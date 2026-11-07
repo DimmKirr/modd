@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Packaging format checks without a target compiler or SDK download."""
 import struct
 import sys

@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* BLE File Transfer service logic: file listing, chunked upload state machine.
  * Flash writes are stubbed; the state machine tracks bytes received. */
 #include "ble_ft.h"

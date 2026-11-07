@@ -1,4 +1,9 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+/* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+ * Portions Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments: layout constants
+ * and drawing sequence follow Felucca's ui.c
+ * Origin: hugelton/Felucca firmware/src/ui.c @ v1.6.1 (a53ecf42)
+ *         https://github.com/hugelton/Felucca/blob/a53ecf428c29c780108fd70a31b71a32a6b5c313/firmware/src/ui.c */
 /* Felucca-styled UI shell: uses upstream gfx.c renderer (AA fonts, SURF
  * cards, palettes) with mock/adapter data through modd_page_t pages.
  * Visual style matches Felucca; content comes from adapters. */

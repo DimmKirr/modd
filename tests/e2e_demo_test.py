@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: DEMO view kitchen-sink UI showcase.
 
 Long-FX opens VIEW_DEMO. SELECT cycles 6 screens (CARDS, LIST, GRAPH, TEXT,

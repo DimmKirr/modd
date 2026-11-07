@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Unit tests for tools/build/vendor.py and the vendir manifest.
 
 Guards the rule that every upstream/ or vendor/ tree the firmware build

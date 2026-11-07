@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Debug log adapter: fixed-size ring buffer for diagnostic messages.
  * Any module can call modd_log() to push a line; the debug UI page
  * reads the ring to display recent messages on the LCD. */

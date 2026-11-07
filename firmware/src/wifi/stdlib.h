@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Shim stdlib.h for lwIP on bare-metal AC791N.
  * Only provides atoi (used by netif.c for interface numbering). */
 #ifndef MODD_STDLIB_H

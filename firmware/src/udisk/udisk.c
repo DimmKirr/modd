@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* UDisk component: mounts FAT32 from USB mass storage, provides directory
  * listing for the file browser page. */
 

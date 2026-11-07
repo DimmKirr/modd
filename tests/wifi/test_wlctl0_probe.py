@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """CONFIG_WIFI_DEBUG_WLCTL0_PROBE (iteration 12i): write WL_CTL0 (0x14000) = 0
 once after boot, with the running-indicator rows before and after, a one-shot
 marker in NOINIT so a crash does not repeat, and a scan afterwards.

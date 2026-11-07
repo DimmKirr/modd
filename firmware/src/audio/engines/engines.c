@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Engine registry: conditional includes based on CONFIG_ENGINE_*.
  * Each engine provides a static const engine_t and is added to ENGINES[]. */
 

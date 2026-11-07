@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Piano direct-map keyboard modal: one key per character.
  * 27 piano keys = 26 letters + space across 4 layers (abc/ABC/123/!@#).
  * ALGO rotates layers, K1 moves cursor, K2 scrolls charset, FX=backspace,

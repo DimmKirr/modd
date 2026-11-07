@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Scales adapter: stubs when no scale system is included. */
 #ifndef MODD_SCALES_H
 #define MODD_SCALES_H

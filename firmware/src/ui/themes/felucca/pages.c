@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Felucca shell: page registration grouped by view.
  * Pages within the same view are registered consecutively so the encoder
  * cycles them in a natural order. */

@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* MIDI adapter: routing, learn, LED state for UI.
  * Stubs are active only when no MIDI routing upstream is configured. */
 #ifndef MODD_MIDI_H

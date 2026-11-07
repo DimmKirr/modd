@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Modulation adapter: source/destination names and icons for UI.
  * Stubs are active only when no modulation upstream is configured. */
 #ifndef MODD_MOD_H

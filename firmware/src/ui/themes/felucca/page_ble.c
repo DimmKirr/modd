@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* BLUETOOTH page: BLE status, connection info, and scanned devices.
  * Modelled on Optimist's HOME > SYSTEM > BLUETOOTH > DEVICES
  * (upstream/optimist/firmware/src/ui/sloop/ui_menu.c MI_BLE/MI_BLEDEV). */

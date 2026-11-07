@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: USB SysEx safety tests.
 
 Guarantees every shipped defconfig produces a binary that can receive SysEx

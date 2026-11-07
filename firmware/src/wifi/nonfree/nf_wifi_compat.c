@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Compatibility shim: expose the same API surface the clean-room driver
  * provides so page_wifi.c compiles unchanged with CONFIG_WIFI_NONFREE.
  * Maps plat_wifi_* (nf_wifi_station.c) to wifi_* names. */

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Host-side debug log reader: ring window math against a fake DAP device."""
 import struct
 import sys

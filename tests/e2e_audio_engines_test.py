@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: test engine audio output from modd_dev firmware.
 
 All ported engines (ANALOG, NOISE, FM6) are compiled into one firmware.

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Patch the fm1-emu web files to expose memory scan for USB safety tests.
 
 Creates a temporary directory with symlinks to the original emulator files,

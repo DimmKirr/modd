@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* WiFi hardware register probes: cleanroom analyst measurement instrument.
  *
  * This code runs on real FM-1 hardware to probe WiFi MAC/DMA register

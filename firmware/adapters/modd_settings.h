@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Settings persistence adapter.
  * Contract: sys_fl_load(p, n) loads up to n bytes into p (0 = ok, -1 = defaults).
  * sys_fl_save(p, n) writes n bytes from p to flash (0 = ok).

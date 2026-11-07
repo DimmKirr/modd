@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: debug log ring buffer and DEBUG page.
 
 Builds with felucca_noise + CONFIG_DEBUG_LOG, boots in the emulator,

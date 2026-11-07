@@ -1,4 +1,10 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+/* SPDX-License-Identifier: MPL-2.0
+ * Copyright (C) 2026 Charles Vestal (fm1-base)
+ * Modifications Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+ * Origin: charlesvestal/fm1-base device/wifi.c @ main (02f422c7)
+ *         https://github.com/charlesvestal/fm1-base/blob/02f422c7d9de121ca099bb2fdebe5c035f59e8ad/device/wifi.c
+ * MPL-2.0 notice: LICENSES/MPL-2.0.txt. Combined into the GPL-3.0-only firmware under MPL-2.0 §3.3. */
+
 /* WiFi station logic: adapted from fm1-base's device/wifi.c (MPL-2.0).
  * Provides plat_wifi_* API using vendor binary WiFi libraries. */
 

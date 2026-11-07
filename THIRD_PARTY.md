@@ -136,6 +136,8 @@ the added Origin lines. Generated from the headers by
 | `firmware/src/ble/ble_att_ft.c` | [w0ts/optimist firmware/src/ble/ble_att.c](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_att.c) @ v0.1 (a4104fcd) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ble/ble_scan.c` | [w0ts/optimist firmware/src/ble/ble_scan.c](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_scan.c) @ v0.1 (a4104fcd) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ble/ble_scan.h` | [w0ts/optimist firmware/src/ble/ble_scan.h](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_scan.h) @ v0.1 (a4104fcd) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/src/ble/ble_hid.c` | [w0ts/optimist firmware/src/ble/ble_gattc.c](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_gattc.c) @ v0.1 (a4104fcd) (ATT helpers and discovery pattern) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/src/ble/ble_hw_stub_sim.c` | [w0ts/optimist firmware/src/ble/ble_hw_stub.c](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_hw_stub.c) @ v0.1 (a4104fcd) (passive stub copied, simulation added) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/boot/ota.c` | [keremimo/melodee firmware/src/ota.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/ota.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/debug/debug_dap.c` | [joakimeriksson/fm1-dock firmware/src/dock.c](https://github.com/joakimeriksson/fm1-dock/blob/2118c7299fdc5fabf81eb81962f1168a21792fd7/firmware/src/dock.c) @ main (2118c729) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/libc.c` | [keremimo/melodee firmware/src/libc.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/libc.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
@@ -146,9 +148,16 @@ the added Origin lines. Generated from the headers by
 | `firmware/src/settings/settings_fmlab.c` | [jsmith13/fm_lab firmware/src/platform.c](https://github.com/jsmith13/fm_lab/blob/cf35dc26709ede9c974654dfc2135f8c25a00082/firmware/src/platform.c) @ v1.1.0 (cf35dc26) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ui/melodee/gfx.c` | [keremimo/melodee firmware/src/gfx.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/gfx.c) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ui/melodee/lcd.c` | [keremimo/melodee firmware/src/lcd.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/lcd.c) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/src/udisk/diskio.h` | [FatFs R0.15 source/diskio.h](https://elm-chan.org/fsw/ff/arc/ff15.zip) (trimmed to the unity build) | FatFs | FatFs |
+| `firmware/src/udisk/ffconf.h` | [FatFs R0.15 source/ffconf.h](https://elm-chan.org/fsw/ff/arc/ff15.zip) (configuration template, values changed) | FatFs | FatFs |
+| `firmware/src/ui/themes/felucca/draw.c` | [hugelton/Felucca firmware/src/ui_draw.c](https://github.com/hugelton/Felucca/blob/a53ecf428c29c780108fd70a31b71a32a6b5c313/firmware/src/ui_draw.c) @ v1.6.1 (a53ecf42) (layout and drawing sequence; reimplemented) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ui/themes/felucca/fui_icons.c` | [hugelton/Felucca firmware/src/icons.c](https://github.com/hugelton/Felucca/blob/a53ecf428c29c780108fd70a31b71a32a6b5c313/firmware/src/icons.c) @ v1.6.1 (a53ecf42) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/src/ui/themes/felucca/ui.c` | [hugelton/Felucca firmware/src/ui.c](https://github.com/hugelton/Felucca/blob/a53ecf428c29c780108fd70a31b71a32a6b5c313/firmware/src/ui.c) @ v1.6.1 (a53ecf42) (layout constants; reimplemented) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/wifi/arch/cc.h` | [lwip-tcpip/lwip src/include/lwip/arch.h](https://github.com/lwip-tcpip/lwip/blob/77dcd25a72509eb83f72b033d219b1d40cd8eb95/src/include/lwip/arch.h) @ STABLE-2_2_1_RELEASE (77dcd25a) | BSD-3-Clause | BSD-3-Clause |
 | `firmware/src/wifi/lwipopts.h` | [lwip-tcpip/lwip contrib/examples/example_app/test_configs/opt_nosys_ipv4.h](https://github.com/lwip-tcpip/lwip/blob/77dcd25a72509eb83f72b033d219b1d40cd8eb95/contrib/examples/example_app/test_configs/opt_nosys_ipv4.h) @ STABLE-2_2_1_RELEASE (77dcd25a) | BSD-3-Clause | BSD-3-Clause |
+| `firmware/src/wifi/nonfree/nf_main.c` | [charlesvestal/fm1-base device/radio.c](https://github.com/charlesvestal/fm1-base/blob/02f422c7d9de121ca099bb2fdebe5c035f59e8ad/device/radio.c) @ main (02f422c7) | MPL-2.0 | MPL-2.0 |
+| `firmware/src/wifi/nonfree/nf_wifi_station.c` | [charlesvestal/fm1-base device/wifi.c](https://github.com/charlesvestal/fm1-base/blob/02f422c7d9de121ca099bb2fdebe5c035f59e8ad/device/wifi.c) @ main (02f422c7) | MPL-2.0 | MPL-2.0 |
+| `firmware/src/wifi/wifi_rf.c` | [w0ts/optimist firmware/hal/fm1_ble_rf.h](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/hal/fm1_ble_rf.h) @ v0.1 (a4104fcd) (RF-die SPI and BBP window helpers) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/stub/crt0_stub.S` | [keremimo/melodee firmware/stub/crt0_stub.S](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/crt0_stub.S) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/stub/stub.c` | [keremimo/melodee firmware/stub/stub.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/stub.c) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/stub/stub.ld` | [keremimo/melodee firmware/stub/stub.ld](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/stub.ld) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
@@ -163,8 +172,10 @@ the added Origin lines. Generated from the headers by
 Permissive notices that must travel with these files are tracked here because the
 upstream trees are not committed: `LICENSES/MIT-Felucca-Engines.txt` (for `dsp.c`,
 `modd_engine.h`, `gen_engine_tables.py`), `LICENSES/BSD-3-Clause-lwIP.txt` (for
-`wifi/arch/cc.h`, `wifi/lwipopts.h`) and `LICENSES/FatFs.txt` (for the FatFs
-configuration in `firmware/src/udisk/`). `dsp.c` is an unchanged copy and keeps its
+`wifi/arch/cc.h`, `wifi/lwipopts.h`), `LICENSES/FatFs.txt` (for the FatFs
+configuration in `firmware/src/udisk/`) and `LICENSES/MPL-2.0.txt` (for the two
+`wifi/nonfree/` files adapted from fm1-base, which stay MPL-2.0 and join the GPL-3.0-only
+firmware under MPL-2.0 §3.3; they compile only with `CONFIG_WIFI_NONFREE`). `dsp.c` is an unchanged copy and keeps its
 MIT header; `modd_engine.h` and `gen_engine_tables.py` are modified and are GPL-3.0-only
 with the MIT copyright notice kept. The release source archive excludes Melodee's
 Casio CZ-1 and Sequential Prophet-5 factory preset `.syx` assets, which Melodee's

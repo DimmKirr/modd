@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* WEATHER page: current weather fetched via WiFi (ip-api + open-meteo).
  * Layout: colored background area with glyph, temperature, condition,
  * city/country, humidity, and wind speed. Spinner during fetch. */

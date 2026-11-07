@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Control map adapter: maps physical buttons and encoders to UI views.
  * Each firmware upstream provides its own table; the shell dispatches
  * through it instead of hardcoding button-to-view assignments. */

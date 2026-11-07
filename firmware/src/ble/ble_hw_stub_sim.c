@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+/* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 the Optimist contributors (w0ts/optimist)
+ * Modifications Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+ * Origin: w0ts/optimist firmware/src/ble/ble_hw_stub.c @ v0.1 (a4104fcd)
+ *         https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_hw_stub.c */
 /* BLE HW stub with connection simulation state machine.
  * Wraps the passive stub (ble_hw_stub.c) and adds the ability to inject
  * a CONNECT_IND, ATT exchanges (MTU, MIDI CCCD) and a disconnect —

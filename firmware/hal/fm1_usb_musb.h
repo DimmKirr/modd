@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* MUSB register-level functions from cpu.a (JieLi AC791N SoC).
  * Declarations match the SDK's asm/usb.h, using SDK-compatible types. */
 #ifndef FM1_USB_MUSB_H

@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Clean-room implementation from docs/hardware/wifi/SPECSHEET.md.
  * No vendor code, IR or disassembly.
  *

@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Felucca settings page: tabbed menu driven by modd_sys_menu adapter.
  * Long-HOME opens this page. ALGO switches tabs, PRESET scrolls rows,
  * SELECT cycles the selected row's value. */

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """USB host stack protocol tests (phases 2-5).
 
 Pure Python: validates byte layouts, parsing logic, and protocol framing

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: visit every view (page + modal) and capture a screenshot.
 
 Navigation model: each button opens a VIEW; SELECT encoder cycles pages

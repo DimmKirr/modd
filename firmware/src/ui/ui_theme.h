@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Theme descriptor: a shell's visual identity.
  * Each shell provides one static ui_theme_t with its layout metrics,
  * font pointers, and element render functions. The element layer

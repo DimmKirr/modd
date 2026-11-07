@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Settings menu adapter: item descriptors and tabs.
  * UI-agnostic: any renderer (Felucca, Melodee, core) can iterate this.
  * Items are static via Kconfig. See design doc for dynamic registration TODO. */

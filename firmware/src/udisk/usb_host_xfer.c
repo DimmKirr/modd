@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* USB host transfer engine: polled EP0 control + bulk IN/OUT.
  * Uses cpu.a low-level MUSB accessors; no ISRs, no RTOS. */
 

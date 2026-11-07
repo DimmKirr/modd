@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Minimal JSON parser for CDP messages.
  * Only handles the subset needed: {"id":N,"method":"X","params":{...}}
  * No malloc, no recursion, no floats. */

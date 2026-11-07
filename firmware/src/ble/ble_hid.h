@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* The HID over GATT client of the central role (BLE_CENTRAL; Core Specification Vol 3 Part F / G, USB HID
  * over GATT Profile 1.0): discovering an HID service (0x1812) on a peripheral (an Xbox Series X|S Wireless
  * Controller), subscribing to its input report notifications, and converting the gamepad reports to MIDI CC

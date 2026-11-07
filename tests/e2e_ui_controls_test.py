@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: comprehensive UI controls test.
 
 Loads the felucca_noise firmware (all pages enabled: HOME, ENV, LFO, FX,

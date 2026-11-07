@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Clean-room RF calibration for AC791N (WL82).
  * From docs/hardware/wifi/SPECSHEET.md §10.1 (full trim), §10.2 (stored
  * record and quick path), §10.1.1-§10.1.13 (subsections).

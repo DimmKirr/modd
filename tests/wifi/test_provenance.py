@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Provenance tests for the clean-room WiFi driver.
 
 (a) Constant trace: every hex literal in the WiFi source (excluding nonfree/)

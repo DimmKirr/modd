@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Diff of two register sweeps (tools/wifi_sweep_diff.py)."""
 import sys
 from pathlib import Path

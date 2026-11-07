@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Host-compiled BLE C tests (no hardware, no embedded toolchain).
 
 Each test compiles a C source from the vendored Optimist BLE stack on the

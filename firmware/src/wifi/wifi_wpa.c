@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Clean-room WPA2-PSK from FIPS 197 (AES-128), FIPS 180-4 (SHA-1),
  * RFC 2104 (HMAC), RFC 2898 (PBKDF2), IEEE 802.11i (4-way handshake, CCMP).
  * No vendor code, IR or disassembly. */

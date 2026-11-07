@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """CDP bridge: WebSocket server backed by fm1-emu via Playwright (async).
 
 Boots the WASM emulator, then exposes FM1.* CDP methods over WebSocket.

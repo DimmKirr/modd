@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """tools/ram_top.py: rank .data/.bss input sections from the linker map, so `task flash`
 shows what fills the 96 KB RAM region before flashing."""
 import sys

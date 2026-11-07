@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Clean-room RTOS shim from docs/hardware/wifi/SPECSHEET.md §8.
  * No vendor code, IR or disassembly.
  *

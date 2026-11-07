@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* FM1.* CDP domain handlers: firmware inspection and control. */
 
 static void cdp_fm1_get_info(int32_t id, struct cdp_tx *tx)

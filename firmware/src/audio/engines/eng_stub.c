@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Stub engine: silence with 4 dummy knobs.
  * Lets the UI and engine page work before any real engine is integrated. */
 

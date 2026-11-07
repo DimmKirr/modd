@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Iteration 12o: the first real reception (12n) stalled the CPU until the watchdog reset it.
 The vendor's receive contract (SPECSHEET §7.11.6 steps 1-7, §7.11.9 [M:s]): the interrupt
 handler masks the source (WF_CON4 0x14050 bit 0) and wakes the receive task; the receive

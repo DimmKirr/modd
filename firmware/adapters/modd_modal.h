@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Modal overlay contract: a temporary UI that intercepts shell dispatch.
  * The keyboard, confirm dialogs, and error popups implement this.
  * When active, the modal draws on top of the current page and receives

@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Minimal WebSocket server (RFC 6455) for CDP transport.
  * Single connection, text frames only, no extensions. */
 

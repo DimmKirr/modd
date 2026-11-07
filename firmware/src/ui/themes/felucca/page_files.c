@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* FILES page: USB disk file browser for Felucca shell.
  * Shows directory listing with scroll, folder navigation, file sizes. */
 

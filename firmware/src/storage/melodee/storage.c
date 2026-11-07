@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Melodee storage stub: FBKG format, 384 presets, migration, backup/restore.
  * TODO: port from upstream melodee (storage.c, storage_hw.c, project.c,
  * upreset.c, cz_store.c, fm6_store.c, favorites.c, native_presets.c,

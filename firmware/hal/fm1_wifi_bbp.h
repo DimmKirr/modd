@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Clean-room implementation from docs/hardware/wifi/SPECSHEET.md BBP window protocol.
  * No vendor code, IR or disassembly. */
 /* AC791N / WL82 BBP (Baseband Processor) access helpers.

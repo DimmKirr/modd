@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Element dispatch: routes element calls to the active theme.
  * Included in the unity build after ui_theme.h and before the shell. */
 

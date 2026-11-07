@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Bench: DEMO view walkthrough via native fm1-live --record.
 
 Uses fm1-live's headless --shot/--record mode with FM1_BENCH_KEYS scripted

@@ -1,4 +1,9 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+/* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+ * Portions Copyright (C) 2026 the Optimist contributors (w0ts/optimist): the ATT request helpers and
+ * discovery state machine follow ble_gattc.c
+ * Origin: w0ts/optimist firmware/src/ble/ble_gattc.c @ v0.1 (a4104fcd)
+ *         https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_gattc.c */
 /* The HID over GATT client of the central role (BLE_CENTRAL; ble_hid.h), discovering an HID service on
  * an Xbox Series X|S Wireless Controller and subscribing to its input report notifications. The gamepad's
  * report (Report ID 1, 16 bytes: sticks, triggers, hat, buttons) is scaled to 7-bit MIDI CC values and

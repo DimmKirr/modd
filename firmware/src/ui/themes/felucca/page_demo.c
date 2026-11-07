@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* DEMO page: kitchen-sink showcase of UI elements.
  * Long-FX opens this view. SELECT switches demo screens,
  * K1-K4 adjust each screen's card values (Felucca knob pattern). */

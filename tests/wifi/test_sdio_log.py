@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Verify SDIO timeout logging is rate-limited and DAP SysEx is suppressed.
 
 These are source-level checks: they read the C files and verify the patterns

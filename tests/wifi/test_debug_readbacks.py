@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Source-level checks for the behavioural WiFi readbacks (plan Phase 1, Task 2-3).
 
 The emulator has no WiFi MAC, so these verify the C sources carry the

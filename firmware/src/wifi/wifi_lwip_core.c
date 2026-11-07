@@ -1,4 +1,7 @@
-/* SPDX-License-Identifier: BSD-3-Clause */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
+/* The lwIP sources included below are BSD-3-Clause (see firmware/vendor/lwip/COPYING). */
 /* Unity-build include for lwIP 2.2.0 core sources.
  * This file #includes the minimal set of lwIP .c files required for
  * TCP, UDP, DNS, DHCP, ARP, and ICMP on a bare-metal NO_SYS=1 target.

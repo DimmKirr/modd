@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* BLE adapter: stubs when the BLE module is off. */
 #ifndef MODD_BLE_H
 #define MODD_BLE_H

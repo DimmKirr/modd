@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Editor adapter: SysEx web editor protocol stubs. */
 #ifndef MODD_EDITOR_H
 #define MODD_EDITOR_H

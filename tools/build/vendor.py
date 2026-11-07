@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Helpers around vendir.yml, the manifest of vendored upstream trees.
 
     vendor.py paths      print every vendored directory, one per line

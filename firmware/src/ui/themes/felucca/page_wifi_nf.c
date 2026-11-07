@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Minimal WiFi status page for the nonfree vendor driver.
  * Shows driver state via the plat_wifi_* API from nf_wifi_station.c.
  * The full WiFi/Weather pages use clean-room APIs and aren't available. */

@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Melodee scales stub: 70 scales incl. 54 microtonal, concert pitch 400-480Hz.
  * TODO: port from upstream melodee (scales.h, microtonal.h, tuning.h,
  * scale_picker.c, note_tools.c). */

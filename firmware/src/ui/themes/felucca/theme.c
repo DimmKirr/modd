@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Felucca theme: visual identity for the Felucca shell.
  * Exposes layout metrics, palette, font pointers, and the
  * ui_theme_t descriptor that the element layer dispatches through.

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Iteration 12l: the vendor's per-channel front-end writes the GPL driver never did
 (SPECSHEET §4.2.1 C2-C3, §14 rows 3-4 [M:s]): TX_BAND_CFG band select and TX_PIN_CFG
 (LNA/PA/RF switch enables) after every channel switch; BBP R94 and R106 are not written

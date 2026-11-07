@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* FM6 adapter for FM Lab's dx7_core.c (Dexed/msfa integer port).
  * The upstream core renders DX7 voices in Q24; this shim wraps it as
  * an engine_t with voice management and amplitude scaling. */

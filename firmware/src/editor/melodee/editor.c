@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Melodee SysEx editor stub: web editor protocol (F0 7D 46 4C cmd.. F7).
  * TODO: port from upstream melodee (editor.c, editor_native.c,
  * editor_preferences.c, editor_backup.c, editor_fm6.c, editor_cz.c,

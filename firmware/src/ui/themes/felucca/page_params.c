@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Felucca parameter pages: ENV, LFO, FX, SCL, EDIT, ARP, VOICE.
  * Each shows 4 cards with parameter values from the adapter. */
 

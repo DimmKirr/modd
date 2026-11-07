@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Effects adapter: FX chain state for UI display and control.
  * Stubs are active only when no effects upstream is configured. */
 #ifndef MODD_FX_H

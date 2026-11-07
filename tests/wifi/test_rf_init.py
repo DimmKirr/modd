@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Cross-test: RF init register sequence.
 
 Verifies that our GPL wifi_rf.c references the critical register addresses

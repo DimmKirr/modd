@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: cooperative scheduler acceptance tests (Phase 4, Task 16).
 
 Verifies that the multi-task scheduler (sched.c) keeps all tasks running

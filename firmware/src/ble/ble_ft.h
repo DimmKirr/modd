@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* BLE File Transfer GATT service: file listing, chunked upload from phone.
  * Service UUID E4B3FA01-1B2C-4D5E-8A9F-3C6D7E8F9A0B. */
 #ifndef BLE_FT_H

@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Melodee USB Audio stub: class-compliant stereo/4-track capture.
  * TODO: port from upstream melodee (usb_audio.c, usb_audio_stream.c,
  * usb_audio_desc.h). */

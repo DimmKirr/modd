@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Universal view-based navigation: page registry, view memory, cycling.
  * Included in the unity build before the shell. All functions static. */
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Verify WiFi stack buffers are static (not stack-local) for scheduler safety.
 
 The cooperative scheduler gives WiFi a 4KB task stack.  These four buffers

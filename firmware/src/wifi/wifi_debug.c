@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* WiFi debug snapshot: fills a fixed-size buffer with key state for DAP query.
  * Included in the unity build after wifi_api.c so all WiFi state is visible.
  * Called by debug_dap.c (forward-declared there). */

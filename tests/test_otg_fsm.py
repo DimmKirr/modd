@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """OTG dual-role state machine tests.
 
 Pure Python: validates FSM transitions, timing, debounce, and register

@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Async two-step weather fetcher: geo-locate via ip-api.com, then
  * current weather from Open-Meteo. Non-blocking, callback-driven. */
 

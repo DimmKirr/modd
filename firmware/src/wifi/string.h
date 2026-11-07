@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Shim string.h for lwIP and FatFs: declares the mem/str functions the firmware
  * provides in libc.c with matching signatures (unsigned, not size_t).
  * Placed on the -I path ahead of the JieLi toolchain sysroot. */

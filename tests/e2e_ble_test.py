@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: BLE connection lifecycle in the emulator.
 
 Builds felucca_noise (BLE + stub driver), boots in fm1-emu, navigates to

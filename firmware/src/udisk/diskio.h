@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: LicenseRef-FatFs
+ * Copyright (C) 2022 ChaN (FatFs R0.15)
+ * Modifications Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+ * Origin: FatFs R0.15 source/diskio.h, https://elm-chan.org/fsw/ff/arc/ff15.zip (pinned in vendir.yml)
+ * FatFs notice: LICENSES/FatFs.txt */
 /* FatFs disk I/O interface for modd unity build.
  * All functions are static (single translation unit). */
 #ifndef _DISKIO_DEFINED

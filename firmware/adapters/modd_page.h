@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Page adapter: the contract between UI shells and page content.
  * A page is one screen of the synthesizer UI (home, engine params,
  * sequencer, effects, etc.). The shell handles navigation, input

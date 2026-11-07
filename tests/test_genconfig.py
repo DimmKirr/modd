@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Unit tests for Kconfig loading and genconfig output.
 
 Results are written to tests/results/<timestamp>-test_genconfig/<subtest>/.

@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Clean-room async HTTP/1.1 GET client on lwIP raw TCP API.
  * Single concurrent request, callback-based, no malloc. */
 

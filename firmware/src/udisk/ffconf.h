@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: LicenseRef-FatFs
+ * Copyright (C) 2022 ChaN (FatFs R0.15)
+ * Modifications Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+ * Origin: FatFs R0.15 source/ffconf.h, https://elm-chan.org/fsw/ff/arc/ff15.zip (pinned in vendir.yml)
+ * FatFs notice: LICENSES/FatFs.txt */
 /* FatFs configuration for modd.
  * Based on ChaN's FatFs R0.15 ffconf.h template.
  * See http://elm-chan.org/fsw/ff/ for the full library. */

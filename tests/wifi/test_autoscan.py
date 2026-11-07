@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """CONFIG_WIFI_DEBUG_AUTOSCAN: scan without the panel so a power-cycle alone
 produces the scan diagnostics for `task debug:dump` / `task debug:follow`."""
 import re

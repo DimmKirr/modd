@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* SDK configuration stubs for vendor binary libraries.
  * These constants and functions are normally provided by the JieLi SDK.
  * Minimal values for WiFi STA with BLE peripheral (no classic BT). */

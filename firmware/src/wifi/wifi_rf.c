@@ -1,4 +1,10 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+// Portions Copyright (C) 2026 the Optimist contributors (w0ts/optimist): the RF-die SPI and BBP
+// window access helpers follow the BLE RF driver (the RF die is shared by BLE and WiFi)
+// Origin: w0ts/optimist firmware/hal/fm1_ble_rf.h @ v0.1 (a4104fcd)
+//         https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/hal/fm1_ble_rf.h
+
 /* Clean-room WiFi RF init for AC791N (WL82).
  * From docs/hardware/wifi/SPECSHEET.md register map and RF init sequence (14 groups),
  * IEEE 802.11-2020 channel plan, and the VCO scan algorithm in fm1_ble_rf.h.

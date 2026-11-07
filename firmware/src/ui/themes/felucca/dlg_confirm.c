@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Confirm dialog modal: YES/NO or OK acknowledgment.
  * Overlays the graph area with a centered dialog box.
  * YES/NO: OCT+ = YES, OCT- = NO (direct button mapping).

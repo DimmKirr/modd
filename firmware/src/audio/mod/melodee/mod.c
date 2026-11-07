@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Melodee modulation matrix stub: 4 slots per track, SRC -> DST by AMT.
  * TODO: port from upstream melodee mod.c. */
 

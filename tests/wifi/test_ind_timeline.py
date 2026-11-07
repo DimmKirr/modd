@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Iteration 12i: the five read-only "MAC/BBP running" indicators are sampled at
 every init step boundary so a transient assert (block started, then killed by a
 later step) cannot hide. Source-level checks: the emulator has no WiFi block.

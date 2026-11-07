@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Unit tests for tools/codegen/gen_weather_art.py.
 
 Replaces the old 1-bit glyph tests: the condition artwork is now indexed

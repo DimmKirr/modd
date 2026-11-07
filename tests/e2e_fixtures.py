@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Shared fixtures for Playwright E2E tests against the fm1-emu WASM emulator."""
 import http.server
 import os

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Decoder for the iteration-12i running-indicator rows (tools/wifi_ind_timeline.py)."""
 import sys
 from pathlib import Path

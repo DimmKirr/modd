@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* CDP server: TCP listen -> WebSocket upgrade -> JSON-RPC dispatch.
  * Called from the main loop via cdp_poll(). */
 

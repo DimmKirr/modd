@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* modd FX page: effects chain overview (stub). */
 
 static const char *fx_say_stub(uint32_t k) { (void)k; return "---"; }

@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Storage adapter: project save/load, user presets.
  * Stubs are active only when no storage upstream is configured. */
 #ifndef MODD_STORAGE_H

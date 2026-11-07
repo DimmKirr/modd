@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Mixer adapter: stereo mix bus stubs when no explicit mixer is included. */
 #ifndef MODD_MIX_H
 #define MODD_MIX_H

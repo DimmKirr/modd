@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Cross-task command queue: UI -> WiFi.
  * Commands are copied (not pointer-based) to avoid cross-yield aliasing. */
 

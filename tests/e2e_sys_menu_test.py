@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: settings menu (SYS page) renders, tabs switch, values cycle.
 
 Builds felucca_noise (SYS_MENU + USB_MODE + MIDI_CH + BLE), boots in

@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* modd ENGINE page: shows the active engine's 4 knob params.
  * Reads through modd_engine.h (engine_t vtable) and modd_audio.h (track_t). */
 

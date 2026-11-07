@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* View IDs: a view is a button-addressable group of related pages.
  * Pressing a button opens the view; the encoder cycles pages within it.
  * See docs/UI.md for the full view/page/element architecture. */

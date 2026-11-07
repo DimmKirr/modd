@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
 /* Clean-room WiFi bus driver for AC791N (WL82) using JieLi WDMA engine.
  *
  * From docs/hardware/wifi/SPECSHEET.md §4.2 (bus gate, clock/reset),

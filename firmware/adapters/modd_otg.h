@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* OTG dual-role state machine: auto-switch between USB device and host.
  * Requires: modd_log.h, fm1_usb.h (device HAL), fm1_usb_host.h (host HAL).
  * Device-mode globals: usb.up, usb.config, usb.frame_same, usb.detached.

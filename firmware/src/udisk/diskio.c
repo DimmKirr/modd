@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* FatFs disk I/O glue: routes FatFs sector reads to the USB host driver. */
 
 static DRESULT disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count)

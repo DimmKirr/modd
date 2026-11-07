@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Shared by the application and assembly startup. */
 #ifndef MODD_BUILD_OPTIONS_H
 #define MODD_BUILD_OPTIONS_H

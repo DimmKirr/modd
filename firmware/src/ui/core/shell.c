@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* modd UI shell: minimal fallback (bitmap font, no theming).
  * Navigation uses the universal ui_nav.c module. */
 

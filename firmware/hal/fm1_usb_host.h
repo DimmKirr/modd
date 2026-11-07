@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* USB host controller HAL for AC791N OTG.
  * Switches the USB PHY into host mode and provides low-level transfer
  * primitives for Bulk-Only Transport (Mass Storage Class). */

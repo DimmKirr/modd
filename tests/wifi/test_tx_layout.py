@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Source-level checks for the WDMA TX image and readiness gate (SPECSHEET §7.11.5,
 revised 2026-11-04 [M:s]):
 

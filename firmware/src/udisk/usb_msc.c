@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* USB Mass Storage Class: Bulk-Only Transport (BBB) + SCSI commands. */
 
 static uint32_t msc_tag;

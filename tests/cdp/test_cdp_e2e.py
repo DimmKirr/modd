@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: connect to the CDP bridge over WebSocket, exercise FM1.* methods.
 
 This test boots the fm1-emu emulator (WiFi-enabled build from

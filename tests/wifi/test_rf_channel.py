@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Iteration 12m: channel selection the vendor's way (SPECSHEET §4.2.1 C1, §4.2 0x1405C,
 §5 FEQ bank patch, §5.2 bank-limit scan, §14 rows 5-7 [M:s 2026-11-04]).
 

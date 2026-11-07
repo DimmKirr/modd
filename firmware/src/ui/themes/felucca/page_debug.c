@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* DEBUG page: scrollable view of the modd_log ring buffer. */
 
 #define DBG_VISIBLE   8
