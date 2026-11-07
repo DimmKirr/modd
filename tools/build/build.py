@@ -1,0 +1,668 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+# Modifications Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+"""Build modd: genconfig + JieLi clang compile + .fwsc package.
+
+Usage:
+  tools/build.py                    # build from .config
+  tools/build.py --defconfig NAME   # load defconfig, then build
+  tools/build.py --genconfig-only   # just write config.h, don't compile
+  tools/build.py --dry-run          # show what would be compiled
+
+The JieLi toolchain is Linux x86-64 only. Runner, first match:
+  - Native x86-64 Linux: runs directly.
+  - Other Linux whose kernel runs x86-64 ELFs itself (Rosetta on Apple-silicon
+    VMs, a binfmt_misc registration): runs through an x86-64 ld.so.
+  - Other Linux with qemu-x86_64: runs via user-mode QEMU.
+  - Otherwise (macOS, or JIELI_DOCKER=1): runs in a linux/amd64 Docker container.
+The two Linux fallbacks need x86-64 glibc and libstdc++: JIELI_X86_GLIBC and
+JIELI_X86_STDCPP, else $JIELI_TOOLCHAIN/../x86libs (task toolchain:x86libs),
+else the nix store.
+"""
+import argparse
+import glob
+import os
+import platform
+import re
+import shutil
+import struct
+import subprocess
+import sys
+from pathlib import Path
+
+import fm1pkg_make
+import lz4blk
+
+ROOT = Path(__file__).resolve().parents[2]
+FW = ROOT / 'firmware'
+OUT = ROOT / 'build'
+GEN = Path(os.environ['MODD_GEN_DIR']) if 'MODD_GEN_DIR' in os.environ else OUT / 'gen'
+
+DOCKER_IMAGE = os.environ.get('JIELI_DOCKER_IMAGE', 'debian:bookworm-slim')
+
+CFLAGS = [
+    '-mcpu=r3', '-mfprev1', '-ffp-contract=off',
+    '-Werror=double-promotion', '-Os',
+    '-ffunction-sections', '-fdata-sections',
+    '-fno-builtin', '-Wall', '-Wno-unused-function',
+]
+
+
+def toolchain_path():
+    tc = os.environ.get('JIELI_TOOLCHAIN')
+    if not tc:
+        raise SystemExit(
+            'JIELI_TOOLCHAIN not set. Run "task fm1-platform:download" first.')
+    p = Path(tc)
+    if not (p / 'pi32v2' / 'bin' / 'clang').exists():
+        raise SystemExit(
+            f'JIELI_TOOLCHAIN={tc} does not contain pi32v2/bin/clang')
+    return p
+
+
+def _find_x86_libs(tc_path=None):
+    """x86-64 glibc and libstdc++ for the Rosetta and qemu runners: two directories
+    holding lib/ld-linux-x86-64.so.2 and lib/libstdc++.so.6 (may be the same one)."""
+    glibc = os.environ.get('JIELI_X86_GLIBC', '')
+    stdcpp = os.environ.get('JIELI_X86_STDCPP', '')
+    if glibc and stdcpp:
+        return glibc, stdcpp
+
+    if tc_path is not None:
+        local = Path(tc_path).parent / 'x86libs'
+        if ((local / 'lib' / 'ld-linux-x86-64.so.2').exists()
+                and (local / 'lib' / 'libstdc++.so.6').exists()):
+            return str(local), str(local)
+
+    for p in sorted(glob.glob('/nix/store/*/lib/ld-linux-x86-64.so.2')):
+        glibc = str(Path(p).parents[1])
+        break
+    for p in sorted(glob.glob('/nix/store/*/lib/libstdc++.so.6')):
+        lib = Path(p)
+        try:
+            out = subprocess.run(
+                ['readelf', '-h', str(lib)],
+                capture_output=True, text=True, timeout=5)
+            if 'X86-64' in out.stdout:
+                stdcpp = str(lib.parents[1])
+                break
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            continue
+    return glibc, stdcpp
+
+
+def _ar_member(archive, member):
+    """One member of a `!<arch>` archive, GNU or BSD naming. Done here because the
+    host ar differs: macOS ar has no --output and extracts into its cwd only."""
+    data = Path(archive).read_bytes()
+    if data[:8] != b'!<arch>\n':
+        raise SystemExit(f'{archive}: not an ar archive')
+    pos, longnames = 8, b''
+    while pos + 60 <= len(data):
+        hdr = data[pos:pos + 60]
+        name = hdr[:16].decode('latin-1').rstrip()
+        size = int(hdr[48:58])
+        body = data[pos + 60:pos + 60 + size]
+        pos += 60 + size + (size & 1)
+        if name == '/':
+            continue                     # symbol table
+        if name == '//':
+            longnames = body             # GNU long-name table
+            continue
+        if name.startswith('/'):
+            off = int(name[1:])
+            name = longnames[off:longnames.index(b'/\n', off)].decode('latin-1')
+        elif name.startswith('#1/'):
+            n = int(name[3:])            # BSD: name precedes the data
+            name = body[:n].rstrip(b'\0').decode('latin-1')
+            body = body[n:]
+        elif name.endswith('/'):
+            name = name[:-1]
+        if name == member:
+            return body
+    raise SystemExit(f'{archive}: no member {member}')
+
+
+def _driver_plan(text):
+    """Sub-commands printed by `clang -###`, one argv list per line that starts with ` "`."""
+    import shlex
+    return [shlex.split(line) for line in text.splitlines() if line.startswith(' "')]
+
+
+class _NativeRunner:
+    def __init__(self, tc_path):
+        self.tc = tc_path
+
+    def run(self, tool_path, args, capture=False):
+        cmd = [str(self.tc / tool_path), *args]
+        return subprocess.run(cmd, check=True, cwd=str(ROOT),
+                              stdout=subprocess.PIPE if capture else None, text=True).stdout
+
+    def label(self):
+        return ''
+
+
+class _X86Runner:
+    """Run the x86-64 toolchain behind an argv prefix (an x86-64 ld.so, or qemu-x86_64).
+
+    The driver forks `clang -cc1` as a child process. That execve leaves the
+    prefix and goes to the kernel, which on Apple-silicon VMs hands x86-64 ELFs
+    to Rosetta; Rosetta then rejects the nix-ld shim installed as
+    /lib64/ld-linux-x86-64.so.2 ("not an x86-64 elf (0xb7)"). So ask the driver
+    for its plan and run every sub-command behind the prefix ourselves."""
+
+    def __init__(self, tc_path, prefix, env, label, exe=None):
+        self.tc = tc_path
+        self.prefix = prefix
+        self.env = env
+        self._label = label
+        # What /proc/self/exe reads as inside the prefix. An explicit ld.so
+        # reports itself, so the driver names the loader as its -cc1 executable
+        # and derives its resource and tool directories from the loader's
+        # directory; the plan is rewritten back to the real driver. qemu fakes
+        # /proc/self/exe, so nothing to fix there.
+        self.exe = exe
+
+    def _fix(self, argv, tool):
+        if not self.exe:
+            return argv
+        exe_dir, tool_dir = str(Path(self.exe).parent), str(Path(tool).parent)
+        return [a.replace(self.exe, tool).replace(exe_dir, tool_dir) for a in argv]
+
+    def run(self, tool_path, args, capture=False):
+        env = os.environ.copy()
+        env.update(self.env)
+        tool = str(self.tc / tool_path)
+        if str(tool_path).endswith('clang'):
+            plan = subprocess.run([*self.prefix, tool, '-###', *args], cwd=str(ROOT), env=env,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            cmds = _driver_plan(plan.stderr)
+            if plan.returncode != 0 or not cmds:
+                sys.stderr.write(plan.stderr)
+                raise subprocess.CalledProcessError(plan.returncode or 1, plan.args)
+            out = ''
+            for argv in cmds:
+                argv = self._fix(argv, tool)
+                out = subprocess.run([*self.prefix, *argv], check=True, cwd=str(ROOT), env=env,
+                                     stdout=subprocess.PIPE if capture else None, text=True).stdout
+            return out
+        cmd = [*self.prefix, tool, *args]
+        return subprocess.run(cmd, check=True, cwd=str(ROOT), env=env,
+                              stdout=subprocess.PIPE if capture else None, text=True).stdout
+
+    def label(self):
+        return self._label
+
+
+class _RosettaRunner(_X86Runner):
+    """The kernel executes x86-64 ELFs itself; only the loader and libraries are ours."""
+
+    def __init__(self, tc_path, glibc, stdcpp):
+        loader = f'{glibc}/lib/ld-linux-x86-64.so.2'
+        super().__init__(tc_path,
+                         [loader, '--library-path', f'{stdcpp}/lib:{glibc}/lib'],
+                         {}, ' (rosetta)', exe=loader)
+
+
+class _QemuRunner(_X86Runner):
+    def __init__(self, tc_path, glibc, stdcpp):
+        super().__init__(tc_path, [shutil.which('qemu-x86_64')],
+                         {'QEMU_LD_PREFIX': glibc,
+                          'LD_LIBRARY_PATH': f'{stdcpp}/lib:{glibc}/lib'},
+                         ' (qemu)')
+
+
+def _can_exec_x86(glibc):
+    """True when this kernel runs an x86-64 ELF by itself (Rosetta, binfmt_misc)."""
+    ld = Path(glibc) / 'lib' / 'ld-linux-x86-64.so.2'
+    try:
+        return subprocess.run([str(ld), '--version'], capture_output=True,
+                              timeout=10).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+class _DockerRunner:
+    def __init__(self, tc_path):
+        self.tc = tc_path
+
+    def run(self, tool_path, args, capture=False):
+        mapped = []
+        for a in args:
+            s = str(a)
+            mapped.append(s.replace(str(ROOT), '/work') if str(ROOT) in s else s)
+        cmd = [
+            'docker', 'run', '--rm', '--platform', 'linux/amd64',
+            '-v', f'{ROOT}:/work',
+            '-v', f'{self.tc}:/opt/jieli:ro',
+            '-w', '/work',
+            DOCKER_IMAGE,
+            f'/opt/jieli/{tool_path}', *mapped,
+        ]
+        return subprocess.run(cmd, check=True, cwd=str(ROOT),
+                              stdout=subprocess.PIPE if capture else None, text=True).stdout
+
+    def label(self):
+        return ' (docker)'
+
+
+def _pick_runner(tc_path):
+    forced = os.environ.get('JIELI_DOCKER')
+    if forced == '1':
+        return _DockerRunner(tc_path)
+
+    is_x86 = platform.machine() in ('x86_64', 'AMD64')
+    is_linux = platform.system() == 'Linux'
+
+    if is_linux and is_x86:
+        return _NativeRunner(tc_path)
+
+    if is_linux:
+        glibc, stdcpp = _find_x86_libs(tc_path)
+        if glibc and stdcpp:
+            if _can_exec_x86(glibc):
+                return _RosettaRunner(tc_path, glibc, stdcpp)
+            if shutil.which('qemu-x86_64'):
+                return _QemuRunner(tc_path, glibc, stdcpp)
+
+    return _DockerRunner(tc_path)
+
+
+_runner = None
+
+
+def tc(tool, *args, capture=False):
+    global _runner
+    if _runner is None:
+        _runner = _pick_runner(toolchain_path())
+
+    if tool == 'cc':
+        tool_path = 'pi32v2/bin/clang'
+        extra = ['-target', 'pi32v2']
+    else:
+        tool_path = tool
+        extra = []
+
+    return _runner.run(tool_path, [*extra, *[str(a) for a in args]], capture=capture)
+
+
+def genconfig(defconfig=None):
+    cmd = [sys.executable, str(ROOT / 'tools' / 'build' / 'genconfig.py')]
+    if defconfig:
+        cmd += ['--defconfig', defconfig]
+    subprocess.run(cmd, check=True, cwd=str(ROOT))
+
+
+def loader_wrap(image):
+    """SPL loader container: JLFS headers and independently checked LZ4 blocks."""
+    def header(crc, offset, size, attr):
+        body = struct.pack('<HIIBBH16s', crc, offset, size, attr, 0, 0,
+                           b'usb_hid_ota.bin')
+        return struct.pack('<H', fm1pkg_make.crc16(body)) + body
+
+    blocks = bytearray()
+    for start in range(0, len(image), 4096):
+        raw = image[start:start + 4096]
+        compressed = lz4blk.compress(raw)
+        if len(compressed) > 4096 or lz4blk.decompress(compressed) != raw:
+            raise SystemExit(f'loader: invalid compressed block at {start}')
+        blocks += struct.pack('<II', len(compressed), len(raw)) + compressed
+    body = header(fm1pkg_make.crc16(image), len(image), 0x01C0A800, 0) + blocks
+    return header(fm1pkg_make.crc16(body), 0x20, len(body), 0x41) + body
+
+
+def build_support(name, entry):
+    """Compile the standalone boot stub or RAM update loader."""
+    src, out = FW / name, OUT / name
+    out.mkdir(parents=True, exist_ok=True)
+    tc('cc', f'-I{src}', '-c', src / entry, '-o', out / 'crt0.o')
+    tc('cc', *CFLAGS, '-Ifirmware/hal', '-Ifirmware/src', f'-I{src}',
+       '-c', src / f'{name}.c', '-o', out / f'{name}.o')
+    elf = out / f'{name}.elf'
+    tc('pi32v2/bin/ld', '--gc-sections', '-e', '_start', '-T', src / f'{name}.ld',
+       out / 'crt0.o', out / f'{name}.o', '-o', elf)
+    binary = out / f'{name}.bin'
+    binary.unlink(missing_ok=True)
+    tc('common/bin/objcopy', '-O', 'binary', '-j', '.text', elf, binary)
+    return binary.read_bytes()
+
+
+def package(version):
+    stub = build_support('stub', 'crt0_stub.S')
+    if not fm1pkg_make.has_stub(stub + bytes(fm1pkg_make.STUB_LEN)):
+        raise SystemExit('boot stub: missing CRSTUB signature')
+    if not stub or len(stub) > fm1pkg_make.STUB_LEN - 256:
+        raise SystemExit('boot stub exceeds its reserved slot')
+    image = build_support('loader', 'crt0_ldr.S')
+    if not image or len(image) > 0x14000:
+        raise SystemExit('loader: image empty or too big')
+    ota = loader_wrap(image)
+    if len(ota) > 0x4000:
+        raise SystemExit('loader overlaps the update-record sector')
+    (OUT / 'loader' / 'ota.bin').write_bytes(ota)
+    body = (OUT / 'body.bin').read_bytes()
+    if not body or len(body) > fm1pkg_make.BODY_MAX:
+        raise SystemExit('application body empty or too big')
+    app = stub.ljust(fm1pkg_make.STUB_LEN, b'\xff') + body
+    (OUT / 'modd.bin').write_bytes(app)
+    fwsc = fm1pkg_make.ufw(fm1pkg_make.flash_image(app, fm1pkg_make.KEY), ota, 'FM-1_900')
+    path = OUT / 'modd.fwsc'
+    path.write_bytes(fwsc)
+    (OUT / 'modd.version').write_text(version)
+    print(f'package: {path.relative_to(ROOT)} ({len(fwsc)} bytes)')
+
+
+def _firmware_version():
+    """Return the firmware version string.
+
+    Priority: FIRMWARE_VERSION env var > dev-<datetime>-<sha> > v0.0.0.
+    """
+    env_ver = os.environ.get('FIRMWARE_VERSION')
+    if env_ver:
+        return env_ver
+    try:
+        sha = subprocess.run(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            capture_output=True, text=True, cwd=str(ROOT), timeout=5,
+        ).stdout.strip()
+        if sha:
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+            return f'dev-{now}-{sha}'
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    return 'v0.0.0'
+
+
+def gen_felucca_ui():
+    """Run Felucca's font/icon/keycap/palette generators into build/gen/."""
+    GEN.mkdir(parents=True, exist_ok=True)
+    felucca = FW / 'upstream' / 'felucca'
+    tools = felucca / 'tools'
+    cmds = [
+        [tools / 'gen_aa_font.py', GEN / 'ui_fonts.h', '--preset', 'inter-tight'],
+        [tools / 'gen_aa_icons.py', GEN / 'ui_icons.h'],
+        [tools / 'gen_aa_keycaps.py', GEN / 'ui_keycaps.h'],
+        [tools / 'gen_ui_palettes.py', GEN / 'ui_palettes.h'],
+    ]
+    procs = [subprocess.Popen([sys.executable, *map(str, c)],
+             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+             for c in cmds]
+    failed = []
+    for c, p in zip(cmds, procs):
+        sys.stdout.write(p.communicate()[0])
+        if p.returncode:
+            failed.append(c[0].name)
+    if failed:
+        raise SystemExit(f'gen_felucca_ui: {", ".join(failed)} failed')
+    print(f'gen_felucca_ui: {len(cmds)} headers -> {GEN.relative_to(ROOT)}/')
+
+
+def gen_engine_tables():
+    """Generate fixed-point lookup tables for Felucca-derived engines."""
+    GEN.mkdir(parents=True, exist_ok=True)
+    dst = GEN / 'fe_tables.h'
+    subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'gen_engine_tables.py'),
+                    str(dst)], check=True, cwd=str(ROOT))
+
+
+def build(dry_run=False):
+    gen_inc = [f'-I{GEN}']
+    if str(GEN) != str(OUT / 'gen'):
+        gen_inc.append(f'-I{OUT / "gen"}')
+    flags = [*CFLAGS, '-Ifirmware/hal', '-Ifirmware/adapters',
+             '-Ifirmware/src', '-Ifirmware', *gen_inc,
+             '-Ifirmware/src/udisk',  # FatFs project config: ffconf.h, diskio.h
+             '-Ifirmware/upstream/optimist/firmware/src/ble',
+             '-Ifirmware/vendor/lwip/src/include',
+             '-Ifirmware/src/wifi']
+
+    config_h = GEN / 'config.h'
+    if not config_h.exists():
+        raise SystemExit(
+            f'{config_h} not found. Run "task config:generate" first.')
+
+    enabled = set(re.findall(r'^#define CONFIG_(\w+) 1$', config_h.read_text(), re.M))
+
+    if 'GEN_FELUCCA_UI' in enabled:
+        if not (GEN / 'ui_fonts.h').exists():
+            gen_felucca_ui()
+        else:
+            print('gen_felucca_ui: headers exist, skipping (delete build/gen/ui_fonts.h to regenerate)')
+    if 'ENGINES' in enabled:
+        gen_engine_tables()
+    if 'WIFI' in enabled and not (GEN / 'ble_rf_tables.h').exists():
+        src = FW / 'upstream' / 'optimist' / 'firmware' / 'hal' / 'ble_rf_tables_v15.h'
+        if src.exists():
+            import shutil
+            shutil.copy2(src, GEN / 'ble_rf_tables.h')
+            print(f'ble_rf_tables: copied {src.name} -> {GEN.relative_to(ROOT)}/')
+        else:
+            raise SystemExit(f'{src} not found; WiFi builds need the shared RF init tables')
+    pending = enabled & {'MIDI_UART', 'DUAL_CORE'}
+    unsupported = {s for s in enabled if s.startswith('HAL_') and
+                   s.endswith(('_FELUCCA', '_SLOOP'))}
+    if pending or unsupported:
+        raise SystemExit('Not integrated yet: ' + ', '.join(sorted(pending | unsupported)) +
+                         '. Load the minimal defconfig for the LCD boot milestone.')
+
+    # Strip the Kconfig version define so the build-time -D takes precedence
+    # without a macro-redefined warning.
+    config_text = config_h.read_text()
+    filtered = re.sub(r'^#define CONFIG_FIRMWARE_VERSION ".*"$', '', config_text, flags=re.M)
+    if filtered != config_text:
+        config_h.write_text(filtered)
+
+    flags.append(f'-include{GEN}/config.h')
+
+    version = _firmware_version()
+    flags.append(f'-DCONFIG_FIRMWARE_VERSION="{version}"')
+    print(f'build: version {version}')
+
+    if 'WIFI_NONFREE' in enabled:
+        fm1b_shim = ROOT / '.scratch' / 'examples' / 'fm1-base' / 'ble' / 'shim'
+        if fm1b_shim.exists():
+            flags.append(f'-I{fm1b_shim}')
+
+    wifi_pass = os.environ.get('MODD_WIFI_PASSWORD', '')
+    if wifi_pass and 'WIFI' in enabled:
+        flags.append(f'-DCONFIG_WIFI_PASSWORD="{wifi_pass}"')
+        print(f'build: WiFi password set ({len(wifi_pass)} chars)')
+
+    asm_srcs = []
+    if (FW / 'crt0.S').exists():
+        asm_srcs.append(('crt0.S', FW / 'crt0.S'))
+    for f in sorted((FW / 'hal').glob('*.S')):
+        asm_srcs.append((f.name, f))
+    if 'SCHED' in enabled:
+        ctx_s = FW / 'src' / 'sched' / 'ctx.S'
+        if ctx_s.exists():
+            asm_srcs.append(('ctx.S', ctx_s))
+
+    c_src = FW / 'src' / 'modd.c'
+    if not c_src.exists():
+        raise SystemExit(f'{c_src} not found')
+
+    if dry_run:
+        print('Would compile:')
+        for name, path in asm_srcs:
+            print(f'  [asm] {path.relative_to(ROOT)}')
+        print(f'  [cc]  {c_src.relative_to(ROOT)}')
+        print(f'Flags: {" ".join(flags)}')
+        print('Then build firmware/stub, firmware/loader and package build/modd.fwsc')
+        return
+
+    logo_src = ROOT / 'assets' / 'logo-dark.png'
+    logo_hdr = GEN / 'boot_logo.h'
+    if logo_src.exists():
+        subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'logo_convert.py')],
+                       check=True, cwd=str(ROOT))
+
+    runner = _pick_runner(toolchain_path())
+    OUT.mkdir(parents=True, exist_ok=True)
+    print(f'build: compiling{runner.label()}...')
+
+    asm_gen_inc = [f'-I{GEN}']
+    if str(GEN) != str(OUT / 'gen'):
+        asm_gen_inc.append(f'-I{OUT / "gen"}')
+    asm_flags = ['-Ifirmware', *asm_gen_inc, '-include', f'{GEN}/config.h']
+    for name, path in asm_srcs:
+        obj_name = Path(name).stem + '.o'
+        tc('cc', *asm_flags, '-c', str(path), '-o', str(OUT / obj_name))
+
+    tc('cc', *flags, '-c', str(c_src), '-o', str(OUT / 'modd.o'))
+
+    objs = [str(OUT / (Path(name).stem + '.o')) for name, _ in asm_srcs]
+    objs.append(str(OUT / 'modd.o'))
+
+    if 'USB_HOST' in enabled:
+        sdk = Path(os.environ.get('AC79_SDK', Path.home() / '.fm1-toolchain' / 'AC79_SDK'))
+        cpu_a = sdk / 'cpu' / 'wl82' / 'liba' / 'cpu.a'
+        if cpu_a.exists():
+            bc_obj = OUT / 'usb_sdk.bc'
+            native_obj = OUT / 'usb_sdk.o'
+            bc_obj.write_bytes(_ar_member(cpu_a, 'usb.c.o'))
+            tc('cc', '-target', 'pi32v2', '-mcpu=r3', '-Os',
+               '-ffunction-sections', '-fdata-sections',
+               '-c', str(bc_obj), '-o', str(native_obj))
+            objs.append(str(native_obj))
+            print(f'build: compiled usb_sdk.o from cpu.a bitcode')
+
+    vendor_libs = []
+
+    if 'WIFI_NONFREE' in enabled:
+        if not os.environ.get('ALLOW_NONFREE'):
+            raise SystemExit(
+                'CONFIG_WIFI_NONFREE requires ALLOW_NONFREE=1.\n'
+                'The vendor binary driver links proprietary .a libraries from\n'
+                'the JieLi SDK. The resulting binary is for personal testing only\n'
+                'and cannot be distributed under GPL-3.0.\n'
+                'To opt in: ALLOW_NONFREE=1 task build -- --defconfig wifi_nonfree')
+
+        nf_libs = ROOT / 'build' / 'nonfree' / 'libs'
+        fm1b = ROOT / '.scratch' / 'examples' / 'fm1-base'
+        nf_dir = OUT / 'nonfree'
+        nf_dir.mkdir(parents=True, exist_ok=True)
+
+        if not fm1b.exists():
+            raise SystemExit(f'fm1-base not found at {fm1b}. '
+                             'Copy fm1-base into .scratch/examples/fm1-base/')
+        if not nf_libs.exists():
+            raise SystemExit(
+                f'Vendor libs not provisioned at {nf_libs}.\n'
+                'Run: ALLOW_NONFREE=1 task nonfree:provision')
+
+        nf_cf = [
+            '-integrated-as', '-mcpu=r3', '-mfprev1',
+            '-fno-common', '-Oz', '-flto',
+            '-ffunction-sections', '-fdata-sections',
+            '-fallow-pointer-null', '-fprefer-gnu-section',
+            '-femulated-tls', '-fms-extensions', '-w',
+            '-DSUPPORT_MS_EXTENSIONS', '-DCONFIG_RELEASE_ENABLE',
+            '-DCONFIG_CPU_WL82', '-DCONFIG_FREE_RTOS_ENABLE',
+            '-DCONFIG_THREAD_ENABLE', '-D__GCC_PI32V2__',
+            '-DCONFIG_NEW_ECC_ENABLE', '-DCONFIG_SFC_ENABLE',
+            '-DCONFIG_NO_SDRAM_ENABLE', '-DCONFIG_BT_ENABLE=1',
+            '-DSHIM_WIFI=1',
+            '-DSHIM_HEAP_KB=200',
+            '-mllvm', '-pi32v2-large-program=true',
+        ]
+        tc_inc = toolchain_path() / 'pi32v2' / 'include'
+        nf_inc = [f'-I{fm1b / "ble" / "shim"}', f'-I{tc_inc}']
+
+        shim_c = [
+            fm1b / 'ble' / 'shim' / 'os.c',
+            fm1b / 'ble' / 'shim' / 'misc.c',
+            fm1b / 'ble' / 'shim' / 'systimer.c',
+            fm1b / 'ble' / 'shim' / 'rf_const.c',
+            fm1b / 'ble' / 'wifi' / 'wifi_shim.c',
+            FW / 'src' / 'wifi' / 'nonfree' / 'nf_sdk_stubs.c',
+        ]
+        for src in shim_c:
+            obj = nf_dir / f'nf_{src.stem}.o'
+            tc('cc', *nf_cf, *nf_inc, '-c', str(src), '-o', str(obj))
+            objs.append(str(obj))
+
+        ctx_obj = nf_dir / 'nf_ctx.o'
+        tc('cc', *nf_inc, '-c', str(fm1b / 'ble' / 'shim' / 'ctx.S'),
+           '-o', str(ctx_obj))
+        objs.append(str(ctx_obj))
+
+        for lib_name in ['btctrler.a', 'btstack.a', 'crypto_toolbox_Osize.a',
+                         'lib_ccm_aes.a', 'wl_rf_common.a',
+                         'wl_wifi_sta_sfc.a', 'wpasupplicant.a', 'hsm.a',
+                         'libcompiler_rt.a']:
+            p = nf_libs / lib_name
+            if p.exists():
+                vendor_libs.append(str(p))
+
+        print(f'build: nonfree WiFi: {len(shim_c)} shim files + '
+              f'{len(vendor_libs)} vendor libs')
+
+    elf = OUT / 'modd.elf'
+    lto_plugin = []
+    if vendor_libs:
+        gold = toolchain_path() / 'pi32v2' / 'bin' / 'LLVMgold.so'
+        if gold.exists():
+            lto_plugin = ['--plugin', str(gold),
+                          '--plugin-opt=mcpu=r3',
+                          '--plugin-opt=-pi32v2-large-program=true']
+    ld_script = FW / ('app_wifi.ld' if 'WIFI_NONFREE' in enabled else 'app.ld')
+    link_args = [*lto_plugin, '--gc-sections', '-T', str(ld_script), *objs]
+    if vendor_libs:
+        link_args += ['--allow-multiple-definition',
+                      '--start-group', *vendor_libs, '--end-group']
+    tc('pi32v2/bin/ld', *link_args, '-Map', str(OUT / 'modd.map'), '-o', str(elf))
+
+    for sect in ('text.bin', 'data.bin'):
+        (OUT / sect).unlink(missing_ok=True)
+    tc('common/bin/objcopy', '-O', 'binary', '-j', '.text',
+       str(elf), str(OUT / 'text.bin'))
+    tc('common/bin/objcopy', '-O', 'binary', '-j', '.data',
+       str(elf), str(OUT / 'data.bin'))
+
+    text_size = (OUT / 'text.bin').stat().st_size
+    print(f'build: {elf.relative_to(ROOT)} ({text_size} bytes text)')
+    # JieLi objcopy accepts one section per invocation. Assemble relocated
+    # code/data at linker load addresses, never their runtime RAM addresses.
+    symbols = tc('common/bin/objdump', '-t', elf, capture=True)
+    body = bytearray((OUT / 'text.bin').read_bytes())
+    for section, symbol in (('.ram_text', '_rt_load'), ('.dsp_text', '_dsp_load'),
+                            ('.dsp_tables', '_dt_load'), ('.data', '_data_load'),
+                            ('.audio_text', '_audio_load')):
+        binary = OUT / f'{section[1:]}.bin'
+        binary.unlink(missing_ok=True)
+        tc('common/bin/objcopy', '-O', 'binary', '-j', section, elf, binary)
+        blob = binary.read_bytes() if binary.exists() else b''
+        if not blob:
+            continue
+        match = re.search(r'^([0-9a-f]+) .*\s' + symbol + r'$', symbols, re.M)
+        if not match:
+            raise SystemExit(f'missing linker symbol: {symbol}')
+        offset = int(match.group(1), 16) - 0x02001000
+        if offset < len(body) or offset % 4 or offset + len(blob) > fm1pkg_make.BODY_MAX:
+            raise SystemExit(f'invalid application load address: {symbol}')
+        body += b'\xff' * (offset - len(body)) + blob
+    body += b'\xff' * (-len(body) % 4)
+    (OUT / 'body.bin').write_bytes(body)
+    package(version)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--defconfig', help='load defconfig before building')
+    ap.add_argument('--genconfig-only', action='store_true')
+    ap.add_argument('--dry-run', action='store_true')
+    args = ap.parse_args()
+
+    if 'MODD_GEN_DIR' not in os.environ:
+        genconfig(args.defconfig)
+    if args.genconfig_only:
+        return
+
+    build(dry_run=args.dry_run)
+
+
+if __name__ == '__main__':
+    main()

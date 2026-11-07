@@ -1,0 +1,32 @@
+mainmenu "modd Firmware Configuration"
+
+config FIRMWARE_NAME
+    string "Firmware name"
+    default "modd"
+
+config FIRMWARE_VERSION
+    string "Firmware version"
+    default "v0.0.0"
+
+source "kconf/engines.kconfig"
+source "kconf/effects.kconfig"
+source "kconf/sequencer.kconfig"
+source "kconf/scales.kconfig"
+
+menu "System"
+
+source "kconf/hal.kconfig"
+source "kconf/boot.kconfig"
+source "kconf/audio.kconfig"
+source "kconf/midi.kconfig"
+source "kconf/ui.kconfig"
+source "kconf/storage.kconfig"
+source "kconf/udisk.kconfig"
+source "kconf/ble.kconfig"
+source "kconf/wifi.kconfig"
+source "kconf/cdp.kconfig"
+source "kconf/debug.kconfig"
+source "kconf/sys_menu.kconfig"
+source "kconf/sched.kconfig"
+
+endmenu

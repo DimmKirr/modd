@@ -1,0 +1,95 @@
+# Vendored upstream source trees, managed by vendir (https://carvel.dev/vendir).
+#
+#   task vendor:sync    rewrite every `path` below from its pinned ref and
+#                       record the resolved SHAs in vendir.lock.yml
+#   task vendor:check   fail if the committed trees drift from the lock (CI)
+#
+# Never edit files under these paths. modd adapts upstream code through
+# firmware/adapters/ and project-owned config headers (for example
+# firmware/src/udisk/ffconf.h), never by patching the vendored tree.
+# Provenance, licenses and what each tree is used for: THIRD_PARTY.md.
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+minimumRequiredVersion: 0.40.0
+directories:
+
+# --- Community FM-1 firmwares (GPL-3.0 unless noted) ---------------------
+
+- path: firmware/upstream/felucca
+  contents:
+  - path: .
+    git:
+      url: https://github.com/hugelton/Felucca
+      ref: v1.6.1
+    # vendir initialises upstream submodules; firmware/engines is Felucca-Engines,
+    # which is vendored separately below at the same pinned commit.
+    excludePaths: [".git/**", "firmware/engines/**"]
+
+- path: firmware/upstream/felucca-engines
+  contents:
+  - path: .
+    git:
+      url: https://github.com/hugelton/Felucca-Engines
+      # Submodule pointer of Felucca v1.6.1 (MIT-licensed engines).
+      ref: c46e0086f69bdc26df1cd144dca9e683cc4531dd
+    excludePaths: [".git/**"]
+
+- path: firmware/upstream/melodee
+  contents:
+  - path: .
+    git:
+      url: https://github.com/keremimo/melodee
+      ref: v1.4.5
+    excludePaths: [".git/**"]
+
+- path: firmware/upstream/sloop
+  contents:
+  - path: .
+    git:
+      url: https://github.com/isod89/sloop-fm1
+      ref: v2.8
+    excludePaths: [".git/**"]
+
+- path: firmware/upstream/fmlab
+  contents:
+  - path: .
+    git:
+      url: https://github.com/jsmith13/fm_lab
+      ref: v1.1.0
+    excludePaths: [".git/**"]
+
+- path: firmware/upstream/optimist
+  contents:
+  - path: .
+    git:
+      url: https://github.com/w0ts/optimist
+      # No release tag covers the BLE stack revision modd was wired against.
+      ref: a4104fcdc78b5173ef058b282058c2366c627f9b
+    excludePaths: [".git/**"]
+
+# --- Third-party libraries -----------------------------------------------
+
+- path: firmware/vendor/lwip
+  contents:
+  - path: .
+    git:
+      # Official GitHub mirror of https://git.savannah.nongnu.org/git/lwip.git
+      url: https://github.com/lwip-tcpip/lwip
+      # lwIP 2.2.1 release (commit 77dcd25a).
+      ref: STABLE-2_2_1_RELEASE
+    excludePaths: [".git/**"]
+
+- path: firmware/vendor/fatfs
+  contents:
+  - path: .
+    http:
+      # FatFs R0.15 by ChaN. Project config lives in firmware/src/udisk/
+      # (ffconf.h, diskio.h); only the pristine core is vendored.
+      url: https://elm-chan.org/fsw/ff/arc/ff15.zip
+      sha256: e0d76654d877e6c74be5ea3c395808794d495169514e98cbf6046168b8f4f070
+    includePaths:
+    - LICENSE.txt
+    - source/00readme.txt
+    - source/00history.txt
+    - source/ff.c
+    - source/ff.h

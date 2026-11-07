@@ -1,0 +1,28 @@
+menu "Storage"
+
+# kc2mm:label "Flash"
+config FLASH
+    bool "Application flash storage"
+    default n
+
+# kc2mm:label "Settings"
+choice
+    prompt "Storage implementation"
+    depends on FLASH
+    optional
+    default STORAGE_MELODEE
+
+config STORAGE_FELUCCA
+    bool "Felucca"
+
+config STORAGE_SLOOP
+    bool "SLOOP"
+
+config STORAGE_MELODEE
+    bool "Melodee"
+    help
+      FBKG format, 384 shared presets, migration, backup/restore.
+
+endchoice
+
+endmenu
