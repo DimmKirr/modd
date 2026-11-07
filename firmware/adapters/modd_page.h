@@ -1,0 +1,39 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Page adapter: the contract between UI shells and page content.
+ * A page is one screen of the synthesizer UI (home, engine params,
+ * sequencer, effects, etc.). The shell handles navigation, input
+ * routing, and the status bar. Pages handle content. */
+#ifndef MODD_PAGE_H
+#define MODD_PAGE_H
+#include <stdint.h>
+
+/* page flags */
+#define PAGEF_HOME    (1u << 0)  /* the default page after boot */
+#define PAGEF_SYSTEM  (1u << 1)  /* system page (settings, about) */
+
+typedef struct modd_page {
+    const char *name;           /* short label: "HOME", "ENGINE", "SEQ" */
+    const char *title;          /* display title (shell renders this) */
+    uint8_t     view;           /* VIEW_* id (which view owns this page) */
+    uint32_t    flags;
+
+    int  (*visible)(void);      /* optional: return 0 to skip in nav cycle */
+
+    /* lifecycle */
+    void (*enter)(void);        /* page became active (draw full) */
+    void (*leave)(void);        /* page lost focus (save state) */
+
+    /* rendering */
+    void (*draw)(void);         /* redraw page content to canvas */
+    void (*status)(void);       /* draw status bar contribution (optional, NULL ok) */
+
+    /* input (return 1 if handled, 0 to let shell handle) */
+    int (*knob)(uint32_t id, int32_t clicks);
+    int (*button)(uint32_t id, uint32_t down);
+    int (*key)(uint32_t note, uint32_t vel);   /* piano key (optional, NULL ok) */
+} modd_page_t;
+
+/* a shell registers pages at startup */
+#define MODD_MAX_PAGES 20
+
+#endif /* MODD_PAGE_H */
