@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      release_bundle:
+        description: Package the tested firmware and corresponding source for release
+        type: boolean
+        default: false
+      firmware_version:
+        description: Version string baked into the firmware (e.g. v1.0.0)
+        type: string
+        default: ''
+    outputs:
+      firmware_artifact_id:
+        description: Artifact containing the tested firmware release files
+        value: ${{ jobs.test.outputs.firmware_artifact_id }}
+      results_artifact_id:
+        description: Artifact containing E2E screenshots, logs, and JUnit results
+        value: ${{ jobs.test.outputs.results_artifact_id }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    concurrency:
+      group: ci-test-${{ github.ref }}
+      cancel-in-progress: false
+    outputs:
+      results_artifact_id: ${{ steps.results.outputs.artifact-id }}
+      firmware_artifact_id: ${{ steps.firmware.outputs.artifact-id }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install project tools
+        uses: jdx/mise-action@v4
+        with:
+          # Install before the action exports UV_PYTHON from .mise.toml.
+          install: true
+
+      - name: Install Python dependencies
+        run: mise exec -- uv sync --locked
+
+      - name: Fetch vendored upstream trees pinned in vendir.lock.yml
+        run: mise exec -- task --yes vendor:ensure
+
+      - name: Run unit tests
+        # Fresh runners must accept the two remote Taskfiles explicitly.
+        run: mise exec -- task --yes test:unit
+
+      - name: Install FM-1 SDK and compiler
+        id: toolchain
+        uses: dimmkirr/setup-fm1-toolchain@v1
+
+      - name: Install FM-1 emulator
+        id: emulator
+        uses: dimmkirr/setup-fm1-emulator@v1
+        with:
+          version: v0.2.0
+          # Use the Playwright version locked in uv.lock, not a second pip install.
+          install-playwright: 'false'
+
+      - name: Check native emulator
+        run: fm1-emu --help || test $? -eq 2
+
+      - name: Install Chromium
+        run: mise exec -- uv run playwright install --with-deps chromium
+
+      - name: Load minimal configuration
+        run: mise exec -- task --yes config:defconfig -- minimal
+
+      - name: Build firmware and run E2E tests
+        id: e2e
+        env:
+          JIELI_TOOLCHAIN: ${{ steps.toolchain.outputs.toolchain-path }}
+          AC79_SDK: ${{ steps.toolchain.outputs.sdk-path }}
+          FM1_WEB_DIR: ${{ steps.emulator.outputs.web-path }}
+          FIRMWARE_VERSION: ${{ inputs.firmware_version }}
+        run: mise exec -- task --yes test:e2e -- --junitxml=tests/results/e2e.xml
+
+      - name: Save E2E screenshots and logs
+        id: results
+        if: ${{ always() && steps.e2e.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: tests/results/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Package tested firmware and corresponding source
+        if: ${{ inputs.release_bundle }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s build/modd.fwsc
+          mkdir -p build/release
+          cp build/modd.fwsc build/release/
+          cp .config build/release/minimal.config
+          # Corresponding source: the tracked files plus the upstream trees vendir fetched
+          # (firmware/upstream and firmware/vendor are not committed). Melodee's Casio and
+          # Sequential factory preset .syx assets are "no licence granted" (its LICENSING.md)
+          # and are not modd inputs, so they stay out.
+          { git ls-files -z; find firmware/upstream firmware/vendor -type f ! -name '*.syx' -print0; } \
+            | tar --null -T - --transform 's,^,modd/,' -czf build/release/modd-source.tar.gz
+          tar -czf build/release/modd-licenses.tar.gz LICENSE LICENSES THIRD_PARTY.md firmware/NOTICES
+          cd build/release
+          sha256sum modd.fwsc minimal.config modd-source.tar.gz \
+            modd-licenses.tar.gz > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Save tested release bundle
+        id: firmware
+        if: ${{ inputs.release_bundle }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-release
+          path: build/release/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish CI screenshots and summary
+        if: >-
+          always() && !cancelled() &&
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+          github.ref == 'refs/heads/main' &&
+          (steps.e2e.outcome == 'success' || steps.e2e.outcome == 'failure')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEST_RESULT: ${{ steps.e2e.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -d tests/results ]]; then
+            echo 'No E2E results were captured.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          mapfile -d '' screenshots < <(find tests/results -type f -path '*/screenshots/*.png' -print0 | sort -z)
+          if (( ${#screenshots[@]} == 0 )); then
+            echo 'No E2E screenshots were captured; see the e2e-results artifact.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          tag=ci-screenshot
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          notes="$RUNNER_TEMP/ci-screenshot.md"
+          {
+            echo '# CI screenshots'
+            echo
+            echo "Latest main run: [$GITHUB_RUN_ID]($run_url). E2E outcome: **$TEST_RESULT**."
+            echo "Commit: $GITHUB_SHA. Logs and JUnit results are in the run's e2e-results artifact."
+            echo
+          } > "$notes"
+
+          assets=()
+          idx=0
+          for screenshot in "${screenshots[@]}"; do
+            idx=$((idx + 1))
+            asset_name="screenshot-${idx}.png"
+            assets+=("$screenshot#$asset_name")
+            {
+              echo "![${asset_name}]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$tag/$asset_name)"
+              echo
+            } >> "$notes"
+          done
+
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            old_assets=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')
+            for old in $old_assets; do
+              gh release delete-asset "$tag" "$old" --repo "$GITHUB_REPOSITORY" --yes 2>/dev/null || true
+            done
+            gh release upload "$tag" "${assets[@]}" --repo "$GITHUB_REPOSITORY"
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" \
+              --notes-file "$notes" --target "$GITHUB_SHA" --prerelease --latest=false
+          else
+            gh release create "$tag" "${assets[@]}" --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" --title 'CI Screenshots' \
+              --notes-file "$notes" --prerelease --latest=false
+          fi
+          cat "$notes" >> "$GITHUB_STEP_SUMMARY"
