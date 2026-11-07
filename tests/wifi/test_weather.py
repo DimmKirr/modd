@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Weather fetcher tests.
 
 Tests the mini JSON parser and weather data extraction logic using
@@ -139,11 +140,11 @@ WEATHER_NEGATIVE_TEMP = b'''{
   }
 }'''
 
-# Open-Meteo as it answers (a New York query, 2026-11-06 23:30 UTC): "current_units" comes before
+# Open-Meteo as it answers (a Berlin query, 2026-11-06 23:30 UTC): "current_units" comes before
 # "current", with the same keys and the units as strings
 OPEN_METEO_RESPONSE = (
-    b'{"latitude":40.710335,"longitude":-73.99309,"generationtime_ms":0.05936622619628906,'
-    b'"utc_offset_seconds":0,"timezone":"GMT","timezone_abbreviation":"GMT","elevation":32.0,'
+    b'{"latitude":52.52,"longitude":13.419998,"generationtime_ms":0.05936622619628906,'
+    b'"utc_offset_seconds":0,"timezone":"GMT","timezone_abbreviation":"GMT","elevation":38.0,'
     b'"current_units":{"time":"iso8601","interval":"seconds","temperature_2m":"\xc2\xb0C",'
     b'"relative_humidity_2m":"%","wind_speed_10m":"km/h","weather_code":"wmo code"},'
     b'"current":{"time":"2026-11-06T23:30","interval":900,"temperature_2m":1.3,'

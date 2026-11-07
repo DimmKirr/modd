@@ -48,7 +48,7 @@ checkout:
 mise trust
 mise install
 mise exec -- uv sync --locked
-mise exec -- task config:defconfig -- minimal
+mise exec -- task config:generate:defconfig -- minimal
 mise exec -- task build
 ```
 

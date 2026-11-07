@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Register sweep diff (plan test 2, task step 11): read whole blocks on both sides in the
 same `0x%08x = 0x%08x` line format and diff them, to catch a register the 62-register
 comparison never looked at."""
@@ -84,9 +85,10 @@ def test_sweep_text_matches_the_vendor_line_format():
 
 
 def test_taskfile_sweeps_the_four_windows_into_one_file():
-    text = TASKFILE.read_text()
-    task = re.search(r'^  debug:sweep:(.*?)(?=^  \S)', text, re.M | re.S)
-    assert task, 'debug:sweep task missing'
+    scratch_tf = TASKFILE.parent / '.scratch' / 'Taskfile.yml'
+    text = scratch_tf.read_text()
+    task = re.search(r'^  sweep:(.*?)(?=^  \S)', text, re.M | re.S)
+    assert task, 'sweep task missing from .scratch/Taskfile.yml'
     body = task.group(1)
     for lo, hi in WINDOWS:
         assert f'0x{lo:x} {(hi - lo) // 4}' in body, f'window {lo:#x} with {(hi - lo) // 4} words'

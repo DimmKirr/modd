@@ -77,7 +77,7 @@ jobs:
         run: mise exec -- uv run playwright install --with-deps chromium
 
       - name: Load minimal configuration
-        run: mise exec -- task --yes config:defconfig -- minimal
+        run: mise exec -- task --yes config:generate:defconfig -- minimal
 
       - name: Build firmware and run E2E tests
         id: e2e

@@ -93,7 +93,16 @@ tasks:
       - bash '{{.EMU_SOURCE}}/web/build.sh' '{{.HOME}}/.fm1-emulator/web'
 
   flash:
-    desc: Build if needed, then flash firmware to FM-1 over USB-MIDI (DEBUG=true for post-flash log follow)
+    desc: "Build if needed, then flash firmware to FM-1 (default: USB-MIDI SysEx)"
+    cmds:
+      - task: flash:midi
+        vars:
+          CLI_ARGS: '{{.CLI_ARGS}}'
+          FIRMWARE: '{{.FIRMWARE | default ""}}'
+          AUTO_APPROVE: '{{.AUTO_APPROVE | default "true"}}'
+
+  flash:midi:
+    desc: Flash firmware to FM-1 over USB-MIDI SysEx
     silent: true
     deps:
       - task: build
@@ -108,10 +117,10 @@ tasks:
     cmds:
       - cmd: |
           test -f build/modd.version && echo "version: $(cat build/modd.version)" || true
-      - task: flash:size-check
+      - task: build:size-check
       - uv run --quiet --group flash python tools/device/fm1_install.py {{.FIRMWARE}} --force {{if eq .AUTO_APPROVE "true"}}--yes {{end}}{{.CLI_ARGS}}
 
-  flash:size-check:
+  build:size-check:
     desc: Show RAM and flash usage from linker map
     silent: true
     preconditions:
@@ -151,10 +160,10 @@ tasks:
           printf "pool:   %6d / %6d (%2d%%)  .pool+audio+stacks\n" "$POOL_USED" "$POOL_MAX" "$POOL_PCT"
           printf "noinit: %6d / %6d (%2d%%)  debug ring+crash\n" "$NOINIT_USED" "$NOINIT_MAX" "$NOINIT_PCT"
           printf "fwsc:   %6d bytes (lz4 package)\n" "$FWSC_SZ"
-      # What fills the 96 KB RAM region, largest first (tools/debug/ram_top.py); `task flash:size-top -- -n 40` for more
+      # What fills the 96 KB RAM region, largest first (tools/debug/ram_top.py); `task build:size-top -- -n 40` for more
       - uv run --quiet python tools/debug/ram_top.py build/modd.map -n 12
 
-  flash:size-top:
+  build:size-top:
     desc: Rank the .data/.bss consumers from the linker map (default top 20; -- -n N)
     silent: true
     preconditions:
@@ -162,59 +171,6 @@ tasks:
         msg: "build/modd.map not found. Run 'task build' first."
     cmds:
       - uv run --quiet python tools/debug/ram_top.py build/modd.map {{.CLI_ARGS}}
-
-  build:fm1-base:
-    desc: Build fm1-base WiFi example (vendor shim firmware with debug HTTP)
-    deps: [fm1-platform:download:sdk, fm1-platform:download:toolchain]
-    dir: '{{.ROOT_DIR}}/.scratch/examples/fm1-base'
-    env:
-      JIELI_TOOLCHAIN: '{{env "JIELI_TOOLCHAIN" | default (printf "%s/.fm1-toolchain/toolchain" .HOME)}}'
-      AC79_SDK: '{{env "AC79_SDK" | default (printf "%s/.fm1-toolchain/AC79_SDK" .HOME)}}'
-    sources:
-      - examples/wifi/**/*
-      - core/**/*
-      - bsp/**/*
-      - tools/build/build.py
-    generates:
-      - examples/wifi/build/wifi.fwsc
-    method: checksum
-    cmds:
-      - uv run --quiet python tools/build/build.py examples/wifi {{.CLI_ARGS}}
-
-  flash:fm1-base:
-    desc: Build fm1-base WiFi example and flash it to the FM-1
-    silent: true
-    deps:
-      - task: build:fm1-base
-        vars: { CLI_ARGS: '' }
-    vars:
-      FIRMWARE: '{{.ROOT_DIR}}/.scratch/examples/fm1-base/examples/wifi/build/wifi.fwsc'
-      AUTO_APPROVE: '{{.AUTO_APPROVE | default "true"}}'
-    preconditions:
-      - sh: test -f {{.FIRMWARE}}
-        msg: "{{.FIRMWARE}} not found. Build failed?"
-    cmds:
-      - uv run --quiet --group flash python tools/device/fm1_install.py {{.FIRMWARE}} --force {{if eq .AUTO_APPROVE "true"}}--yes {{end}}{{.CLI_ARGS}}
-      - |
-        if [ -n "$WIFI_SSID" ] && [ -n "$WIFI_PASSWORD" ]; then
-          echo "Waiting for device to boot..."
-          sleep 4
-          echo "Joining WiFi: $WIFI_SSID"
-          uv run --quiet --project .scratch/examples/fm1-base python .scratch/examples/fm1-base/tools/fm1_remote.py wifi join "$WIFI_SSID" "$WIFI_PASSWORD" wifi status
-          echo "Waiting for DHCP..."
-          sleep 5
-          uv run --quiet --project .scratch/examples/fm1-base python .scratch/examples/fm1-base/tools/fm1_remote.py wifi status
-        else
-          echo "No WIFI_SSID/WIFI_PASSWORD in .env; join manually: task wifi:join -- SSID PASSWORD"
-        fi
-
-  wifi:join:
-    desc: "Join a WiFi network via USB (task wifi:join -- SSID PASSWORD)"
-    silent: true
-    vars:
-      FM1_REMOTE: '{{.ROOT_DIR}}/.scratch/examples/fm1-base/tools/fm1_remote.py'
-    cmds:
-      - uv run --quiet --project .scratch/examples/fm1-base python {{.FM1_REMOTE}} wifi join {{.CLI_ARGS}}
 
   flash:uboot:
     desc: Flash firmware via UBOOT mode (hold OCT+/- for 5s, then run this)
@@ -230,7 +186,7 @@ tasks:
       - uv sync --quiet --group uboot
       - sudo uv run --quiet --group uboot python tools/device/fm1_uboot_flash.py {{.FIRMWARE}} {{.CLI_ARGS}}
 
-  flash:debug:
+  debug:flash:
     desc: Debug flash issues - list MIDI devices and retry update loader detection
     cmds:
       - cmd: |
@@ -261,7 +217,7 @@ tasks:
           echo "If only 'FM-1' appeared, the device is in normal mode."
           echo "If nothing appeared, check USB cable."
 
-  recovery:download-stock-firmware:
+  recover:download-stock-firmware:
     desc: Download official M-VAVE FM-1 stock firmware V15 (.fwsc)
     vars:
       STOCK_FWSC: '{{.ROOT_DIR}}/build/mvave-fm1-original-v15.fwsc'
@@ -272,7 +228,7 @@ tasks:
       - curl -fL -o '{{.STOCK_FWSC}}' https://github.com/m-vave/fm1_open/raw/main/sdk/firmware/FM-1_015.fwsc
       - echo "Downloaded stock V15 firmware to {{.STOCK_FWSC}}"
 
-  recovery:transporter:rpi:flash:
+  recover:transporter:rpi:flash:
     desc: Flash Transporter firmware onto a Raspberry Pi Pico (hold BOOTSEL, plug in, then run this)
     vars:
       RECOVERY_DIR: '{{.ROOT_DIR}}/.scratch/examples/Transporter/pico-fork/recovery'
@@ -284,9 +240,9 @@ tasks:
       - uv run --quiet --group unbrick python fm1_transporter_recover.py setup --board pico_rp2040
       - uv run --quiet --group unbrick python fm1_transporter_recover.py flash-board --board pico_rp2040 {{.CLI_ARGS}}
 
-  recovery:transporter:fm1:unbrick:
+  recover:transporter:fm1:unbrick:
     desc: Recover a hard-bricked FM-1 via Transporter (Pico wired to FM-1, no USB presence)
-    deps: [recovery:download-stock-firmware]
+    deps: [recover:download-stock-firmware]
     vars:
       RECOVERY_DIR: '{{.ROOT_DIR}}/.scratch/examples/Transporter/pico-fork/recovery'
       STOCK_FWSC: '{{.ROOT_DIR}}/build/mvave-fm1-original-v15.fwsc'
@@ -297,9 +253,9 @@ tasks:
     cmds:
       - uv run --quiet --group unbrick python fm1_transporter_recover.py recover --board pico_rp2040 --v15 '{{.STOCK_FWSC}}' '{{.STOCK_FWSC}}' {{.CLI_ARGS}}
 
-  recovery:transporter:fm1:unbrick-soft:
+  recover:transporter:fm1:unbrick-soft:
     desc: Restore firmware via USB ROM boot mode (soft-bricked device)
-    deps: [recovery:download-stock-firmware]
+    deps: [recover:download-stock-firmware]
     vars:
       UNBRICKER_DIR: '{{env "UNBRICKER_DIR" | default (printf "%s/.fm1-toolchain/unbricker" .HOME)}}'
       STOCK_FWSC: '{{.ROOT_DIR}}/build/mvave-fm1-original-v15.fwsc'
@@ -312,46 +268,25 @@ tasks:
       - uv run --quiet --group unbrick python "{{.UNBRICKER_DIR}}/fm1_unbrick.py" restore '{{.STOCK_FWSC}}' {{.CLI_ARGS}}
 
   # ---- Device debug tasks --------------------------------------------------
-  # Every `task debug:<name>` and `task logs*` run leaves its full output in
-  # .scratch/debug/<name>.log (overwritten on each run; copy anything worth
-  # keeping into .scratch/debug/observations/). Convention, enforced by
-  # tests/test_taskfile_debug_logs.py:
-  #   - `mkdir -p .scratch/debug` first
-  #   - a dated header line `=== debug:<name> <date> ===` written with `tee` (new file)
-  #   - every command's stdout and stderr piped through `tee -a` into the same file
-  # All of these talk to the FM-1 over USB-MIDI SysEx (python-rtmidi, hence
-  # `uv run --with python-rtmidi`); run them on the host that has the USB cable.
-  # The `logs*` tasks are aliases of the saving `debug:*` tasks.
+  # Each run saves to .scratch/debug/logs/<timestamp>-<name>.log with a
+  # symlink at .scratch/debug/<name>.log. All talk to the FM-1 over
+  # USB-MIDI SysEx (python-rtmidi). Specialized tasks (wl0, sweep, ind,
+  # input) live in .scratch/Taskfile.yml under the debug:wifi: namespace.
 
-  logs:
-    desc: Alias of debug:follow (tail the DAP log, saved to .scratch/debug/follow.log)
-    cmds:
-      - task: debug:follow
-        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
-
-  logs:dump:
-    desc: Alias of debug:dump (dump the ring, saved to .scratch/debug/dump.log)
-    cmds:
-      - task: debug:dump
-        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
-
-  logs:hello:
-    desc: Alias of debug:hello (device status, saved to .scratch/debug/hello.log)
-    cmds:
-      - task: debug:hello
-        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
-
-  # Whole DAP ring (4 KB on the device) plus build facts for context.
-  debug:dump:
-    desc: Dump the debug log ring and build facts, save to .scratch/debug/logs/
+  logs:debug:
+    desc: "Dump build facts, crash record, log ring, and keep tailing (-- --no-follow to stop after dump)"
     silent: true
     cmds:
       - mkdir -p .scratch/debug/logs
       - |
         TS="$(date -u +%Y-%m-%dT%H%M%SZ)"
-        LOG=".scratch/debug/logs/${TS}-dump.log"
+        LOG=".scratch/debug/logs/${TS}-debug.log"
+        NO_FOLLOW=false
+        for arg in {{.CLI_ARGS}}; do
+          [ "$arg" = "--no-follow" ] && NO_FOLLOW=true
+        done
         {
-          echo "=== debug:dump $(date -Iseconds) ==="
+          echo "=== logs:debug $(date -Iseconds) ==="
           echo "=== config.h symbols ==="
           grep '^#define CONFIG_' build/gen/config.h 2>/dev/null
           echo ""
@@ -361,141 +296,17 @@ tasks:
           echo "=== firmware size ==="
           ls -la build/modd.fwsc build/modd.elf 2>/dev/null
           echo ""
+          echo "=== device status (crash record, ring position) ==="
+          uv run --quiet --with python-rtmidi python tools/device/fm1log.py --hello 2>&1
+          echo ""
           echo "=== DAP log buffer ==="
-          uv run --quiet --with python-rtmidi python tools/device/fm1log.py {{.CLI_ARGS}} 2>&1
+          if [ "$NO_FOLLOW" = "true" ]; then
+            uv run --quiet --with python-rtmidi python tools/device/fm1log.py 2>&1
+          else
+            uv run --quiet --with python-rtmidi python tools/device/fm1log.py --follow 2>&1
+          fi
         } | tee "$LOG"
-        ln -sf "logs/${TS}-dump.log" .scratch/debug/dump.log
-
-  # Stream the ring from power-on: start it, then power-cycle the FM-1. Ctrl-C to stop.
-  debug:follow:
-    desc: Follow the debug log from boot, saved to .scratch/debug/logs/
-    silent: true
-    cmds:
-      - mkdir -p .scratch/debug/logs
-      - |
-        TS="$(date -u +%Y-%m-%dT%H%M%SZ)"
-        LOG=".scratch/debug/logs/${TS}-follow.log"
-        {
-          echo "=== debug:follow $(date -Iseconds) ==="
-          echo "Waiting for FM-1 (power-cycle now)..."
-          uv run --quiet --with python-rtmidi python tools/device/fm1log.py --follow {{.CLI_ARGS}} 2>&1
-        } | tee "$LOG"
-        ln -sf "logs/${TS}-follow.log" .scratch/debug/follow.log
-
-  # Device status: crash record, render stats, ring position. The crash record
-  # survives a warm reset (watchdog, fm1_reboot) but not a power-cycle.
-  debug:hello:
-    desc: Device status (crash record, log position), saved to .scratch/debug/logs/
-    silent: true
-    cmds:
-      - mkdir -p .scratch/debug/logs
-      - |
-        TS="$(date -u +%Y-%m-%dT%H%M%SZ)"
-        LOG=".scratch/debug/logs/${TS}-hello.log"
-        {
-          echo "=== debug:hello $(date -Iseconds) ==="
-          uv run --quiet --with python-rtmidi python tools/device/fm1log.py --hello {{.CLI_ARGS}} 2>&1
-        } | tee "$LOG"
-        ln -sf "logs/${TS}-hello.log" .scratch/debug/hello.log
-
-  # WiFi bring-up probe (CONFIG_WIFI_DEBUG_WLCTL0_PROBE): scan once with extra readbacks,
-  # stop when the scan ends, decode the indicator rows.
-  #   -- --retry   retry the four refused SoC writes, then scan
-  debug:wl0:
-    desc: "WiFi probe scan with readbacks, saved to .scratch/debug/logs/"
-    silent: true
-    cmds:
-      - mkdir -p .scratch/debug/logs
-      - |
-        TS="$(date -u +%Y-%m-%dT%H%M%SZ)"
-        LOG=".scratch/debug/logs/${TS}-wl0.log"
-        {
-          echo "=== debug:wl0 $(date -Iseconds) ==="
-          uv run --quiet --with python-rtmidi python tools/device/fm1log.py --wl0 {{.CLI_ARGS}} 2>&1
-          echo ""
-          echo "=== indicator rows ==="
-          uv run --quiet python tools/debug/wifi_ind_timeline.py ".scratch/debug/logs/${TS}-wl0.log" 2>&1 || true
-        } | tee "$LOG"
-        ln -sf "logs/${TS}-wl0.log" .scratch/debug/wl0.log
-
-  # Capture vendor VM records and BBP state from fm1-base over HTTP (A25).
-  # FM1_BASE_IP from .env or -- <ip>; default 192.168.1.100.
-  debug:vm187:
-    desc: "Capture VM 187 + BBP calibration from fm1-base HTTP (task debug:vm187 -- <ip>)"
-    silent: true
-    vars:
-      IP: '{{.CLI_ARGS | default (env "FM1_BASE_IP" | default "192.168.1.100")}}'
-    cmds:
-      - mkdir -p .scratch/debug/logs
-      - |
-        TS="$(date -u +%Y-%m-%dT%H%M%SZ)"
-        LOG=".scratch/debug/logs/${TS}-vm187.log"
-        {
-          echo "=== debug:vm187 $(date -Iseconds)  http://{{.IP}}:8080 ==="
-          echo ""
-          echo "=== /vm ==="
-          curl -sf "http://{{.IP}}:8080/vm"
-          echo ""
-          echo "=== /status ==="
-          curl -sf "http://{{.IP}}:8080/status"
-          echo ""
-        } | tee "$LOG"
-        ln -sf "logs/${TS}-vm187.log" .scratch/debug/vm187.log
-
-  # Register sweep of the wireless-control, MAC and SoC-clock blocks in the vendor's
-  # `0xADDR = 0xVALUE` line format. Vendor side: curl http://<ip>:8080/sweep?base=..&n=..
-  # Diff: uv run python tools/debug/wifi_sweep_diff.py .scratch/debug/sweep.log <vendor.txt>
-  debug:sweep:
-    desc: "Read the 0x14000, 0x30000 and 0x10000 register blocks over DAP, saved to .scratch/debug/logs/"
-    silent: true
-    cmds:
-      - mkdir -p .scratch/debug/logs
-      - |
-        TS="$(date -u +%Y-%m-%dT%H%M%SZ)"
-        LOG=".scratch/debug/logs/${TS}-sweep.log"
-        {
-          echo "=== debug:sweep $(date -Iseconds) ==="
-          for w in "0x14000 1024" "0x30000 2048" "0x10000 1024"; do
-            uv run --quiet --with python-rtmidi python tools/device/fm1log.py --sweep $w {{.CLI_ARGS}} 2>&1
-          done
-        } | tee "$LOG"
-        ln -sf "logs/${TS}-sweep.log" .scratch/debug/sweep.log
-
-  # Decode the running-indicator rows (A/B tag lines) from a saved log.
-  debug:ind:
-    desc: "Decode indicator rows from a log (default .scratch/debug/follow.log), saved to .scratch/debug/logs/"
-    silent: true
-    cmds:
-      - mkdir -p .scratch/debug/logs
-      - |
-        TS="$(date -u +%Y-%m-%dT%H%M%SZ)"
-        LOG=".scratch/debug/logs/${TS}-ind.log"
-        {
-          echo "=== debug:ind $(date -Iseconds) ==="
-          uv run --quiet python tools/debug/wifi_ind_timeline.py {{.CLI_ARGS | default ".scratch/debug/follow.log"}} 2>&1
-        } | tee "$LOG"
-        ln -sf "logs/${TS}-ind.log" .scratch/debug/ind.log
-
-  # Panel input check: hold a button or key while it captures.
-  debug:input:
-    desc: "Test input: HOLD a button/key, then run this. Saved to .scratch/debug/logs/"
-    silent: true
-    cmds:
-      - mkdir -p .scratch/debug/logs
-      - |
-        TS="$(date -u +%Y-%m-%dT%H%M%SZ)"
-        LOG=".scratch/debug/logs/${TS}-input.log"
-        echo "Hold a button or key on the FM-1 NOW, then press Enter..."
-        read -r
-        echo "Capturing log (hold button for 5 more seconds)..."
-        {
-          echo "=== debug:input $(date -Iseconds) ==="
-          uv run --quiet --with python-rtmidi python tools/device/fm1log.py 2>&1
-          echo ""
-          echo "Look for raw0-3 != 0 or btns != 0 in the heartbeats above."
-          echo "If all zeros while holding a button, input hardware is not working."
-        } | tee "$LOG"
-        ln -sf "logs/${TS}-input.log" .scratch/debug/input.log
+        ln -sf "logs/${TS}-debug.log" .scratch/debug/debug.log
 
   settings:reset:
     desc: Reset FM-1 settings to defaults (erases saved settings, device reboots)
@@ -520,67 +331,27 @@ tasks:
     cmds:
       - uv run --quiet kc2mm inject --check docs/COMPONENTS.md --kconf-dir kconf
 
-  # x86-64 glibc and libstdc++ for the Rosetta and qemu runners in tools/build/build.py
-  # (aarch64 Linux hosts). Copied once out of a linux/amd64 Debian image, next to
-  # the toolchain, where build.py looks for them.
-  toolchain:x86libs:
-    desc: Provide x86-64 glibc/libstdc++ for the Rosetta and qemu toolchain runners (~/.fm1-toolchain/x86libs)
-    vars:
-      X86LIBS: '{{printf "%s/.fm1-toolchain/x86libs" .HOME}}'
-    status:
-      - test -f {{.X86LIBS}}/lib/ld-linux-x86-64.so.2
-      - test -f {{.X86LIBS}}/lib/libstdc++.so.6
-    cmds:
-      - mkdir -p {{.X86LIBS}}/lib
-      - |
-        docker run --rm --platform linux/amd64 debian:bookworm-slim \
-          tar -chf - -C /lib/x86_64-linux-gnu \
-            ld-linux-x86-64.so.2 libc.so.6 libm.so.6 libdl.so.2 libpthread.so.0 \
-            librt.so.1 libgcc_s.so.1 libstdc++.so.6 libz.so.1 \
-          | tar -xf - -C {{.X86LIBS}}/lib
-      - ln -sfn lib {{.X86LIBS}}/lib64
-      - echo "x86-64 runtime libraries in {{.X86LIBS}}"
-
-  nonfree:provision:
-    desc: Copy vendor binary libs from AC79 SDK into build/nonfree/libs/ (requires ALLOW_NONFREE=1)
-    env:
-      AC79_SDK: '{{env "AC79_SDK" | default (printf "%s/.fm1-toolchain/AC79_SDK" .HOME)}}'
-    preconditions:
-      - sh: '[ "${ALLOW_NONFREE}" = "1" ]'
-        msg: "Set ALLOW_NONFREE=1 to use vendor binary libraries (personal testing only, not redistributable under GPL-3.0)"
-      - sh: test -d "${AC79_SDK}/cpu/wl82/liba"
-        msg: "AC79 SDK not found at ${AC79_SDK}. Run 'task fm1-platform:download:sdk' first."
-    status:
-      - test -f build/nonfree/libs/wl_wifi_sta_sfc.a
-    cmds:
-      - mkdir -p build/nonfree/libs
-      - |
-        for lib in btctrler.a btstack.a crypto_toolbox_Osize.a lib_ccm_aes.a \
-                   wl_rf_common.a wl_wifi_sta_sfc.a wpasupplicant.a hsm.a; do
-          cp "${AC79_SDK}/cpu/wl82/liba/${lib}" build/nonfree/libs/
-        done
-      - |
-        crt="${AC79_SDK}/include_lib/newlib/pi32v2-lib/libcompiler_rt.a"
-        [ -f "$crt" ] && cp "$crt" build/nonfree/libs/ || true
-      - echo "Provisioned {{.NUM_LIBS | default "9"}} vendor libs into build/nonfree/libs/"
-
-  nonfree:clean:
-    desc: Remove provisioned vendor binary libs
-    cmds:
-      - rm -rf build/nonfree/libs
-      - echo "Vendor libs removed"
-
   config:
+    desc: "Configure the build (default: menuconfig)"
+    cmds:
+      - task: config:menuconfig
+
+  config:menuconfig:
     desc: Run menuconfig (ncurses) to configure the build
     cmds:
       - uv run --quiet python tools/build/menuconfig.py
 
-  config:defconfig:
-    desc: Load a named defconfig (e.g. task config:defconfig -- melodee)
-    cmds:
-      - uv run --quiet python tools/build/genconfig.py --defconfig {{.CLI_ARGS}}
-
   config:generate:
+    desc: "Generate build/gen/config.h (default: from current .config)"
+    cmds:
+      - task: config:generate:local
+
+  config:generate:local:
     desc: Generate build/gen/config.h from current .config
     cmds:
       - uv run --quiet python tools/build/genconfig.py
+
+  config:generate:defconfig:
+    desc: Load a named defconfig and generate config.h (e.g. task config:generate:defconfig -- melodee)
+    cmds:
+      - uv run --quiet python tools/build/genconfig.py --defconfig {{.CLI_ARGS}}

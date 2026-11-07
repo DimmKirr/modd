@@ -421,7 +421,7 @@ def build(dry_run=False):
     config_h = GEN / 'config.h'
     if not config_h.exists():
         raise SystemExit(
-            f'{config_h} not found. Run "task config:generate" first.')
+            f'{config_h} not found. Run "task config:generate:local" first.')
 
     enabled = set(re.findall(r'^#define CONFIG_(\w+) 1$', config_h.read_text(), re.M))
 
