@@ -116,10 +116,10 @@ def parse_fixed10(s: str) -> int:
 # ---- Sample API responses ----------------------------------------------
 
 GEO_RESPONSE = b'''{
-  "lat": 52.5244,
-  "lon": 13.4105,
-  "city": "Berlin",
-  "countryCode": "DE"
+  "lat": 40.7143,
+  "lon": -74.006,
+  "city": "New York",
+  "countryCode": "US"
 }'''
 
 WEATHER_RESPONSE = b'''{
@@ -140,11 +140,11 @@ WEATHER_NEGATIVE_TEMP = b'''{
   }
 }'''
 
-# Open-Meteo as it answers (a Berlin query, 2026-11-06 23:30 UTC): "current_units" comes before
+# Open-Meteo as it answers (a New York query, 2026-11-06 23:30 UTC): "current_units" comes before
 # "current", with the same keys and the units as strings
 OPEN_METEO_RESPONSE = (
-    b'{"latitude":52.52,"longitude":13.419998,"generationtime_ms":0.05936622619628906,'
-    b'"utc_offset_seconds":0,"timezone":"GMT","timezone_abbreviation":"GMT","elevation":38.0,'
+    b'{"latitude":40.710335,"longitude":-73.99309,"generationtime_ms":0.05936622619628906,'
+    b'"utc_offset_seconds":0,"timezone":"GMT","timezone_abbreviation":"GMT","elevation":32.0,'
     b'"current_units":{"time":"iso8601","interval":"seconds","temperature_2m":"\xc2\xb0C",'
     b'"relative_humidity_2m":"%","wind_speed_10m":"km/h","weather_code":"wmo code"},'
     b'"current":{"time":"2026-11-06T23:30","interval":900,"temperature_2m":1.3,'
@@ -157,16 +157,16 @@ OPEN_METEO_RESPONSE = (
 
 class TestMiniJsonExtract:
     def test_geo_lat(self):
-        assert mini_json_extract(GEO_RESPONSE, 'lat') == '52.5244'
+        assert mini_json_extract(GEO_RESPONSE, 'lat') == '40.7143'
 
     def test_geo_lon(self):
-        assert mini_json_extract(GEO_RESPONSE, 'lon') == '13.4105'
+        assert mini_json_extract(GEO_RESPONSE, 'lon') == '-74.006'
 
     def test_geo_city(self):
-        assert mini_json_extract(GEO_RESPONSE, 'city') == 'Berlin'
+        assert mini_json_extract(GEO_RESPONSE, 'city') == 'New York'
 
     def test_geo_country(self):
-        assert mini_json_extract(GEO_RESPONSE, 'countryCode') == 'DE'
+        assert mini_json_extract(GEO_RESPONSE, 'countryCode') == 'US'
 
     def test_missing_key(self):
         assert mini_json_extract(GEO_RESPONSE, 'timezone') is None
@@ -292,10 +292,10 @@ class TestWeatherDataExtraction:
         city = mini_json_extract(body, 'city')
         cc = mini_json_extract(body, 'countryCode')
 
-        assert lat == '52.5244'
-        assert lon == '13.4105'
-        assert city == 'Berlin'
-        assert cc == 'DE'
+        assert lat == '40.7143'
+        assert lon == '-74.006'
+        assert city == 'New York'
+        assert cc == 'US'
 
 
 # ---- Tests: source file structure --------------------------------------
