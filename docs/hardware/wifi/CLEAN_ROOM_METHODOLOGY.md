@@ -9,7 +9,15 @@ may and may not read, and how the clean-room claim is checked.
 - `docs/hardware/wifi/SPECSHEET.md`: the hardware fact sheet. The single public output of the
   analysis and the only analysis document the implementer reads. Every fact carries an evidence
   tag; §0 of the sheet explains the tags, the table policy and the SDK source record.
-- `docs/hardware/wifi/CLEAN_ROOM_METHODOLOGY.md`: this file.
+- `docs/hardware/wifi/CLEAN_ROOM_METHODOLOGY.md`: this file. Rules, roles and checks only. The
+  dates it carries are source pins, the ruling's date and the events that define the
+  provenance checks, not a log.
+- `docs/hardware/wifi/CLEAN_ROOM_IMPLEMENTER_JOURNAL.md`: the implementer-facing record, barrier-clean:
+  facts awaiting hardware confirmation (§14), the hardware tests (§15), unspecified steps,
+  unknowns and housekeeping (§16). Section numbers continue the sheet's and are stable.
+- `docs/hardware/wifi/CLEAN_ROOM_READER_JOURNAL.md`: the reader's dated record: the project timeline
+  and the changelog of the sheet (reader passes, errata, observations). Reader-side material;
+  the implementer does not open it.
 - `firmware/NOTICES`: third-party attribution for the references the driver uses.
 
 Everything else the analysis produced (disassembly, intermediate representation, verification
@@ -23,11 +31,10 @@ source-search summary and per-fact evidence tags appear in the sheet.
 
 - **Reader (analyst).** Examines the hardware through public documentation, IP-ancestor
   documentation, direct observation (emulator traces, hardware probes, register read-backs of
-  the running vendor radio) and, as a last resort, the vendor's pre-compiled libraries. Writes
-  the fact sheet. Never writes driver code.
+  the running vendor radio) and, as a last resort, the vendor's pre-compiled libraries. Writes the fact sheet and both journals. Never writes driver code.
 - **Implementer.** Writes the driver from the fact sheet, the public standards and the permitted
   references below. Never reads vendor binaries, vendor disassembly or intermediate
-  representation, reader-side notes, or third-party code derived from the vendor libraries.
+  representation, reader-side notes (including `CLEAN_ROOM_READER_JOURNAL.md`), or third-party code derived from the vendor libraries.
 - **Maintainer.** Decides licence positions, runs the provenance checks that need reader-side
   material, and owns the published history.
 
@@ -49,7 +56,13 @@ be hard-coded from any unit's read-back.
 **Vendor identifiers.** The sheet uses SDK register names (from the chip header),
 RT2800 names for the MAC registers, and descriptive names for everything else. The reader scans
 the driver for vendor-internal identifiers and hands the implementer file:line locations with
-replacement names (CLEAN_ROOM_JOURNAL.md §16.3); the list of identifiers itself stays reader-side.
+replacement names (CLEAN_ROOM_IMPLEMENTER_JOURNAL.md §16.3); the list of identifiers itself stays reader-side.
+
+**Exposure.** The same account produced the 2026-10-26 prototype, the fact sheet and the driver.
+A shared git author neither proves nor disproves shared exposure; the private record notes which
+session saw which vendor-derived material. The rewrite of `wifi_rf_cal.c` and the removal of the
+forced unit-specific registers are assigned to a fresh implementer context that has seen only the
+public documents, and any historical separation claim is qualified by that record.
 
 ## Source tiers
 
@@ -131,7 +144,7 @@ The same list stands in SPECSHEET §2; the sheet is the copy the implementer rea
 - the vendor's pre-compiled libraries and anything linked from them (`firmware/src/wifi/nonfree/`
   is build-isolated behind `CONFIG_WIFI_NONFREE`, mutually exclusive with the clean-room driver,
   and is not a reference for it);
-- any reader-side material: the reader's private store (analysis notes, the vendor-firmware copy,
+- any reader-side material: `CLEAN_ROOM_READER_JOURNAL.md`, the reader's private store (analysis notes, the vendor-firmware copy,
   captures, task notes), disassembly, intermediate representation, verification logs;
 - `.scratch/tasks/todo/2026-10-25T000000Z-wifi-driver-design.md` (superseded);
 - **fm1-base** `bsp/chip/fm1_rf_cal.h` and anything that includes it. That file states in its
@@ -155,8 +168,8 @@ Ruling recorded 2026-11-04 (reader, on the maintainer's standing position; the m
 override it in writing here): **not accepted**. Consequences: SPECSHEET §10.1 and §10.2 now
 supply the complete calibration procedure from the vendor libraries under the exemption, with
 hardware cross-checks; the implementer rewrites `wifi_rf_cal.c` from the sheet with
-project-original names (CLEAN_ROOM_JOURNAL.md §16.3) and drops the fm1-base citation; the RF calibration
-layer counts as clean-room only after that rewrite. If the maintainer overrides: relabel the
+project-original names (CLEAN_ROOM_IMPLEMENTER_JOURNAL.md §16.3) and drops the fm1-base citation; the RF calibration
+layer counts as clean-room only after that rewrite. The rewrite was completed on 2026-11-06. If the maintainer overrides: relabel the
 layer "derived" in the table below, mark the file's licence accordingly, add JieLi and fm1-base
 to NOTICES for that layer, and state here that the clean-room claim does not cover it.
 
@@ -165,7 +178,7 @@ to NOTICES for that layer, and state here that the clean-room claim does not cov
 | Layer | Clean-room from the fact sheet? | Implementation source |
 |-------|---------------------------------|------------------------|
 | RF analog bring-up, PLL, bank scan | Yes | SPECSHEET §4.2.1, §5.2, §11.2.9 |
-| RF calibration (full trim, stored record, quick path) | Yes from SPECSHEET §10.1-§10.2 as of 2026-11-04; the code at commit 76da132d predates this and is derived (see the ruling): rewrite required | SPECSHEET §10.1, §10.2 |
+| RF calibration (full trim, stored record, quick path) | Yes: rewritten from SPECSHEET §10.1-§10.2 on 2026-11-06 (see the ruling) | SPECSHEET §10.1, §10.2 |
 | RF-die LUT | Yes | SPECSHEET §5; table data from the SDK source (Apache-2.0) |
 | Clock tree, control block, WDMA transport | Yes | SPECSHEET §4.2, §7.11 |
 | BBP programming (windows, tables, TX filter, compression) | Yes | SPECSHEET §6, §11.2 |
@@ -176,36 +189,6 @@ to NOTICES for that layer, and state here that the clean-room claim does not cov
 | RTOS shim | Partial (behavioural contract from the sheet) | SPECSHEET §8, bare-metal adaptation |
 | WiFi API | No (original) | own design |
 
-## History
-
-- 2026-10-25: first fact sheet written from emulator traces and the first binary pass.
-- 2026-10-26: a prototype driver was written directly from the intermediate representation
-  (commit `6fa6dac7`; seven files, including register tables "extracted from decompiled IR").
-  It was discarded the next day. Its blobs are no longer in any file at HEAD, but they remain in
-  the published history until the purge below.
-- 2026-10-27: the driver was restarted from the fact sheet (commit `313ca7ca`).
-- 2026-10-28 to 2026-11-04: hardware probes and twelve bring-up iterations; reader passes on
-  2026-10-31 and 2026-11-04.
-- 2026-11-01: fm1-base's calibration file was used as a reference for `wifi_rf_cal.c` (the
-  contamination the ruling above addresses).
-- 2026-11-04: the driver written from the sheet transmits and receives (iteration 12o); the
-  clean-room audit of commit 76da132d listed the open provenance items; reader pass 2 supplied
-  the missing calibration facts, the tests (CLEAN_ROOM_JOURNAL.md §15) and the housekeeping list (§16).
-- 2026-11-05: reader pass 3 added Phase D (join, authentication, association, link-up,
-  keys, link-down) to SPECSHEET §4.2.1, §7.11.5, §7.13 and CLEAN_ROOM_JOURNAL.md §14-§16 from the implementer's
-  2026-11-05 observations and the station, supplicant and transport libraries; two of the nine
-  reader-side analysis packages were stopped by a safety classifier before writing and were
-  redone by the reader by hand (private record §5).
-- Pending (maintainer): purge of the seven 2026-10-26 blobs from the published history and
-  force-push of `main` and `feat/weather-page`, verified on a fresh clone with
-  `git log --all --find-object` for each blob id; date to be recorded here.
-
-**Exposure.** The same account produced the 2026-10-26 prototype, the fact sheet and the driver.
-A shared git author neither proves nor disproves shared exposure; the private record notes which
-session saw which vendor-derived material. The rewrite of `wifi_rf_cal.c` and the removal of the
-forced unit-specific registers are assigned to a fresh implementer context that has seen only the
-public documents, and any historical separation claim is qualified by that record.
-
 ## Implementer workspace and hand-off
 
 The implementer works in a fresh clone taken after the history purge, without the reader's
@@ -214,9 +197,8 @@ enters), without opening `firmware/src/wifi/nonfree/`, and with pinned copies of
 permitted references. The manifest of that workspace and its access boundary are recorded with
 the hand-off.
 
-Order of work (CLEAN_ROOM_JOURNAL.md §15 and §16): rewrite `wifi_rf_cal.c` from §10.1-§10.2 and retire the
-forced registers, with the provenance checks below as unit tests in the same change; then the
-hardware tests in the order §15 gives.
+Order of work: the hardware tests in the order CLEAN_ROOM_IMPLEMENTER_JOURNAL.md §15 gives, then the
+open items of §16.2; the provenance checks below run as unit tests with every change.
 
 ### Hand-off protocol
 
@@ -236,7 +218,7 @@ hardware tests in the order §15 gives.
    pasted into the implementer's session.
 3. **One channel out.** Results reach the reader only as observation files in the
    implementer's observation store: build id, what was changed, the registers read with their
-   values, and the decision taken. The reader folds them into CLEAN_ROOM_JOURNAL.md §14 and §16 and never
+   values, and the decision taken. The reader folds them into CLEAN_ROOM_IMPLEMENTER_JOURNAL.md §14 and §16 and never
    writes into that store.
 4. **Unknowns stay visible.** Where the sheet gives no fact, the implementer stubs the step with
    a TODO citing the §16 id; it never guesses a value, imports a third-party implementation, or
@@ -254,7 +236,7 @@ hardware tests in the order §15 gives.
    excerpts, lwIP, wpa_supplicant by version). Bar: zero untraced. Implementer-side.
 2. **Citation resolution.** Every `SPECSHEET §x.y` in code resolves to a heading that supports
    the claimed address, behaviour and revision; section numbers are stable (new material only in
-   new subsections). Known stale citations are listed in CLEAN_ROOM_JOURNAL.md §16.3. Implementer-side.
+   new subsections). Known stale citations are listed in CLEAN_ROOM_IMPLEMENTER_JOURNAL.md §16.3. Implementer-side.
 3. **Forbidden identifiers.** The reader scans the clean-room files against the private
    identifier list: zero hits. Reader-side.
 4. **Published history.** After the purge, no 2026-10-26 blob is reachable from any published

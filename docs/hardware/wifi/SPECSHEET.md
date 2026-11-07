@@ -263,7 +263,7 @@ The shared radio front-end. Initialized during both WiFi and BLE startup [M:t].
 
 | Address   | Name          | Bits                                                             | Function                                                                                             | Tag            |
 |-----------|---------------|------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|----------------|
-| `0x11900` | WL_A00        | [14] periodic routine bit (not a trim); [31:0] first analog word | Master analog control. Bit 14 toggled by a periodic routine (~2 ms); the RF init preserves it as found | M:t, meaning I |
+| `0x11900` | WL_A00        | [14] periodic toggle bit (not a trim); [31:0] first analog word | Master analog control. Bit 14 toggled periodically (~2 ms); the RF init preserves it as found | M:t, meaning I |
 | `0x11904` | WL_A04        |                                                                  | Analog configuration (constant, set during post-scan)                                                | M:t            |
 | `0x11908` | WL_A08        | [7], [15], [17], [25]                                            | Trim fields from VM 187 bytes 32, 33, 36, 37                                                         | M:s            |
 | `0x11910` | WL_A10        | [15:14] from VM 187 byte 42; [22:26] from T6 table               | Analog configuration with stored trims                                                               | M:s            |
@@ -529,7 +529,7 @@ The order B11 before B13 means the interrupt mask is opened before interrupt 52 
 | C1 | `0x1405C` [7:0] | = channel + 101, one read-modify-write; no PLL, LUT or BBP access, no delay | | channel in the driver's channel list | same (one read-modify-write; no BBP or PLL write) |
 | C2 | MAC+`0x132C` TX_BAND_CFG | `(v & ~0x6) \| 0x4` for channels below 15 (`\| 0x2` otherwise) | | | same |
 | C3 | MAC+`0x1328` TX_PIN_CFG | `0x00050302`: a plain write of the 2.4 GHz base value `0x00050F02` (one TX path) masked with `0x0005030A` (one RX path), from the 1T1R antenna configuration; the first write of this register happens here, before the first probe request [M:s] | | | same |
-| C4 | (AGC initial value through the RT2800 BBP path) | dropped by the vendor's own register filter: no hardware write | | | n/a |
+| C4 | (AGC initial value through the RT2800 BBP path) | never written by the vendor firmware: no hardware write | | | n/a |
 | C5 | dwell timer armed, then one probe request per channel visit (active scans only; passive channels send none) | software | 200 ms (the tunable, infrastructure mode); 140 ms otherwise; 30 ms fast-active; 110/90 ms in dual-band modes [M:s, PUB] | | diff order: probe sent right after the switch, then a 100 ms dwell; channels 1-13 |
 | C6 | TX readiness gate | read MAC+`0x438` byte 2 (pages in TX queue 2) and require it below the limit (byte 1 of the value last written to MAC+`0x40C`: `0xBF` from the table, `0x7F` after association, §7.10) with (limit − pages) x 128 > MPDU length; read MAC+`0x434`, require bit 18 = 0; read MAC+`0x43C`, require [7:5] != 0. Poll until all three pass | polled retry | | same reads; bounded: up to 5 x 10 ms, then transmits anyway |
 | C7 | TX staging | software buffer: length word (MPDU + 22, not transferred), queue word (bit 0 = WIV, [2:1] = queue 2), TXWI, frame (§7.11.5) | | | same layout (software length word, queue word 5/4, TXWI, unpadded frame, 6 zero bytes); TXWI: TXOP 0, density 5, PacketId 0, ACK 0 and WCID `0xFF` for every frame |
@@ -541,8 +541,8 @@ hostapd_and_wpasupplicant.a; added 2026-11-05]**
 EAPOL frames arrive as unencrypted data frames; the MAC does not process them (§7.13.5) [M:s].
 Profile assumed: infrastructure station, 2.4 GHz, 20 MHz, B/G/N
 mixed, WMM access point, WPA2-PSK CCMP, TX burst off. "Slot n" = entry n of the station slot table
-MAC+`0x1800` + 8n (§7.13.2). D1-D10 run before any key exists; D11-D24 are the link-up routine;
-D25-D29 the EAPOL and key phase; D30-D32 the link-down routine. Column **GPL**: build dev-20261105T064012Z and the uncommitted tree of
+MAC+`0x1800` + 8n (§7.13.2). D1-D10 run before any key exists; D11-D24 are the link-up phase;
+D25-D29 the EAPOL and key phase; D30-D32 the link-down phase. Column **GPL**: build dev-20261105T064012Z and the uncommitted tree of
 2026-11-05 [I for the comparison].
 
 | # | Register / action | Value / operation | Delay / timer | Condition | GPL |
@@ -598,8 +598,8 @@ source]. No write to `0x14000` on the boot path (12p).
 
 #### 4.2.1a Superseded: clock tree init sequence (2026-10-31), kept as errata
 
-The WiFi clock tree must be initialized in a specific order with inter-step delays. This sequence
-is performed by the vendor's clock/reset routine before any MAC or RF access. Failure to complete
+The WiFi clock tree must be initialized in a specific order with inter-step delays. The vendor
+firmware completes this sequence before any MAC or RF access. Failure to complete
 the full sequence leaves the radio receiver without clocks (WDMA TX still works because the WDMA
 engine has a separate clock gate at `0x1404C` bit 24).
 
@@ -979,8 +979,7 @@ constant register index of the BBP write path checked, no computed index exists]
 
 Nothing else is written directly: not R94 (`0x5E`), not R96, not R0-R20 (except R4), not R23, not
 R31-R63, not R89-R104 [M:s]. The RT2800-layer BBP path (AGC initial value per channel, BBP tuning)
-reaches the MAC's BBP port through the vendor's own register filter, which drops every write to
-`0x3101C`; in this build those routines are also empty [M:s wl_wifi_sta.a]. No window commit
+reaches the MAC's BBP port: the vendor firmware never writes `0x3101C` on these paths [M:s wl_wifi_sta.a]. No window commit
 mirrors into the direct register space as far as the binaries show; R32-R63 are hardware state [I].
 
 **Measured vendor values** [M:hw 2026-11-02, 2026-11-03]: R0 `0x60`, R2 `0x42`, R3 `0x10`, R4 0,
@@ -1060,8 +1059,7 @@ before the first scan result.
 ### 6.8 Per-channel behaviour [M:s wl_rf_common.a, wl_wifi_sta.a, 2026-11-04]
 
 A channel change writes **no BBP register**, direct or windowed: R106 stays 4, R94 is never written,
-and the RT2800-layer per-channel AGC write is an empty routine whose BBP path the vendor's filter
-would drop anyway (§6.4). The RF side of a channel change is the single `WF_CON7` [7:0] write of
+and no per-channel AGC value reaches the BBP (§6.4). The RF side of a channel change is the single `WF_CON7` [7:0] write of
 §4.2.1 C1 (no PLL, LUT or analog register access, no delay); the MAC side is TX_BAND_CFG and
 TX_PIN_CFG (C2, C3). A temperature-drift retune that reloads only the FEQ half of the LUT exists
 but is disabled in the SDK configuration [M:s].
@@ -1229,15 +1227,15 @@ flash-controller registers read under a wrong hypothesis; kept for the record on
 `0x40000` (not `0x0000` as in standard RT2800, and not `0x0200` as seen in vendor binary [M:s]).
 
 **WDMA DISCOVERY (2026-10-31) [M:s]:** these WPDMA registers are hardware-present [M:hw] but
-**not used by the vendor's production WiFi stack**. The vendor's register bridge drops all writes
-to offsets below `0x400` (covering all WPDMA offsets `0x200`-`0x29C`) [M:s], and the DMA
+**never written by the vendor firmware**: no write reaches MAC offsets below `0x400` (which
+covers all WPDMA offsets `0x200`-`0x29C`) [M:s], and the DMA
 the vendor does not use WPDMA for TX/RX [M:s]. All production TX/RX uses a JieLi-custom "WDMA"
 engine at MAC offset `0xF00` instead (§7.11). Our direct MMIO probes bypass the bridge and
 confirmed the WPDMA registers are live hardware. However, no successful data transfer has been
 achieved via WPDMA on AC791N. The WDMA engine (§7.11) is the vendor-proven path.
 
 The vendor binary references offsets `0x0200`-`0x0298` [M:s], which are **open bus** on real hardware
-[M:hw v15-v16]. The vendor's software abstraction layer likely adds the `0x40000` base at runtime.
+[M:hw v15-v16]. The offsets are relative to the `0x40000` base [I].
 
 **Evidence chain:**
 - v21 [M:hw]: wide DMA hunt found non-zero value at `0x40200` (0x809803B5), all other tested bases returned zero
@@ -1701,9 +1699,9 @@ The values are those of the table; the vendor radio's steady state differs in se
 the RT2800 layer rewrites them at association time or from its periodic task [M:hw, M:s]. Writes to
 MAC offsets below `0x400`, `0x500`-`0x1007` (MAC_SYS_CTRL included), `0x101C`-`0x101F` (BBP port),
 `0x102C`-`0x102F`, `0x1100`-`0x1107`, `0x1314`-`0x1327`, `0x1330`-`0x133B` and `0x2000`-`0x2FFF`
-coming from the RT2800 layer are dropped by the vendor's register filter; the registers in those
+that the RT2800 layout would expect are never written by the vendor firmware; the registers in those
 ranges that matter (MAC_SYS_CTRL, timing, BBP port, `0x308`, `0x30C`, `0x324`, `0x328`) are written
-by the vendor's own low-level code instead (§4.2.1) [M:s wl_rf_common.a].
+by the vendor firmware directly (§4.2.1) [M:s wl_rf_common.a].
 
 **Association-time writes [M:s wl_wifi_sta.a; names IP:RT2x00].** At link-up the RT layer writes
 `0x3040C` = `0x1F3F7F9F` (TX burst off, the profile's `TxBurst=0`; `0x1F3FBF9F` with TX
@@ -1744,9 +1742,8 @@ parameters [M:s].
 **Discovery date: 2026-10-31 [M:s].** The vendor radio library reveals that JieLi replaced
 the standard RT2800 WPDMA ring-based DMA engine with a custom "WDMA" (WiFi DMA) block at MAC
 offset `0xF00` [M:s]. The standard WPDMA registers documented in §7.1 (`0x40200`-`0x4029C`) are
-**hardware-present** [M:hw v21-v23c] but **silently ignored by the vendor's register bridge**:
-all writes to offsets below `0x400` (which includes all WPDMA offsets `0x200`-`0x29C`) are
-dropped [M:s]. The vendor does not use WPDMA for TX/RX [M:s]; all production TX/RX uses WDMA
+**hardware-present** [M:hw v21-v23c] but **never written by the vendor firmware**: no write
+reaches offsets below `0x400` (which includes all WPDMA offsets `0x200`-`0x29C`) [M:s]. The vendor does not use WPDMA for TX/RX [M:s]; all production TX/RX uses WDMA
 exclusively [M:s].
 
 **Architecture: synchronous, single-packet DMA.** Unlike RT2800 WPDMA which uses ring buffers
@@ -2111,8 +2108,8 @@ bytes suffice for the frames of this profile [I].
 | Vendor usage | Writes NOP'd by bridge [M:s]          | All production TX/RX [M:s]                    |
 
 **Implementation note [I]:** WDMA is simpler and vendor-proven. WPDMA is RT2800-compatible with
-potential throughput advantages from ring buffers, but the vendor's bridge layer drops all WPDMA
-writes, and no successful data transfer has been achieved via WPDMA on AC791N. For a first
+potential throughput advantages from ring buffers, but the vendor firmware never writes WPDMA,
+and no successful data transfer has been achieved via WPDMA on AC791N. For a first
 implementation, WDMA is the recommended path.
 
 #### 7.11.8 What needs hardware probes (WDMA-specific)
@@ -2877,7 +2874,7 @@ stored trims present (the normal path). Total: 34,274 register writes [M:t].
 - VCO bank scan: binary search over 64 bands, comparator at `0x11978` bits 17/18 [M:t]
 - BBP window-D read-modify-write loop: 539 read-backs (DC/IQ trimming) [M:t]
 - BT TX trims: from BBP read-backs into `0x2FC08`/`0x2FC10` [M:t]
-- Bit 14 of `0x11900`: periodic routine, not a trim [M:t]
+- Bit 14 of `0x11900`: periodic toggle, not a trim [M:t]
 
 ### 11.2 WiFi PHY/MAC hardware init [M:s]
 
@@ -3043,7 +3040,7 @@ Written through BBP window C (§6.1).
 | 119   | 0x49 | 120   | 0x00 | 121   | 0x04 | 122   | 0xD0 |
 
 Gaps: indices 43-47, 74, 77-78, 116 are not written. Indices 27, 54, 55, 72, 73, 79, 101, 102,
-105, 106 are loaded from external calibration globals (see below).
+105, 106 take calibration-dependent values, not constants (see below).
 
 **Calibration-dependent CCA registers** [M:s]:
 
@@ -3378,7 +3375,7 @@ WLA_CON12 (`0x11930`): configures PLL clock source for 40MHz crystal.
    recommended over incremental RMW for these registers.
 2. Several sub-steps (RF mode select, PLL restart, VCO bank scan, calibration, PA configuration,
    TX IQ keep, bandwidth save) modify registers beyond the RMW list; the PLL restart and the bank
-   scan are now in §5.2, the RF modes and calibration in §10.1. These are calibration/optimization routines.
+   scan are now in §5.2, the RF modes and calibration in §10.1. These are calibration steps.
 3. PLL bank scan is a runtime calibration; the simulated PLL values may need VCO re-lock.
 
 #### 11.2.10 Window D TX filter (CFR) [M:s, completed 2026-11-04]
