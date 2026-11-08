@@ -7,7 +7,8 @@ task build
 ```
 
 Produces `build/modd.fwsc`. Requires the JieLi toolchain (downloaded
-automatically on first run).
+automatically on first run). `task build` delegates to `build:live`, which
+caches on source checksums and skips when nothing changed.
 
 ## Flashing firmware
 
@@ -105,6 +106,38 @@ The FM-1 uses an ESMT SPI NOR flash (JEDEC `0x856014`, 1 MB). Each 4 KiB
 sector supports ~100,000 program/erase cycles. The UBOOT flasher only
 writes changed sectors, so incremental builds during development use
 very few cycles per update.
+
+## Building upstream firmwares (for testing)
+
+When porting or adapting upstream code, it helps to build and compare against
+the original. These tasks build a clean upstream firmware from its vendored
+source using modd's JieLi toolchain:
+
+```sh
+task vendor:build                   # build all upstream firmwares
+task vendor:build:felucca           # → firmware/upstream/felucca/build/felucca.fwsc
+task vendor:build:melodee           # → firmware/upstream/melodee/build/melodee.fwsc
+task vendor:build:sloop             # → firmware/upstream/sloop/build/felucca.fwsc
+task vendor:build:fmlab             # → firmware/upstream/fmlab/build/fmlab.fwsc
+task vendor:build:skiff             # → firmware/upstream/skiff/build/felucca.fwsc
+task vendor:build:fm1-dock          # → firmware/upstream/fm1-dock/build/fm1-dock.fwsc
+task vendor:build:optimist          # → firmware/upstream/optimist/build/felucca.fwsc
+task vendor:build:felucca:emulator  # build + ensure WASM emulator is ready
+task vendor:flash:felucca           # flash a pre-built upstream to FM-1
+```
+
+Available upstreams: `felucca`, `melodee`, `sloop`, `fmlab`, `skiff`,
+`fm1-dock`, `optimist`. Output stays in each upstream's own `build/`
+directory. The upstream sources under `firmware/upstream/` are never modified.
+
+The build requires Pillow with raqm support (for upstream font generation).
+This works out of the box in the Linux container. On macOS, build in the
+container first, then flash from the host:
+
+```sh
+# container:  task vendor:build:felucca
+# macOS:      task vendor:flash:felucca
+```
 
 ## Debugging
 

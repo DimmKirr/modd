@@ -10,6 +10,9 @@ includes:
     vars:
       FM1_VERSION: v0.3.0
       FM1_SOURCE_REPO: DimmKirr/fm1-emu
+  vendor:
+    taskfile: firmware/upstream/Taskfile.yml
+    dir: '{{.ROOT_DIR}}'
   debug:wifi:
     taskfile: .scratch/Taskfile.yml
     optional: true
@@ -17,6 +20,12 @@ includes:
 
 tasks:
   build:
+    desc: Build modd firmware (alias for build:live)
+    cmds:
+      - task: build:live
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:live:
     desc: Generate config.h and compile firmware (skipped when sources and .env are unchanged; --force to rebuild)
     deps: [fm1-platform:download:sdk, fm1-platform:download:toolchain, vendor:ensure]
     env:
@@ -45,18 +54,6 @@ tasks:
     desc: Show what would be compiled without building
     cmds:
       - uv run --quiet python tools/build/build.py --dry-run
-
-  vendor:ensure:
-    desc: "Fetch firmware/upstream/* and firmware/vendor/* at the commits in vendir.lock.yml when missing (the trees are not committed)"
-    status:
-      - uv run --quiet python tools/build/vendor.py present
-    cmds:
-      - vendir sync --locked
-
-  vendor:sync:
-    desc: "Re-resolve the pins in vendir.yml: rewrite the trees and vendir.lock.yml (one tree: -- --directory <path>)"
-    cmds:
-      - vendir sync {{.CLI_ARGS}}
 
   test:
     desc: Run all tests (unit + e2e)

@@ -1,0 +1,282 @@
+# Build and flash upstream community firmwares for A/B testing during porting.
+# Included from the root Taskfile under the `vendor:` namespace, so tasks here
+# are invoked as `task vendor:build:felucca`, `task vendor:flash:melodee`, etc.
+#
+# The fm1-platform and fm1-emulator includes are duplicated here because
+# Taskfile resolves deps relative to the include namespace: a task in the
+# `vendor:` namespace cannot reach the root's `fm1-platform:` tasks.
+# Both instances download to the same ~/.fm1-toolchain/ paths, so the
+# status checks make the duplicates no-ops.
+version: '3'
+
+includes:
+  fm1-platform:
+    taskfile: https://raw.githubusercontent.com/DimmKirr/setup-fm1-toolchain/v1/Taskfile.yml
+  fm1-emulator:
+    taskfile: https://raw.githubusercontent.com/DimmKirr/setup-fm1-emulator/v1/Taskfile.yml
+    vars:
+      FM1_VERSION: v0.3.0
+      FM1_SOURCE_REPO: DimmKirr/fm1-emu
+
+tasks:
+  ensure:
+    desc: "Fetch firmware/upstream/* and firmware/vendor/* at the commits in vendir.lock.yml when missing (the trees are not committed)"
+    status:
+      - uv run --quiet python tools/build/vendor.py present
+    cmds:
+      - vendir sync --locked
+
+  sync:
+    desc: "Re-resolve the pins in vendir.yml: rewrite the trees and vendir.lock.yml (one tree: -- --directory <path>)"
+    cmds:
+      - vendir sync {{.CLI_ARGS}}
+
+  _build:
+    internal: true
+    deps: [fm1-platform:download:sdk, fm1-platform:download:toolchain, ensure]
+    dir: 'firmware/upstream/{{.UPSTREAM}}'
+    vars:
+      OUTPUT: '{{.OUTPUT | default (printf "%s.fwsc" .UPSTREAM)}}'
+    status:
+      - test -f 'build/{{.OUTPUT}}'
+    env:
+      JIELI_TOOLCHAIN: '{{env "JIELI_TOOLCHAIN" | default (printf "%s/.fm1-toolchain/toolchain" .HOME)}}'
+      AC79_SDK: '{{env "AC79_SDK" | default (printf "%s/.fm1-toolchain/AC79_SDK" .HOME)}}'
+      JIELI_DOCKER: '{{env "JIELI_DOCKER" | default "0"}}'
+    preconditions:
+      - sh: test -f 'build/{{.OUTPUT}}' || uv run --quiet --project '{{.ROOT_DIR}}' python -c 'import PIL'
+        msg: "Pillow is not installed (run: uv sync)"
+      - sh: test -f 'build/{{.OUTPUT}}' || uv run --quiet --project '{{.ROOT_DIR}}' python -c 'from PIL import features; assert features.check("raqm")'
+        msg: |
+          Pillow lacks raqm support (needed for upstream font generation).
+          You likely need to install libraqm and freetype, then rebuild Pillow from source:
+
+            macOS:  brew install libraqm
+                    uv pip install --reinstall --no-binary pillow pillow
+            Linux:  nix profile install nixpkgs#libraqm   (or: apt install libraqm-dev libfreetype-dev)
+                    uv pip install --reinstall --no-binary pillow pillow
+    cmds:
+      # Felucca and SLOOP expect a felucca-engines submodule at firmware/engines/;
+      # vendir fetches it separately, so symlink it when missing.
+      - cmd: |
+          if [ ! -e firmware/engines ] && [ -d "{{.ROOT_DIR}}/firmware/upstream/felucca-engines" ]; then
+            ln -s "{{.ROOT_DIR}}/firmware/upstream/felucca-engines" firmware/engines
+          fi
+        silent: true
+      # On non-x86-64 Linux, create a shim toolchain that runs binaries through
+      # an explicit x86-64 ld.so (the JieLi clang is a non-standard ELF that
+      # Rosetta rejects directly). The shim mirrors the real toolchain layout
+      # with symlinks to tc-shim.sh, so the upstream build.py finds them at
+      # the expected relative paths.
+      - cmd: |
+          if [ "$(uname -m)" = "x86_64" ] || [ "$(uname -s)" != "Linux" ]; then
+            exit 0
+          fi
+          REAL="$JIELI_TOOLCHAIN"
+          SHIM_DIR="{{.ROOT_DIR}}/build/vendor-tc-shim"
+          SHIM_SCRIPT="{{.ROOT_DIR}}/.scratch/tools/vendor-build/tc-shim.sh"
+          if [ -d "$SHIM_DIR/pi32v2/bin" ]; then
+            exit 0
+          fi
+          echo "Creating toolchain shim for $(uname -m)..."
+          for bin in "$REAL"/pi32v2/bin/* "$REAL"/common/bin/*; do
+            [ -f "$bin" ] || continue
+            rel="${bin#$REAL/}"
+            mkdir -p "$SHIM_DIR/$(dirname "$rel")"
+            ln -sf "$SHIM_SCRIPT" "$SHIM_DIR/$rel"
+          done
+          # Copy non-binary dirs (includes, libs, linker scripts) as symlinks
+          for d in pi32v2/include pi32v2/lib common/include common/lib; do
+            [ -d "$REAL/$d" ] && ln -sfn "$REAL/$d" "$SHIM_DIR/$d"
+          done
+          export JIELI_TOOLCHAIN="$SHIM_DIR"
+          export JIELI_TOOLCHAIN_REAL="$REAL"
+        silent: true
+      - cmd: |
+          if [ "$(uname -m)" != "x86_64" ] && [ "$(uname -s)" = "Linux" ]; then
+            export JIELI_TOOLCHAIN="{{.ROOT_DIR}}/build/vendor-tc-shim"
+            export JIELI_TOOLCHAIN_REAL="{{env "JIELI_TOOLCHAIN" | default (printf "%s/.fm1-toolchain/toolchain" .HOME)}}"
+          fi
+          uv run --quiet --project '{{.ROOT_DIR}}' bash build.sh {{.CLI_ARGS}}
+        silent: true
+
+  build:
+    desc: Build all upstream firmwares for testing
+    cmds:
+      - task: build:felucca
+      - task: build:melodee
+      - task: build:sloop
+      - task: build:fmlab
+      - task: build:optimist
+      - task: build:fm1-dock
+      - task: build:skiff
+
+  build:felucca:
+    desc: "Build upstream Felucca for testing (→ firmware/upstream/felucca/build/felucca.fwsc)"
+    cmds:
+      - task: _build
+        vars: { UPSTREAM: felucca, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:melodee:
+    desc: "Build upstream Melodee for testing (→ firmware/upstream/melodee/build/melodee.fwsc)"
+    cmds:
+      - task: _build
+        vars: { UPSTREAM: melodee, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:sloop:
+    desc: "Build upstream SLOOP for testing (→ firmware/upstream/sloop/build/felucca.fwsc)"
+    cmds:
+      - task: _build
+        vars: { UPSTREAM: sloop, OUTPUT: 'felucca.fwsc', CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:fmlab:
+    desc: "Build upstream FM Lab for testing (→ firmware/upstream/fmlab/build/fmlab.fwsc)"
+    cmds:
+      - task: _build
+        vars: { UPSTREAM: fmlab, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:optimist:
+    desc: "Build upstream Optimist (BLE) for testing (→ firmware/upstream/optimist/build/felucca.fwsc)"
+    deps: [fm1-platform:download:sdk, fm1-platform:download:toolchain, ensure]
+    dir: 'firmware/upstream/optimist'
+    status:
+      - test -f 'build/felucca.fwsc'
+    preconditions:
+      - sh: test -f 'build/felucca.fwsc' || uv run --quiet --project '{{.ROOT_DIR}}' python -c 'import PIL'
+        msg: "Pillow is not installed (run: uv sync)"
+    env:
+      JIELI_TOOLCHAIN: '{{env "JIELI_TOOLCHAIN" | default (printf "%s/.fm1-toolchain/toolchain" .HOME)}}'
+      AC79_SDK: '{{env "AC79_SDK" | default (printf "%s/.fm1-toolchain/AC79_SDK" .HOME)}}'
+    cmds:
+      - cmd: |
+          if [ "$(uname -m)" != "x86_64" ] && [ "$(uname -s)" = "Linux" ]; then
+            export JIELI_TOOLCHAIN="{{.ROOT_DIR}}/build/vendor-tc-shim"
+            export JIELI_TOOLCHAIN_REAL="{{env "JIELI_TOOLCHAIN" | default (printf "%s/.fm1-toolchain/toolchain" .HOME)}}"
+          fi
+          uv run --quiet --project '{{.ROOT_DIR}}' python -c "
+          import platform, sys; platform.machine = lambda: 'x86_64'
+          sys.argv = ['tools/build.py', '--config', 'config/profiles/everything-that-fits.config'] + sys.argv[1:]
+          import runpy; runpy.run_path('tools/build.py', run_name='__main__')
+          " {{.CLI_ARGS}}
+        silent: true
+
+  build:fm1-dock:
+    desc: "Build upstream fm1-dock for testing (→ firmware/upstream/fm1-dock/build/fm1-dock.fwsc)"
+    cmds:
+      - task: _build
+        vars: { UPSTREAM: fm1-dock, OUTPUT: 'fm1-dock.fwsc', CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:skiff:
+    desc: "Build upstream Skiff for testing (→ firmware/upstream/skiff/build/felucca.fwsc)"
+    cmds:
+      - task: _build
+        vars: { UPSTREAM: skiff, OUTPUT: 'felucca.fwsc', CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:felucca:emulator:
+    desc: Build upstream Felucca for testing + ensure emulator is ready
+    deps: [fm1-emulator:download:wasm]
+    cmds:
+      - task: build:felucca
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:melodee:emulator:
+    desc: Build upstream Melodee for testing + ensure emulator is ready
+    deps: [fm1-emulator:download:wasm]
+    cmds:
+      - task: build:melodee
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:sloop:emulator:
+    desc: Build upstream SLOOP for testing + ensure emulator is ready
+    deps: [fm1-emulator:download:wasm]
+    cmds:
+      - task: build:sloop
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:fmlab:emulator:
+    desc: Build upstream FM Lab for testing + ensure emulator is ready
+    deps: [fm1-emulator:download:wasm]
+    cmds:
+      - task: build:fmlab
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:optimist:emulator:
+    desc: Build upstream Optimist (BLE) for testing + ensure emulator is ready
+    deps: [fm1-emulator:download:wasm]
+    cmds:
+      - task: build:optimist
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:fm1-dock:emulator:
+    desc: Build upstream fm1-dock for testing + ensure emulator is ready
+    deps: [fm1-emulator:download:wasm]
+    cmds:
+      - task: build:fm1-dock
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  build:skiff:emulator:
+    desc: Build upstream Skiff for testing + ensure emulator is ready
+    deps: [fm1-emulator:download:wasm]
+    cmds:
+      - task: build:skiff
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  flash:felucca:
+    desc: Flash upstream Felucca to FM-1 (run vendor:build:felucca first)
+    vars:
+      FIRMWARE: firmware/upstream/felucca/build/felucca.fwsc
+    preconditions:
+      - sh: test -f '{{.FIRMWARE}}'
+        msg: '{{.FIRMWARE}} not found. Build it first: task vendor:build:felucca'
+    cmds:
+      - uv run --quiet --group flash python tools/device/fm1_install.py '{{.FIRMWARE}}' --force --yes {{.CLI_ARGS}}
+
+  flash:melodee:
+    desc: Flash upstream Melodee to FM-1 (run vendor:build:melodee first)
+    vars:
+      FIRMWARE: firmware/upstream/melodee/build/melodee.fwsc
+    preconditions:
+      - sh: test -f '{{.FIRMWARE}}'
+        msg: '{{.FIRMWARE}} not found. Build it first: task vendor:build:melodee'
+    cmds:
+      - uv run --quiet --group flash python tools/device/fm1_install.py '{{.FIRMWARE}}' --force --yes {{.CLI_ARGS}}
+
+  flash:sloop:
+    desc: Flash upstream SLOOP to FM-1 (run vendor:build:sloop first)
+    vars:
+      FIRMWARE: firmware/upstream/sloop/build/felucca.fwsc
+    preconditions:
+      - sh: test -f '{{.FIRMWARE}}'
+        msg: '{{.FIRMWARE}} not found. Build it first: task vendor:build:sloop'
+    cmds:
+      - uv run --quiet --group flash python tools/device/fm1_install.py '{{.FIRMWARE}}' --force --yes {{.CLI_ARGS}}
+
+  flash:fmlab:
+    desc: Flash upstream FM Lab to FM-1 (run vendor:build:fmlab first)
+    vars:
+      FIRMWARE: firmware/upstream/fmlab/build/fmlab.fwsc
+    preconditions:
+      - sh: test -f '{{.FIRMWARE}}'
+        msg: '{{.FIRMWARE}} not found. Build it first: task vendor:build:fmlab'
+    cmds:
+      - uv run --quiet --group flash python tools/device/fm1_install.py '{{.FIRMWARE}}' --force --yes {{.CLI_ARGS}}
+
+  flash:optimist:
+    desc: Flash upstream Optimist (BLE) to FM-1 (run vendor:build:optimist first)
+    vars:
+      FIRMWARE: firmware/upstream/optimist/build/felucca.fwsc
+    preconditions:
+      - sh: test -f '{{.FIRMWARE}}'
+        msg: '{{.FIRMWARE}} not found. Build it first: task vendor:build:optimist'
+    cmds:
+      - uv run --quiet --group flash python tools/device/fm1_install.py '{{.FIRMWARE}}' --force --yes {{.CLI_ARGS}}
+
+  flash:skiff:
+    desc: Flash upstream Skiff to FM-1 (run vendor:build:skiff first)
+    vars:
+      FIRMWARE: firmware/upstream/skiff/build/felucca.fwsc
+    preconditions:
+      - sh: test -f '{{.FIRMWARE}}'
+        msg: '{{.FIRMWARE}} not found. Build it first: task vendor:build:skiff'
+    cmds:
+      - uv run --quiet --group flash python tools/device/fm1_install.py '{{.FIRMWARE}}' --force --yes {{.CLI_ARGS}}

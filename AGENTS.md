@@ -11,8 +11,9 @@ modd is a modular firmware framework for the M-VAVE FM-1 synthesizer (JieLi AC79
 Kconfiglib-based configuration. All commands go through [Taskfile](https://taskfile.dev), which wraps the JieLi toolchain env vars (`JIELI_TOOLCHAIN`, `AC79_SDK`) automatically:
 
 ```
-task build                              # build using .config (default symlink)
+task build                              # build modd firmware (alias for build:live)
 task build -- --defconfig wifi_debug    # build a specific defconfig from configs/
+task build:live                         # build with source-change caching (the real build target)
 task flash                              # build if sources or .env changed, then flash over USB-MIDI
 task config                             # interactive menuconfig
 task config:generate:defconfig -- melodee  # load a preset defconfig and generate config.h
@@ -20,9 +21,14 @@ task config:generate:local                # .config -> build/gen/config.h
 task test                               # run all tests (unit + e2e)
 task test:unit                          # Python unit tests only
 task test:e2e                           # emulator + Playwright e2e tests
+task vendor:build                       # (testing) build all upstream firmwares
+task vendor:build:felucca               # (testing) build clean upstream Felucca
+task vendor:flash:melodee               # (testing) flash pre-built upstream Melodee
 ```
 
 **Important:** always use `task build` (not `python tools/build.py` directly) because the Taskfile sets required env vars for the JieLi toolchain. If calling `build.py` directly, you must set `JIELI_TOOLCHAIN` and `AC79_SDK`.
+
+`task build` delegates to `build:live`, which has source-change caching (skips when sources and `.env` are unchanged). Use `build:live` only when you need to reference the cacheable target directly (e.g. as a dependency).
 
 ### .config and defconfigs
 
@@ -173,6 +179,8 @@ Upstream trees are fetched with vendir and are not committed: `vendir.yml` pins 
 - Melodee: `firmware/upstream/melodee/`
 - SLOOP: `firmware/upstream/sloop/`
 - FMLab: `firmware/upstream/fmlab/`
+- Skiff: `firmware/upstream/skiff/`
+- fm1-dock: `firmware/upstream/fm1-dock/`
 - Optimist (BLE): `firmware/upstream/optimist/`
 - lwIP: `firmware/vendor/lwip/`; FatFs: `firmware/vendor/fatfs/` (project config in `firmware/src/udisk/`)
 
@@ -233,3 +241,119 @@ as a prerelease. Failed verification never publishes a versioned release.
 - Kconfig symbols use `CONFIG_` prefix. Engine symbols: `CONFIG_ENGINE_*`. HAL upstream variants: `CONFIG_HAL_*_FELUCCA/SLOOP/MELODEE`.
 - Voice budget is a shared resource pool. Engine cost is measured in VBUDGET units (Prophet: 2-3, FM6: 2, CZ-1: 1, etc.).
 - License: all modd code is GPL-3.0-only. Upstream `felucca_engine.h` and Felucca-Engines are MIT; `modd_engine.h` derives from it under GPL-3.0-only with the MIT notice kept. Every file copied or adapted from an upstream carries an `Origin:` line pinned to the upstream commit; the list is in `THIRD_PARTY.md`.
+
+## Adding Upstream Firmware
+
+To add a new community FM-1 firmware to the vendor build system, follow these steps. All FM-1 firmwares share the same JieLi AC791N toolchain and a similar `build.sh` + `tools/build.py` pattern. The tasks live in `firmware/upstream/Taskfile.yml` (included from the root `Taskfile.yml` under the `vendor:` namespace, so e.g. its `build:felucca` task runs as `task vendor:build:felucca`), not in the root Taskfile itself. `firmware/upstream/` is gitignored except for that one Taskfile.
+
+### 1. Add to vendir.yml
+
+Add a new entry under the `# --- Community FM-1 firmwares` section:
+
+```yaml
+- path: firmware/upstream/<name>
+  contents:
+  - path: .
+    git:
+      url: https://github.com/<owner>/<repo>
+      ref: <tag-or-commit>
+    excludePaths: [".git/**"]
+```
+
+Pin to a release tag when available (e.g. `v2.2`), or a full commit SHA when there is no suitable tag.
+
+### 2. Sync the vendor tree
+
+```sh
+vendir sync --directory firmware/upstream/<name>
+```
+
+This fetches the repo and updates `vendir.lock.yml` with the resolved SHA. Commit both `vendir.yml` and `vendir.lock.yml`.
+
+### 3. Inspect the build
+
+Check the new upstream's build system:
+
+- **`build.sh`**: all FM-1 firmwares have one. Read it to find the output filename and any special dependencies.
+- **Output filename**: most produce `felucca.fwsc` (the default FM-1 package name) or `<name>.fwsc`. Check `tools/build.py` for the exact name (look for `.fwsc`).
+- **Pillow + raqm**: if the build generates font headers from TTF files (look for `gen_aa_font.py`, `ImageFont`, `layout_engine=...RAQM`), the upstream needs Pillow with raqm support. Most do.
+- **Submodules**: check `.gitmodules` or `firmware/engines/`. Felucca and SLOOP need the felucca-engines submodule; the `_build` task symlinks it automatically. Newer firmwares (Skiff, fm1-dock) are typically self-contained.
+- **Special config**: some upstreams (e.g. Optimist) have non-standard config systems or overflow default flash budgets. Check if a specific config profile is needed.
+
+### 4. Add Taskfile tasks
+
+Three tasks are needed for each upstream, plus an entry in the umbrella.
+
+All of the following tasks go in `firmware/upstream/Taskfile.yml`, not the root Taskfile. Task names below omit the `vendor:` prefix that the root's include adds (e.g. `build:felucca` in that file runs as `task vendor:build:felucca`).
+
+**If the firmware fits the standard pattern** (has `build.sh`, uses JieLi toolchain, needs raqm): delegate to `_build`:
+
+```yaml
+build:<name>:
+  desc: "Build upstream <Name> for testing (→ firmware/upstream/<name>/build/<output>.fwsc)"
+  cmds:
+    - task: _build
+      vars: { UPSTREAM: <name>, OUTPUT: '<output>.fwsc', CLI_ARGS: '{{.CLI_ARGS}}' }
+```
+
+If the output is `<name>.fwsc`, you can omit `OUTPUT` (it defaults to `<upstream>.fwsc`). If the output is `felucca.fwsc`, set `OUTPUT: 'felucca.fwsc'`.
+
+**If the firmware has a non-standard build** (e.g. Optimist's custom config system): write a custom task following the `build:optimist` pattern. Copy the env, deps, status, and shim setup, then adapt the build command.
+
+**Emulator variant:**
+
+```yaml
+build:<name>:emulator:
+  desc: Build upstream <Name> for testing + ensure emulator is ready
+  deps: [fm1-emulator:download:wasm]
+  cmds:
+    - task: build:<name>
+      vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+```
+
+**Flash task** (calls `fm1_install.py` directly, no modd build dependency):
+
+```yaml
+flash:<name>:
+  desc: Flash upstream <Name> to FM-1 (run vendor:build:<name> first)
+  vars:
+    FIRMWARE: firmware/upstream/<name>/build/<output>.fwsc
+  preconditions:
+    - sh: test -f '{{.FIRMWARE}}'
+      msg: '{{.FIRMWARE}} not found. Build it first: task vendor:build:<name>'
+  cmds:
+    - uv run --quiet --group flash python tools/device/fm1_install.py '{{.FIRMWARE}}' --force --yes {{.CLI_ARGS}}
+```
+
+**Add to the umbrella** in `build`:
+
+```yaml
+build:
+  desc: Build all upstream firmwares for testing
+  cmds:
+    # ... existing entries ...
+    - task: build:<name>
+```
+
+### 5. Update documentation
+
+- Add a bullet to the **Reference Firmwares** list in this file.
+- Add the entry to `THIRD_PARTY.md` with license and provenance.
+- Update `docs/DEVELOPMENT.md` if the new upstream has special build requirements.
+
+### 6. Test
+
+```sh
+task vendor:build:<name>              # should produce the .fwsc
+task vendor:build:<name>:emulator     # should also download/check emulator
+```
+
+On macOS, the build runs through Docker (each upstream's `build.sh` gates on it). In the Linux container (aarch64), the `_build` task sets up a toolchain shim that runs the x86-64 JieLi clang through an explicit `ld.so` loader (`.scratch/tools/vendor-build/tc-shim.sh`).
+
+### Key constraints
+
+- Never modify files under `firmware/upstream/`, except `firmware/upstream/Taskfile.yml` itself (the one file excluded from `.gitignore`). The vendored trees are managed by vendir and will be overwritten on sync.
+- `build.sh` may not be executable after vendir sync. The `_build` task uses `bash build.sh` instead of `./build.sh`.
+- `vendir sync` replaces the entire target directory, wiping any build output. Always build after syncing.
+- The `_build` preconditions are guarded with `test -f 'build/<output>' ||` so they skip when the firmware is already built (avoids raqm failures on macOS when the output exists from a container build).
+- Tasks inside `firmware/upstream/Taskfile.yml` cannot reference the root Taskfile's `fm1-platform:*` or `fm1-emulator:*` tasks directly (Taskfile resolves deps within the include's own namespace). That file carries its own local `includes:` for both, which is why `fm1-platform:download:sdk` resolves there.
