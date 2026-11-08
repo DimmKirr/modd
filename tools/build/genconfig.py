@@ -57,6 +57,7 @@ COMPONENT_SYMBOLS = {
     'UI_FELUCCA': 'ui:felucca',
     'UI_SLOOP': 'ui:sloop',
     'UI_MELODEE': 'ui:melodee',
+    'UI_MODD': 'ui:modd',
     'FLASH': 'flash',
     'STORAGE_FELUCCA': 'storage:felucca',
     'STORAGE_SLOOP': 'storage:sloop',

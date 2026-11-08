@@ -26,7 +26,7 @@ task test:e2e                           # emulator + Playwright e2e tests
 
 ### .config and defconfigs
 
-`.config` is a symlink to `configs/modd_dev_defconfig`, the main development profile. Do not replace it with a regular file. To build with a different defconfig from `configs/`, pass `--defconfig <name>` (without the `_defconfig` suffix):
+`.config` is a symlink to `configs/modd_defconfig`, the main development profile. Do not replace it with a regular file. To build with a different defconfig from `configs/`, pass `--defconfig <name>` (without the `_defconfig` suffix):
 
 ```
 task build -- --defconfig wifi_debug    # builds with configs/wifi_debug_defconfig

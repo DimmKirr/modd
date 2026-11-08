@@ -13,10 +13,10 @@ flowchart TB
     HAL["<b>HAL</b><br/><small>sys · irq · gpio · time · lcd · input<br/>flash · uart · usb · timer · mc<br/>cache · clock · power · eq · led_pwm · ble_rf</small>"]
     MIDI["<b>MIDI</b><br/><small>UART Transport · Routing<br/>Editor · Console</small>"]
     USB["<b>USB</b><br/><small>Device Driver · USB Audio · Host Controller · UDisk</small>"]
+    SCHED["<b>Scheduler</b><br/><small>stack_canary</small>"]
     STORAGE["<b>Storage</b><br/><small>Flash · Settings</small>"]
-    SCHED["<b>Sched</b><br/><small>Cooperative round-robin · ctx.S</small>"]
     UI["<b>UI</b><br/><small>Shell · Controls · Settings Menu</small>"]
-    WIFI["<b>WiFi</b><br/><small>STA · lwIP · WPA · MIDI · CDP</small>"]
+    WIFI["<b>WiFi</b><br/><small>STA · lwIP · WPA · autojoin · MIDI · nonfree<br/>CDP</small>"]
 
     BOOT -.-> STORAGE
     BOOT -.-> USB
@@ -33,15 +33,13 @@ flowchart TB
     DEBUG --> USB
     MIDI --> USB
     WIFI --> DEBUG
-    SCHED --> HAL
-    UI -.-> SCHED
-    WIFI -.-> SCHED
     AUDIO --> HAL
     BLE --> HAL
     BOOT --> HAL
     DEBUG --> HAL
     MIDI --> HAL
     USB --> HAL
+    SCHED --> HAL
     STORAGE --> HAL
     UI --> HAL
     WIFI --> HAL
@@ -342,7 +340,7 @@ For the cross-theme framework (view/page/element model, navigation rules, theme 
 - **Felucca**: page-based shell with encoder/button dispatch
 - **SLOOP**
 - **Melodee**: Rubik font, track colors, 8 palettes, partial updates
-- **Native** (Core): minimal bitmap-font shell (default when no upstream UI is selected)
+- **Native** (modd): modd's own UI on Melodee's renderer; Rubik type, Melodee's palettes plus the logo's MODD and MODD NIGHT; HOME, settings on HOME hold, weather on GLO hold; ships its own button map (default when no upstream UI is selected)
 
 ### Event flow
 
@@ -579,12 +577,12 @@ graph LR
 
 | Preset | Audio | USB | Engines | UI | Extras | Buildable |
 |--------|-------|-----|---------|-----|--------|-----------|
-| `minimal` | Melodee core + FX | yes | none | none | -- | yes |
-| `core` | none | yes | none | Core shell | -- | yes |
-| `modd_dev` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | Felucca | BLE, OTA, storage, modulation, settings menu, USB disk | yes (29 components) |
+| `minimal` | Melodee core + FX | yes | none | modd (no input) | -- | yes |
+| `modd` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | modd | WiFi + weather, OTA, storage, modulation, settings menu, USB disk, scheduler, debug log | yes |
+| `modd_ui` | none | yes | none | modd | -- | yes |
+| `felucca` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | Felucca | WiFi + weather, OTA, storage, modulation, settings menu, USB disk, debug log | yes (24 components) |
 | `felucca_noise` | Melodee core + FX | yes | Analog, Noise | Felucca | debug log, settings menu | yes |
-| `felucca` | Felucca | yes | all Felucca | Felucca | -- | not yet |
-| `melodee` | Melodee | yes | all Melodee | Melodee | -- | not yet |
-| `sloop` | SLOOP | yes | Felucca set | SLOOP | -- | not yet |
+| `melodee` | Melodee | yes | all Melodee | Felucca (Melodee shell not ported) | -- | not yet |
+| `sloop` | SLOOP | yes | Felucca set | Felucca (no SLOOP theme) | -- | not yet |
 
 All presets have `CONFIG_USB=y` so the device is always reflashable over USB.

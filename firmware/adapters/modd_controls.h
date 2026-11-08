@@ -32,10 +32,34 @@
 #define ENC_K3       4
 #define ENC_K4       5
 #define ENC_PRESET   6
+#define ENC_NONE     0xFF  /* no encoder assigned to this role */
 
 /* what SELECT encoder does when no page claims it */
 #define CTL_SELECT_PAGE   0   /* cycle pages within current view */
 #define CTL_SELECT_BPM    1   /* adjust tempo */
+
+/* --- Declarative knob-to-parameter slot --- */
+
+#define SLOT_WRAP    (1u << 0)  /* wrap around at boundaries */
+#define SLOT_TRACK   (1u << 1)  /* targets trk[slot_index] not trk[song.sel] */
+
+typedef struct {
+    uint8_t     enc_id;     /* ENC_K1..ENC_K4 (or ENC_ALGO, etc.) */
+    uint8_t     pid;        /* P_* parameter id, P_COUNT = none */
+    int16_t     min, max;   /* value range */
+    int8_t      step;       /* clicks multiplier (1 or 4 typically) */
+    uint8_t     flags;      /* SLOT_* flags */
+    const char *label;      /* short label for codegen/MIDI learn */
+} param_slot_t;
+
+/* --- Theme encoder roles --- */
+
+typedef struct {
+    uint8_t page_cycle;     /* which encoder cycles pages within a view */
+    uint8_t list_scroll;    /* which encoder scrolls lists */
+    uint8_t value_edit;     /* which encoder edits focused values */
+    uint8_t preset_browse;  /* which encoder browses presets */
+} theme_enc_roles_t;
 
 /* button action: VIEW_* id on tap/hold, VIEW_NONE for no nav action */
 typedef struct modd_controls {
@@ -44,6 +68,10 @@ typedef struct modd_controls {
     uint32_t    hold_us;                /* hold threshold in microseconds */
     uint8_t     select_default;         /* CTL_SELECT_PAGE or CTL_SELECT_BPM */
 } modd_controls_t;
+
+/* The modd theme ships its own map (ui/themes/modd/controls.c); the tables below serve the
+ * ported themes, chosen by the Control model Kconfig choice. */
+#ifndef CONFIG_UI_MODD
 
 /* --- Felucca control map --- */
 
@@ -170,5 +198,29 @@ static const modd_controls_t modd_controls = {
 };
 
 #endif
+
+/* --- Encoder roles per upstream --- */
+
+#if defined(CONFIG_CONTROLS_FMLAB)
+
+static const theme_enc_roles_t modd_enc_roles = {
+    .page_cycle    = ENC_NONE,
+    .list_scroll   = ENC_SELECT,
+    .value_edit    = ENC_SELECT,
+    .preset_browse = ENC_PRESET,
+};
+
+#else
+
+static const theme_enc_roles_t modd_enc_roles = {
+    .page_cycle    = ENC_SELECT,
+    .list_scroll   = ENC_SELECT,
+    .value_edit    = ENC_SELECT,
+    .preset_browse = ENC_PRESET,
+};
+
+#endif
+
+#endif /* !CONFIG_UI_MODD */
 
 #endif /* MODD_CONTROLS_H */

@@ -143,7 +143,7 @@ host-side RMS for assertions.
 
 ```python
 class TestMyAudio(E2ETestCase):
-    DEFCONFIG = 'modd_dev'
+    DEFCONFIG = 'felucca'
 
     def test_something_sounds_right(self):
         page = self.new_emu_page()

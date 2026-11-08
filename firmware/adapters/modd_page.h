@@ -32,6 +32,10 @@ typedef struct modd_page {
     int (*knob)(uint32_t id, int32_t clicks);
     int (*button)(uint32_t id, uint32_t down);
     int (*key)(uint32_t note, uint32_t vel);   /* piano key (optional, NULL ok) */
+
+    /* declarative knob map (NULL = custom .knob only) */
+    const param_slot_t *knob_map;
+    uint8_t             knob_count;
 } modd_page_t;
 
 /* a shell registers pages at startup */

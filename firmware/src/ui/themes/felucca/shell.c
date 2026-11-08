@@ -5,6 +5,13 @@
 
 static void fsh_splash_render(void);
 
+static const theme_enc_roles_t felucca_roles = {
+    .page_cycle    = ENC_SELECT,
+    .list_scroll   = ENC_SELECT,
+    .value_edit    = ENC_SELECT,
+    .preset_browse = ENC_PRESET,
+};
+
 /* Fill only the BG gaps between layout regions, matching upstream Felucca's
  * draw_frame(): header, cards, graph, and footer cover the rest. */
 static void fsh_draw_frame(void)
@@ -52,10 +59,37 @@ static void fsh_knob(uint32_t id, int32_t clicks)
 {
     if (nav_modal && nav_modal->knob && nav_modal->knob(id, clicks))
         return;
+
     const modd_page_t *p = nav_active();
+
     if (p && p->knob && p->knob(id, clicks))
         return;
-    if (id == ENC_SELECT && modd_controls.select_default == CTL_SELECT_PAGE) {
+
+    if (p && p->knob_map) {
+        uint32_t i;
+        for (i = 0; i < p->knob_count; i++) {
+            const param_slot_t *s = &p->knob_map[i];
+            if (s->enc_id != (uint8_t)id || s->pid >= P_COUNT)
+                continue;
+            track_t *t = (s->flags & SLOT_TRACK)
+                ? &trk[i < NTRK ? i : 0]
+                : &trk[song.sel];
+            int16_t v = t->p[s->pid] + (int16_t)(clicks * s->step);
+            if (s->flags & SLOT_WRAP) {
+                if (v < s->min) v = s->max;
+                if (v > s->max) v = s->min;
+            } else {
+                if (v < s->min) v = s->min;
+                if (v > s->max) v = s->max;
+            }
+            t->p[s->pid] = v;
+            nav_dirty = 1;
+            return;
+        }
+    }
+
+    if (felucca_roles.page_cycle != ENC_NONE &&
+        id == felucca_roles.page_cycle) {
         if (clicks > 0) nav_cycle(1);
         else if (clicks < 0) nav_cycle(-1);
     }

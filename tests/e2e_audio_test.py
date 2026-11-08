@@ -274,10 +274,10 @@ class TestFeluccaAnalogAcid(E2ETestCase):
     """Litmus: boot Felucca firmware, play Analog ACID preset, record WAV.
 
     Confirms the audio capture pipeline works end-to-end with real firmware.
-    Uses FM1_FWSC env var or falls back to building modd_dev.
+    Uses FM1_FWSC env var or falls back to building felucca.
     """
 
-    DEFCONFIG = 'modd_dev'
+    DEFCONFIG = 'felucca'
     _build_ok = False
 
     @classmethod

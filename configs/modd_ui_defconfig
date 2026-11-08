@@ -1,5 +1,6 @@
-# core: bare-bones shell with no audio, no input, no storage.
-# Tests that the boot path, LCD, and USB work without any synth subsystems.
+# modd_ui: the modd theme alone, no audio, no storage. Panel input on, so the
+# buttons navigate. Tests the boot path, LCD, input and USB without any synth
+# subsystem. The product build is modd_defconfig.
 CONFIG_FIRMWARE_NAME="modd"
 
 # HAL (Melodee variant: cache, clock, power management)
@@ -11,12 +12,13 @@ CONFIG_HAL_MELODEE_CACHE=y
 CONFIG_HAL_MELODEE_CLOCK=y
 CONFIG_HAL_MELODEE_POWER=y
 
-# UI (core shell: minimal bitmap-font page framework, no physical controls)
-CONFIG_UI_CORE=y
+# UI (modd theme on Melodee's renderer; it ships its own button map)
+CONFIG_HAL_INPUT_MELODEE=y
+CONFIG_INPUT=y
+CONFIG_UI_MODD=y
 
 # Disabled subsystems
 # CONFIG_AUDIO is not set
-# CONFIG_INPUT is not set
 # CONFIG_FLASH is not set
 # CONFIG_MIDI_UART is not set
 # CONFIG_DUAL_CORE is not set

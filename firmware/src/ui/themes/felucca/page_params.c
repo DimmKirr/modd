@@ -38,21 +38,6 @@ static void fparams_draw_page(const fparams_def_t *def)
     ui_footer(eng ? eng->name : "---", "ACID", def->name);
 }
 
-static int fparams_knob(const fparams_def_t *def, uint32_t id, int32_t clicks)
-{
-    if (id >= 2 && id <= 5) {
-        track_t *t = &trk[song.sel];
-        uint32_t pid = def->params[id - 2];
-        int16_t v = t->p[pid] + (int16_t)(clicks * 4);
-        if (v < 0) v = 0;
-        if (v > 127) v = 127;
-        t->p[pid] = v;
-        nav_dirty = 1;
-        return 1;
-    }
-    return 0;
-}
-
 /* ENV page: ADSR envelope */
 static const fparams_def_t fenv_def = {
     "ENV", "ENVELOPE",
@@ -62,9 +47,15 @@ static const fparams_def_t fenv_def = {
     {ICON_ATTACK, ICON_DECAY, ICON_SUSTAIN, ICON_RELEASE},
 };
 static void fenv_draw(void) { fparams_draw_page(&fenv_def); }
-static int fenv_knob(uint32_t id, int32_t clicks) { return fparams_knob(&fenv_def, id, clicks); }
+static const param_slot_t fenv_slots[] = {
+    {ENC_K1, P_ATK, 0, 127, 4, 0, "ATK"},
+    {ENC_K2, P_DEC, 0, 127, 4, 0, "DEC"},
+    {ENC_K3, P_SUS, 0, 127, 4, 0, "SUS"},
+    {ENC_K4, P_REL, 0, 127, 4, 0, "REL"},
+};
 static const modd_page_t FPAGE_ENV = {
-    .name = "ENV", .title = "ENVELOPE", .view = VIEW_ENV, .draw = fenv_draw, .knob = fenv_knob,
+    .name = "ENV", .title = "ENVELOPE", .view = VIEW_ENV, .draw = fenv_draw,
+    .knob_map = fenv_slots, .knob_count = 4,
 };
 
 /* LFO page */
@@ -76,9 +67,15 @@ static const fparams_def_t flfo_def = {
     {ICON_LFO_WAVE, ICON_RATE, ICON_SHAPE, ICON_TIME},
 };
 static void flfo_draw(void) { fparams_draw_page(&flfo_def); }
-static int flfo_knob(uint32_t id, int32_t clicks) { return fparams_knob(&flfo_def, id, clicks); }
+static const param_slot_t flfo_slots[] = {
+    {ENC_K1, P_LFO,  0, 127, 4, 0, "LFO"},
+    {ENC_K2, P_LFRT, 0, 127, 4, 0, "RATE"},
+    {ENC_K3, P_LFSH, 0, 127, 4, 0, "SHAPE"},
+    {ENC_K4, P_LFDL, 0, 127, 4, 0, "DELAY"},
+};
 static const modd_page_t FPAGE_LFO = {
-    .name = "LFO", .title = "LFO", .view = VIEW_LFO, .draw = flfo_draw, .knob = flfo_knob,
+    .name = "LFO", .title = "LFO", .view = VIEW_LFO, .draw = flfo_draw,
+    .knob_map = flfo_slots, .knob_count = 4,
 };
 
 /* FX page: send levels */
@@ -90,9 +87,15 @@ static const fparams_def_t ffx_def = {
     {ICON_DIST, ICON_CHORUS, ICON_DELAY, ICON_REVERB},
 };
 static void ffx_draw(void) { fparams_draw_page(&ffx_def); }
-static int ffx_knob(uint32_t id, int32_t clicks) { return fparams_knob(&ffx_def, id, clicks); }
+static const param_slot_t ffx_slots[] = {
+    {ENC_K1, P_DIST, 0, 127, 4, 0, "DST"},
+    {ENC_K2, P_CHOR, 0, 127, 4, 0, "CHO"},
+    {ENC_K3, P_DLY,  0, 127, 4, 0, "DLY"},
+    {ENC_K4, P_REV,  0, 127, 4, 0, "REV"},
+};
 static const modd_page_t FPAGE_FX = {
-    .name = "FX", .title = "EFFECTS", .view = VIEW_FX, .draw = ffx_draw, .knob = ffx_knob,
+    .name = "FX", .title = "EFFECTS", .view = VIEW_FX, .draw = ffx_draw,
+    .knob_map = ffx_slots, .knob_count = 4,
 };
 
 /* SCL page: scale and tuning */
@@ -104,9 +107,15 @@ static const fparams_def_t fscl_def = {
     {ICON_PITCH, ICON_SCALE, ICON_OCTAVE, ICON_TRANSPOSE},
 };
 static void fscl_draw(void) { fparams_draw_page(&fscl_def); }
-static int fscl_knob(uint32_t id, int32_t clicks) { return fparams_knob(&fscl_def, id, clicks); }
+static const param_slot_t fscl_slots[] = {
+    {ENC_K1, P_ROOT,  0, 127, 4, 0, "ROOT"},
+    {ENC_K2, P_SCALE, 0, 127, 4, 0, "SCL"},
+    {ENC_K3, P_OCT,   0, 127, 4, 0, "OCT"},
+    {ENC_K4, P_TRANS, 0, 127, 4, 0, "TRN"},
+};
 static const modd_page_t FPAGE_SCL = {
-    .name = "SCL", .title = "SCALE", .view = VIEW_SCL, .draw = fscl_draw, .knob = fscl_knob,
+    .name = "SCL", .title = "SCALE", .view = VIEW_SCL, .draw = fscl_draw,
+    .knob_map = fscl_slots, .knob_count = 4,
 };
 
 /* EDIT page: engine params (reads from engine_t.edit[]) */
@@ -172,9 +181,15 @@ static const fparams_def_t farp_def = {
     {ICON_ARP, ICON_RATE, ICON_OCTAVE, ICON_GATE},
 };
 static void farp_draw(void) { fparams_draw_page(&farp_def); }
-static int farp_knob(uint32_t id, int32_t clicks) { return fparams_knob(&farp_def, id, clicks); }
+static const param_slot_t farp_slots[] = {
+    {ENC_K1, P_ARP,   0, 127, 4, 0, "MODE"},
+    {ENC_K2, P_ARTM,  0, 127, 4, 0, "TIME"},
+    {ENC_K3, P_ARNG,  0, 127, 4, 0, "RANGE"},
+    {ENC_K4, P_AGATE, 0, 127, 4, 0, "GATE"},
+};
 static const modd_page_t FPAGE_ARP = {
-    .name = "ARP", .title = "ARPEGGIO", .view = VIEW_ARP, .draw = farp_draw, .knob = farp_knob,
+    .name = "ARP", .title = "ARPEGGIO", .view = VIEW_ARP, .draw = farp_draw,
+    .knob_map = farp_slots, .knob_count = 4,
 };
 
 /* VOICE page: mono, hold, glide, unison */
@@ -186,7 +201,13 @@ static const fparams_def_t fvoice_def = {
     {ICON_VOICE, ICON_HOLD, ICON_GLIDE, ICON_OCTAVE},
 };
 static void fvoice_draw(void) { fparams_draw_page(&fvoice_def); }
-static int fvoice_knob(uint32_t id, int32_t clicks) { return fparams_knob(&fvoice_def, id, clicks); }
+static const param_slot_t fvoice_slots[] = {
+    {ENC_K1, P_MONO, 0, 127, 4, 0, "VCE"},
+    {ENC_K2, P_HOLD, 0, 127, 4, 0, "HOLD"},
+    {ENC_K3, P_GLI,  0, 127, 4, 0, "GLD"},
+    {ENC_K4, P_UNI,  0, 127, 4, 0, "UNI"},
+};
 static const modd_page_t FPAGE_VOICE = {
-    .name = "VOICE", .title = "VOICE", .view = VIEW_GLO, .draw = fvoice_draw, .knob = fvoice_knob,
+    .name = "VOICE", .title = "VOICE", .view = VIEW_GLO, .draw = fvoice_draw,
+    .knob_map = fvoice_slots, .knob_count = 4,
 };

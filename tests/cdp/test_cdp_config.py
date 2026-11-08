@@ -52,7 +52,7 @@ def test_dev_defconfig_includes_cdp():
     import tempfile
     with tempfile.TemporaryDirectory() as tmpdir:
         r = subprocess.run(
-            [sys.executable, str(genconfig), '--defconfig', 'modd_dev', '--outdir', tmpdir],
+            [sys.executable, str(genconfig), '--defconfig', 'felucca', '--outdir', tmpdir],
             capture_output=True, text=True, cwd=str(ROOT))
         assert r.returncode == 0, r.stderr
         header = Path(tmpdir) / 'config.h'

@@ -83,6 +83,19 @@ tasks:
     cmds:
       - uv run --quiet python -m pytest tests/e2e_boot_test.py tests/e2e_components_test.py tests/e2e_usb_safety_test.py tests/e2e_audio_test.py tests/e2e_audio_engines_test.py tests/e2e_ble_test.py tests/e2e_weather_test.py -v {{.CLI_ARGS}}
 
+  test:e2e:walkthrough:
+    desc: Walk every UI page in the modd theme and screenshot each one
+    deps:
+      - task: build
+        vars:
+          CLI_ARGS: ''
+      - fm1-emulator:download:wasm
+    env:
+      FM1_WEB_DIR: '{{env "FM1_WEB_DIR" | default (printf "%s/.fm1-emulator/web" .HOME)}}'
+      PLAYWRIGHT_BROWSERS_PATH: '{{env "PLAYWRIGHT_BROWSERS_PATH" | default (printf "%s/.cache/ms-playwright" .HOME)}}'
+    cmds:
+      - uv run --quiet python -m pytest tests/e2e_ui_walkthrough_test.py -v {{.CLI_ARGS}}
+
   emulator:build:
     desc: Build WASM from a local fm1-emu checkout (requires the Rust WASM target)
     requires:
@@ -318,6 +331,7 @@ tasks:
     desc: Regenerate all generated documentation
     cmds:
       - task: docs:module-diagram
+      - task: docs:themes
 
   docs:module-diagram:
     desc: Regenerate the module dependency diagram in docs/COMPONENTS.md
@@ -326,10 +340,45 @@ tasks:
     cmds:
       - uv run --quiet kc2mm inject docs/COMPONENTS.md --kconf-dir kconf
 
+  docs:themes:
+    desc: Regenerate all theme documentation (controls, diagrams, screenshots)
+    cmds:
+      - task: docs:themes:controls
+      - task: docs:themes:ui:diagram
+      - task: docs:themes:ui:screenshots
+
+  docs:themes:controls:
+    desc: Regenerate physical controls reference in docs/ui/README.md
+    sources:
+      - firmware/adapters/modd_controls.h
+      - tools/codegen/gen_ui_map.py
+    cmds:
+      - uv run --quiet python tools/codegen/gen_ui_map.py hw-controls docs/ui/README.md
+
+  docs:themes:ui:diagram:
+    desc: Regenerate UI navigation diagrams and controls tables for all themes
+    vars:
+      THEMES:
+        sh: uv run --quiet python tools/codegen/gen_ui_map.py list-themes
+    cmds:
+      - for: { var: THEMES }
+        cmd: uv run --quiet python tools/codegen/gen_ui_map.py inject docs/ui/themes/{{.ITEM}}/UI.md {{.ITEM}}
+
+  docs:themes:ui:screenshots:
+    desc: Capture per-page emulator screenshots for all themes
+    cmds:
+      - uv run --quiet python tools/codegen/gen_ui_screenshots.py --all {{.CLI_ARGS}}
+
   docs:check:
     desc: Verify generated docs match their sources (for CI)
+    vars:
+      THEMES:
+        sh: uv run --quiet python tools/codegen/gen_ui_map.py list-themes
     cmds:
       - uv run --quiet kc2mm inject --check docs/COMPONENTS.md --kconf-dir kconf
+      - uv run --quiet python tools/codegen/gen_ui_map.py hw-controls --check docs/ui/README.md
+      - for: { var: THEMES }
+        cmd: uv run --quiet python tools/codegen/gen_ui_map.py inject --check docs/ui/themes/{{.ITEM}}/UI.md {{.ITEM}}
 
   config:
     desc: "Configure the build (default: menuconfig)"

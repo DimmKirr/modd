@@ -19,7 +19,7 @@ API_C = ROOT / 'firmware' / 'src' / 'wifi' / 'wifi_api.c'
 SDIO_C = ROOT / 'firmware' / 'src' / 'wifi' / 'wifi_sdio.c'
 DAP_C = ROOT / 'firmware' / 'src' / 'debug' / 'debug_dap.c'
 DEBUG_H = ROOT / 'firmware' / 'adapters' / 'modd_debug.h'
-DEV_DEFCONFIG = ROOT / 'configs' / 'modd_dev_defconfig'
+DEV_DEFCONFIG = ROOT / 'configs' / 'felucca_defconfig'
 TASKFILE = ROOT / 'Taskfile.yml'
 
 

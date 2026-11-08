@@ -44,22 +44,14 @@ static void fmixer_draw(void)
     }
 }
 
-static int fmixer_knob(uint32_t id, int32_t clicks)
-{
-    if (id >= 1 && id <= 4) {
-        uint32_t k = id - 1;
-        if (k < NTRK) {
-            int16_t v = trk[k].p[P_LEVEL] + (int16_t)(clicks * 4);
-            if (v < 0) v = 0;
-            if (v > 127) v = 127;
-            trk[k].p[P_LEVEL] = v;
-            nav_dirty = 1;
-            return 1;
-        }
-    }
-    return 0;
-}
+static const param_slot_t fmixer_slots[] = {
+    {ENC_ALGO, P_LEVEL, 0, 127, 4, SLOT_TRACK, "T1 LVL"},
+    {ENC_K1,   P_LEVEL, 0, 127, 4, SLOT_TRACK, "T2 LVL"},
+    {ENC_K2,   P_LEVEL, 0, 127, 4, SLOT_TRACK, "T3 LVL"},
+    {ENC_K3,   P_LEVEL, 0, 127, 4, SLOT_TRACK, "T4 LVL"},
+};
 
 static const modd_page_t FPAGE_MIXER = {
-    .name = "MIXER", .title = "MIXER", .view = VIEW_GLO, .draw = fmixer_draw, .knob = fmixer_knob,
+    .name = "MIXER", .title = "MIXER", .view = VIEW_GLO, .draw = fmixer_draw,
+    .knob_map = fmixer_slots, .knob_count = 4,
 };

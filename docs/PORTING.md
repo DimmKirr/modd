@@ -51,7 +51,7 @@ The UI never calls audio functions, never allocates voices, never touches hardwa
 
 Screen rendering, event dispatch, menu system, splash screen.
 
-Kconfig: `CONFIG_UI_FELUCCA`, `CONFIG_UI_MELODEE`, `CONFIG_UI_SLOOP`, `CONFIG_UI_CORE`.
+Kconfig: `CONFIG_UI_FELUCCA`, `CONFIG_UI_MELODEE`, `CONFIG_UI_SLOOP`, `CONFIG_UI_MODD`.
 
 ### Components
 
@@ -62,7 +62,7 @@ Kconfig: `CONFIG_UI_FELUCCA`, `CONFIG_UI_MELODEE`, `CONFIG_UI_SLOOP`, `CONFIG_UI
 | Drawing | `draw.c` | Header/card/footer layout primitives |
 | Icons | `fui_icons.c` | Track cushions, icon font rendering |
 | Renderer | `gfx.c` | Canvas primitives (`cv_begin`, `cv_blit`, `cv_text_*`) |
-| Boot logo | `ui/core/boot_logo.c` | RLE-compressed logo decoder, shared across all UI upstreams |
+| Boot logo | `ui/boot_logo.c` | RLE-compressed logo decoder, shared across all UI upstreams |
 | Splash | Kconfig `SPLASH_LOGO` / `SPLASH_NONE` | Selectable splash screen style |
 
 ### Boot logo component

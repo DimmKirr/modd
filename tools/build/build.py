@@ -399,6 +399,29 @@ def gen_felucca_ui():
     print(f'gen_felucca_ui: {len(cmds)} headers -> {GEN.relative_to(ROOT)}/')
 
 
+def gen_melodee_ui():
+    """Run Melodee's font/keycap generators and modd's palette list into build/gen/melodee/."""
+    out = GEN / 'melodee'
+    out.mkdir(parents=True, exist_ok=True)
+    tools = FW / 'upstream' / 'melodee' / 'tools'
+    cmds = [
+        [tools / 'gen_aa_font.py', out / 'ui_fonts.h', '--preset', 'rubik'],
+        [tools / 'gen_aa_keycaps.py', out / 'ui_keycaps.h'],
+        [ROOT / 'tools' / 'codegen' / 'gen_modd_palettes.py', out / 'ui_palettes.h'],
+    ]
+    procs = [subprocess.Popen([sys.executable, *map(str, c)], cwd=str(tools.parent),
+             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+             for c in cmds]
+    failed = []
+    for c, p in zip(cmds, procs):
+        sys.stdout.write(p.communicate()[0])
+        if p.returncode:
+            failed.append(c[0].name)
+    if failed:
+        raise SystemExit(f'gen_melodee_ui: {", ".join(failed)} failed')
+    print(f'gen_melodee_ui: {len(cmds)} headers -> {out.relative_to(ROOT)}/')
+
+
 def gen_engine_tables():
     """Generate fixed-point lookup tables for Felucca-derived engines."""
     GEN.mkdir(parents=True, exist_ok=True)
@@ -430,6 +453,12 @@ def build(dry_run=False):
             gen_felucca_ui()
         else:
             print('gen_felucca_ui: headers exist, skipping (delete build/gen/ui_fonts.h to regenerate)')
+    if 'GEN_MELODEE_UI' in enabled:
+        if not (GEN / 'melodee' / 'ui_fonts.h').exists():
+            gen_melodee_ui()
+        else:
+            print('gen_melodee_ui: headers exist, skipping (delete build/gen/melodee/ to regenerate)')
+        flags.insert(0, f'-I{GEN / "melodee"}')   # before build/gen: its ui_fonts.h must win
     if 'ENGINES' in enabled:
         gen_engine_tables()
     if 'WIFI' in enabled and not (GEN / 'ble_rf_tables.h').exists():

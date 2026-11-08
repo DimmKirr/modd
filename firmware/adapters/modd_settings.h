@@ -36,6 +36,9 @@ typedef struct {
 #ifdef CONFIG_BLE
     uint8_t ble_addr[7];    /* [0..5] = saved random static address, [6] = 0xA5 if valid */
 #endif
+#ifdef CONFIG_UI_MODD
+    uint8_t ui_pal;         /* palette: UI_PAL_TAG + index (ui/themes/modd/page_colors.c) */
+#endif
     uint8_t _end;           /* always present so struct is never empty */
 } sys_settings_t;
 
@@ -53,6 +56,9 @@ static void sys_settings_defaults(void)
 #ifdef CONFIG_SYS_MENU_BLE
     sys_settings.ble_on = 1;     /* ON */
     sys_settings.ble_discoverable = 1; /* ON */
+#endif
+#ifdef CONFIG_UI_MODD
+    sys_settings.ui_pal = 0;     /* below UI_PAL_TAG: reads as the default palette */
 #endif
     sys_settings._end = 0;
 }

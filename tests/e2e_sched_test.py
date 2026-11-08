@@ -7,7 +7,7 @@ Verifies that the multi-task scheduler (sched.c) keeps all tasks running
 without crashes, audio dropouts, or UI freezes.  Tests that need real WiFi
 hardware are specced as skip-stubs until hardware is available.
 
-Build: modd_dev defconfig (includes CONFIG_SCHED, CONFIG_DEBUG).
+Build: felucca defconfig (includes CONFIG_SCHED, CONFIG_DEBUG).
 """
 import base64
 import json
@@ -22,7 +22,7 @@ from e2e_fixtures import E2ETestCase, _run_timestamp, RESULTS_DIR, e2e_build
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / 'build'
 FWSC = Path(os.environ['FM1_FWSC']) if 'FM1_FWSC' in os.environ else BUILD / 'modd.fwsc'
-DEFCONFIG = 'modd_dev'
+DEFCONFIG = 'felucca'
 TEST_RESULTS = RESULTS_DIR / f'{_run_timestamp}-e2e_sched_test'
 
 JS_HOOK_AUDIO_CONTEXT = '''() => {

@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: Weather page in the emulator.
 
-Builds the modd_dev defconfig (WiFi + lwIP), boots in fm1-emu,
+Builds the felucca defconfig (WiFi + lwIP), boots in fm1-emu,
 navigates to the WEATHER page,
 and tests:
   1. Weather page renders without crashing
@@ -33,7 +33,7 @@ FWSC = BUILD / 'modd.fwsc'
 
 TEST_RESULTS = RESULTS_DIR / f'{_run_timestamp}-e2e_weather_test'
 
-DEFCONFIG = 'modd_dev'
+DEFCONFIG = 'felucca'
 
 # "SSID:PASSWORD": the firmware built to join that AP, the emulator booted with its WiFi
 # chip and the page's network behind it (fm1-emu `?oss-wifi=1&internet=1`)

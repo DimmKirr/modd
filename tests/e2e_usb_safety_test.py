@@ -40,7 +40,7 @@ UBOOT_SYSEX_KEY = bytes([0xF0, 0x22, 0x24, 0x35, 0x7D, 0xF7])
 USB_VID_LE = bytes([0x09, 0x12])  # VID 0x1209, little-endian in descriptor
 MANIFEST_MARKER = b'<<MODD>>'
 
-ALL_DEFCONFIGS = ['minimal', 'modd_dev', 'core', 'melodee', 'felucca', 'sloop']
+ALL_DEFCONFIGS = ['minimal', 'modd', 'modd_ui', 'melodee', 'felucca', 'sloop']
 
 
 def _genconfig(defconfig):
@@ -379,10 +379,10 @@ class TestAllDefconfigsBinaryUSB(unittest.TestCase):
         self._check_defconfig('minimal')
 
     def test_core(self):
-        self._check_defconfig('core')
+        self._check_defconfig('modd_ui')
 
-    def test_modd_dev(self):
-        self._check_defconfig('modd_dev')
+    def test_felucca(self):
+        self._check_defconfig('felucca')
 
     def test_melodee(self):
         self._check_defconfig('melodee')

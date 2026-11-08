@@ -10,7 +10,7 @@ from kconfiglib import Kconfig, BOOL, expr_str
 
 ROOT = Path(__file__).resolve().parents[2]
 API_C = ROOT / 'firmware' / 'src' / 'wifi' / 'wifi_api.c'
-DEV_DEFCONFIG = ROOT / 'configs' / 'modd_dev_defconfig'
+DEV_DEFCONFIG = ROOT / 'configs' / 'felucca_defconfig'
 
 
 def test_kconfig_symbol_is_debug_only():

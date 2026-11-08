@@ -13,33 +13,41 @@ config INPUT
 
 # kc2mm:label "Shell"
 choice
-    prompt "UI framework"
+    prompt "UI theme"
     default UI_FELUCCA if INPUT
-    default UI_CORE
+    default UI_MODD
 
 config UI_FELUCCA
     bool "Felucca"
     depends on INPUT
     select GEN_FELUCCA_UI
     help
-      SURF cards, Inter Tight font, anti-aliased icons, knob arcs.
+      Port of Felucca's UI: SURF cards, Inter Tight font, anti-aliased
+      icons, knob arcs, Felucca's pages and button map. Goal is a faithful
+      port; modd-only modules (WiFi, weather, BLE) add pages under the
+      existing views. Source: firmware/src/ui/themes/felucca/.
 
+# Not yet selectable: no SLOOP theme exists (firmware/src/ui/themes/sloop/).
+# Remove the 'depends on n' guard when it does.
 config UI_SLOOP
     bool "SLOOP"
-    depends on INPUT
+    depends on n
 
 # Not yet selectable: no melodee shell implementation exists.
 # Remove the 'depends on n' guard when themes/melodee/shell.c is ready.
 config UI_MELODEE
     bool "Melodee"
     depends on n
+    select GEN_MELODEE_UI
 
-config UI_CORE
-    bool "modd (minimal)"
+config UI_MODD
+    bool "modd"
+    select GEN_MELODEE_UI
     help
-      Bitmap font, basic page navigation. No theming.
-      Uses the page adapter: any engine/seq/fx appears automatically.
-      Does not require INPUT: works in emulator-only builds.
+      modd's own UI on Melodee's renderer: Rubik type, Melodee's palettes plus
+      the logo's MODD and MODD NIGHT. HOME, settings (HOME hold), weather (GLO
+      hold). Ships its own button map. Does not require INPUT: works in
+      emulator-only builds. Source: firmware/src/ui/themes/modd/.
 
 endchoice
 
@@ -47,6 +55,7 @@ endchoice
 choice
     prompt "Control model"
     default CONTROLS_FELUCCA
+    depends on !UI_MODD
 
 config CONTROLS_FELUCCA
     bool "Felucca"
@@ -91,5 +100,12 @@ config GEN_FELUCCA_UI
     help
       Hidden. Selected by UI_FELUCCA. Tells the build system to run
       Felucca font/icon/keycap/palette generators before compiling.
+
+config GEN_MELODEE_UI
+    bool
+    help
+      Hidden. Selected by UI_MODD and UI_MELODEE. Tells the build system to run
+      Melodee's font and keycap generators and modd's palette list into
+      build/gen/melodee/ before compiling.
 
 endmenu

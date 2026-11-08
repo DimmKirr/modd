@@ -12,7 +12,50 @@ View ──button──> Page ──encoder──> Element
 
 Each shell (Felucca, Melodee, SLOOP) provides a theme that renders elements with its own visual language. The navigation model and page structure are universal.
 
-For physical controls (buttons, encoders), event flow, and current page card layouts, see [COMPONENTS.md](COMPONENTS.md#ui).
+For event flow and page card layouts, see [COMPONENTS.md](COMPONENTS.md#ui). Per-theme navigation maps and page controls are in each theme's [UI.md](themes/).
+
+<!-- ui-hw-controls:start -->
+## Physical controls
+
+The FM-1 has 14 buttons, 7 rotary encoders, and 1 potentiometer (master volume).
+
+### Buttons
+
+| ID | Name | Default action |
+|---:|------|----------------|
+| 0 | OCTDN | Octave down |
+| 1 | OCTUP | Octave up |
+| 2 | FX | Effects view (hold: Demo) |
+| 3 | SCL | Scale view |
+| 4 | ENV | Envelope view |
+| 5 | LFO | LFO view |
+| 6 | EDIT | Engine edit view |
+| 7 | GLO | Global view (hold: Connectivity) |
+| 8 | HOME | Home view (hold: Settings) |
+| 9 | SAVE | Save/Files view |
+| 10 | ARP | Arpeggiator view |
+| 11 | SEQ | Sequencer view |
+| 12 | PLAY | Play/stop |
+| 13 | REC | Record toggle |
+
+### Encoders
+
+| ID | Name | Default action |
+|---:|------|----------------|
+| 0 | SELECT | Cycle pages within current view |
+| 1 | ALGO | Context-dependent (engine, track, etc.) |
+| 2 | K1 | Knob 1: card slot 0 parameter |
+| 3 | K2 | Knob 2: card slot 1 parameter |
+| 4 | K3 | Knob 3: card slot 2 parameter |
+| 5 | K4 | Knob 4: card slot 3 parameter |
+| 6 | PRESET | Cycle presets |
+
+### Potentiometer
+
+| Name | Action |
+|------|--------|
+| Master | Master volume (hardware, always active) |
+<!-- ui-hw-controls:end -->
 
 ## Upstream Navigation Models
 
@@ -61,7 +104,9 @@ firmware/src/ui/
     melodee/             # (future)
     sloop/               # (future)
 
-  core/                  # minimal fallback shell (bitmap font, no theming)
+  themes/modd/           # modd's own theme on Melodee's renderer (gfx.c from themes/melodee/)
+  themes/felucca/        # port of Felucca's UI
+  themes/melodee/        # Melodee's renderer and LCD driver; its shell is still a stub
 ```
 
 The split:

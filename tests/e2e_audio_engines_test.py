@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""E2E: test engine audio output from modd_dev firmware.
+"""E2E: test engine audio output from felucca firmware.
 
 All ported engines (ANALOG, NOISE, FM6) are compiled into one firmware.
 Engine tests switch via the SELECT encoder. WAV files are saved in
@@ -154,9 +154,9 @@ def wav_rms(path):
 
 
 class TestNoiseEngine(E2ETestCase):
-    """Boot modd_dev, switch to Noise engine via SELECT encoder, play notes."""
+    """Boot felucca, switch to Noise engine via SELECT encoder, play notes."""
 
-    DEFCONFIG = 'modd_dev'
+    DEFCONFIG = 'felucca'
     _build_ok = False
 
     @classmethod
@@ -262,9 +262,9 @@ class TestNoiseEngine(E2ETestCase):
 
 
 class TestAnalogEngine(E2ETestCase):
-    """Boot modd_dev (Analog is the default engine at index 0), play notes, record WAV."""
+    """Boot felucca (Analog is the default engine at index 0), play notes, record WAV."""
 
-    DEFCONFIG = 'modd_dev'
+    DEFCONFIG = 'felucca'
     _build_ok = False
 
     @classmethod
@@ -365,9 +365,9 @@ class TestAnalogEngine(E2ETestCase):
 
 
 class TestFM6Engine(E2ETestCase):
-    """Boot modd_dev, switch to FM6 engine (index 2), play notes, record WAV."""
+    """Boot felucca, switch to FM6 engine (index 2), play notes, record WAV."""
 
-    DEFCONFIG = 'modd_dev'
+    DEFCONFIG = 'felucca'
     _build_ok = False
 
     @classmethod
@@ -476,7 +476,7 @@ class TestFM6Engine(E2ETestCase):
 class TestMasterVolume(E2ETestCase):
     """Verify master pot controls audio volume at 0%, ~1%, 50%, 100%."""
 
-    DEFCONFIG = 'modd_dev'
+    DEFCONFIG = 'felucca'
     _build_ok = False
 
     @classmethod
@@ -562,7 +562,7 @@ class TestAudioLevelNormalization(E2ETestCase):
       3. Master volume knob actually scales the output (half < full).
     """
 
-    DEFCONFIG = 'modd_dev'
+    DEFCONFIG = 'felucca'
     _build_ok = False
 
     ENGINES = [
@@ -749,7 +749,7 @@ class TestEngineSelectVolumeConsistency(E2ETestCase):
       4. Assert RMS from step 1 ≈ RMS from step 3 (within 3 dB / 1.41x ratio).
     """
 
-    DEFCONFIG = 'modd_dev'
+    DEFCONFIG = 'felucca'
     _build_ok = False
 
     @classmethod
@@ -858,7 +858,7 @@ class TestEngineSelectVolumeConsistency(E2ETestCase):
 class TestEngineSelectDisplay(E2ETestCase):
     """Verify LCD updates immediately when switching engines via SELECT encoder."""
 
-    DEFCONFIG = 'modd_dev'
+    DEFCONFIG = 'felucca'
     _build_ok = False
 
     @classmethod
