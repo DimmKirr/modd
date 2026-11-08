@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-modd is a modular firmware framework for the M-VAVE FM-1 synthesizer (JieLi AC791N SoC, pi32v2 architecture). It unifies code from three community firmware upstreams: **Felucca** (hugelton), **Melodee** (keremimo), and **SLOOP** (isod89) into a single configurable source tree. Everything in modd is GPL-3.0-only; the upstream Felucca-Engines interface (`felucca_engine.h`) and engines are MIT.
+modd is a modular firmware framework for the M-VAVE FM-1 synthesizer (JieLi AC791N SoC, pi32v2 architecture). It brings modules from any FM-1 firmware into one configurable source tree. Three community upstreams are vendored today: **Felucca** (hugelton), **Melodee** (keremimo), and **SLOOP** (isod89). Any FM-1 firmware that builds with the JieLi toolchain can be added the same way (see [Adding Upstream Firmware](#adding-upstream-firmware)). Everything in modd is GPL-3.0-only; the upstream Felucca-Engines interface (`felucca_engine.h`) and engines are MIT.
 
 ## Build System
 
@@ -42,7 +42,7 @@ Generated files go to `build/gen/config.h`.
 
 ## Architecture
 
-All three firmwares compile as a **single translation unit** (unity build): one `.c` file `#include`s all others. Every function is `static`. Kconfig controls which `#include` directives are active via `CONFIG_*` defines in `autoconf.h`.
+modd compiles as a **single translation unit** (unity build): one `.c` file `#include`s all others. Every function is `static`. Kconfig controls which `#include` directives are active via `CONFIG_*` defines in `autoconf.h`.
 
 ### Terminology
 
@@ -241,6 +241,53 @@ as a prerelease. Failed verification never publishes a versioned release.
 - Kconfig symbols use `CONFIG_` prefix. Engine symbols: `CONFIG_ENGINE_*`. HAL upstream variants: `CONFIG_HAL_*_FELUCCA/SLOOP/MELODEE`.
 - Voice budget is a shared resource pool. Engine cost is measured in VBUDGET units (Prophet: 2-3, FM6: 2, CZ-1: 1, etc.).
 - License: all modd code is GPL-3.0-only. Upstream `felucca_engine.h` and Felucca-Engines are MIT; `modd_engine.h` derives from it under GPL-3.0-only with the MIT notice kept. Every file copied or adapted from an upstream carries an `Origin:` line pinned to the upstream commit; the list is in `THIRD_PARTY.md`.
+
+## Moving Modules Around
+
+Three levels of module assembly, from simplest to most involved.
+
+### 1. Enable or disable a module
+
+Toggle a `CONFIG_*` symbol in `task config` (or edit `.config` directly) and rebuild. Examples:
+
+- Enable WiFi: set `CONFIG_WIFI=y`
+- Add an engine: set `CONFIG_ENGINE_ANALOG=y`
+- Disable BLE: set `CONFIG_BLE=n`
+
+The Kconfig dependency system prevents invalid combinations (e.g. enabling an engine without its audio core).
+
+### 2. Swap an upstream implementation
+
+Many modules have radio choices that select which upstream provides the implementation. The adapter contract (`modd_*.h`) stays the same; only the backing code changes.
+
+Examples in `modd.c`:
+
+```c
+#if defined(CONFIG_HAL_SYS_MELODEE)
+  #include "hal/melodee/fm1_sys.h"
+#elif defined(CONFIG_HAL_SYS_FELUCCA)
+  #include "hal/felucca/fm1_sys.h"
+#elif defined(CONFIG_HAL_SYS_SLOOP)
+  #include "hal/sloop/fm1_sys.h"
+#endif
+```
+
+To swap: change the Kconfig radio choice, rebuild. The adapter contract guarantees the rest of the firmware sees the same interface.
+
+### 3. Add your own module
+
+1. Write a `.c` file that conforms to the relevant `modd_*.h` contract. For engines, implement `engine_t` (required: `note_on`, `render`; see [Working with Engines](#working-with-engines)).
+2. Add a `CONFIG_*` Kconfig symbol in the appropriate `kconf/*.kconfig` file.
+3. Add a `#include` guarded by that symbol in `modd.c` (or `engines.c` for engines).
+4. Build and test: `task build && task test:e2e`.
+
+For the mock-first porting strategy (start with stub data, wire real components later), see [docs/PORTING.md](docs/PORTING.md).
+
+### Combining modules from multiple firmwares
+
+If you want modules from multiple firmwares in one build (e.g. one engine from Felucca, one engine from Melodee, a UI theme from SLOOP), the recommended path is to add them as modules via adapters to modd. Each module conforms to its adapter contract independently, so modules from different upstreams coexist as long as they fit the voice budget and satisfy Kconfig dependencies.
+
+Upstream firmwares are vendored under `firmware/upstream/` via vendir and are never modified. To port a component, copy or adapt it into `firmware/src/` (or `firmware/adapters/`), wire it through the relevant contract, and add its `CONFIG_*` guard. The [Engine source locations](#engine-source-locations) tables show what is ready and what needs porting.
 
 ## Adding Upstream Firmware
 

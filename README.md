@@ -8,36 +8,65 @@
 
 <p align="center"><strong>Your FM-1. Your combination.</strong></p>
 
-A modular firmware framework for the M-VAVE FM-1 synthesizer, inspired by
+A modular firmware framework for the M-VAVE FM-1 synthesizer. Bring modules
+from any FM-1 firmware into one configurable source tree and build a single
+image for your instrument.
+
+Three community firmwares are vendored today:
 [Felucca](https://github.com/hugelton/Felucca),
 [Melodee](https://github.com/keremimo/melodee), and
-[SLOOP](https://github.com/isod89/sloop-fm1). The goal: build
-one firmware image configured for your instrument.
+[SLOOP](https://github.com/isod89/sloop-fm1). Any FM-1 firmware that builds
+with the JieLi toolchain can be added the same way.
 
-> **Early development:** the minimal firmware builds and has emulator boot tests.
-> It displays a boot screen; audio, engine mixing, and musical workflows are
-> still being integrated. Hardware validation is pending.
+> **Early development:** the minimal preset builds and boots in the emulator.
+> Audio, engine mixing, and musical workflows are still being integrated.
 
-## Modular by design
+## How modules work
 
-The aim is to configure **any compatible combination of supported modules**
-from one source tree:
+modd compiles as a single translation unit. Kconfig controls which modules
+are included via `CONFIG_*` guards:
 
-- **Mix your engines.** Combine synthesis engines across firmware upstreams in
-  the same build, with a shared engine interface.
-- **Choose your workflow.** Select audio, effects, sequencer, MIDI, and storage
-  implementations as their integration becomes available.
-- **Build only what you need.** Enable the modules you use and save your choices
-  in a configuration you can rebuild and share.
+- **Modules** are domain groupings: Audio, UI, MIDI, USB, WiFi, BLE, HAL,
+  Storage, Boot, Debug.
+- **Adapter contracts** (`modd_*.h` headers) define the interface between
+  modules. A component from any upstream can plug in if it conforms to the
+  contract.
+- **Engines** implement the `engine_t` vtable (`note_on`, `render`, plus
+  optional fields). They compile in or out independently via `CONFIG_ENGINE_*`.
 
-These are the integration goals. Combinations must fit the FM-1's memory and
-processing budget and satisfy module dependencies. UI code stays coupled to
-its firmware upstream until those dependencies are separated.
+Combinations must fit the FM-1's memory and processing budget and satisfy
+module dependencies. Today, only the `minimal` preset is buildable; more
+presets and engine selection are planned.
 
-Kconfig provides the configuration menus and generates the C definitions used
-by the build. Modules are selected when compiling the firmware. Today, only
-the `minimal` preset is buildable; the Melodee, Felucca, and SLOOP presets and
-engine selection are planned.
+## Move modules around
+
+Three levels, from simplest to most involved:
+
+1. **Enable or disable a module.** Run `task config`, toggle a `CONFIG_*`
+   symbol, rebuild. This is how you add WiFi, BLE, or an extra engine.
+2. **Swap an upstream implementation.** Kconfig radio choices select which
+   upstream provides a module (e.g. `CONFIG_HAL_SYS_MELODEE` vs
+   `CONFIG_HAL_SYS_FELUCCA`). The adapter contract stays the same.
+3. **Add your own module.** Write a `.c` file that conforms to the relevant
+   `modd_*.h` contract, add a `CONFIG_*` guard, wire it into `modd.c`.
+   See [AGENTS.md](AGENTS.md) for the full walkthrough.
+
+If you want modules from multiple firmwares in one build (e.g. one engine
+from Felucca, one from Melodee), the recommended path is to add them as
+modules via adapters to modd.
+
+## Test before flashing
+
+The WASM emulator runs your firmware in the browser. E2E tests (Playwright)
+interact with the virtual panel and verify LCD state, so you can iterate
+without connecting hardware:
+
+```sh
+mise exec -- task test:e2e
+```
+
+See [Testing](docs/TESTING.md) for Chromium setup, test coverage, and
+screenshots.
 
 ## Build the current milestone
 
@@ -62,15 +91,7 @@ To explore the configuration menus, run `mise exec -- task config`. Some menu
 choices are placeholders: the build rejects unintegrated options. Reload
 `minimal` to return to the supported configuration.
 
-## Test and contribute
-
-```sh
-mise exec -- task test:unit
-mise exec -- task test:e2e
-```
-
-The E2E suite builds the firmware and checks it in the browser emulator.
-See [Testing](docs/TESTING.md) for Chromium setup, test coverage, and screenshots.
+## Contribute
 
 Help integrate an engine or module, define its compatibility requirements,
 or add tests for a supported combination. Include the configuration and test
