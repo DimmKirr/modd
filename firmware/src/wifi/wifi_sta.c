@@ -168,10 +168,12 @@ static uint32_t wifi_sta_ie(uint8_t *buf, uint8_t id, const uint8_t *data, uint8
 
 static void wifi_sta_set_state(wifi_state_t s)
 {
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_int("wifi: sta state=", (int32_t)s);
     if (wifi_sta.resp_log_n > WIFI_STA_RESP_LOG_MAX)
         modd_log_int("wifi: resp frames unlogged=",
                      (int32_t)(wifi_sta.resp_log_n - WIFI_STA_RESP_LOG_MAX));
+#endif
     wifi_sta.resp_log_n = 0;
     wifi_sta.state = s;
     wifi_sta.state_enter_ms = wifi_sta_now_ms();
@@ -205,14 +207,9 @@ static void wifi_sta_send_probe_req(uint8_t channel)
                        wifi_sta_rates, sizeof wifi_sta_rates);
 
     tx_rc = wifi_mac_tx(frame, pos);
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_int("wifi: probe tx=", (int32_t)tx_rc);
     if (wifi_sta.scan_ch <= 2) {
-        /* TX-side behaviour [IP:RT2x00]:
-         *  qpcnt   TXRXQ_PCNT sampled before the WDMA ack: 0 = the frame never
-         *          entered a MAC TX queue, [7:0] = TX0Q depth
-         *  mstat   MAC_STATUS_CFG: [0] BBP/RF busy TX, [1] busy RX
-         *  tsfifo  TX_STA_FIFO: [0] valid, [5] success, [15:8] WCID
-         *  tx_cnt0 [15:0] fail, [31:16] beacon;  tx_cnt1 [15:0] success, [31:16] retry */
         modd_log_int("wifi: qpcnt=", (int32_t)wifi_sdio_state.tx_qpcnt);
         modd_log_int("wifi: txgate=", (int32_t)wifi_sdio_state.tx_gate);
         modd_log_int("wifi: txg_pcnt=", (int32_t)wifi_sdio_state.tx_gate_pcnt);
@@ -223,6 +220,9 @@ static void wifi_sta_send_probe_req(uint8_t channel)
         modd_log_int("wifi: tx_cnt0=", (int32_t)WIFI_TX_STA_CNT0);
         modd_log_int("wifi: tx_cnt1=", (int32_t)WIFI_TX_STA_CNT1);
     }
+#else
+    (void)tx_rc;
+#endif
 }
 
 #ifdef CONFIG_WIFI_T19_TEST
@@ -415,10 +415,14 @@ static void wifi_sta_parse_beacon(const uint8_t *frame, uint32_t len,
  * unreported frame. */
 static void wifi_sta_log_tx_fate(const char *tag)
 {
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log(tag);
     modd_log_int("wifi:  tx_cnt0=", (int32_t)WIFI_TX_STA_CNT0);
     modd_log_int("wifi:  tx_cnt1=", (int32_t)WIFI_TX_STA_CNT1);
     modd_log_int("wifi:  tsfifo=", (int32_t)WIFI_TX_STA_FIFO);
+#else
+    (void)tag;
+#endif
 }
 
 /* ---- authentication (IEEE 802.11 Open System) ---- */
@@ -437,7 +441,11 @@ static void wifi_sta_send_auth(void)
     wifi_sta_wr16(frame + pos, 0); pos += 2; /* status: reserved */
 
     wifi_sta_log_tx_fate("wifi: tx fate before auth");
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_int("wifi: auth tx=", (int32_t)wifi_mac_tx(frame, pos));
+#else
+    wifi_mac_tx(frame, pos);
+#endif
 }
 
 static int wifi_sta_parse_auth_resp(const uint8_t *frame, uint32_t len)
@@ -505,9 +513,13 @@ static void wifi_sta_send_assoc_req(void)
     }
 
     wifi_sta_log_tx_fate("wifi: tx fate before assoc");
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_int("wifi: assoc len=", (int32_t)pos);
     modd_log_int("wifi: assoc tx=", (int32_t)wifi_mac_tx(frame, pos));
     modd_log_int("wifi: assoc qpcnt=", (int32_t)wifi_sdio_state.tx_qpcnt);
+#else
+    wifi_mac_tx(frame, pos);
+#endif
 }
 
 static int wifi_sta_parse_assoc_resp(const uint8_t *frame, uint32_t len)
@@ -554,12 +566,14 @@ static void wifi_sta_rx_mgmt(const uint8_t *frame, uint32_t len, int8_t rssi)
     /* every management frame addressed to us from the scan on (probe
      * responses, auth/assoc responses, deauth): subtype, sender and the first
      * body bytes (status codes) */
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     if (wifi_sta.state >= WIFI_STATE_SCANNING &&
         wifi_sta_mcmp(frame + 4, wifi_sta.our_mac, 6) == 0) {
         modd_log_int("wifi: rx to-us fc=", (int32_t)fc);
         modd_log_hex("wifi: rx from=", frame + 10, 6);
         modd_log_hex("wifi: rx body=", frame + 24, len > 32 ? 8 : len - 24);
     }
+#endif
 
     switch (fc & 0x00F0) {
     case 0x0080: /* beacon */
@@ -571,24 +585,29 @@ static void wifi_sta_rx_mgmt(const uint8_t *frame, uint32_t len, int8_t rssi)
     case 0x00B0: /* authentication */
         if (wifi_sta.state == WIFI_STATE_AUTH) {
             int from_ap = wifi_sta_mcmp(frame + 10, wifi_sta.target_bssid, 6) == 0;
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
             int quiet = from_ap && ++wifi_sta.resp_log_n > WIFI_STA_RESP_LOG_MAX;
-            /* whom the target AP is answering: a DA other than ours means
-             * the frame it decoded did not carry our source address */
             if (from_ap && !quiet)
                 modd_log_hex("wifi: auth resp da=", frame + 4, 6);
+#endif
             if (wifi_sta_parse_auth_resp(frame, len) == 0) {
                 modd_log("wifi: auth ok");
                 wifi_sta_set_state(WIFI_STATE_ASSOC);
-            } else if (len >= 30 && !quiet) {
+            }
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
+            else if (len >= 30 && !quiet) {
                 modd_log_int("wifi: auth rej alg=", (int32_t)wifi_sta_rd16(frame + 24));
                 modd_log_int("wifi: auth rej seq=", (int32_t)wifi_sta_rd16(frame + 26));
                 modd_log_int("wifi: auth rej status=", (int32_t)wifi_sta_rd16(frame + 28));
             }
+#endif
+            (void)from_ap;
         }
         break;
 
     case 0x0010: /* association response */
         if (wifi_sta.state == WIFI_STATE_ASSOC) {
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
             int from_ap = wifi_sta_mcmp(frame + 10, wifi_sta.target_bssid, 6) == 0;
             int quiet = from_ap && ++wifi_sta.resp_log_n > WIFI_STA_RESP_LOG_MAX;
             if (from_ap && !quiet)
@@ -598,6 +617,7 @@ static void wifi_sta_rx_mgmt(const uint8_t *frame, uint32_t len, int8_t rssi)
                 modd_log_int("wifi: assoc resp status=", (int32_t)wifi_sta_rd16(frame + 26));
                 modd_log_int("wifi: assoc resp aid=", (int32_t)(wifi_sta_rd16(frame + 28) & 0x3FFF));
             }
+#endif
             if (wifi_sta_parse_assoc_resp(frame, len) == 0) {
                 modd_log_int("wifi: assoc ok aid=", (int32_t)wifi_sta.aid);
                 if (wifi_sta.target_security >= WIFI_SEC_WPA) {
@@ -615,9 +635,11 @@ static void wifi_sta_rx_mgmt(const uint8_t *frame, uint32_t len, int8_t rssi)
     case 0x00C0: /* deauthentication */
         if (wifi_sta.state >= WIFI_STATE_AUTH &&
             wifi_sta_mcmp(frame + 10, wifi_sta.target_bssid, 6) == 0) {
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
             modd_log_hex("wifi: deauth da=", frame + 4, 6);
             modd_log_int("wifi: rx deauth reason=",
                          len >= 26 ? (int32_t)wifi_sta_rd16(frame + 24) : -1);
+#endif
             if (wifi_sta.state == WIFI_STATE_CONNECTED)
                 wifi_on_disconnected();
             wifi_sta_set_state(WIFI_STATE_IDLE);
@@ -627,8 +649,10 @@ static void wifi_sta_rx_mgmt(const uint8_t *frame, uint32_t len, int8_t rssi)
     case 0x00A0: /* disassociation */
         if (wifi_sta.state >= WIFI_STATE_ASSOC &&
             wifi_sta_mcmp(frame + 10, wifi_sta.target_bssid, 6) == 0) {
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
             modd_log_int("wifi: rx disassoc reason=",
                          len >= 26 ? (int32_t)wifi_sta_rd16(frame + 24) : -1);
+#endif
             if (wifi_sta.state == WIFI_STATE_CONNECTED)
                 wifi_on_disconnected();
             wifi_sta_set_state(WIFI_STATE_IDLE);
@@ -645,21 +669,27 @@ static void wifi_sta_init(const uint8_t *mac)
     wifi_sta_mcpy(wifi_sta.our_mac, mac, 6);
     wifi_sta.state = WIFI_STATE_IDLE;
     modd_log("wifi: sta init");
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_hex("wifi: sta mac=", mac, 6);
+#endif
 }
 
 static int wifi_sta_start_scan(void (*cb)(const char *ssid, int rssi, int channel))
 {
     if (wifi_sta.state != WIFI_STATE_IDLE) return -1;
     modd_log("wifi: scan start");
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_hex("wifi: scan mac=", wifi_sta.our_mac, 6);
+#endif
     wifi_sta.nresults = 0;
     wifi_sta.scan_ch = 1;
     wifi_sta.scan_cb = cb;
     wifi_sta.scan_start_ms = wifi_sta_now_ms();
     wifi_sta_set_state(WIFI_STATE_SCANNING);
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_int("wifi: scan wdma_ctl=", (int32_t)WDMA_CTL);
     modd_log_int("wifi: scan irq_en=", (int32_t)WIFI_MAC_IRQ_EN);
+#endif
     wifi_sta_send_probe_req(1);
     return 0;
 }
@@ -728,8 +758,10 @@ static int wifi_sta_start_connect(const char *ssid, const char *password)
     wifi_rf_set_channel(ap->channel);
     wifi_mac_front_end();
     modd_log("wifi: sta connecting");
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_int("wifi: sta ch=", (int32_t)ap->channel);
     modd_log_hex("wifi: sta bssid=", ap->bssid, 6);
+#endif
 
     wifi_sta_set_state(WIFI_STATE_AUTH);
     wifi_sta_send_auth();
@@ -782,38 +814,23 @@ static void wifi_sta_poll(void)
                     }
                 }
             }
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
             modd_log_int("wifi: scan ch=", (int32_t)wifi_sta.scan_ch);
             modd_log_int("wifi: scan rx=", (int32_t)wifi_sdio_state.rx_count);
-            /* Per channel (12m): rx0 [15:0] CRC / [31:16] PHY errors, rx1
-             * [15:0] false CCA / [31:16] PLCP errors (read-to-clear), the
-             * channel code in WF_CON7 and whether the RF die applied the LUT
-             * entry: divider 0x1193C [12:5], bank 0x11938 [25:19]. */
             modd_log_int("wifi: rx0=", (int32_t)WIFI_RX_STA_CNT0);
             modd_log_int("wifi: rx1=", (int32_t)WIFI_RX_STA_CNT1);
             modd_log_int("wifi: wcon7=", (int32_t)FM1_RF_REG(0x1405Cu));
             modd_log_int("wifi: pll=", (int32_t)FM1_RF_REG(0x11938u));
             modd_log_int("wifi: fine=", (int32_t)FM1_RF_REG(0x1193Cu));
             if (wifi_sta.scan_ch <= 2) {
-                /* RX-side behaviour [IP:RT2x00]: rx counters are read-to-clear,
-                 * so each value is the count since the previous read.
-                 *  mac_rx0 [15:0] CRC errors, [31:16] PHY errors
-                 *  mac_rx1 [15:0] false CCA,  [31:16] PLCP errors
-                 * Any non-zero value means the baseband detected energy. */
                 modd_log_int("wifi: mac_rx0=", (int32_t)WIFI_RX_STA_CNT0);
                 modd_log_int("wifi: mac_rx1=", (int32_t)WIFI_RX_STA_CNT1);
                 modd_log_int("wifi: isr_n=", (int32_t)wifi_isr_count);
-                /* CCA occupancy over the 100 ms dwell [IP:RT2x00 CH_IDLE/BUSY_STA]:
-                 * busy/(idle+busy) near 1 means carrier sense is stuck and the
-                 * MAC defers every transmission. */
                 modd_log_int("wifi: ch_idle=", (int32_t)WIFI_CH_IDLE_STA);
                 modd_log_int("wifi: ch_busy=", (int32_t)WIFI_CH_BUSY_STA);
                 modd_log_int("wifi: ch_bsec=", (int32_t)WIFI_CH_BUSY_SEC);
-                /* Diffs still open against the vendor after iteration 11.
-                 * RF analog and MAC config readbacks were removed: all equal. */
-                modd_log_int("wifi: wctl=", (int32_t)WDMA_CTL);       /* vendor 0x10037 (bit 16) */
-                modd_log_int("wifi: sirq=", (int32_t)WIFI_SOC_IRQ_EN); /* vendor 0x00C80001 (bit 23) */
-                /* SoC wireless control block [SPECSHEET §4.2, §4.5] for the
-                 * vendor comparison: bus gates, clock tree, unknown configs */
+                modd_log_int("wifi: wctl=", (int32_t)WDMA_CTL);
+                modd_log_int("wifi: sirq=", (int32_t)WIFI_SOC_IRQ_EN);
                 modd_log_int("wifi: wctl0=", (int32_t)(*(volatile uint32_t *)0x14000u));
                 modd_log_int("wifi: wctl8=", (int32_t)(*(volatile uint32_t *)0x14008u));
                 modd_log_int("wifi: clk0=", (int32_t)(*(volatile uint32_t *)0x14040u));
@@ -829,22 +846,21 @@ static void wifi_sta_poll(void)
                 modd_log_int("wifi: txpin=", (int32_t)WIFI_TX_PIN_CFG);
                 modd_log_int("wifi: txband=", (int32_t)WIFI_TX_BAND_CFG);
                 modd_log_int("wifi: pbfmax=", (int32_t)WIFI_PBF_MAX_PCNT);
-                /* txadr == txbuf means WDMA_TX_ADR reads back the DMA start we
-                 * wrote; txadr > txbuf means the engine advances it (end pointer).
-                 * Needed to interpret the vendor TX ring samples. */
                 modd_log_int("wifi: txadr=", (int32_t)WDMA_TX_ADR);
                 modd_log_int("wifi: txbuf=", (int32_t)(uint32_t)&wifi_tx_buf[0]);
                 modd_log_int("wifi: txlen=", (int32_t)WDMA_TX_LEN);
-                /* Baseband snapshot, once per scan, for the 1:1 BBP comparison */
                 if (wifi_sta.scan_ch == 1) {
                     wifi_bbp_snapshot();
                     wifi_ind_log("scan", 1);
                 }
             }
+#endif
             wifi_sta.scan_ch++;
             if (wifi_sta.scan_ch > 13) {
                 modd_log_int("wifi: scan done n=", (int32_t)wifi_sta.nresults);
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
                 modd_log_int("wifi: rx total=", (int32_t)wifi_sdio_state.rx_count);
+#endif
                 /* scan_cb already reported per-channel SSIDs with RSSI */
 #ifdef CONFIG_WIFI_T19_TEST
                 modd_log_int("wifi: cal d4=", (int32_t)wifi_rf_bbp_win_rd(2, 0x04));
@@ -857,7 +873,11 @@ static void wifi_sta_poll(void)
                 wifi_sta_t19_test();
 #endif
 #if defined(CONFIG_WIFI_AUTOJOIN) && defined(CONFIG_WIFI_SSID)
-                if (CONFIG_WIFI_SSID[0] != '\0') {
+                if (CONFIG_WIFI_SSID[0] != '\0'
+#ifdef CONFIG_SYS_MENU_NETWORK
+                    && sys_settings.wifi_on
+#endif
+                   ) {
                     modd_log("wifi: autojoin");
                     wifi_sta_set_state(WIFI_STATE_IDLE);
                     wifi_sta_start_connect(CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD);

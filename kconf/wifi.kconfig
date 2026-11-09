@@ -70,14 +70,15 @@ config WIFI_MAC_OVERRIDE
 
 # kc2mm:hide
 config WIFI_DEBUG_AUTOSCAN
-    bool "Debug: scan automatically after boot"
+    bool "Debug: verbose WiFi diagnostics"
     depends on WIFI && DEBUG_LOG
     default n
     help
-      Start a WiFi scan 2 s after the WiFi task starts and repeat it every
-      15 s while idle, without touching the panel. Lets a power-cycle alone
-      produce the scan diagnostics read by `task debug:dump` and
-      `task debug:follow` during bring-up. Turn off for normal use.
+      Enable verbose WiFi logging: periodic auto-scans every 15 s, per-channel
+      register dumps, AP BSSID/SSID discovery, TX/RX frame diagnostics, and
+      auth/assoc details. Without this, only lifecycle messages are logged
+      (init, scan start/done, connecting, connected, disconnect).
+      Turn off for normal use.
 
 # kc2mm:hide
 config WIFI_DEBUG_WLCTL0_PROBE

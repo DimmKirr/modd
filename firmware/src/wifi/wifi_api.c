@@ -134,6 +134,16 @@ static uint32_t wifi_get_ip(void)
     return wifi_lwip_get_ip();
 }
 
+static uint32_t wifi_get_gw(void)
+{
+    return wifi_lwip_get_gw();
+}
+
+static uint32_t wifi_get_dns(void)
+{
+    return wifi_lwip_get_dns();
+}
+
 /* ---- event callbacks from lower layers ---- */
 
 /* wifi_sta.c calls this when association + WPA completes */

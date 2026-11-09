@@ -221,14 +221,18 @@ static void wifi_mac_parse_beacon(const uint8_t *frame, uint32_t len,
             slot = weakest;
     }
     if (slot >= 0) {
-        int is_new = !wifi_bss_table[slot].in_use;
         bss.in_use = 1;
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
+        int is_new = !wifi_bss_table[slot].in_use;
+#endif
         wifi_bss_table[slot] = bss;
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
         if (is_new) {
             modd_log_hex("wifi: rx bss=", bss.bssid, 6);
             if (bss.ssid_len > 0)
                 modd_log(bss.ssid);
         }
+#endif
         /* keep table sorted by RSSI descending (strongest first) */
         while (slot > 0 &&
                wifi_bss_table[slot].rssi > wifi_bss_table[slot - 1].rssi) {
@@ -409,7 +413,7 @@ static int wifi_mac_tx_data(struct wifi_buf *buf)
 
 /* ---- RX dispatch ---- */
 
-static uint32_t wifi_mac_rx_dbg;
+static uint8_t wifi_mac_rx_dbg;
 
 static void wifi_mac_rx(uint8_t *data, uint32_t len, int8_t rssi)
 {
@@ -425,11 +429,13 @@ static void wifi_mac_rx(uint8_t *data, uint32_t len, int8_t rssi)
     type = (uint8_t)(fc & 0x0C);
     stype = (uint8_t)(fc & 0xF0);
 
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     if (wifi_mac_rx_dbg < 10u) {
         modd_log_int("wifi: mac rx fc=", (int32_t)fc);
         modd_log_int("wifi: mac rx len=", (int32_t)len);
         wifi_mac_rx_dbg++;
     }
+#endif
 
     if (type == WIFI_FC_TYPE_MGMT) {
         if (stype == WIFI_FC_STYPE_BEACON || stype == WIFI_FC_STYPE_PROBE_RSP)
@@ -443,6 +449,7 @@ static void wifi_mac_rx(uint8_t *data, uint32_t len, int8_t rssi)
             if (fc & 0x0080) mhdr += 2; /* QoS */
             len += ((mhdr + 3u) & ~3u) - mhdr;
         }
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
         if (len >= 10 && wifi_mac_addr_eq(data + 4, wifi_mac_addr)) {
             modd_log_int("wifi: rx data4us fc=", (int32_t)fc);
             modd_log_int("wifi: rx data4us len=", (int32_t)len);
@@ -450,6 +457,7 @@ static void wifi_mac_rx(uint8_t *data, uint32_t len, int8_t rssi)
             if (len > 26)
                 modd_log_hex("wifi: d4us snap=", data + 26, len > 40 ? 14 : len - 26);
         }
+#endif
         wifi_data_rx(data, len);
     }
 }
@@ -737,7 +745,9 @@ static void wifi_mac_set_bssid(const uint8_t *bssid)
     WIFI_MAC_BSSID_DW0 = dw0;
     WIFI_MAC_BSSID_DW1 = dw1;
     /* keep scan filter during auth/assoc; tighten after 4-way handshake */
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_hex("wifi: bssid hw=", bssid, 6);
+#endif
 }
 
 /* Tighten RX filter after association + WPA completes. */

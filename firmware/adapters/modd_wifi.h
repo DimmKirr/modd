@@ -43,10 +43,15 @@ static int  wifi_connect(const char *ssid, const char *password);
 static void wifi_disconnect(void);
 static wifi_state_t wifi_get_state(void);
 static uint32_t wifi_get_ip(void);
+static uint32_t wifi_get_gw(void);
+static uint32_t wifi_get_dns(void);
 
 #elif !defined(CONFIG_WIFI_NONFREE)
 
 static inline void wifi_init(void) {}
 static inline int  wifi_get_state(void) { return 0; }
+static inline uint32_t wifi_get_ip(void) { return 0; }
+static inline uint32_t wifi_get_gw(void) { return 0; }
+static inline uint32_t wifi_get_dns(void) { return 0; }
 
 #endif
