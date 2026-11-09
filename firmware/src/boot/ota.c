@@ -289,7 +289,7 @@ static int ota_stage(void)                       /* steps 1..6; 0 = host said su
         return -7;
     official = ota_rd16(b) == OTA_LDR_HCRC && ota_rd16(b + 2) == OTA_LDR_DCRC && len == OTA_LDR_LEN;
     for (i = 0x48, own = 0; i + 16u <= 0x48u + 64u && !own; i++)    /* first LZ4 literals: crt0_ldr.S */
-        own = ota_memeq(b + i, (const uint8_t *)"COREFM1-LOADER-1", 16) && ota_rd32(b + 0x20 + 4) <= 0x14000u;
+        own = ota_memeq(b + i, (const uint8_t *)"MODD-FM-LOADER-1", 16) && ota_rd32(b + 0x20 + 4) <= 0x14000u;
     if (!official && !own)
         return -7;
     if (official) {                    /* the official loader writes the head: it must equal ours */
@@ -412,7 +412,7 @@ static uint32_t ota_staged(void)
         !isize || isize > 0x14000u)
         return 0;
     for (i = 0x48; i + 16u <= 0x48u + 64u && !own; i++)
-        own = (uint32_t)ota_memeq(h + i, (const uint8_t *)"COREFM1-LOADER-1", 16);
+        own = (uint32_t)ota_memeq(h + i, (const uint8_t *)"MODD-FM-LOADER-1", 16);
     if (!own)
         return 0;
     for (p = 0x40, end = 0x20u + len; p + 8u <= end;) {

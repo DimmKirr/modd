@@ -21,7 +21,7 @@ static void udisk_activate(void)
 {
     if (udisk_active) return;
     udisk_active = 1;
-    usb_host_init();
+    modd_log("udisk: activate");
 }
 
 static void udisk_deactivate(void)
@@ -31,9 +31,10 @@ static void udisk_deactivate(void)
         f_mount(0, "", 0);
         udisk_mounted = 0;
         udisk_nentry = 0;
+        modd_log("udisk: unmounted");
     }
-    usb_host_deinit();
     udisk_active = 0;
+    modd_log("udisk: deactivate");
 }
 
 static int udisk_opendir(const char *path);
@@ -47,6 +48,9 @@ static void udisk_try_mount(void)
         udisk_cwd[0] = '/';
         udisk_cwd[1] = 0;
         udisk_opendir("/");
+        modd_log_int("udisk: mounted, files=", (int32_t)udisk_nentry);
+    } else {
+        modd_log_int("udisk: mount fail ", (int32_t)r);
     }
 }
 
@@ -59,6 +63,7 @@ static void udisk_poll(void)
         udisk_mounted = 0;
         udisk_nentry = 0;
         f_mount(0, "", 0);
+        modd_log("udisk: removed");
     }
 }
 

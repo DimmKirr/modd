@@ -10,6 +10,7 @@ static uint32_t msc_tag;
 #define SCSI_INQUIRY          0x12
 #define SCSI_READ_CAPACITY10  0x25
 #define SCSI_READ10           0x28
+#define SCSI_WRITE10          0x2A
 
 static int msc_bot_xfer(uint8_t *cb, uint8_t cb_len, uint8_t dir_in,
                         uint8_t *data, uint32_t data_len)
@@ -102,12 +103,62 @@ static int msc_read_sectors(uint32_t lba, uint8_t *buf, uint32_t count)
     return msc_bot_xfer(cb, 10, 1, buf, count * uhost.sector_size);
 }
 
+static int msc_write_sectors(uint32_t lba, const uint8_t *buf, uint32_t count)
+{
+    uint8_t cb[10];
+    cb[0] = SCSI_WRITE10;
+    cb[1] = 0;
+    cb[2] = (uint8_t)(lba >> 24);
+    cb[3] = (uint8_t)(lba >> 16);
+    cb[4] = (uint8_t)(lba >> 8);
+    cb[5] = (uint8_t)(lba);
+    cb[6] = 0;
+    cb[7] = (uint8_t)(count >> 8);
+    cb[8] = (uint8_t)(count);
+    cb[9] = 0;
+    return msc_bot_xfer(cb, 10, 0, (uint8_t *)buf, count * uhost.sector_size);
+}
+
+/* MSC class-specific control requests (Bulk-Only Transport spec) */
+static void msc_clear_halt(uint8_t ep_addr)
+{
+    usb_control_msg(0x02, 0x01, 0, ep_addr, 0, 0);
+}
+
+static void msc_bot_recovery(void)
+{
+    usb_control_msg(0x21, 0xFF, 0, uhost.iface, 0, 0);
+    msc_clear_halt(0x80u | uhost.ep_in);
+    msc_clear_halt(uhost.ep_out);
+    usb_host_sie_wr(SIE_INDEX, USB_BULK_HOST_EP);
+    usb_host_sie_wr(SIE_TXCSR1, 0x48u);
+    usb_host_sie_wr(SIE_RXCSR1, 0x90u);
+    msc_tag = 0;
+}
+
+static int msc_get_max_lun(uint8_t *lun)
+{
+    int r = usb_control_msg(0xA1, 0xFE, 0, uhost.iface, lun, 1);
+    if (r < 0) { *lun = 0; return 0; }
+    return 0;
+}
+
 static int msc_init_device(void)
 {
     uint8_t buf[36];
     int r, retries;
 
-    r = msc_inquiry(buf);
+    msc_get_max_lun(&uhost.max_lun);
+    modd_log_int("usb: msc luns=", uhost.max_lun + 1);
+
+    for (retries = 0; retries < 3; retries++) {
+        modd_log("usb: msc inquiry");
+        r = msc_inquiry(buf);
+        if (r == 0) break;
+        modd_log_int("usb: msc inquiry fail ", r);
+        msc_bot_recovery();
+        usb_mdelay(200);
+    }
     if (r) return r;
 
     for (retries = 0; retries < 10; retries++) {
@@ -116,14 +167,18 @@ static int msc_init_device(void)
         msc_request_sense(buf);
         usb_mdelay(100);
     }
-    if (r) return r;
+    modd_log_int("usb: msc TUR retries=", retries);
+    if (r) { modd_log_int("usb: msc TUR fail ", r); return r; }
 
     uint32_t last_lba, block_size;
     r = msc_read_capacity(&last_lba, &block_size);
-    if (r) return r;
+    if (r) { modd_log_int("usb: msc cap fail ", r); return r; }
 
+    modd_log_int("usb: msc lba=", (int32_t)last_lba);
+    modd_log_int("usb: msc blk=", (int32_t)block_size);
     uhost.capacity = last_lba + 1;
     uhost.sector_size = block_size;
     uhost.state = UHOST_MSC_READY;
+    modd_log("usb: msc ready");
     return 0;
 }

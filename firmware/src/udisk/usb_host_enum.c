@@ -60,8 +60,7 @@ typedef struct __attribute__((packed)) {
 #define USB_DIR_IN   0x80
 #define USB_DIR_OUT  0x00
 
-/* Scratch buffer for configuration descriptor (max 256 bytes) */
-static uint8_t usb_enum_buf[256];
+static uint8_t usb_enum_buf[128];
 
 static int usb_host_enumerate(void)
 {
@@ -69,16 +68,27 @@ static int usb_host_enumerate(void)
     int r;
 
     /* 1. GET_DESCRIPTOR(DEVICE) at addr 0, first 8 bytes for bMaxPacketSize0 */
-    usb_write_faddr(MUSB_ID, 0);
+    usb_host_sie_wr(SIE_FADDR, 0);
+    usb_host_sie_wr(SIE_INDEX, 0);
+    modd_log("usb: enum start");
+    usb_host_log_hex8("usb: con0=", (FM1_USB_CON0 >> 16) & 0xFF);
+    usb_host_log_hex8("usb: io0=", (FM1_USB_IO_CON0 >> 4) & 0xF);
+
     r = usb_control_msg(USB_DIR_IN, USB_REQ_GET_DESCRIPTOR,
                         (USB_DT_DEVICE << 8), 0, (uint8_t *)&dev, 8);
-    if (r < 0) return -1;
+    if (r < 0) {
+        usb_host_log_hex8("usb: setup fail csr=",
+                          usb_host_sie_rd(SIE_CSR0));
+        return -1;
+    }
+
+    modd_log("usb: got dev desc");
 
     /* 2. SET_ADDRESS(1) */
     r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_ADDRESS, 1, 0, 0, 0);
     if (r < 0) return -2;
-    usb_mdelay(10);
-    usb_write_faddr(MUSB_ID, 1);
+    fm1_delay_ms(10);
+    usb_host_sie_wr(SIE_FADDR, 1);
 
     /* 3. GET_DESCRIPTOR(DEVICE) full 18 bytes at addr 1 */
     r = usb_control_msg(USB_DIR_IN, USB_REQ_GET_DESCRIPTOR,
@@ -102,7 +112,7 @@ static int usb_host_enumerate(void)
     /* 6. Parse: find MSC BBB interface + bulk endpoints */
     uint8_t ep_in = 0, ep_out = 0;
     uint16_t ep_maxp = 64;
-    uint8_t msc_found = 0;
+    uint8_t msc_found = 0, msc_iface = 0;
     uint32_t pos = cfg->bLength;
 
     while (pos + 2 <= total) {
@@ -116,6 +126,7 @@ static int usb_host_enumerate(void)
                 iface->bInterfaceSubClass == USB_MSC_SUBCLASS_SCSI &&
                 iface->bInterfaceProtocol == USB_MSC_PROTO_BBB) {
                 msc_found = 1;
+                msc_iface = iface->bInterfaceNumber;
             } else {
                 msc_found = 0;
             }
@@ -145,16 +156,28 @@ static int usb_host_enumerate(void)
     r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_CONFIG,
                         cfg->bConfigurationValue, 0, 0, 0);
     if (r < 0) return -7;
-    usb_mdelay(10);
+    fm1_delay_ms(50);
 
-    /* 8. Configure host bulk endpoint */
-    usb_h_ep_config(MUSB_ID, USB_BULK_HOST_EP, 0x02, 0, 0, 0, 0);
-    usb_write_txmaxp(MUSB_ID, USB_BULK_HOST_EP, ep_maxp);
-    usb_write_rxmaxp(MUSB_ID, USB_BULK_HOST_EP, ep_maxp);
+    /* 8. Configure host bulk EP1: DMA buffers + SIE registers */
+    usb_host_rxbuf = usb_enum_buf;
+    fm1_usb_ep_txbuf(USB_BULK_HOST_EP, ep0buf);
+    fm1_usb_ep_rxbuf(USB_BULK_HOST_EP, usb_host_rxbuf);
+    usb_host_sie_wr(SIE_INDEX, USB_BULK_HOST_EP);
+    usb_host_sie_wr(SIE_TXMAXP, 0xFFu);
+    usb_host_sie_wr(SIE_TXCSR1, 0x48u);
+    usb_host_sie_wr(SIE_TXCSR2, 0x20u);
+    usb_host_sie_wr(SIE_TXTYPE, (uint32_t)(0x20u | ep_out));
+    usb_host_sie_wr(SIE_RXMAXP, 0xFFu);
+    usb_host_sie_wr(SIE_RXCSR1, 0x90u);
+    usb_host_sie_wr(SIE_RXCSR2, 0);
+    usb_host_sie_wr(SIE_RXTYPE, (uint32_t)(0x20u | ep_in));
+    fm1_usb_ep_enable(1u << USB_BULK_HOST_EP);
 
     uhost.ep_in = ep_in;
     uhost.ep_out = ep_out;
+    uhost.iface = msc_iface;
     uhost.max_packet = ep_maxp;
     uhost.state = UHOST_ENUMERATED;
+    modd_log("usb: enum ok");
     return 0;
 }

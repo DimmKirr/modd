@@ -4,8 +4,14 @@
 
 static DRESULT disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count)
 {
-    (void)pdrv; (void)buff; (void)sector; (void)count;
-    return RES_WRPRT;
+    if (pdrv != 0) return RES_PARERR;
+    if (uhost.state != UHOST_MSC_READY) return RES_NOTRDY;
+    int r = usb_host_write_sectors(sector, buff, count);
+    if (r != 0) {
+        modd_log_int("usb: fat write err lba=", (int32_t)sector);
+        return RES_ERROR;
+    }
+    return RES_OK;
 }
 
 static DSTATUS disk_initialize(BYTE pdrv)
@@ -13,10 +19,13 @@ static DSTATUS disk_initialize(BYTE pdrv)
     if (pdrv != 0) return STA_NOINIT;
     if (uhost.state != UHOST_MSC_READY) return STA_NOINIT;
     uint32_t cap, ssz;
-    if (usb_host_read_capacity(&cap, &ssz) != 0)
+    if (usb_host_read_capacity(&cap, &ssz) != 0) {
+        modd_log("usb: fat disk_init cap fail");
         return STA_NOINIT;
+    }
     uhost.capacity = cap;
     uhost.sector_size = ssz;
+    modd_log_int("usb: fat sectors=", (int32_t)cap);
     return 0;
 }
 
@@ -31,8 +40,11 @@ static DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count)
 {
     if (pdrv != 0) return RES_PARERR;
     if (uhost.state != UHOST_MSC_READY) return RES_NOTRDY;
-    if (usb_host_read_sectors(sector, buff, count) != 0)
+    int r = usb_host_read_sectors(sector, buff, count);
+    if (r != 0) {
+        modd_log_int("usb: fat read err lba=", (int32_t)sector);
         return RES_ERROR;
+    }
     return RES_OK;
 }
 

@@ -410,6 +410,9 @@ uint32_t time_lapse(uint32_t *r, uint32_t us) { uint32_t now = jiffies; uint32_t
 void usb_mdelay(unsigned int ms) { fm1_delay_ms(ms); }
 int usb_host_timeout(unsigned int ms) { (void)ms; return 0; }
 
+static uint8_t ep0buf[64 + 4] __attribute__((aligned(4)));
+static uint8_t *usb_host_rxbuf;
+#define EP0BUF_DEFINED
 #include "fm1_usb_host.h"
 #include "udisk/usb_host_xfer.c"
 #include "udisk/usb_host_enum.c"
@@ -452,6 +455,7 @@ int usb_host_timeout(unsigned int ms) { (void)ms; return 0; }
 #include "midi/melodee/usb_audio.c"
 #endif
 #ifdef CONFIG_OTA
+#include "boot/boot_work.c"
 #include "../adapters/modd_ota.h"
 #include "boot/ota.c"
 #endif
@@ -1123,6 +1127,7 @@ static void ui_task(void)
         fsh_draw();
 #elif defined(CONFIG_UI_MODD)
         shell_draw();
+        ui_leds();
 #endif
         while (fm1_ms - m < 15u) {
 #ifdef CONFIG_INPUT
@@ -1527,6 +1532,7 @@ static void fm1_main(void)
         fsh_draw();
 #elif defined(CONFIG_UI_MODD)
         shell_draw();
+        ui_leds();
 #endif
         while (fm1_ms - m < 15u) {
 #ifdef CONFIG_INPUT

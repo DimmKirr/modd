@@ -10,7 +10,7 @@
 	.globl _start
 _start:
 	goto 1f
-	.ascii "COREFM1-LOADER-1"	/* 16 bytes: modd recognises its loader in a package by this */
+	.ascii "MODD-FM-LOADER-1"	/* 16 bytes: modd recognises its loader in a package by this */
 	.balign 2
 1:	cli
 	sp = _stack_top

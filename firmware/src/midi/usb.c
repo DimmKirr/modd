@@ -38,7 +38,9 @@ enum { S_FADDR = 0, S_POWER = 1, S_INTRTX1 = 2, S_INTRTX2 = 3, S_INTRRX1 = 4, S_
        S_TXMAXP = 16, S_CSR0 = 17, S_TXCSR1 = 17, S_TXCSR2 = 18, S_RXMAXP = 19, S_RXCSR1 = 20, S_RXCSR2 = 21,
        S_COUNT0 = 22, S_RXCOUNT1 = 22, S_RXCOUNT2 = 23 };
 
+#ifndef EP0BUF_DEFINED
 static uint8_t ep0buf[64 + 4] __attribute__((aligned(4)));
+#endif
 static uint8_t ep1tx[64] __attribute__((aligned(4)));
 static uint8_t ep1rx[64 + 4] __attribute__((aligned(4)));
 #if MELODEE_CDC

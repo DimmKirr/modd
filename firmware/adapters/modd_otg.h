@@ -24,12 +24,13 @@
 
 static int otg_vbus_present(void)
 {
-    uint32_t dc = usb_read_devctl(MUSB_ID);
+    uint32_t dc = usb_host_sie_rd(SIE_DEVCTL);
     return OTG_VBUS_VALID(dc);
 }
 
 typedef struct {
     uint8_t  mode;
+    uint8_t  vbus_last;
     uint32_t debounce_ms;
     uint32_t idle_ms;
     uint32_t cooldown_until;
@@ -40,6 +41,7 @@ static otg_state_t otg;
 static void otg_init(void)
 {
     otg.mode = OTG_DEVICE;
+    otg.vbus_last = 2;
     otg.debounce_ms = 0;
     otg.idle_ms = 0;
 }
@@ -47,9 +49,8 @@ static void otg_init(void)
 static void otg_switch_to_host(void)
 {
     usb_detach();
-    FM1_USB_IO_CON0 &= ~0x40u;   /* D+ pull-up off */
     fm1_delay_ms(OTG_SETTLE_MS);
-    usb_host_init();
+    usb_host_init(ep0buf);
     modd_log("OTG: -> host");
     otg.mode = OTG_HOST;
     otg.debounce_ms = 0;
@@ -59,7 +60,6 @@ static void otg_switch_to_host(void)
 static void otg_switch_to_device(void)
 {
     usb_host_deinit();
-    USB_HOST_IO_CON0 &= ~0x10u;  /* D- pull-down off */
     usb.detached = 0;
     usb.retry_ms = 0;
     usb.config = 0;
@@ -73,32 +73,40 @@ static void otg_switch_to_device(void)
 
 static void otg_poll(uint32_t now_ms)
 {
+    uint8_t vb = otg_vbus_present() ? 1 : 0;
+    if (vb != otg.vbus_last) {
+        otg.vbus_last = vb;
+        if (vb) {
+            modd_log("OTG: VBUS on");
+        } else {
+            modd_log("OTG: VBUS off");
+        }
+    }
+
     if (otg.mode == OTG_DEVICE) {
         int should_switch;
 #ifdef CONFIG_SYS_MENU_USB_MODE
         if (sys_settings.usb_mode == 0) {
-            /* User chose MIDI-only: never switch to host */
             should_switch = 0;
         } else
 #endif
         if (otg_vbus_present()) {
-            /* External host (iPhone, computer) is supplying 5V: stay device */
             should_switch = 0;
         } else if (!usb.up) {
             should_switch = 0;
         } else if (usb.config) {
-            /* Was enumerated: detect disconnect via SOF frame freeze */
             should_switch = usb.frame_same >= OTG_FRAME_IDLE_THRESHOLD;
         } else if (usb.resets > 0) {
-            /* Host sent bus reset but hasn't configured: enumeration in progress */
             should_switch = 0;
         } else {
-            /* SIE alive, no resets, no config: no host present */
             should_switch = 1;
         }
-        /* Active config with live SOF: host is still here */
         if (usb.config && usb.frame_same < OTG_FRAME_IDLE_THRESHOLD)
             should_switch = 0;
+#ifdef CONFIG_UDISK
+        if (udisk_active)
+            should_switch = 1;
+#endif
 
         if (should_switch && (otg.cooldown_until == 0 || now_ms >= otg.cooldown_until)) {
             if (otg.debounce_ms == 0) {
@@ -117,6 +125,13 @@ static void otg_poll(uint32_t now_ms)
         }
     } else if (otg.mode == OTG_HOST) {
         usb_host_poll();
+#ifdef CONFIG_UDISK
+        if (!udisk_active) {
+            modd_log("OTG: udisk off, -> device");
+            otg_switch_to_device();
+            return;
+        }
+#endif
         int failed = uhost.state == UHOST_ERROR;
         int connected = usb_host_connected();
         int idle = !connected || failed;

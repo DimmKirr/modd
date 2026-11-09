@@ -73,8 +73,8 @@ static int ota_fread(uint32_t off, void *p, uint32_t n)
 
 static void ota_show(uint32_t step, int32_t code)
 {
+    static const char *const STEP[] = {"", "PACKAGE", "CHECK", "LOADER", "CONFIRM", "RESTART"};
     if (step < 9u) {
-        static const char *const STEP[] = {"", "PACKAGE", "CHECK", "LOADER", "CONFIRM", "RESTART"};
         modd_log(STEP[step < 6u ? step : 0]);
     } else if (code == 1) {
         modd_log("OTA: dry run OK");
@@ -82,13 +82,27 @@ static void ota_show(uint32_t step, int32_t code)
         modd_log_int("OTA: fail ", code);
     }
     lcd_fill(0, 0, 240, 240, 0x0000);
-    {
-        const char *msg = step < 9u ? "UPDATE" : (code == 1 ? "DRY RUN OK" : "OTA FAILED");
-        boot_text_1x(120, msg, 0xFFFF, 0x0000);
+    boot_text_1x(105, "UPDATE", 0xFFFF, 0x0000);
+    if (step < 9u) {
+        boot_text_1x(120, STEP[step < 6u ? step : 0], BOOT_WORK_ACC, 0x0000);
+    } else {
+        char b[24];
+        if (code == 1) {
+            str_cpy(b, "DRY RUN OK", sizeof b);
+        } else {
+            str_cpy(b, "FAILED -", sizeof b);
+            uint32_t k = str_len(b);
+            uint32_t v = (uint32_t)-code;
+            if (v >= 10u) b[k++] = (char)('0' + v / 10u);
+            b[k++] = (char)('0' + v % 10u);
+            b[k] = 0;
+        }
+        boot_text_1x(120, b, BOOT_WORK_ACC, 0x0000);
+        lcd_sync();
+        fm1_delay_ms(1500);
+        return;
     }
     lcd_sync();
-    if (step >= 9u)
-        fm1_delay_ms(1500);
 }
 
 static void ota_commit(const uint8_t *parm)

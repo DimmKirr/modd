@@ -5,7 +5,7 @@
 #define MODD_UDISK_H
 #include <stdint.h>
 
-#define UDISK_PATH_MAX   256
+#define UDISK_PATH_MAX   248
 #define UDISK_NAME_MAX    64
 #define UDISK_DIR_MAX     64
 

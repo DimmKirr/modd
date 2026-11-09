@@ -10,7 +10,7 @@
 #define FFCONF_DEF  80286
 
 /* Function configuration */
-#define FF_FS_READONLY   1   /* read-only: no write, mkfs, truncate */
+#define FF_FS_READONLY   0
 #define FF_FS_MINIMIZE   1   /* remove f_stat, f_getfree, f_unlink, f_mkdir, f_truncate, f_rename */
 #define FF_USE_FIND      0
 #define FF_USE_MKFS      0
