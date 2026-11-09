@@ -73,6 +73,14 @@ config SYS_MENU_MIDI_CH
     help
       Select the MIDI receive channel (1-16) from the settings menu.
 
+config SYS_MENU_NETWORK
+    bool "Network settings tab (WiFi on/off, IP info)"
+    default y
+    depends on SYS_MENU && (WIFI || WIFI_NONFREE)
+    help
+      Adds a NETWORK tab to the settings menu with WiFi on/off toggle
+      and read-only display of IP address, gateway, and DNS server.
+
 config SYS_MENU_BLE
     bool "Bluetooth on/off setting"
     default y

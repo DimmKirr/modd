@@ -24,7 +24,31 @@ static uint32_t ty_pixel(void) { return 0; }
 #define MT_Y_FOOT  212
 #define MT_H_FOOT  28
 
-/* header: page title left, "n/m" position right, a rule underneath */
+#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+static void mt_wifi_icon(int32_t x, int32_t base, uint32_t bars, uint16_t on, uint16_t off)
+{
+    int32_t bw = 2, gap = 1, bx = x;
+    uint32_t b;
+    for (b = 0; b < 3u; b++) {
+        int32_t h = 4 + (int32_t)b * 3;
+        uint16_t c = (b < bars) ? on : off;
+        cv_rect(bx, base - h, bw, h, c);
+        bx += bw + gap;
+    }
+    cv_rect(bx, base - 2, 2, 2, bars > 0u ? on : off);
+}
+
+static uint32_t mt_wifi_bars(void)
+{
+    int st = wifi_get_state();
+    if (st == WIFI_STATE_CONNECTED) return 3;
+    if (st == WIFI_STATE_WPA || st == WIFI_STATE_ASSOC) return 2;
+    if (st == WIFI_STATE_AUTH || st == WIFI_STATE_SCANNING) return 1;
+    return 0;
+}
+#endif
+
+/* header: page title left, wifi + "n/m" position right, a rule underneath */
 static void mt_render_header(void)
 {
     const modd_page_t *p = nav_active();
@@ -34,6 +58,8 @@ static void mt_render_header(void)
     cv_begin(MT_W, MT_H_HEAD, T_BG);
     if (p)
         cv_text(6, ty_y(MT_H_HEAD / 2, TY_TX), TY_TX, p->title ? p->title : p->name, T_TEXT);
+
+    int32_t rx = MT_W - 6;
     if (n > 1u) {
         if (cur >= 10u) pos[i++] = (char)('0' + cur / 10u);
         pos[i++] = (char)('0' + cur % 10u);
@@ -41,8 +67,16 @@ static void mt_render_header(void)
         if (n >= 10u) pos[i++] = (char)('0' + n / 10u);
         pos[i++] = (char)('0' + n % 10u);
         pos[i] = 0;
-        cv_text_r(MT_W - 6, ty_y(MT_H_HEAD / 2, TY_LB), TY_LB, pos, T_MID, T_BG);
+        rx = cv_text_r(MT_W - 6, ty_y(MT_H_HEAD / 2, TY_LB), TY_LB, pos, T_MID, T_BG);
     }
+
+#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+    {
+        uint32_t wb = mt_wifi_bars();
+        mt_wifi_icon(rx - 16, MT_H_HEAD - 6, wb, wb == 3u ? T_THEME : T_MID, T_LINE);
+    }
+#endif
+
     cv_rect(0, MT_H_HEAD - 1, MT_W, 1, T_LINE);
     cv_blit(0, MT_Y_HEAD);
 }

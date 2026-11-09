@@ -36,14 +36,22 @@ typedef struct {
 #ifdef CONFIG_BLE
     uint8_t ble_addr[7];    /* [0..5] = saved random static address, [6] = 0xA5 if valid */
 #endif
+#ifdef CONFIG_SYS_MENU_NETWORK
+    uint8_t wifi_on;        /* 0 = OFF, 1 = ON (user preference; module checks at connect) */
+#endif
 #ifdef CONFIG_UI_MODD
     uint8_t ui_pal;         /* palette: UI_PAL_TAG + index (ui/themes/modd/page_colors.c) */
+    uint8_t ui_lights;      /* LED brightness: 0=OFF, 1=LOW, 2=MID, 3=HIGH, 4=FULL */
 #endif
     uint8_t _end;           /* always present so struct is never empty */
 } sys_settings_t;
 
 static sys_settings_t sys_settings;
 static volatile uint8_t sys_settings_dirty;
+
+#ifdef CONFIG_UI_MODD
+static uint8_t modd_lights;
+#endif
 
 static void sys_settings_defaults(void)
 {
@@ -53,12 +61,16 @@ static void sys_settings_defaults(void)
 #ifdef CONFIG_SYS_MENU_MIDI_CH
     sys_settings.midi_ch = 0;    /* channel 1 */
 #endif
+#ifdef CONFIG_SYS_MENU_NETWORK
+    sys_settings.wifi_on = 1;    /* ON */
+#endif
 #ifdef CONFIG_SYS_MENU_BLE
     sys_settings.ble_on = 1;     /* ON */
     sys_settings.ble_discoverable = 1; /* ON */
 #endif
 #ifdef CONFIG_UI_MODD
     sys_settings.ui_pal = 0;     /* below UI_PAL_TAG: reads as the default palette */
+    sys_settings.ui_lights = 3;  /* HIGH */
 #endif
     sys_settings._end = 0;
 }

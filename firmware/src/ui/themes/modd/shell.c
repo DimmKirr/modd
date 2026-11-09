@@ -44,6 +44,11 @@ static void shell_knob(uint32_t id, int32_t clicks)
     }
 }
 
+#ifdef CONFIG_DEBUG_LOG
+static uint32_t nav_dbg_idx;
+static uint32_t nav_dbg_return;
+#endif
+
 static uint32_t shell_btn_held;
 static uint32_t shell_btn_us;
 
@@ -54,7 +59,7 @@ static void shell_button(uint32_t id, uint32_t down)
         return;
     if (down) {
         shell_btn_held = id + 1u;
-        shell_btn_us = fm1_micros();
+        shell_btn_us = fm1_input_btn_press_us(id);
     }
     if (!down && shell_btn_held == id + 1u) {
         uint32_t held_us = fm1_micros() - shell_btn_us;
@@ -68,6 +73,17 @@ static void shell_button(uint32_t id, uint32_t down)
     const modd_page_t *p = nav_active();
     if (p && p->button && p->button(id, down))
         return;
+#ifdef CONFIG_DEBUG_LOG
+    if (!down && id == BTN_GLO) {
+        if (nav_cur == nav_dbg_idx) {
+            nav_set_page(nav_dbg_return);
+        } else {
+            nav_dbg_return = nav_cur;
+            nav_set_page(nav_dbg_idx);
+        }
+        return;
+    }
+#endif
     if (!down && modd_controls.btn_tap[id] != VIEW_NONE) {
         nav_open_view(modd_controls.btn_tap[id]);
     }
@@ -91,6 +107,8 @@ static void shell_init(void)
     ui_set_theme(&modd_theme);
 #ifdef CONFIG_SYS_MENU
     pal = palette_from_stored(sys_settings.ui_pal);
+    modd_lights = sys_settings.ui_lights < LIGHTS_N
+                ? sys_settings.ui_lights : LIGHTS_HIGH;
 #endif
     palette_set(pal);
 }

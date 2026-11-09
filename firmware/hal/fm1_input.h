@@ -101,6 +101,7 @@ static volatile struct {
     uint8_t raw[FM1_NCOL];       /* last frame, packed rows, 1 = closed */
     uint8_t cnt[FM1_NKEY];       /* frames in a row against the debounced state */
     uint32_t note_t0[27];        /* TIMER4 tick of the first scan that saw note key n closed */
+    uint32_t btn_t0[14];         /* TIMER4 tick when button i was pressed (debounce end) */
     uint8_t enc_prev[FM1_NENC], enc_last[FM1_NENC];
     uint8_t enc_rest[FM1_NENC];  /* the detent state (0..3) */
     uint16_t enc_still[FM1_NENC]; /* frames since the last state change */
@@ -267,10 +268,12 @@ static void fm1__key(uint32_t id, uint32_t closed)
         fm1_in.notes ^= bit;
     } else {
         fm1_in.buttons ^= bit;
-        if (!on)
+        if (!on) {
+            fm1_in.btn_t0[id] = FM1_INPUT_NOW();
             fm1_in.pressed |= bit;
-        else
+        } else {
             fm1_in.released |= bit;
+        }
     }
 }
 
@@ -434,6 +437,12 @@ static uint32_t fm1_input_edges(uint32_t *released)
     fm1_in.pressed = fm1_in.released = 0;
     fm1__unlock(k);
     return p;
+}
+
+static uint32_t fm1_input_btn_press_us(uint32_t id)
+{
+    if (id >= 14u) return 0;
+    return fm1_in.btn_t0[id] / FM1_TICKS_PER_US;
 }
 
 static uint32_t fm1_input_note_edges(void)

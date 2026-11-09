@@ -11,6 +11,9 @@
 enum {
     SMTAB_DISPLAY, SMTAB_CONTROL, SMTAB_AUDIO,
     SMTAB_MIDI, SMTAB_SYSTEM,
+#ifdef CONFIG_SYS_MENU_NETWORK
+    SMTAB_NETWORK,
+#endif
 #ifdef CONFIG_BLE
     SMTAB_BLE,
 #endif
@@ -19,6 +22,9 @@ enum {
 
 static const char *const SMTAB_NAME[SMTAB_COUNT] = {
     "DISPLAY", "CONTROL", "AUDIO", "MIDI", "SYSTEM",
+#ifdef CONFIG_SYS_MENU_NETWORK
+    "NET",
+#endif
 #ifdef CONFIG_BLE
     "BLE",
 #endif
@@ -65,6 +71,16 @@ static void    sm_midi_ch_set(uint8_t v)
 }
 #endif
 
+#ifdef CONFIG_SYS_MENU_NETWORK
+static uint8_t sm_wifi_on_get(void) { return sys_settings.wifi_on; }
+static void    sm_wifi_on_set(uint8_t v)
+{
+    if (v > 1u) v = 1u;
+    sys_settings.wifi_on = v;
+    sys_settings_dirty = 1;
+}
+#endif
+
 #ifdef CONFIG_SYS_MENU_BLE
 static uint8_t sm_ble_on_get(void) { return sys_settings.ble_on; }
 static void    sm_ble_on_set(uint8_t v)
@@ -87,14 +103,36 @@ static uint8_t sm_ble_name_get(void) { return 0; }
 static void    sm_ble_name_set(uint8_t v) { (void)v; }
 #endif
 
+/* --- LIGHTS setting (modd theme LED brightness) --- */
+
+#ifdef CONFIG_UI_MODD
+static const char *const SM_LIGHTS[] = {"OFF", "LOW", "MID", "HIGH", "FULL"};
+
+static uint8_t sm_lights_get(void) {
+    return sys_settings.ui_lights < 5u ? sys_settings.ui_lights : 3u;
+}
+static void sm_lights_set(uint8_t v) {
+    if (v > 4u) v = 4u;
+    sys_settings.ui_lights = v;
+    modd_lights = v;
+    sys_settings_dirty = 1;
+}
+#endif
+
 /* --- Item array (static, Kconfig-gated) --- */
 
 static const sys_menu_item_t SYS_MENU[] = {
+#ifdef CONFIG_UI_MODD
+    { "LIGHTS",   SMTAB_DISPLAY, 5, SM_LIGHTS, sm_lights_get, sm_lights_set },
+#endif
 #ifdef CONFIG_SYS_MENU_USB_MODE
     { "USB MODE",   SMTAB_SYSTEM, 2,  SM_USB_MODE,  sm_usb_mode_get, sm_usb_mode_set },
 #endif
 #ifdef CONFIG_SYS_MENU_MIDI_CH
     { "MIDI CH",    SMTAB_MIDI,  16,  SM_MIDI_CH,   sm_midi_ch_get,  sm_midi_ch_set },
+#endif
+#ifdef CONFIG_SYS_MENU_NETWORK
+    { "WIFI",         SMTAB_NETWORK, 2, SM_ONOFF,   sm_wifi_on_get,  sm_wifi_on_set },
 #endif
 #ifdef CONFIG_SYS_MENU_BLE
     { "BLUETOOTH",    SMTAB_BLE,  2,  SM_ONOFF,     sm_ble_on_get,   sm_ble_on_set },

@@ -404,8 +404,11 @@ def gen_melodee_ui():
     out = GEN / 'melodee'
     out.mkdir(parents=True, exist_ok=True)
     tools = FW / 'upstream' / 'melodee' / 'tools'
+    rubik = str(FW / 'upstream' / 'melodee' / 'assets' / 'fonts' / 'Rubik[wght].ttf')
     cmds = [
         [tools / 'gen_aa_font.py', out / 'ui_fonts.h', '--preset', 'rubik'],
+        [tools / 'gen_aa_font.py', out / 'ui_font_xs.h',
+         '--face', f'XS={rubik}@400:12:32-126', '--kern-min', '0'],
         [tools / 'gen_aa_keycaps.py', out / 'ui_keycaps.h'],
         [ROOT / 'tools' / 'codegen' / 'gen_modd_palettes.py', out / 'ui_palettes.h'],
     ]

@@ -97,15 +97,15 @@ firmware/src/ui/
       pages.c            # page registration with view assignments
       page_home.c        # page implementations
       page_params.c
-      page_demo.c        # DEMO view: 5-screen UI showcase + keyboard integration
+      page_demo.c        # DEMO view: 6-screen UI showcase + keyboard integration
       page_weather.c
       ...
 
     melodee/             # (future)
     sloop/               # (future)
 
-  themes/modd/           # modd's own theme on Melodee's renderer (gfx.c from themes/melodee/)
-  themes/felucca/        # port of Felucca's UI
+  themes/modd/           # modd's own theme on Melodee's renderer: HOME, Settings, Conn, Demo
+  themes/felucca/        # port of Felucca's UI (full page set)
   themes/melodee/        # Melodee's renderer and LCD driver; its shell is still a stub
 ```
 
@@ -444,7 +444,9 @@ Grouped by view. For encoder/button mappings and card parameter details, see [CO
 
 ### VIEW_DEMO (FX hold)
 
-Kitchen-sink UI showcase. SELECT cycles 5 screens, K1-K4 adjust card values per screen.
+Kitchen-sink UI showcase. SELECT cycles 6 screens, K1-K4 adjust card values per screen.
+
+**Felucca theme** (uses `fui_*` helpers, modals, `kbd_piano`):
 
 | Screen | Cards | Graph area | K1 special |
 |---|---|---|---|
@@ -452,6 +454,22 @@ Kitchen-sink UI showcase. SELECT cycles 5 screens, K1-K4 adjust card values per 
 | LIST | ITEMS, SEL, SCROLL, VISIBLE | Scrollable 16-item list | List selection + auto-scroll |
 | GRAPH | BARS, FRAME, ANIM, STYLE | Animated bar chart | Counter (0-99) |
 | TEXT | FONT S/M/L, DEMO | Font samples, alignment, rounded rects | Counter (0-99) |
-| EDIT | EDIT, LEN, MAX, OCT+ | Editable text field + "OCT+ TO EDIT" hint | Counter (0-99) |
+| EDIT | EDIT, LEN, MAX, OCT+ | Editable text field | Counter (0-99) |
+| MODALS | MODALS, SEL, -, OCT+ | Modal type list (YES/NO, OK, Keyboard) | Modal selection |
 
-On the EDIT screen, pressing OCT+ opens the [piano keyboard modal](#piano-keyboard-modal) to edit the text field. The keyboard callback writes back to the display on confirm.
+On the EDIT screen, pressing OCT+ opens the [piano keyboard modal](#piano-keyboard-modal) to edit the text field. The MODALS screen opens real dialogs (`dlg_confirm`, `dlg_ok`, `kbd_piano`).
+
+**modd theme** (uses `cv_*` / `mt_panel_*`, no modal system):
+
+| Screen | Cards | Panel area | K1 special | K2 special |
+|---|---|---|---|---|
+| CARDS | FRA, SCR, K1, NOTE | Theme color swatches | Counter (0-99) | -- |
+| LIST | ITEMS, SEL | Scrollable 16-item list | List selection + auto-scroll | -- |
+| GRAPH | BARS, FRAME, ANIM, STYLE | Animated bar chart | Counter (0-99) | -- |
+| TEXT | FONT S/M/L, DEMO | Font samples, alignment, rounded rects | Counter (0-99) | -- |
+| EDIT | EDIT, LEN, CUR, MAX | Inline text editor with blinking cursor | Move cursor | Change character |
+| MODALS | MODALS, SEL, -, STYLE | Mock dialog overlays drawn in panel | Select modal type | -- |
+
+modd's EDIT screen has an inline character editor (K1 moves cursor, K2 changes character value). The MODALS screen renders mock dialog overlays (no real modal system).
+
+The modd DEMO view also includes a FILES page (`CONFIG_UDISK`) before DEMO: a USB disk browser using the shared `udisk.c` FAT32 layer.

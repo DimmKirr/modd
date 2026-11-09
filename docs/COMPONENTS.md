@@ -340,7 +340,7 @@ For the cross-theme framework (view/page/element model, navigation rules, theme 
 - **Felucca**: page-based shell with encoder/button dispatch
 - **SLOOP**
 - **Melodee**: Rubik font, track colors, 8 palettes, partial updates
-- **Native** (modd): modd's own UI on Melodee's renderer; Rubik type, Melodee's palettes plus the logo's MODD and MODD NIGHT; HOME, settings on HOME hold, weather on GLO hold; ships its own button map (default when no upstream UI is selected)
+- **Native** (modd): modd's own UI on Melodee's renderer; Rubik type, Melodee's palettes plus the logo's MODD and MODD NIGHT; HOME, Settings menu + Colors + Connectivity on HOME hold, Weather on GLO hold, Files (CONFIG_UDISK) + 6-screen Demo on FX hold; ships its own button map matching Felucca's layout
 
 ### Event flow
 
