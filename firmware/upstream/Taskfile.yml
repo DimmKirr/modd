@@ -221,6 +221,17 @@ tasks:
       - task: build:skiff
         vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
 
+  _flash_uboot:
+    internal: true
+    vars:
+      FIRMWARE: '{{.FIRMWARE}}'
+    preconditions:
+      - sh: test -f '{{.FIRMWARE}}'
+        msg: '{{.FIRMWARE}} not found. Build the firmware first.'
+    cmds:
+      - uv sync --quiet --group uboot
+      - sudo uv run --quiet --group uboot python tools/device/fm1_uboot_flash.py '{{.FIRMWARE}}' {{.CLI_ARGS}}
+
   flash:felucca:
     desc: Flash upstream Felucca to FM-1 (run vendor:build:felucca first)
     vars:
@@ -280,3 +291,45 @@ tasks:
         msg: '{{.FIRMWARE}} not found. Build it first: task vendor:build:skiff'
     cmds:
       - uv run --quiet --group flash python tools/device/fm1_install.py '{{.FIRMWARE}}' --force --yes {{.CLI_ARGS}}
+
+  flash:uboot:felucca:
+    desc: Flash upstream Felucca via UBOOT mode
+    cmds:
+      - task: _flash_uboot
+        vars: { FIRMWARE: firmware/upstream/felucca/build/felucca.fwsc }
+
+  flash:uboot:melodee:
+    desc: Flash upstream Melodee via UBOOT mode
+    cmds:
+      - task: _flash_uboot
+        vars: { FIRMWARE: firmware/upstream/melodee/build/melodee.fwsc }
+
+  flash:uboot:sloop:
+    desc: Flash upstream SLOOP via UBOOT mode
+    cmds:
+      - task: _flash_uboot
+        vars: { FIRMWARE: firmware/upstream/sloop/build/felucca.fwsc }
+
+  flash:uboot:fmlab:
+    desc: Flash upstream FM Lab via UBOOT mode
+    cmds:
+      - task: _flash_uboot
+        vars: { FIRMWARE: firmware/upstream/fmlab/build/fmlab.fwsc }
+
+  flash:uboot:optimist:
+    desc: Flash upstream Optimist (BLE) via UBOOT mode
+    cmds:
+      - task: _flash_uboot
+        vars: { FIRMWARE: firmware/upstream/optimist/build/felucca.fwsc }
+
+  flash:uboot:fm1-dock:
+    desc: Flash upstream fm1-dock via UBOOT mode
+    cmds:
+      - task: _flash_uboot
+        vars: { FIRMWARE: firmware/upstream/fm1-dock/build/fm1-dock.fwsc }
+
+  flash:uboot:skiff:
+    desc: Flash upstream Skiff via UBOOT mode
+    cmds:
+      - task: _flash_uboot
+        vars: { FIRMWARE: firmware/upstream/skiff/build/felucca.fwsc }
