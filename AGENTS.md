@@ -18,12 +18,16 @@ task flash                              # build if sources or .env changed, then
 task config                             # interactive menuconfig
 task config:generate:defconfig -- melodee  # load a preset defconfig and generate config.h
 task config:generate:local                # .config -> build/gen/config.h
+task dock:modules -- /path/to/disk      # copy fm1-dock's prebuilt .dock modules to a USB disk / SD card root
 task test                               # run all tests (unit + e2e)
 task test:unit                          # Python unit tests only
 task test:e2e                           # emulator + Playwright e2e tests
 task vendor:build                       # (testing) build all upstream firmwares
 task vendor:build:felucca               # (testing) build clean upstream Felucca
 task vendor:flash:melodee               # (testing) flash pre-built upstream Melodee
+task debug:usb                          # dump USB host state, SIE registers, filtered USB log lines
+task debug:usb -- --follow              # same + tail all log lines
+task logs:debug                         # full debug dump: build facts, crash record, log ring + tail
 ```
 
 **Important:** always use `task build` (not `python tools/build.py` directly) because the Taskfile sets required env vars for the JieLi toolchain. If calling `build.py` directly, you must set `JIELI_TOOLCHAIN` and `AC79_SDK`.
@@ -60,8 +64,9 @@ See [docs/COMPONENTS.md](docs/COMPONENTS.md) for full component map with diagram
 4. **MIDI, UI, Storage, Boot**: each a module with upstream-specific component implementations selected via Kconfig radio choices.
 5. **USB**: device driver, USB Audio, host controller, mass storage.
 6. **BLE**: optional module (Optimist upstream) for Bluetooth Low Energy; depends on HAL, enables BLE MIDI transport.
-7. **WiFi**: STA driver, lwIP, WPA, weather client, CDP server.
-8. **Debug**: log buffer.
+7. **Network** (`firmware/src/net/`, `CONFIG_LWIP`): the lwIP stack, HTTP client and LLM client, link-agnostic. Links add a `netif` on top: WiFi (`CONFIG_WIFI_LWIP`) today, USB ethernet / iPhone tethering (`CONFIG_USB_NET`) planned. `net_on_up()` is the "an interface got an address" hook; CDP and LLM depend on `LWIP`, not on a link.
+8. **WiFi**: STA driver, WPA, the WiFi `netif`, weather client.
+9. **Debug**: log buffer.
 
 ### Contracts (defined in `.scratch/GLUE.md`)
 
@@ -76,6 +81,8 @@ Thin compatibility headers (`modd_*.h`) that let components from different upstr
 | MIDI Routing | `modd_midi.h` | Swap MIDI implementations |
 | Scales/Tuning | `modd_scales.h` | Swap scale sets |
 | Debug DAP | `modd_debug.h` | NOINIT byte ring + USB SysEx debug protocol |
+| Dock modules | `modd_dock.h` | fm1-dock `.dock` instruments: ABI tables, header/CRC/relocation; installed from a `dock_src_t` (USB disk today) and run one at a time |
+| Lists | `modd_list.h` | One scrolling-list widget (modd theme `list.c`) over any source: a USB disk directory, the dock instruments, later an HTTP index; four control slots (short/long OCT-/OCT+) with glyph, label and default hints |
 
 ### The P_COUNT Problem
 
@@ -93,6 +100,8 @@ firmware/
   src/                      # source tree (future: populated from reference firmwares)
     modd.c              # unity root with CONFIG_* conditional includes
     engines.c               # engine registry (conditional includes)
+    net/                    # Network module: lwip_core.c (lwIP source list), lwipopts.h, net.c (init, tick, net_on_up), http.c
+    dock/                   # fm1-dock module host: dock.c (slots, flash install, start/stop, ISR hook), dock_disk.c (USB disk source)
   upstream/                 # vendored community firmwares, never patched (see vendir.yml)
   vendor/                   # vendored libraries: lwIP, FatFs (see vendir.yml)
 tools/
@@ -126,7 +135,7 @@ tools/
 
 ## Toolchain
 
-- **Compiler**: JieLi clang 4.0.1 for pi32v2 (proprietary target, x86-64 binary). Runner order in `tools/build/build.py`: native on x86-64 Linux; on other Linux, direct execution through an x86-64 `ld.so` when the kernel runs x86-64 ELFs itself (Rosetta on Apple-silicon VMs, binfmt_misc), then `qemu-x86_64`; otherwise Docker (macOS, or `JIELI_DOCKER=1`). The two Linux fallbacks need x86-64 glibc/libstdc++: `~/.fm1-toolchain/x86libs` `JIELI_X86_GLIBC`/`JIELI_X86_STDCPP`, or the nix store.
+- **Compiler**: JieLi clang 4.0.1 for pi32v2 (proprietary target, x86-64 binary). The build/test environment must have **one of**: (1) x86-64 architecture (native), (2) `qemu-x86_64` (user-mode emulation), or (3) Rosetta/binfmt_misc (Apple-silicon VMs). Runner selection in `tools/build/build.py` is automatic: native on x86-64 Linux; on other Linux, tests the ld.so runner with an actual compile (not just `ld.so --version`) and falls back to `qemu-x86_64` if it segfaults; otherwise Docker (macOS, or `JIELI_DOCKER=1`). The vendor build shim (`.scratch/tools/vendor-build/tc-shim.sh`) follows the same logic. The non-native Linux runners need x86-64 glibc/libstdc++: `~/.fm1-toolchain/x86libs` `JIELI_X86_GLIBC`/`JIELI_X86_STDCPP`, or the nix store.
 - **Target**: AC791N dual-core MCU, bare-metal, no OS
 - **Audio**: 44.1kHz stereo, 128-sample half-buffer DMA, I2S codec
 - **Flash**: SPI NOR for storage, projects, presets, OTA
