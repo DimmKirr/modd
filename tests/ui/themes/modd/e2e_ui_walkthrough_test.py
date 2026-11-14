@@ -80,7 +80,9 @@ class UIWalkthroughTest(E2ETestCase):
 
             for step in steps:
                 self._execute_step(panel, page, step)
-                self.screenshot(page, f'{step["view"]}-{step["page"]}')
+                label = f'{step["view"]}-{step["page"]}'
+                self.screenshot(page, label)
+                self.screenshot_lcd(page, label)
                 visited.append(step['page'])
 
             self.assertGreater(len(visited), 0, 'No pages visited')

@@ -224,12 +224,31 @@ class E2ETestCase(unittest.TestCase):
         FM1Controls(page).send_encoder(physical_enc, clicks, delay_ms=delay_ms)
 
     def screenshot(self, page, screen_name):
-        """Save only the emulator panel canvas beside this run's logs."""
-        screenshot_dir = self._results_dir() / 'screenshots'
-        screenshot_dir.mkdir(parents=True, exist_ok=True)
+        """Save the full emulator panel canvas to screenshots/full/."""
+        full_dir = self._results_dir() / 'screenshots' / 'full'
+        full_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H%M%S.%f')[:-3] + 'Z'
         filename = f'{ts}-{screen_name}.png'
-        page.locator('canvas#panel').screenshot(path=str(screenshot_dir / filename))
+        page.locator('canvas#panel').screenshot(path=str(full_dir / filename))
+
+    def screenshot_lcd(self, page, screen_name):
+        """Save a cropped LCD-only screenshot to screenshots/lcd/."""
+        import base64
+        lcd_dir = self._results_dir() / 'screenshots' / 'lcd'
+        lcd_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H%M%S.%f')[:-3] + 'Z'
+        filename = f'{ts}-{screen_name}.png'
+        data_url = page.evaluate('''() => {
+            const c = document.getElementById('panel');
+            const ctx = c.getContext('2d');
+            const tmp = document.createElement('canvas');
+            tmp.width = 480; tmp.height = 480;
+            tmp.getContext('2d').putImageData(
+                ctx.getImageData(370, 42, 480, 480), 0, 0);
+            return tmp.toDataURL('image/png');
+        }''')
+        raw = base64.b64decode(data_url.split(',', 1)[1])
+        (lcd_dir / filename).write_bytes(raw)
 
     def frames_to_gif(self, frames, name='boot', fps=10, scale=480):
         """Convert captured canvas data-URL frames to an optimised GIF."""
