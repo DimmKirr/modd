@@ -20,9 +20,9 @@ import unittest
 from pathlib import Path
 
 # conftest.py (loaded by pytest automatically) puts tests/ on sys.path
-from e2e_fixtures import E2ETestCase
+from e2e_fixtures import E2ETestCase, fwsc_path
 
-FWSC = Path(__file__).resolve().parents[4] / 'build' / 'modd.fwsc'
+FWSC = fwsc_path()
 
 
 class TestModdSettings(E2ETestCase):

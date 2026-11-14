@@ -17,13 +17,13 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from e2e_fixtures import E2ETestCase, _run_timestamp, RESULTS_DIR
+from e2e_fixtures import E2ETestCase, _run_timestamp, RESULTS_DIR, fwsc_path, defconfig_name
 
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT / 'tools' / 'codegen'))
 from gen_ui_map import parse_page_controls, discover_themes
 
-FWSC = ROOT / 'build' / 'modd.fwsc'
+FWSC = fwsc_path()
 
 # Felucca card layout: 4 cards at Y=28, each 57x44, spaced at 59px intervals.
 # The emulator panel canvas is 2x (retina): multiply LCD coords by 2, then
@@ -105,8 +105,9 @@ class TestKnobValues(E2ETestCase):
 
     @classmethod
     def _detect_theme(cls):
-        """Detect which theme was compiled from build/gen/config.h."""
-        config_h = ROOT / 'build' / 'gen' / 'config.h'
+        """Detect which theme was compiled from the active defconfig's config.h."""
+        dc = defconfig_name()
+        config_h = ROOT / 'build' / dc / 'gen' / 'config.h'
         if not config_h.exists():
             return None
         text = config_h.read_text()

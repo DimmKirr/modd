@@ -13,6 +13,7 @@ import json
 import http.server
 import os
 import socket
+import sys
 import threading
 from pathlib import Path
 
@@ -20,10 +21,13 @@ import websockets
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'tests'))
+from e2e_fixtures import fwsc_path
+
 EMU_DIR = Path(os.environ.get('FM1_WEB_DIR', Path.home() / '.fm1-emulator' / 'web'))
 EMU_WIFI_DIR = Path(os.environ.get(
     'FM1_WIFI_WEB_DIR', Path.home() / '.fm1-emulator' / 'web-wifi'))
-FWSC_PATH = ROOT / 'build' / 'modd.fwsc'
+FWSC_PATH = fwsc_path()
 
 if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ:
     _pw_cache = Path.home() / '.cache' / 'ms-playwright'

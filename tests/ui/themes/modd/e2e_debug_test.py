@@ -12,9 +12,9 @@ Run:
 import unittest
 from pathlib import Path
 
-from e2e_fixtures import E2ETestCase
+from e2e_fixtures import E2ETestCase, fwsc_path
 
-FWSC = Path(__file__).resolve().parents[4] / 'build' / 'modd.fwsc'
+FWSC = fwsc_path()
 
 
 class TestModdDebugPage(E2ETestCase):

@@ -47,7 +47,7 @@ def test_genconfig_writes_header():
         pytest.skip('tools/genconfig.py not yet created')
     out = _outdir('header_minimal')
     r = subprocess.run(
-        [sys.executable, str(genconfig), '--defconfig', 'minimal',
+        [sys.executable, str(genconfig), '--defconfig', 'modd_minimal',
          '--outdir', str(out)],
         capture_output=True, text=True, cwd=str(ROOT))
     assert r.returncode == 0, r.stderr
@@ -76,7 +76,7 @@ def test_genconfig_writes_manifest():
         pytest.skip('tools/genconfig.py not yet created')
     out = _outdir('manifest_minimal')
     r = subprocess.run(
-        [sys.executable, str(genconfig), '--defconfig', 'minimal',
+        [sys.executable, str(genconfig), '--defconfig', 'modd_minimal',
          '--outdir', str(out)],
         capture_output=True, text=True, cwd=str(ROOT))
     assert r.returncode == 0, r.stderr
@@ -94,7 +94,7 @@ def test_genconfig_writes_manifest():
     assert 'modd_manifest' in content
 
 
-DEFCONFIGS = ['melodee', 'felucca', 'sloop', 'minimal',
+DEFCONFIGS = ['melodee', 'felucca', 'sloop', 'modd_minimal',
               'felucca_noise']
 
 
@@ -117,7 +117,7 @@ def test_defconfig_loads(name):
 # -- component manifest assertions per defconfig --
 
 EXPECTED_COMPONENTS = {
-    'minimal': sorted([
+    'modd_minimal': sorted([
         'audio',
         'audio-core:melodee',
         'boot:melodee',
@@ -203,7 +203,7 @@ def test_usb_host_depends_on_usb():
     """CONFIG_USB_HOST must not be selectable without CONFIG_USB."""
     from kconfiglib import Kconfig
     k = Kconfig(str(KCONFIG), warn=False)
-    k.load_config(str(ROOT / 'configs' / 'minimal_defconfig'))
+    k.load_config(str(ROOT / 'configs' / 'modd_minimal_defconfig'))
     usb = k.syms['USB']
     usb_host = k.syms['USB_HOST']
     usb.set_value(0)
@@ -223,7 +223,7 @@ def _kconfig_with(defconfig):
 
 def test_lwip_is_selectable_without_wifi():
     """CONFIG_LWIP is the stack; it must not require the WiFi radio."""
-    k = _kconfig_with('minimal_defconfig')
+    k = _kconfig_with('modd_minimal_defconfig')
     assert k.syms['WIFI'].str_value == 'n'
     k.syms['LWIP'].set_value(2)
     assert k.syms['LWIP'].str_value == 'y'
@@ -231,7 +231,7 @@ def test_lwip_is_selectable_without_wifi():
 
 def test_wifi_lwip_selects_lwip():
     """Enabling the WiFi link on lwIP pulls the stack in."""
-    k = _kconfig_with('wifi_debug_defconfig')
+    k = _kconfig_with('modd_wifi_debug_defconfig')
     assert k.syms['WIFI_LWIP'].str_value == 'y'
     assert k.syms['LWIP'].str_value == 'y'
 
@@ -241,7 +241,7 @@ def test_wifi_defconfig_manifest_gains_net_lwip():
     out = _outdir('manifest_wifi_debug')
     r = subprocess.run(
         [sys.executable, str(ROOT / 'tools' / 'build' / 'genconfig.py'),
-         '--defconfig', 'wifi_debug', '--outdir', str(out)],
+         '--defconfig', 'modd_wifi_debug', '--outdir', str(out)],
         capture_output=True, text=True, cwd=str(ROOT))
     assert r.returncode == 0, r.stderr
     import json
@@ -251,7 +251,7 @@ def test_wifi_defconfig_manifest_gains_net_lwip():
 
 def test_cdp_and_llm_follow_lwip_not_wifi():
     """IP consumers depend on the stack, not on the WiFi link."""
-    k = _kconfig_with('minimal_defconfig')
+    k = _kconfig_with('modd_minimal_defconfig')
     k.syms['LWIP'].set_value(2)
     assert k.syms['WIFI'].str_value == 'n'
     for name in ('CDP', 'LLM'):
@@ -262,7 +262,7 @@ def test_cdp_and_llm_follow_lwip_not_wifi():
 
 def test_usb_net_selects_lwip_and_needs_usb_host():
     """USB_NET is a link on lwIP: needs the USB host, pulls the stack in, no radio."""
-    k = _kconfig_with('minimal_defconfig')
+    k = _kconfig_with('modd_minimal_defconfig')
     k.syms['USB_NET'].set_value(2)
     assert k.syms['USB_NET'].str_value == 'n', 'needs USB_HOST'
     k.syms['USB_HOST'].set_value(2)

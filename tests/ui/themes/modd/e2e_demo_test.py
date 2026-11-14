@@ -12,9 +12,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from e2e_fixtures import E2ETestCase
+from e2e_fixtures import E2ETestCase, fwsc_path
 
-FWSC = Path(__file__).resolve().parents[4] / 'build' / 'modd.fwsc'
+FWSC = fwsc_path()
 
 LCD_REGION = (370, 42, 480, 480)
 LCD_MIN_PIXELS = 500

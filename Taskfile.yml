@@ -13,10 +13,16 @@ includes:
   vendor:
     taskfile: firmware/upstream/Taskfile.yml
     dir: '{{.ROOT_DIR}}'
+  modd:
+    taskfile: configs/Taskfile.yml
+    dir: '{{.ROOT_DIR}}'
   debug:wifi:
     taskfile: .scratch/Taskfile.yml
     optional: true
     dir: '{{.ROOT_DIR}}'
+
+vars:
+  BUILD_DIR: build/modd
 
 tasks:
   build:
@@ -45,7 +51,7 @@ tasks:
       - .config
       - .env
     generates:
-      - build/modd.fwsc
+      - '{{.BUILD_DIR}}/modd.fwsc'
     method: checksum
     cmds:
       - uv run --quiet python tools/build/build.py {{.CLI_ARGS}}
@@ -118,7 +124,7 @@ tasks:
       - task: build
         vars: { CLI_ARGS: '' }   # flash's own -- args are for fm1_install.py, not build.py
     vars:
-      FIRMWARE: '{{.FIRMWARE | default "build/modd.fwsc"}}'
+      FIRMWARE: '{{.FIRMWARE | default (printf "%s/modd.fwsc" .BUILD_DIR)}}'
       DEBUG: '{{.DEBUG | default "true"}}'
       AUTO_APPROVE: '{{.AUTO_APPROVE | default "true"}}'
     preconditions:
@@ -126,7 +132,7 @@ tasks:
         msg: "{{.FIRMWARE}} not found."
     cmds:
       - cmd: |
-          test -f build/modd.version && echo "version: $(cat build/modd.version)" || true
+          test -f {{.BUILD_DIR}}/modd.version && echo "version: $(cat {{.BUILD_DIR}}/modd.version)" || true
       - task: build:size-check
       - uv run --quiet --group flash python tools/device/fm1_install.py {{.FIRMWARE}} --force {{if eq .AUTO_APPROVE "true"}}--yes {{end}}{{.CLI_ARGS}}
 
@@ -134,15 +140,15 @@ tasks:
     desc: Show RAM and flash usage from linker map
     silent: true
     preconditions:
-      - sh: test -f build/modd.map
-        msg: "build/modd.map not found. Run 'task build' first."
+      - sh: test -f {{.BUILD_DIR}}/modd.map
+        msg: "{{.BUILD_DIR}}/modd.map not found. Run 'task build' first."
     cmds:
       - cmd: |
-          MAP=build/modd.map
-          ELF=build/modd.elf
-          FWSC=build/modd.fwsc
+          MAP={{.BUILD_DIR}}/modd.map
+          ELF={{.BUILD_DIR}}/modd.elf
+          FWSC={{.BUILD_DIR}}/modd.fwsc
           # flash (XIP): body size vs 0x8C000 (573440)
-          TEXT_SZ=$(stat -f%z build/text.bin 2>/dev/null || stat -c%s build/text.bin 2>/dev/null)
+          TEXT_SZ=$(stat -f%z {{.BUILD_DIR}}/text.bin 2>/dev/null || stat -c%s {{.BUILD_DIR}}/text.bin 2>/dev/null)
           FLASH_MAX=573440
           FLASH_PCT=$((TEXT_SZ * 100 / FLASH_MAX))
           # RAM (.data+.bss): 96K = 98304
@@ -171,28 +177,28 @@ tasks:
           printf "noinit: %6d / %6d (%2d%%)  debug ring+crash\n" "$NOINIT_USED" "$NOINIT_MAX" "$NOINIT_PCT"
           printf "fwsc:   %6d bytes (lz4 package)\n" "$FWSC_SZ"
       # What fills the 96 KB RAM region, largest first (tools/debug/ram_top.py); `task build:size-top -- -n 40` for more
-      - uv run --quiet python tools/debug/ram_top.py build/modd.map -n 12
+      - uv run --quiet python tools/debug/ram_top.py {{.BUILD_DIR}}/modd.map -n 12
 
   build:size-top:
     desc: Rank the .data/.bss consumers from the linker map (default top 20; -- -n N)
     silent: true
     preconditions:
-      - sh: test -f build/modd.map
-        msg: "build/modd.map not found. Run 'task build' first."
+      - sh: test -f {{.BUILD_DIR}}/modd.map
+        msg: "{{.BUILD_DIR}}/modd.map not found. Run 'task build' first."
     cmds:
-      - uv run --quiet python tools/debug/ram_top.py build/modd.map {{.CLI_ARGS}}
+      - uv run --quiet python tools/debug/ram_top.py {{.BUILD_DIR}}/modd.map {{.CLI_ARGS}}
 
   flash:uboot:
     desc: Flash firmware via UBOOT mode (hold OCT+/- for 5s, then run this)
     silent: true
     vars:
-      FIRMWARE: '{{.FIRMWARE | default "build/modd.fwsc"}}'
+      FIRMWARE: '{{.FIRMWARE | default (printf "%s/modd.fwsc" .BUILD_DIR)}}'
     preconditions:
       - sh: test -f {{.FIRMWARE}}
         msg: "{{.FIRMWARE}} not found. Run 'task build' first."
     cmds:
       - cmd: |
-          test -f build/modd.version && echo "version: $(cat build/modd.version)" || true
+          test -f {{.BUILD_DIR}}/modd.version && echo "version: $(cat {{.BUILD_DIR}}/modd.version)" || true
       - uv sync --quiet --group uboot
       - sudo uv run --quiet --group uboot python tools/device/fm1_uboot_flash.py {{.FIRMWARE}} {{.CLI_ARGS}}
 
@@ -298,13 +304,13 @@ tasks:
         {
           echo "=== logs:debug $(date -Iseconds) ==="
           echo "=== config.h symbols ==="
-          grep '^#define CONFIG_' build/gen/config.h 2>/dev/null
+          grep '^#define CONFIG_' {{.BUILD_DIR}}/gen/config.h 2>/dev/null
           echo ""
           echo "=== .bss/.pool sizes (from linker map) ==="
-          grep -E '^\.(bss|pool)\b|_bss_(start|end)|_pool_(start|end)' build/modd.map 2>/dev/null
+          grep -E '^\.(bss|pool)\b|_bss_(start|end)|_pool_(start|end)' {{.BUILD_DIR}}/modd.map 2>/dev/null
           echo ""
           echo "=== firmware size ==="
-          ls -la build/modd.fwsc build/modd.elf 2>/dev/null
+          ls -la {{.BUILD_DIR}}/modd.fwsc {{.BUILD_DIR}}/modd.elf 2>/dev/null
           echo ""
           echo "=== device status (crash record, ring position) ==="
           uv run --quiet --with python-rtmidi python tools/device/fm1log.py --hello 2>&1
@@ -458,12 +464,12 @@ tasks:
       - uv run --quiet python tools/build/menuconfig.py
 
   config:generate:
-    desc: "Generate build/gen/config.h (default: from current .config)"
+    desc: "Generate build/<defconfig>/gen/config.h (default: from current .config)"
     cmds:
       - task: config:generate:local
 
   config:generate:local:
-    desc: Generate build/gen/config.h from current .config
+    desc: Generate build/modd/gen/config.h from current .config
     cmds:
       - uv run --quiet python tools/build/genconfig.py
 

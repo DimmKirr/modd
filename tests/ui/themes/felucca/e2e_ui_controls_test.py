@@ -25,10 +25,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from e2e_fixtures import E2ETestCase, _run_timestamp, RESULTS_DIR
+from e2e_fixtures import E2ETestCase, _run_timestamp, RESULTS_DIR, fwsc_path
 
-ROOT = Path(__file__).resolve().parents[4]
-FWSC = ROOT / 'build' / 'modd.fwsc'
+FWSC = fwsc_path()
 
 # Felucca control map: button -> page name (from modd_controls.h)
 BUTTON_NAV = {

@@ -37,8 +37,9 @@ import lz4blk
 
 ROOT = Path(__file__).resolve().parents[2]
 FW = ROOT / 'firmware'
-OUT = ROOT / 'build'
-GEN = Path(os.environ['MODD_GEN_DIR']) if 'MODD_GEN_DIR' in os.environ else OUT / 'gen'
+BUILD = ROOT / 'build'
+OUT = BUILD  # overridden per defconfig in main()
+GEN = Path(os.environ['MODD_GEN_DIR']) if 'MODD_GEN_DIR' in os.environ else BUILD / 'modd' / 'gen'
 
 DOCKER_IMAGE = os.environ.get('JIELI_DOCKER_IMAGE', 'debian:bookworm-slim')
 
@@ -317,10 +318,12 @@ def tc(tool, *args, capture=False):
     return _runner.run(tool_path, [*extra, *[str(a) for a in args]], capture=capture)
 
 
-def genconfig(defconfig=None):
+def genconfig(defconfig=None, outdir=None):
     cmd = [sys.executable, str(ROOT / 'tools' / 'build' / 'genconfig.py')]
     if defconfig:
         cmd += ['--defconfig', defconfig]
+    if outdir:
+        cmd += ['--outdir', str(outdir)]
     subprocess.run(cmd, check=True, cwd=str(ROOT))
 
 
@@ -406,7 +409,7 @@ def _firmware_version():
 
 
 def gen_felucca_ui():
-    """Run Felucca's font/icon/keycap/palette generators into build/gen/."""
+    """Run Felucca's font/icon/keycap/palette generators into GEN dir."""
     GEN.mkdir(parents=True, exist_ok=True)
     felucca = FW / 'upstream' / 'felucca'
     tools = felucca / 'tools'
@@ -430,7 +433,7 @@ def gen_felucca_ui():
 
 
 def gen_melodee_ui():
-    """Run Melodee's font/keycap generators and modd's palette list into build/gen/melodee/."""
+    """Run Melodee's font/keycap generators and modd's palette list into GEN/melodee/."""
     out = GEN / 'melodee'
     out.mkdir(parents=True, exist_ok=True)
     tools = FW / 'upstream' / 'melodee' / 'tools'
@@ -514,13 +517,13 @@ def build(dry_run=False):
         if not (GEN / 'ui_fonts.h').exists():
             gen_felucca_ui()
         else:
-            print('gen_felucca_ui: headers exist, skipping (delete build/gen/ui_fonts.h to regenerate)')
+            print(f'gen_felucca_ui: headers exist, skipping (delete {GEN}/ui_fonts.h to regenerate)')
     if 'GEN_MELODEE_UI' in enabled:
         if not (GEN / 'melodee' / 'ui_fonts.h').exists():
             gen_melodee_ui()
         else:
-            print('gen_melodee_ui: headers exist, skipping (delete build/gen/melodee/ to regenerate)')
-        flags.insert(0, f'-I{GEN / "melodee"}')   # before build/gen: its ui_fonts.h must win
+            print(f'gen_melodee_ui: headers exist, skipping (delete {GEN}/melodee/ to regenerate)')
+        flags.insert(0, f'-I{GEN / "melodee"}')   # before GEN: its ui_fonts.h must win
     if 'ENGINES' in enabled:
         gen_engine_tables()
     if 'WIFI' in enabled and not (GEN / 'ble_rf_tables.h').exists():
@@ -581,13 +584,15 @@ def build(dry_run=False):
             print(f'  [asm] {path.relative_to(ROOT)}')
         print(f'  [cc]  {c_src.relative_to(ROOT)}')
         print(f'Flags: {" ".join(flags)}')
-        print('Then build firmware/stub, firmware/loader and package build/modd.fwsc')
+        print(f'Then build firmware/stub, firmware/loader and package {OUT.relative_to(ROOT)}/modd.fwsc')
         return
 
     logo_src = ROOT / 'assets' / 'logo-dark.png'
     logo_hdr = GEN / 'boot_logo.h'
-    if logo_src.exists():
-        subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'logo_convert.py')],
+    if logo_src.exists() and not logo_hdr.exists():
+        GEN.mkdir(parents=True, exist_ok=True)
+        subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'logo_convert.py'),
+                        str(logo_src), str(logo_hdr)],
                        check=True, cwd=str(ROOT))
 
     runner = _pick_runner(toolchain_path())
@@ -739,8 +744,14 @@ def main():
     ap.add_argument('--dry-run', action='store_true')
     args = ap.parse_args()
 
+    global OUT, GEN
+    dc = args.defconfig or 'modd'
+    OUT = BUILD / dc
     if 'MODD_GEN_DIR' not in os.environ:
-        genconfig(args.defconfig)
+        GEN = OUT / 'gen'
+
+    if 'MODD_GEN_DIR' not in os.environ:
+        genconfig(args.defconfig, outdir=GEN)
     if args.genconfig_only:
         return
 

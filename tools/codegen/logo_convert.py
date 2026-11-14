@@ -105,6 +105,6 @@ def convert(src, dst, width=240, canvas=240):
 
 
 if __name__ == '__main__':
-    src = ROOT / 'assets' / 'logo-light.png'
-    dst = ROOT / 'build' / 'gen' / 'boot_logo.h'
+    src = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / 'assets' / 'logo-light.png'
+    dst = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / 'build' / 'gen' / 'boot_logo.h'
     convert(src, dst)

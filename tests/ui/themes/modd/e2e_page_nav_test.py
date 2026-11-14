@@ -7,9 +7,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from e2e_fixtures import E2ETestCase
+from e2e_fixtures import E2ETestCase, fwsc_path
 
-FWSC_PATH = Path(__file__).resolve().parents[4] / 'build' / 'modd.fwsc'
+FWSC_PATH = fwsc_path()
 
 # Max acceptable time (ms) for the LCD to show the new page after one encoder click.
 # Emulator at 100MHz: typically 30-100ms. Budget allows 2x headroom.

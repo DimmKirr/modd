@@ -15,11 +15,11 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from e2e_fixtures import E2ETestCase
+from e2e_fixtures import E2ETestCase, fwsc_path, defconfig_name
 
 ROOT = Path(__file__).resolve().parents[2]
-FWSC_PATH = ROOT / 'build' / 'modd.fwsc'
-CONFIG_H = ROOT / 'build' / 'gen' / 'config.h'
+FWSC_PATH = fwsc_path()
+CONFIG_H = ROOT / 'build' / defconfig_name() / 'gen' / 'config.h'
 
 
 def _dock_enabled():
@@ -34,7 +34,7 @@ class TestDockInstr(E2ETestCase):
         if not FWSC_PATH.is_file():
             raise unittest.SkipTest('Firmware not built. Run "task build" first.')
         if not _dock_enabled():
-            raise unittest.SkipTest('CONFIG_DOCK is off in build/gen/config.h')
+            raise unittest.SkipTest(f'CONFIG_DOCK is off in {CONFIG_H}')
         super().setUpClass()
 
     def _boot_to_home(self, page):

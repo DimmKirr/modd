@@ -18,6 +18,19 @@ from fm1_controls import FM1Controls
 
 ROOT = Path(__file__).resolve().parents[1]
 EMU_DIR = Path(os.environ.get('FM1_WEB_DIR', Path.home() / '.fm1-emulator' / 'web'))
+
+
+def defconfig_name():
+    """Return the active defconfig name (e.g. 'modd', 'modd_dev_network')."""
+    return os.environ.get('MODD_DEFCONFIG', 'modd')
+
+
+def fwsc_path(defconfig=None):
+    """Resolve the firmware path for a given defconfig."""
+    if 'MODD_FWSC' in os.environ:
+        return Path(os.environ['MODD_FWSC'])
+    dc = defconfig or defconfig_name()
+    return ROOT / 'build' / dc / 'modd.fwsc'
 RESULTS_DIR = Path(__file__).resolve().parent / 'results'
 CHROMIUM_PATH = os.environ.get('CHROMIUM_PATH') or shutil.which('chromium')
 
@@ -251,9 +264,15 @@ class E2ETestCase(unittest.TestCase):
         (lcd_dir / filename).write_bytes(raw)
 
     def frames_to_gif(self, frames, name='boot', fps=10, scale=480):
-        """Convert captured canvas data-URL frames to an optimised GIF."""
+        """Convert captured canvas data-URL frames to an optimised GIF.
+
+        Returns the GIF path, or None if ffmpeg is not installed.
+        """
         import base64
+        import shutil
         import subprocess
+        if not shutil.which('ffmpeg'):
+            return None
         results = self._results_dir()
         frame_dir = results / 'frames'
         frame_dir.mkdir(parents=True, exist_ok=True)
@@ -275,6 +294,5 @@ class E2ETestCase(unittest.TestCase):
             '-lavfi', f'{filters}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=3',
             str(gif_path),
         ], check=True, capture_output=True)
-        import shutil
         shutil.rmtree(frame_dir)
         return gif_path

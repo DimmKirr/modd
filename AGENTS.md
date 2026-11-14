@@ -12,12 +12,14 @@ Kconfiglib-based configuration. All commands go through [Taskfile](https://taskf
 
 ```
 task build                              # build modd firmware (alias for build:live)
-task build -- --defconfig wifi_debug    # build a specific defconfig from configs/
+task build -- --defconfig modd_wifi_debug    # build a specific defconfig from configs/
+task modd:build:modd_wifi_debug             # same, via per-defconfig task
+task modd:test:modd_dev_network             # build + e2e test a specific defconfig
 task build:live                         # build with source-change caching (the real build target)
 task flash                              # build if sources or .env changed, then flash over USB-MIDI
 task config                             # interactive menuconfig
 task config:generate:defconfig -- melodee  # load a preset defconfig and generate config.h
-task config:generate:local                # .config -> build/gen/config.h
+task config:generate:local                # .config -> build/modd/gen/config.h
 task dock:modules -- /path/to/disk      # copy fm1-dock's prebuilt .dock modules to a USB disk / SD card root
 task test                               # run all tests (unit + e2e)
 task test:unit                          # Python unit tests only
@@ -30,7 +32,7 @@ task debug:usb -- --follow              # same + tail all log lines
 task logs:debug                         # full debug dump: build facts, crash record, log ring + tail
 ```
 
-**Important:** always use `task build` (not `python tools/build.py` directly) because the Taskfile sets required env vars for the JieLi toolchain. If calling `build.py` directly, you must set `JIELI_TOOLCHAIN` and `AC79_SDK`.
+**Important: never call `python tools/build.py` directly.** Always use `task build`. The Taskfile sets required env vars (`JIELI_TOOLCHAIN`, `AC79_SDK`), downloads the toolchain if missing, and ensures vendored dependencies are present. Without the Taskfile, `build.py` will fail with `JIELI_TOOLCHAIN not set`. No arguments builds the default modd defconfig; pass `-- --defconfig <name>` for others.
 
 `task build` delegates to `build:live`, which has source-change caching (skips when sources and `.env` are unchanged). Use `build:live` only when you need to reference the cacheable target directly (e.g. as a dependency).
 
@@ -39,10 +41,10 @@ task logs:debug                         # full debug dump: build facts, crash re
 `.config` is a symlink to `configs/modd_defconfig`, the main development profile. Do not replace it with a regular file. To build with a different defconfig from `configs/`, pass `--defconfig <name>` (without the `_defconfig` suffix):
 
 ```
-task build -- --defconfig wifi_debug    # builds with configs/wifi_debug_defconfig
+task build -- --defconfig modd_wifi_debug    # builds with configs/modd_wifi_debug_defconfig
 ```
 
-Generated files go to `build/gen/config.h`.
+Generated files go to `build/<defconfig>/gen/config.h` (e.g. `build/modd/gen/config.h`).
 
 ## Architecture
 
@@ -107,7 +109,7 @@ firmware/
 tools/
   build/                    # build pipeline
     build.py                # full build entry point (genconfig + compile)
-    genconfig.py            # .config -> build/gen/autoconf.h
+    genconfig.py            # .config -> build/<defconfig>/gen/config.h
     menuconfig.py           # Kconfiglib TUI wrapper
     fm1pkg_make.py          # .fwsc package builder
     lz4blk.py               # LZ4 block compression
@@ -135,7 +137,21 @@ tools/
 
 ## Toolchain
 
-- **Compiler**: JieLi clang 4.0.1 for pi32v2 (proprietary target, x86-64 binary). The build/test environment must have **one of**: (1) x86-64 architecture (native), (2) `qemu-x86_64` (user-mode emulation), or (3) Rosetta/binfmt_misc (Apple-silicon VMs). Runner selection in `tools/build/build.py` is automatic: native on x86-64 Linux; on other Linux, tests the ld.so runner with an actual compile (not just `ld.so --version`) and falls back to `qemu-x86_64` if it segfaults; otherwise Docker (macOS, or `JIELI_DOCKER=1`). The vendor build shim (`.scratch/tools/vendor-build/tc-shim.sh`) follows the same logic. The non-native Linux runners need x86-64 glibc/libstdc++: `~/.fm1-toolchain/x86libs` `JIELI_X86_GLIBC`/`JIELI_X86_STDCPP`, or the nix store.
+- **Compiler**: JieLi clang 4.0.1 for pi32v2 (proprietary target, x86-64 binary). The build/test environment must have **one of**: (1) x86-64 architecture (native), (2) `qemu-x86_64` (user-mode emulation), or (3) Rosetta/binfmt_misc (Apple-silicon VMs). Runner selection is automatic: native on x86-64 Linux; on other Linux, `task build` tests the ld.so runner with an actual compile and falls back to `qemu-x86_64` if it segfaults; otherwise Docker (macOS, or `JIELI_DOCKER=1`). The vendor build shim (`.scratch/tools/vendor-build/tc-shim.sh`) follows the same logic. The non-native Linux runners need x86-64 glibc/libstdc++: `~/.fm1-toolchain/x86libs` `JIELI_X86_GLIBC`/`JIELI_X86_STDCPP`, or the nix store.
+- **Finding the toolchain**: `task build` sets `JIELI_TOOLCHAIN` and `AC79_SDK` automatically and downloads the toolchain if missing. In CI, `dimmkirr/setup-fm1-toolchain@v1` handles the same setup.
+- **Toolchain paths** (check in order):
+  1. `$JIELI_TOOLCHAIN` / `$AC79_SDK` env vars (if set, used as-is)
+  2. `~/.fm1-toolchain/toolchain` and `~/.fm1-toolchain/AC79_SDK` (Taskfile default, installed by `task fm1-platform:download`)
+  3. JieLi upstream default: `/opt/jieli/pi32v2` (JieLi SDK docs install location)
+  The key binary to verify: `$JIELI_TOOLCHAIN/pi32v2/bin/clang`. The installed layout under `~/.fm1-toolchain/`:
+  ```
+  ~/.fm1-toolchain/
+    toolchain/          # JIELI_TOOLCHAIN points here
+      pi32v2/bin/       # clang, ld, ar, cc, LLVMgold.so
+      common/bin/       # objdump, objcopy
+    AC79_SDK/           # AC79_SDK points here (SDK headers, libs, linker scripts)
+    x86libs/            # x86-64 glibc/libstdc++ for qemu/Rosetta runners
+  ```
 - **Target**: AC791N dual-core MCU, bare-metal, no OS
 - **Audio**: 44.1kHz stereo, 128-sample half-buffer DMA, I2S codec
 - **Flash**: SPI NOR for storage, projects, presets, OTA

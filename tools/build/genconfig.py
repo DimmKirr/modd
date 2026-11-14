@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""Generate build/gen/config.h from .config using Kconfiglib.
+"""Generate build/<defconfig>/gen/config.h from .config using Kconfiglib.
 
   tools/genconfig.py                    # generate from .config
   tools/genconfig.py --defconfig NAME   # load configs/NAME_defconfig first
@@ -110,7 +110,7 @@ def write_manifest(kconf, out_dir):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--defconfig', help='load configs/<NAME>_defconfig')
-    ap.add_argument('--outdir', help='write config.h and manifest here (default: build/gen)')
+    ap.add_argument('--outdir', help='write config.h and manifest here (default: build/<defconfig>/gen)')
     args = ap.parse_args()
 
     os.environ['srctree'] = str(ROOT)
@@ -125,9 +125,16 @@ def main():
     elif config.exists():
         kconf.load_config(str(config))
 
+    if args.outdir:
+        out = Path(args.outdir)
+    else:
+        dc = args.defconfig or 'modd'
+        out = ROOT / 'build' / dc / 'gen'
+    out.mkdir(parents=True, exist_ok=True)
+
     # Save .config BEFORE env overrides so secrets stay out of the repo.
     if args.outdir:
-        kconf.write_config(str(Path(args.outdir) / '.config'))
+        kconf.write_config(str(out / '.config'))
     elif not args.defconfig:
         kconf.write_config(str(config))
 
@@ -142,9 +149,6 @@ def main():
             if sym:
                 sym.set_value(val)
                 print(f'genconfig: {name} overridden from environment')
-
-    out = Path(args.outdir) if args.outdir else ROOT / 'build' / 'gen'
-    out.mkdir(parents=True, exist_ok=True)
     kconf.write_autoconf(str(out / 'config.h'))
     components = write_manifest(kconf, out)
     print(f'genconfig: wrote {out / "config.h"}')

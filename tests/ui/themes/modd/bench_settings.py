@@ -28,7 +28,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
-FWSC = ROOT / 'build' / 'modd.fwsc'
+sys.path.insert(0, str(ROOT / 'tests'))
+from e2e_fixtures import fwsc_path
+
+FWSC = fwsc_path()
 FM1_LIVE = Path.home() / '.fm1-emulator' / 'bin' / 'fm1-live'
 RESULTS = ROOT / 'tests' / 'results'
 
