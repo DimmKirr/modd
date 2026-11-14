@@ -269,8 +269,18 @@ static void dock_stop(void)
 }
 
 #ifdef CONFIG_USB_NET
-static int usbnet_is_up(void);                  /* net/usbnet.c: its memory is the module's RAM (.pool_net) */
+static int usbnet_is_up(void);
+#endif
+#ifdef CONFIG_USB_NET_ECM
+static int ecm_is_up(void);
+#endif
+
+#if defined(CONFIG_USB_NET) && defined(CONFIG_USB_NET_ECM)
+static int dock_net_busy(void) { return usbnet_is_up() || ecm_is_up(); }
+#elif defined(CONFIG_USB_NET)
 #define dock_net_busy() usbnet_is_up()
+#elif defined(CONFIG_USB_NET_ECM)
+#define dock_net_busy() ecm_is_up()
 #else
 #define dock_net_busy() 0
 #endif

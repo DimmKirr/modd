@@ -279,6 +279,9 @@ static void usb_host_poll(void)
                 modd_log("USB host: device connected");
                 if (uhost.state == UHOST_MSC_READY) {
                     modd_log_int("USB host: sectors ", (int32_t)uhost.capacity);
+                } else if (!uhost.ep_in || !uhost.ep_out) {
+                    /* no disk, the network link alone: nothing for MSC to initialise */
+                    modd_log("USB host: no disk");
                 } else {
                     r = msc_init_device();
                     if (r == 0) {

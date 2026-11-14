@@ -20,4 +20,26 @@ config USB_NET
       OTG port in host mode while enabled, so USB-MIDI to a computer is
       off at the same time. Needs no radio: coexists with BLE.
 
+config USB_NET_AUTO
+    bool "Hold the USB port in host mode for the network link from boot"
+    depends on USB_NET || USB_NET_ECM
+    default n
+    help
+      Starts with "USB NET" and "USB ETH" on: the OTG port goes to host mode as
+      soon as no computer is driving it, and whichever network link is plugged
+      in (a phone, a CDC-ECM adapter) comes up without a visit to the settings menu. Meant for a unit that lives on its hub with a phone,
+      and for the emulator (fm1-live --usb ethernet): with it, the FM-1 is never
+      a USB-MIDI device to a computer.
+
+config USB_NET_ECM
+    bool "USB CDC-ECM ethernet adapter"
+    depends on USB_HOST
+    select LWIP
+    default n
+    help
+      CDC-ECM host driver for standard USB Ethernet adapters (e.g.
+      ASIX AX88179A). Devices that expose a CDC-ECM configuration
+      are switched to it automatically. Shares the OTG port and
+      .pool_net RAM with USB_NET (iPhone tethering).
+
 endmenu

@@ -36,8 +36,18 @@ static int otg_vbus_present(void)
 /* USB network link (net/usbnet.c, included later): the user wants the
  * port held in host mode for it, like udisk_active does for the disk. */
 #ifdef CONFIG_USB_NET
-static void usbnet_detach(void);         /* usbnet_wanted is declared in udisk/usb_hub.c */
+static void usbnet_detach(void);
+#endif
+#ifdef CONFIG_USB_NET_ECM
+static void ecm_detach(void);
+#endif
+
+#if defined(CONFIG_USB_NET) && defined(CONFIG_USB_NET_ECM)
+#define OTG_HOST_WANTED() (udisk_active || usbnet_wanted || ecm_wanted)
+#elif defined(CONFIG_USB_NET)
 #define OTG_HOST_WANTED() (udisk_active || usbnet_wanted)
+#elif defined(CONFIG_USB_NET_ECM)
+#define OTG_HOST_WANTED() (udisk_active || ecm_wanted)
 #else
 #define OTG_HOST_WANTED() (udisk_active)
 #endif
@@ -77,6 +87,9 @@ static void otg_switch_to_device(void)
 {
 #ifdef CONFIG_USB_NET
     usbnet_detach();
+#endif
+#ifdef CONFIG_USB_NET_ECM
+    ecm_detach();
 #endif
     usb_host_deinit();
     usb.detached = 0;

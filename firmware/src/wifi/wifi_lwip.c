@@ -147,6 +147,7 @@ static void wifi_lwip_stop_dhcp(void)
     dhcp_stop(&wifi_netif);
     netif_set_link_down(&wifi_netif);
     netif_set_down(&wifi_netif);
+    net_on_down(&wifi_netif);
 }
 
 static uint32_t wifi_lwip_get_ip(void)

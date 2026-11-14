@@ -158,6 +158,7 @@ static void usbnet_detach(void)
         dhcp_stop(&usbnet_netif);
         netif_set_link_down(&usbnet_netif);
         netif_set_down(&usbnet_netif);
+        net_on_down(&usbnet_netif);
     }
     usbnet_carrier = 0;
     usbnet_rx_armed = 0;
@@ -186,6 +187,7 @@ static void usbnet_carrier_poll(uint32_t now)
         modd_log_int("usbnet: carrier off r=", r);
         dhcp_stop(&usbnet_netif);
         netif_set_link_down(&usbnet_netif);
+        net_on_down(&usbnet_netif);
     }
 }
 
@@ -252,7 +254,11 @@ static void usbnet_poll(void)
 static void usbnet_init(void)
 {
     usbnet_up = 0;
+#ifdef CONFIG_USB_NET_AUTO
+    usbnet_wanted = 1;
+#else
     usbnet_wanted = 0;
+#endif
 }
 
 static void usbnet_set_wanted(uint8_t on)

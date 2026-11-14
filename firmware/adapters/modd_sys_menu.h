@@ -97,6 +97,13 @@ static uint8_t sm_usbnet_get(void) { return usbnet_wanted; }
 static void    sm_usbnet_set(uint8_t v) { usbnet_set_wanted(v > 0u); }
 #endif
 
+#ifdef CONFIG_USB_NET_ECM
+static uint8_t ecm_wanted;
+static void    ecm_set_wanted(uint8_t on);
+static uint8_t sm_ecm_get(void) { return ecm_wanted; }
+static void    sm_ecm_set(uint8_t v) { ecm_set_wanted(v > 0u); }
+#endif
+
 #ifdef CONFIG_SYS_MENU_BLE
 static uint8_t sm_ble_on_get(void) { return sys_settings.ble_on; }
 static void    sm_ble_on_set(uint8_t v)
@@ -152,6 +159,9 @@ static const sys_menu_item_t SYS_MENU[] = {
 #endif
 #if defined(CONFIG_SYS_MENU_NETWORK) && defined(CONFIG_USB_NET)
     { "USB NET",      SMTAB_NETWORK, 2, SM_ONOFF,   sm_usbnet_get,   sm_usbnet_set },
+#endif
+#if defined(CONFIG_SYS_MENU_NETWORK) && defined(CONFIG_USB_NET_ECM)
+    { "USB ETH",      SMTAB_NETWORK, 2, SM_ONOFF,   sm_ecm_get,      sm_ecm_set },
 #endif
 #ifdef CONFIG_SYS_MENU_BLE
     { "BLUETOOTH",    SMTAB_BLE,  2,  SM_ONOFF,     sm_ble_on_get,   sm_ble_on_set },

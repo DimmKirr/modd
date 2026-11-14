@@ -65,6 +65,18 @@ typedef struct __attribute__((packed)) {
 static uint8_t usb_enum_buf[256] __attribute__((aligned(4), section(".pool")));
 
 static int usb_hub_discover(void);
+#ifdef CONFIG_USB_NET
+static int usb_hub_parse_apple_net(uint8_t addr, uint8_t hub_addr, uint8_t hub_port,
+                                   const usb_config_desc_t *cfg, uint16_t total);
+static int usbnet_attach(void);          /* net/usbnet.c, included after the USB host */
+static uint8_t usbnet_wanted;            /* udisk/usb_hub.c */
+#endif
+#ifdef CONFIG_USB_NET_ECM
+static int usb_hub_parse_ecm(uint8_t addr, uint8_t hub_addr, uint8_t hub_port,
+                             const usb_config_desc_t *cfg, uint16_t total);
+static int ecm_attach(void);
+static uint8_t ecm_wanted;
+#endif
 
 static int usb_host_enumerate(void)
 {
@@ -176,6 +188,34 @@ static int usb_host_enumerate(void)
             }
             return -6;
         }
+#ifdef CONFIG_USB_NET
+        /* The network link on the cable itself (a phone plugged straight in, the
+         * emulator's --usb ethernet): the hub path's parser, at address 1. */
+        if (dev.idVendor == 0x05ACu /* Apple */ && usbnet_wanted) {
+            if (usb_hub_parse_apple_net(1, 0, 0, cfg, total) && usbnet_attach() == 0) {
+                uhost.addr = 1;
+                uhost.ep0_mps_msc = uhost.ep0_mps;
+                uhost.ep_in = 0;
+                uhost.ep_out = 0;
+                uhost.state = UHOST_ENUMERATED;
+                modd_log("usb: net link on the cable");
+                return 0;
+            }
+        }
+#endif
+#ifdef CONFIG_USB_NET_ECM
+        if (dev.idVendor != 0x05ACu && ecm_wanted) {
+            if (usb_hub_parse_ecm(1, 0, 0, cfg, total) && ecm_attach() == 0) {
+                uhost.addr = 1;
+                uhost.ep0_mps_msc = uhost.ep0_mps;
+                uhost.ep_in = 0;
+                uhost.ep_out = 0;
+                uhost.state = UHOST_ENUMERATED;
+                modd_log("usb: ECM link on the cable");
+                return 0;
+            }
+        }
+#endif
         return -6;
     }
 

@@ -726,6 +726,7 @@ static void modd_ble_sync(void) {}
 #include "wifi/wifi_weather.c"   /* weather client on http.c; link-agnostic */
 #include "wifi/wifi_llm.c"       /* LLM client on http.c; link-agnostic */
 #include "net/usbnet.c"          /* USB network link (CONFIG_USB_NET), stubs otherwise */
+#include "net/usbnet_ecm.c"     /* CDC-ECM ethernet (CONFIG_USB_NET_ECM), stubs otherwise */
 
 /* --- WiFi module (GPL-3.0 clean-room driver) --- */
 
@@ -1086,6 +1087,7 @@ static void services_task(void)
         weather_poll();
         llm_poll();
         usbnet_poll();
+        ecm_poll();
         yield();
     }
 }
@@ -1319,6 +1321,7 @@ static void fm1_main(void)
 #ifdef CONFIG_USB_HOST
     otg_init();
     usbnet_init();                 /* stub without CONFIG_USB_NET */
+    ecm_init();                    /* stub without CONFIG_USB_NET_ECM */
     modd_log("OTG: device mode (boot)");
 #endif
 
@@ -1565,6 +1568,7 @@ static void fm1_main(void)
         weather_poll();
         llm_poll();
         usbnet_poll();
+        ecm_poll();
 #if defined(CONFIG_UI_FELUCCA)
         fsh_draw();
 #elif defined(CONFIG_UI_MODD)

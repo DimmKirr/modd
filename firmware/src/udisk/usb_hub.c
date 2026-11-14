@@ -111,6 +111,28 @@ static uint8_t usbnet_wanted;            /* settings: hold host mode for the net
 static int usbnet_attach(void);          /* net/usbnet.c, included after the USB host */
 #endif
 
+#ifdef CONFIG_USB_NET_ECM
+/* CDC-ECM candidate: a standard Ethernet adapter in one of the device's
+ * configurations. cfg_value selects the ECM config, data_iface/data_alt
+ * the data interface's alternate setting with bulk endpoints. */
+typedef struct {
+    uint8_t  addr, hub_addr, hub_port;
+    uint8_t  cfg_value;
+    uint8_t  ctrl_iface;
+    uint8_t  data_iface;
+    uint8_t  data_alt;
+    uint8_t  ep_in, ep_out;
+    uint8_t  ep0_mps;
+    uint16_t max_packet;
+    uint8_t  mac_str_idx;
+} usb_ecm_cand_t;
+
+static usb_ecm_cand_t usb_ecm_cand;
+static uint8_t ecm_wanted;
+static int ecm_attach(void);
+static void ecm_detach(void);
+#endif
+
 static void usb_devtab_clear(void)
 {
     uint32_t i;
@@ -119,6 +141,9 @@ static void usb_devtab_clear(void)
     usb_next_addr = 1;
     usb_hub_msc.addr = 0;
     usb_net_cand.addr = 0;
+#ifdef CONFIG_USB_NET_ECM
+    usb_ecm_cand.addr = 0;
+#endif
     usb_hub_msc_count = 0;
     usb_hub_mounted = 0xFF;
     usb_hub_dead = 0;
@@ -295,15 +320,122 @@ static int usb_hub_parse_apple_net(uint8_t addr, uint8_t hub_addr, uint8_t hub_p
     return 1;
 }
 
-/* Stub handlers for non-MSC device classes.
- * These log what was found; actual drivers can be added later. */
+#ifdef CONFIG_USB_NET_ECM
+/* CDC functional descriptor subtypes (USB CDC 1.2, Table 13) */
+#define CDC_CS_INTERFACE     0x24
+#define CDC_SUBTYPE_UNION    0x06
+#define CDC_SUBTYPE_ECM      0x0F
+
+static int usb_hub_parse_ecm(uint8_t addr, uint8_t hub_addr, uint8_t hub_port,
+                             const usb_config_desc_t *cfg, uint16_t total)
+{
+    uint32_t pos = cfg->bLength;
+    uint8_t ctrl_iface = 0xFF, data_iface = 0xFF;
+    uint8_t mac_str = 0;
+    uint8_t in_ecm_ctrl = 0;
+    uint8_t ep_in = 0, ep_out = 0, data_alt = 0;
+    uint16_t maxp = 64;
+
+    while (pos + 2 <= total) {
+        uint8_t dlen = usb_enum_buf[pos];
+        uint8_t dtype = usb_enum_buf[pos + 1];
+        if (dlen < 2 || pos + dlen > total) break;
+
+        if (dtype == USB_DT_INTERFACE && dlen >= 9) {
+            const usb_interface_desc_t *ifc =
+                (const usb_interface_desc_t *)&usb_enum_buf[pos];
+            in_ecm_ctrl = (ifc->bInterfaceClass == 0x02 &&
+                          ifc->bInterfaceSubClass == 0x06 &&
+                          ifc->bAlternateSetting == 0);
+            if (in_ecm_ctrl)
+                ctrl_iface = ifc->bInterfaceNumber;
+        }
+
+        if (dtype == CDC_CS_INTERFACE && dlen >= 13 && in_ecm_ctrl) {
+            uint8_t subtype = usb_enum_buf[pos + 2];
+            if (subtype == CDC_SUBTYPE_ECM)
+                mac_str = usb_enum_buf[pos + 3];
+        }
+
+        if (dtype == CDC_CS_INTERFACE && dlen >= 5 && in_ecm_ctrl) {
+            uint8_t subtype = usb_enum_buf[pos + 2];
+            if (subtype == CDC_SUBTYPE_UNION)
+                data_iface = usb_enum_buf[pos + 4];
+        }
+
+        pos += dlen;
+    }
+
+    if (ctrl_iface == 0xFF || data_iface == 0xFF) return 0;
+
+    pos = cfg->bLength;
+    uint8_t in_data_alt1 = 0;
+    while (pos + 2 <= total) {
+        uint8_t dlen = usb_enum_buf[pos];
+        uint8_t dtype = usb_enum_buf[pos + 1];
+        if (dlen < 2 || pos + dlen > total) break;
+
+        if (dtype == USB_DT_INTERFACE && dlen >= 9) {
+            const usb_interface_desc_t *ifc =
+                (const usb_interface_desc_t *)&usb_enum_buf[pos];
+            in_data_alt1 = (ifc->bInterfaceNumber == data_iface &&
+                           ifc->bAlternateSetting >= 1 &&
+                           ifc->bInterfaceClass == 0x0A);
+            if (in_data_alt1)
+                data_alt = ifc->bAlternateSetting;
+        }
+
+        if (dtype == USB_DT_ENDPOINT && dlen >= 7 && in_data_alt1) {
+            const usb_endpoint_desc_t *ep =
+                (const usb_endpoint_desc_t *)&usb_enum_buf[pos];
+            if ((ep->bmAttributes & 0x03) == 0x02) {
+                if ((ep->bEndpointAddress & USB_EP_DIR_IN) && !ep_in) {
+                    ep_in = ep->bEndpointAddress & 0x0F;
+                    maxp = ep->wMaxPacketSize;
+                } else if (!(ep->bEndpointAddress & USB_EP_DIR_IN) && !ep_out) {
+                    ep_out = ep->bEndpointAddress & 0x0F;
+                }
+            }
+        }
+        pos += dlen;
+    }
+
+    if (!ep_in || !ep_out) return 0;
+
+    usb_ecm_cand.addr = addr;
+    usb_ecm_cand.hub_addr = hub_addr;
+    usb_ecm_cand.hub_port = hub_port;
+    usb_ecm_cand.cfg_value = cfg->bConfigurationValue;
+    usb_ecm_cand.ctrl_iface = ctrl_iface;
+    usb_ecm_cand.data_iface = data_iface;
+    usb_ecm_cand.data_alt = data_alt;
+    usb_ecm_cand.ep_in = ep_in;
+    usb_ecm_cand.ep_out = ep_out;
+    usb_ecm_cand.ep0_mps = uhost.ep0_mps;
+    usb_ecm_cand.max_packet = maxp > 64 ? 64 : maxp;
+    usb_ecm_cand.mac_str_idx = mac_str;
+    modd_log_int("hub: ECM found cfg=", cfg->bConfigurationValue);
+    modd_log_int("hub:  ctrl_if=", ctrl_iface);
+    modd_log_int("hub:  data_if=", data_iface);
+    return 1;
+}
+#endif
+
+/* Stub handlers for non-MSC device classes. */
 
 static void usb_hub_on_cdc(uint8_t addr, uint16_t vid, uint16_t pid)
 {
     modd_log_int("hub: CDC/ethernet at addr=", addr);
     modd_log_int("hub:  VID=", vid);
     modd_log_int("hub:  PID=", pid);
-    /* Future: CDC-ECM or RNDIS ethernet driver */
+#ifdef CONFIG_USB_NET_ECM
+    if (!usb_ecm_cand.addr && vid != USB_VID_APPLE) {
+        usb_config_desc_t *cfg = (usb_config_desc_t *)usb_enum_buf;
+        uint16_t total = cfg->wTotalLength;
+        if (total > sizeof(usb_enum_buf)) total = sizeof(usb_enum_buf);
+        usb_hub_parse_ecm(addr, 0, 0, cfg, total);
+    }
+#endif
 }
 
 static void usb_hub_on_billboard(uint8_t addr, uint16_t vid, uint16_t pid)
@@ -461,6 +593,10 @@ static int usb_hub_discover_device(uint8_t addr, uint8_t parent_hub,
         }
         if (ddev.idVendor == USB_VID_APPLE && !usb_net_cand.addr)
             usb_hub_parse_apple_net(addr, parent_hub, parent_port, cfg, total);
+#ifdef CONFIG_USB_NET_ECM
+        if (!usb_ecm_cand.addr && ddev.idVendor != USB_VID_APPLE)
+            usb_hub_parse_ecm(addr, parent_hub, parent_port, cfg, total);
+#endif
     }
 
     r = usb_control_msg(USB_DIR_IN, USB_REQ_GET_DESCRIPTOR,
@@ -783,6 +919,10 @@ static int usb_hub_discover(void)
     /* The network link comes up next to the disk; the session is a
      * success when either did. */
     if (usb_net_cand.addr && usbnet_wanted && usbnet_attach() == 0)
+        return 0;
+#endif
+#ifdef CONFIG_USB_NET_ECM
+    if (usb_ecm_cand.addr && ecm_wanted && ecm_attach() == 0)
         return 0;
 #endif
     return disk ? 0 : -1;
