@@ -120,7 +120,7 @@ static void wifi_rf_vm_read(void)
                 break;
 
             /* verify CRC-16/XMODEM check byte */
-            crc = wifi_rf_crc16(0, &flash[off + 4], len);
+            crc = wifi_rf_crc16(0, (const uint8_t *)&flash[off + 4], len);
             if ((crc & 0xFFu) != hdr[0])
                 break;   /* first failing check ends the log */
 
