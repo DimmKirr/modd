@@ -16,7 +16,11 @@
 #define NTRK   NPART
 #define NSTEP  64
 #define CTL    32          /* samples per control tick */
+#ifdef CONFIG_DOCK
+#define BLOCK  256         /* DMA half-buffer: fm1-dock's HALF_FRAMES (its modules render 256-frame blocks; FM-106 renders nothing else) */
+#else
 #define BLOCK  128         /* DMA half-buffer: 128 stereo samples @ 44.1kHz */
+#endif
 
 /* --- audio pipeline precision --- */
 

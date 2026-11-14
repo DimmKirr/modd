@@ -3,7 +3,9 @@
 /* modd SETTINGS: tabbed menu driven by modd_sys_menu adapter.
  * HOME hold opens VIEW_SETTINGS (single page, tabs only).
  * SELECT switches tabs, ALGO scrolls rows, PRESET changes value.
- * OCT+ confirms/toggles, OCT- closes settings. */
+ * OCT+ confirms/toggles, OCT- closes settings.
+ * INSTR (CONFIG_DOCK): modd's engines, the installed dock modules and the .dock files on a
+ * USB disk; OCT+ starts one, installing it from the disk first (dock.c, dock_disk.c). */
 
 #define MSET_ROW_H    20
 #define MSET_X_PAD    8
@@ -44,11 +46,68 @@ static int mset_tab_visible(uint8_t tab)
 {
     if (mset_tab_count(tab) > 0) return 1;
     if (tab == SMTAB_DISPLAY) return 1;
+#ifdef CONFIG_DOCK
+    if (tab == SMTAB_INSTR) return 1;
+#endif
 #ifdef CONFIG_SYS_MENU_NETWORK
     if (tab == SMTAB_NETWORK) return 1;
 #endif
     return 0;
 }
+
+#ifdef CONFIG_DOCK
+/* ---- INSTR: the list widget (list.c) over LIST_INSTR (dock/dock_list.c) ---- */
+static ui_list_t minstr_list;
+#define MSET_CANVAS_REAL_H 124                  /* the renderer caps a canvas at 240 x 124 (gfx.c CV_MAX) */
+
+static void minstr_fmt_pct(char *b, uint32_t pct)
+{
+    uint32_t i = 0;
+    if (pct >= 100u) b[i++] = '1';
+    if (pct >= 10u) b[i++] = (char)('0' + (pct / 10u) % 10u);
+    b[i++] = (char)('0' + pct % 10u);
+    b[i++] = '%';
+    b[i] = 0;
+}
+
+/* dock_install's progress, drawn at once: the handler blocks the UI task until it is done */
+static void minstr_progress(const char *what, uint32_t pct)
+{
+    char b[8];
+    minstr_fmt_pct(b, pct);
+    gfx_frame(1);
+    cv_begin(MT_W, MSET_ROW_H, T_BG);
+    cv_text_fit(MSET_X_PAD, 3, TY_LB, what, T_THEME, T_BG, 120);
+    cv_text_r(MT_W - MSET_X_PAD, 3, TY_LB, b, T_DIM, T_BG);
+    cv_blit(0, (uint32_t)(MT_Y_FOOT - MSET_ROW_H));
+    gfx_frame(0);
+}
+
+static void minstr_enter(void)
+{
+    ui_list_init(&minstr_list, &LIST_INSTR, MSET_ROW_H);
+    minstr_list.cursor = dock_cur == DOCK_NONE ? 0 : dock_cur + 1u;
+    dock_progress = minstr_progress;
+    ui_list_open(&minstr_list);
+}
+
+static void minstr_leave(void)
+{
+    dock_progress = 0;
+    ui_list_close(&minstr_list);
+}
+
+static void mset_draw_instr(int32_t y0)
+{
+    ui_list_draw(&minstr_list, y0, MSET_CANVAS_REAL_H - y0);
+}
+
+static void settings_status(void)
+{
+    if (mset.tab == SMTAB_INSTR)
+        ui_list_poll(&minstr_list);
+}
+#endif /* CONFIG_DOCK */
 
 static void mset_next_tab(int32_t dir)
 {
@@ -59,9 +118,15 @@ static void mset_next_tab(int32_t dir)
         if (t < 0) t = SMTAB_COUNT - 1;
         if (t >= (int32_t)SMTAB_COUNT) t = 0;
     } while (!mset_tab_visible((uint8_t)t) && --tries);
+#ifdef CONFIG_DOCK
+    if (mset.tab == SMTAB_INSTR && t != (int32_t)SMTAB_INSTR) minstr_leave();
+#endif
     mset.tab = (uint8_t)t;
     mset.row = 0;
     mset.scroll = 0;
+#ifdef CONFIG_DOCK
+    if (mset.tab == SMTAB_INSTR) minstr_enter();
+#endif
 }
 
 #if defined(CONFIG_SYS_MENU_NETWORK) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
@@ -183,6 +248,11 @@ static void settings_draw(void)
     if (mset.tab == SMTAB_DISPLAY) {
         mset_draw_display(MSET_LIST_Y);
     } else
+#ifdef CONFIG_DOCK
+    if (mset.tab == SMTAB_INSTR) {
+        mset_draw_instr(MSET_LIST_Y);
+    } else
+#endif
 #if defined(CONFIG_SYS_MENU_NETWORK) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
     if (mset.tab == SMTAB_NETWORK) {
         int32_t info_y = MSET_LIST_Y + (int32_t)n * MSET_ROW_H + 6;
@@ -199,6 +269,12 @@ static void settings_draw(void)
 
 static void mset_step_value(int32_t dir)
 {
+#ifdef CONFIG_DOCK
+    if (mset.tab == SMTAB_INSTR) {
+        ui_list_act(&minstr_list);
+        return;
+    }
+#endif
     if (mset.tab == SMTAB_DISPLAY) {
         uint32_t n = UI_NPALETTES;
         uint32_t next = (uint32_t)((int32_t)ux.pal
@@ -237,6 +313,12 @@ static int settings_knob(uint32_t id, int32_t clicks)
     }
     if (id == ENC_ALGO) {
         uint32_t n = mset_tab_count(mset.tab);
+#ifdef CONFIG_DOCK
+        if (mset.tab == SMTAB_INSTR) {
+            ui_list_knob(&minstr_list, clicks);
+            return 1;
+        }
+#endif
         int32_t r = (int32_t)mset.row + clicks;
         if (r < 0) r = 0;
         if (n > 0 && (uint32_t)r >= n) r = (int32_t)(n - 1);
@@ -257,6 +339,17 @@ static int settings_knob(uint32_t id, int32_t clicks)
 
 static int settings_button(uint32_t id, uint32_t down)
 {
+#ifdef CONFIG_DOCK
+    if (mset.tab == SMTAB_INSTR && (id == BTN_OCTUP || id == BTN_OCTDN)) {
+        if (ui_list_button(&minstr_list, id, down))
+            return 1;
+        if (id == BTN_OCTDN && !down) {         /* short-: nothing to go up to, settings close */
+            nav_open_view(VIEW_HOME);
+            return 1;
+        }
+        return 0;
+    }
+#endif
     if (!down) return 0;
     if (id == BTN_OCTUP) {
         mset_step_value(1);
@@ -284,13 +377,26 @@ static void settings_enter(void)
     }
 }
 
+#ifdef CONFIG_DOCK
+static void settings_leave(void)
+{
+    if (mset.tab == SMTAB_INSTR) minstr_leave();
+}
+#endif
+
 static const modd_page_t PAGE_SETTINGS = {
     .name   = "MENU",
     .title  = "Settings",
     .view   = VIEW_SETTINGS,
     .flags  = PAGEF_SYSTEM,
     .enter  = settings_enter,
+#ifdef CONFIG_DOCK
+    .leave  = settings_leave,
+#endif
     .draw   = settings_draw,
+#ifdef CONFIG_DOCK
+    .status = settings_status,
+#endif
     .knob   = settings_knob,
     .button = settings_button,
 };

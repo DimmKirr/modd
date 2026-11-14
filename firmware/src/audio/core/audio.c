@@ -17,6 +17,12 @@ static int32_t mix_buf_r[BLOCK];
 static void mix_block(void)
 {
     uint32_t i;
+#ifdef CONFIG_DOCK
+    if (dock_active) {                          /* a dock module owns the block (dock.c) */
+        dock_render(mix_buf_l, mix_buf_r, BLOCK);
+        return;
+    }
+#endif
     for (i = 0; i < BLOCK; i++) {
         mix_buf_l[i] = 0;
         mix_buf_r[i] = 0;

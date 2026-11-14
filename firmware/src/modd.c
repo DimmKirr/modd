@@ -14,6 +14,7 @@ extern uint32_t _bss_start[], _bss_end[];
 extern uint32_t _dsp_start[], _dsp_end[], _dsp_load[];
 extern uint32_t _dt_start[], _dt_end[], _dt_load[];
 extern uint32_t _pool_start[], _pool_end[];
+extern uint32_t _pool_net_start[], _pool_net_end[];
 extern uint32_t _rt_start[], _rt_end[], _rt_load[];
 extern uint32_t _audio_start[], _audio_end[], _audio_load[];
 
@@ -356,6 +357,10 @@ static void fm1_fault(const fm1_crash_t *c)
 #include "modd_mix.h"
 #include "modd_scales.h"
 #include "modd_udisk.h"
+#include "modd_list.h"
+#ifdef CONFIG_DOCK
+#include "modd_dock.h"
+#endif
 #include "modd_debug.h"
 #include "modd_log.h"
 #include "ui/ui_view.h"
@@ -416,6 +421,7 @@ static uint8_t *usb_host_rxbuf;
 #include "fm1_usb_host.h"
 #include "udisk/usb_host_xfer.c"
 #include "udisk/usb_host_enum.c"
+#include "udisk/usb_hub.c"
 #include "udisk/usb_msc.c"
 #ifdef CONFIG_UDISK
 /* FatFs R0.15, vendored unmodified (vendir.yml). Project config comes from
@@ -457,6 +463,16 @@ static uint8_t *usb_host_rxbuf;
 #ifdef CONFIG_OTA
 #include "boot/boot_work.c"
 #include "../adapters/modd_ota.h"
+
+/* --- fm1-dock modules (after usb.c: fm1_ms; after modd_ota.h: modd_flash_ok): installed from a dock_src_t, run through the audio ISR --- */
+#ifdef CONFIG_DOCK
+#include "dock/dock.c"
+#ifdef CONFIG_DOCK_DISK
+#include "dock/dock_disk.c"
+#endif
+#include "dock/dock_list.c"
+#endif
+
 #include "boot/ota.c"
 #endif
 #ifdef CONFIG_DEBUG_DAP
@@ -476,9 +492,9 @@ static uint8_t *usb_host_rxbuf;
 uint32_t fm1_audio_irq_start_ticks;
 uint32_t fm1_audio_irq_elapsed_ticks;
 
-/* Audio deadline miss counter: 128 samples @ 44.1kHz = 2.9ms = ~17,400 ticks @ 6MHz */
+/* Audio deadline miss counter: 128 samples @ 44.1kHz = 2.9ms = ~17,400 ticks @ 6MHz (scaled by BLOCK) */
 static uint32_t audio_deadline_misses;
-#define AUDIO_DEADLINE_TICKS 17400u
+#define AUDIO_DEADLINE_TICKS (17400u * BLOCK / 128u)
 
 /* --- Cooperative scheduler --- */
 
@@ -700,6 +716,17 @@ static void modd_ble_sync(void) {}
 
 #endif /* CONFIG_BLE */
 
+/* --- Network module: lwIP stack, link-agnostic --- */
+
+#ifdef CONFIG_LWIP
+#include "net/lwip_core.c"
+#endif /* CONFIG_LWIP */
+#include "net/net.c"
+#include "net/http.c"
+#include "wifi/wifi_llm.c"       /* LLM client on http.c; link-agnostic */
+#include "wifi/wifi_weather.c"   /* weather client on http.c; link-agnostic */
+#include "net/usbnet.c"          /* USB network link (CONFIG_USB_NET), stubs otherwise */
+
 /* --- WiFi module (GPL-3.0 clean-room driver) --- */
 
 #ifdef CONFIG_WIFI
@@ -745,12 +772,7 @@ static uint8_t wifi_sta_bssid[6];
 #include "wifi/wifi_sta.c"
 #include "wifi/wifi_data.c"
 #include "wifi/wifi_wpa.c"
-#ifdef CONFIG_WIFI_LWIP
-#include "wifi/wifi_lwip_core.c"
-#endif
 #include "wifi/wifi_lwip.c"
-#include "wifi/wifi_http.c"
-#include "wifi/wifi_weather.c"
 #ifdef CONFIG_SCHED
 static void wifi_cmd_poll(void);
 #endif
@@ -1059,6 +1081,11 @@ static void services_task(void)
 #if defined(CONFIG_DEBUG_DAP) && defined(CONFIG_USB)
         modd_debug_poll();
 #endif
+        net_poll();
+        http_poll();
+        weather_poll();
+        llm_poll();
+        usbnet_poll();
         yield();
     }
 }
@@ -1291,6 +1318,7 @@ static void fm1_main(void)
 
 #ifdef CONFIG_USB_HOST
     otg_init();
+    usbnet_init();                 /* stub without CONFIG_USB_NET */
     modd_log("OTG: device mode (boot)");
 #endif
 
@@ -1303,6 +1331,10 @@ static void fm1_main(void)
     storage_init();
     settings_load();
     modd_log("storage: init");
+#endif
+
+#ifdef CONFIG_DOCK
+    dock_init();
 #endif
 
     scales_init();
@@ -1396,7 +1428,7 @@ static void fm1_main(void)
 #ifdef CONFIG_SCHED
 #ifdef CONFIG_USB
     {
-        static uint32_t usb_stack[512] __attribute__((section(".pool")));
+        static uint32_t usb_stack[1024] __attribute__((section(".pool")));
         sched_create(usb_task, usb_stack, sizeof usb_stack);
 #ifdef CONFIG_DEBUG
         modd_log("sched: usb task created");
@@ -1528,6 +1560,11 @@ static void fm1_main(void)
 #ifdef CONFIG_WIFI_NONFREE
         nf_wifi_poll();
 #endif
+        net_poll();
+        http_poll();
+        weather_poll();
+        llm_poll();
+        usbnet_poll();
 #if defined(CONFIG_UI_FELUCCA)
         fsh_draw();
 #elif defined(CONFIG_UI_MODD)
@@ -1555,6 +1592,8 @@ void fm1_cstart(void)
     for (d = _bss_start; d < _bss_end; d++)
         *d = 0;
     for (d = _pool_start; d < _pool_end; d++)
+        *d = 0;
+    for (d = _pool_net_start; d < _pool_net_end; d++)   /* (in POOL, or the dock overlay) */
         *d = 0;
     for (s = _data_load, d = _data_start; d < _data_end; s++, d++)
         *d = *s;

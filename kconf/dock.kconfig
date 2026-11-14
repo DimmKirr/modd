@@ -1,0 +1,33 @@
+# kc2mm:ignore
+menu "Dock modules"
+
+config DOCK
+    bool "fm1-dock modules (.dock instruments)"
+    depends on FLASH && AUDIO && USB && !WIFI && !WIFI_NONFREE
+    default n
+    help
+      Host for fm1-dock modules: relocatable .dock instruments installed to
+      flash (0x99000..0xE0000, slot tables at 0x97000/0x98000) and run in
+      place, one at a time, through the audio ISR. Selects the app_dock.ld
+      memory map: modules own 0x01C30000..0x01C74000 and 0x01C04000..0x01C08000,
+      so POOL moves down to 0x01C18000. Not with WiFi: app_wifi.ld differs.
+
+config DOCK_SLOTS
+    int "Installed module slots"
+    depends on DOCK
+    range 1 32
+    default 8
+    help
+      Entries in the slot table. Each costs 16 bytes of RAM; the flash area
+      (284 KB) holds one large module or a few small ones regardless.
+
+config DOCK_DISK
+    bool "Install modules from a USB disk"
+    depends on DOCK && UDISK
+    default y
+    help
+      Settings > INSTR lists .dock files found on a mounted USB disk (the
+      dock's SD reader or a stick) beside the installed slots. Files are
+      recognised by their HRBR header, not their 8.3 name.
+
+endmenu

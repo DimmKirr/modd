@@ -49,10 +49,10 @@ directories:
   path: firmware/upstream/fmlab
 - contents:
   - git:
-      commitTitle: 'Merge pull request #59 from joakimeriksson/windows-connect...'
-      sha: 501cb23f9f44981e8dc5a32091ef50122e1abb2b
+      commitTitle: 'Merge pull request #79 from joakimeriksson/docs-0.8.2...'
+      sha: 6199d250c10376fca0270b917da2e79c7c604691
       tags:
-      - v0.8
+      - v0.8.2
     path: .
   path: firmware/upstream/fm1-dock
 - contents:
@@ -73,6 +73,19 @@ directories:
       - v0.1
     path: .
   path: firmware/upstream/optimist
+- contents:
+  - git:
+      commitTitle: 'The package carries the resource region: build.py puts NAME-res.bin
+        into the .fwsc (fm1pkg_make.py --res: an entry of type 101, the region''s
+        address from app.h''s APP_RES_BASE at byte 0x14), and felucca-bsp''s update
+        loader writes it after the app, so an install from a host that sends only
+        the package (The Firmware Hub, M-UPGRADE) has the app''s resources; device/res.c
+        checks the address is the one the app reads. NAME-res.bin stays beside the
+        package for the host''s own write (fm1_resources.py, the installer page: a
+        region there already answers at once). bsp: felucca-bsp 18eadad'
+      sha: c8e05997ce970875038156d2bbd69e712eac1543
+    path: .
+  path: firmware/upstream/fm1-base
 - contents:
   - git:
       commitTitle: Prepare 2.2.1 release

@@ -36,6 +36,13 @@ static void shell_knob(uint32_t id, int32_t clicks)
     if (nav_modal && nav_modal->knob && nav_modal->knob(id, clicks))
         return;
     const modd_page_t *p = nav_active();
+#ifdef CONFIG_DOCK
+    /* on HOME the four knobs are the module's (its sound); the rest stays modd's navigation */
+    if (dock_active && p && p->view == VIEW_HOME && id >= ENC_K1 && id <= ENC_K4) {
+        dock_enc(id, clicks);
+        return;
+    }
+#endif
     if (p && p->knob && p->knob(id, clicks))
         return;
     if (id == ENC_SELECT && modd_controls.select_default == CTL_SELECT_PAGE) {
@@ -71,6 +78,13 @@ static void shell_button(uint32_t id, uint32_t down)
         }
     }
     const modd_page_t *p = nav_active();
+#ifdef CONFIG_DOCK
+    /* on HOME the octave buttons are the module's (a panel module shifts its own octave) */
+    if (dock_active && p && p->view == VIEW_HOME && (id == BTN_OCTDN || id == BTN_OCTUP)) {
+        dock_btn(id, down);
+        return;
+    }
+#endif
     if (p && p->button && p->button(id, down))
         return;
 #ifdef CONFIG_DEBUG_LOG
@@ -91,6 +105,13 @@ static void shell_button(uint32_t id, uint32_t down)
 
 static void shell_key(uint32_t note, uint32_t vel)
 {
+#ifdef CONFIG_DOCK
+    if (dock_active) {                          /* the module is the instrument while it runs */
+        if (note >= 53u && note < 53u + 27u)
+            dock_key(note - 53u, vel != 0);
+        return;
+    }
+#endif
     if (nav_modal && nav_modal->key && nav_modal->key(note, vel))
         return;
     const modd_page_t *p = nav_active();
