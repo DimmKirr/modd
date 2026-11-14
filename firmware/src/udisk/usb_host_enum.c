@@ -60,7 +60,11 @@ typedef struct __attribute__((packed)) {
 #define USB_DIR_IN   0x80
 #define USB_DIR_OUT  0x00
 
-static uint8_t usb_enum_buf[128];
+/* One configuration descriptor at a time; an iPhone's tethering
+ * configuration is ~94 bytes, composite audio devices run past 128. */
+static uint8_t usb_enum_buf[256] __attribute__((aligned(4), section(".pool")));
+
+static int usb_hub_discover(void);
 
 static int usb_host_enumerate(void)
 {
@@ -83,6 +87,9 @@ static int usb_host_enumerate(void)
     }
 
     modd_log("usb: got dev desc");
+    usb_host_log_hex8("usb: bDeviceClass=", dev.bDeviceClass);
+    usb_host_log_hex8("usb: bMaxPacketSize0=", dev.bMaxPacketSize0);
+    uhost.ep0_mps = usb_ep0_mps_valid(dev.bMaxPacketSize0);
 
     /* 2. SET_ADDRESS(1) */
     r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_ADDRESS, 1, 0, 0, 0);
@@ -95,6 +102,10 @@ static int usb_host_enumerate(void)
                         (USB_DT_DEVICE << 8), 0, (uint8_t *)&dev, 18);
     if (r < 0) return -3;
 
+    modd_log_int("usb: VID ", dev.idVendor);
+    modd_log_int("usb: PID ", dev.idProduct);
+    modd_log_int("usb: #cfg ", dev.bNumConfigurations);
+
     /* 4. GET_DESCRIPTOR(CONFIG) header to learn wTotalLength */
     r = usb_control_msg(USB_DIR_IN, USB_REQ_GET_DESCRIPTOR,
                         (USB_DT_CONFIG << 8), 0, usb_enum_buf, 9);
@@ -102,6 +113,8 @@ static int usb_host_enumerate(void)
 
     usb_config_desc_t *cfg = (usb_config_desc_t *)usb_enum_buf;
     uint16_t total = cfg->wTotalLength;
+    modd_log_int("usb: cfg total ", total);
+    modd_log_int("usb: #iface ", cfg->bNumInterfaces);
     if (total > sizeof(usb_enum_buf)) total = sizeof(usb_enum_buf);
 
     /* 5. GET_DESCRIPTOR(CONFIG) full */
@@ -122,6 +135,9 @@ static int usb_host_enumerate(void)
 
         if (dtype == USB_DT_INTERFACE && dlen >= 9) {
             usb_interface_desc_t *iface = (usb_interface_desc_t *)&usb_enum_buf[pos];
+            usb_host_log_hex8("usb: iface cls=", iface->bInterfaceClass);
+            usb_host_log_hex8("usb: iface sub=", iface->bInterfaceSubClass);
+            usb_host_log_hex8("usb: iface proto=", iface->bInterfaceProtocol);
             if (iface->bInterfaceClass == USB_CLASS_MSC &&
                 iface->bInterfaceSubClass == USB_MSC_SUBCLASS_SCSI &&
                 iface->bInterfaceProtocol == USB_MSC_PROTO_BBB) {
@@ -134,11 +150,11 @@ static int usb_host_enumerate(void)
 
         if (dtype == USB_DT_ENDPOINT && dlen >= 7 && msc_found) {
             usb_endpoint_desc_t *ep = (usb_endpoint_desc_t *)&usb_enum_buf[pos];
-            if ((ep->bmAttributes & 0x03) == 0x02) {  /* bulk */
-                if (ep->bEndpointAddress & USB_EP_DIR_IN) {
+            if ((ep->bmAttributes & 0x03) == 0x02) {  /* first bulk IN / OUT */
+                if ((ep->bEndpointAddress & USB_EP_DIR_IN) && !ep_in) {
                     ep_in = ep->bEndpointAddress & 0x0F;
                     ep_maxp = ep->wMaxPacketSize;
-                } else {
+                } else if (!(ep->bEndpointAddress & USB_EP_DIR_IN) && !ep_out) {
                     ep_out = ep->bEndpointAddress & 0x0F;
                 }
             }
@@ -150,13 +166,26 @@ static int usb_host_enumerate(void)
     uhost.pid = dev.idProduct;
     uhost.dev_class = dev.bDeviceClass;
 
-    if (!ep_in || !ep_out) return -6;
+    if (!ep_in || !ep_out) {
+        if (dev.bDeviceClass == 0x09) {
+            modd_log("usb: hub detected, running discovery");
+            r = usb_hub_discover();
+            if (r == 0) {
+                modd_log("usb: hub MSC mounted");
+                return 0;
+            }
+            return -6;
+        }
+        return -6;
+    }
 
     /* 7. SET_CONFIGURATION */
     r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_CONFIG,
                         cfg->bConfigurationValue, 0, 0, 0);
     if (r < 0) return -7;
     fm1_delay_ms(50);
+    uhost.addr = 1;
+    uhost.ep0_mps_msc = uhost.ep0_mps;
 
     /* 8. Configure host bulk EP1: DMA buffers + SIE registers */
     usb_host_rxbuf = usb_enum_buf;

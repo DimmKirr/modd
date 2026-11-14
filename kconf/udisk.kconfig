@@ -9,6 +9,17 @@ config USB_HOST
       Enable USB host mode on the AC791N OTG controller.
       Requires a powered USB-C OTG hub (no on-board VBUS boost).
 
+config USB_HUB_MAX_DEVICES
+    int "Hub device table size"
+    depends on USB_HOST
+    range 1 16
+    default 2
+    help
+      Maximum number of USB devices tracked during hub discovery.
+      Each entry costs 4 bytes of RAM. 2 covers one hub plus one
+      downstream device; a USB-C dock with a nested hub, card reader,
+      ethernet and billboard devices needs 8 before any drive is added.
+
 config UDISK
     bool "USB mass storage (UDisk)"
     depends on USB_HOST

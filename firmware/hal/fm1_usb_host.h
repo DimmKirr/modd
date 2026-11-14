@@ -38,6 +38,14 @@
 #define SIE_RXINTERVAL 27
 
 #define USB_BULK_HOST_EP  1
+#define USB_EP0_MAXP_DEFAULT 64
+
+/* bMaxPacketSize0 as a full-speed device may declare it; anything else
+ * (a truncated read) falls back to 8, which every device accepts. */
+static uint8_t usb_ep0_mps_valid(uint8_t v)
+{
+    return (v == 16 || v == 32 || v == 64) ? v : 8;
+}
 
 static void usb_host_sie_wr(uint32_t r, uint32_t v)
 {
@@ -76,6 +84,23 @@ typedef struct {
     uint8_t  dev_class;
     uint32_t capacity;     /* sectors */
     uint32_t sector_size;  /* typically 512 */
+    uint8_t  ep0_mps;      /* bMaxPacketSize0 of the device FADDR points at */
+    uint8_t  addr;         /* the MSC device's address: every MSC transfer sets FADDR to it */
+    uint8_t  ep0_mps_msc;  /* its bMaxPacketSize0, restored with FADDR */
+    uint8_t  lun;          /* LUN used in CBWs */
+    uint8_t  csw_status;   /* last CSW bCSWStatus */
+    uint8_t  sense_key;    /* last REQUEST_SENSE: key, ASC, ASCQ */
+    uint8_t  asc;
+    uint8_t  ascq;
+    uint8_t  inq_pdt;      /* INQUIRY byte 0 (peripheral device type) */
+    uint8_t  inq_rmb;      /* INQUIRY byte 1 (bit 7: removable) */
+    uint8_t  tur_tries;    /* TEST_UNIT_READY attempts on the last LUN */
+    uint8_t  ctl_rt;       /* last failed control transfer: bmRequestType, */
+    uint8_t  ctl_rq;       /*   bRequest, stage (0 setup, 1 data, 2 status), */
+    uint8_t  ctl_stage;    /*   result, CSR0 and FADDR at failure */
+    int8_t   ctl_r;
+    uint8_t  ctl_csr0;
+    uint8_t  ctl_faddr;
 } usb_host_t;
 
 static usb_host_t uhost;
@@ -115,6 +140,8 @@ static void usb_host_init(void *ep0)
     uhost.dev_class = 0;
     uhost.capacity = 0;
     uhost.sector_size = 512;
+    uhost.ep0_mps = USB_EP0_MAXP_DEFAULT;
+    uhost.lun = 0;
     fm1_usb_reset();
     fm1_delay_ms(25);
     fm1_usb_host_attach(ep0);
@@ -199,7 +226,8 @@ static void usb_host_log_fail(int err)
     if (dc >= 10) line[n++] = (char)('0' + (dc / 10) % 10);
     line[n++] = (char)('0' + dc % 10);
     p = " pw:"; while (*p) line[n++] = *p++;
-    line[n++] = (char)('0' + pw);
+    line[n++] = "0123456789ABCDEF"[(pw >> 4) & 0xF];
+    line[n++] = "0123456789ABCDEF"[pw & 0xF];
     p = " iu:"; while (*p) line[n++] = *p++;
     if (iu >= 10) line[n++] = (char)('0' + (iu / 10) % 10);
     line[n++] = (char)('0' + iu % 10);
@@ -249,13 +277,17 @@ static void usb_host_poll(void)
                 modd_log_int("USB host: VID ", uhost.vid);
                 modd_log_int("USB host: PID ", uhost.pid);
                 modd_log("USB host: device connected");
-                r = msc_init_device();
-                if (r == 0) {
+                if (uhost.state == UHOST_MSC_READY) {
                     modd_log_int("USB host: sectors ", (int32_t)uhost.capacity);
                 } else {
-                    uhost.last_err = (int8_t)(r - 10);
-                    uhost.state = UHOST_ERROR;
-                    modd_log_int("USB host: MSC fail ", r);
+                    r = msc_init_device();
+                    if (r == 0) {
+                        modd_log_int("USB host: sectors ", (int32_t)uhost.capacity);
+                    } else {
+                        uhost.last_err = (int8_t)(r - 10);
+                        uhost.state = UHOST_ERROR;
+                        modd_log_int("USB host: MSC fail ", r);
+                    }
                 }
             } else {
                 uhost.last_err = (int8_t)r;
@@ -266,9 +298,14 @@ static void usb_host_poll(void)
     } else if (uhost.state >= UHOST_ATTACHED) {
         if (!usb_host_connected()) {
             modd_log("USB: device removed");
+            usb_host_log_hex8("usb: devctl=", usb_host_sie_rd(SIE_DEVCTL));
+            usb_host_log_hex8("usb: intrusb=", usb_host_sie_rd(SIE_INTRUSB));
             uhost.state = UHOST_DISCONNECTED;
         }
     }
 }
+
+/* D_USB debug dump lives in udisk/usb_hub.c (needs the hub device table). */
+static uint32_t usb_debug_fill(uint8_t *b, uint32_t max);
 
 #endif /* FM1_USB_HOST_H */

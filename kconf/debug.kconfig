@@ -12,8 +12,18 @@ config DEBUG_LOG
     default y if DEBUG
     depends on DEBUG
     help
-      Enable a 32-line ring buffer for diagnostic messages.
+      Enable a ring buffer for diagnostic messages.
       Subsystems write via modd_log(); the DEBUG page displays them.
+
+config DEBUG_LOG_LINES
+    int "Log ring buffer lines"
+    depends on DEBUG_LOG
+    range 64 1024
+    default 248
+    help
+      Number of lines in the debug log ring buffer.
+      Each line is 48 bytes; timestamps add 4 bytes per line.
+      256 = 13KB, 512 = 26KB. Increase for USB hub debugging.
 
 config DEBUG_DAP
     bool "USB debug protocol (DAP)"

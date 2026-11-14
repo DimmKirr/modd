@@ -5,6 +5,7 @@
 
 static FATFS udisk_fs;
 static uint8_t udisk_active;
+static void udisk_fmt_size(char *buf, uint32_t bytes);
 
 static void udisk_init(void)
 {
@@ -88,6 +89,7 @@ static int udisk_opendir(const char *path)
         e->name[i] = 0;
         e->size = (uint32_t)fno.fsize;
         e->is_dir = (fno.fattrib & AM_DIR) ? 1 : 0;
+        if (e->is_dir) e->detail[0] = 0; else udisk_fmt_size(e->detail, e->size);
         udisk_nentry++;
     }
     f_closedir(&dp);
@@ -165,3 +167,58 @@ static void udisk_fmt_size(char *buf, uint32_t bytes)
         buf[i++] = 'M'; buf[i] = 0;
     }
 }
+
+/* ---- the directory as a list source (modd_list.h): answers from udisk_entries[] ---- */
+static uint8_t udisk_list_was_mounted;
+
+static uint32_t udisk_list_count(void) { return udisk_mounted ? udisk_nentry : 0; }
+
+static void udisk_list_entry(uint32_t i, modd_list_entry_t *e)
+{
+    const udisk_entry_t *u = &udisk_entries[i];
+    e->name = u->name;
+    e->detail = u->detail;
+    e->kind = u->is_dir ? LIST_FOLDER : LIST_FILE;
+}
+
+static int udisk_list_enter(uint32_t i)
+{
+    return udisk_entries[i].is_dir ? udisk_chdir(udisk_entries[i].name) : -1;
+}
+
+static int udisk_list_up(void) { return udisk_go_up(); }
+static const char *udisk_list_status(void) { return udisk_mounted ? 0 : "No USB Disk"; }
+static const char *udisk_list_title(void) { return udisk_cwd; }
+
+static void udisk_list_open(void)
+{
+    udisk_activate();
+    udisk_list_was_mounted = udisk_mounted;
+    if (udisk_mounted)
+        udisk_opendir(udisk_cwd);
+}
+
+static void udisk_list_close(void) { udisk_deactivate(); }
+
+static int udisk_list_poll(void)
+{
+    if (udisk_mounted != udisk_list_was_mounted) {
+        udisk_list_was_mounted = udisk_mounted;
+        if (udisk_mounted)
+            udisk_opendir(udisk_cwd);
+        return 1;
+    }
+    return 0;
+}
+
+static const modd_list_src_t LIST_UDISK = {
+    .count  = udisk_list_count,
+    .entry  = udisk_list_entry,
+    .enter  = udisk_list_enter,
+    .up     = udisk_list_up,
+    .status = udisk_list_status,
+    .title  = udisk_list_title,
+    .open   = udisk_list_open,
+    .close  = udisk_list_close,
+    .poll   = udisk_list_poll,
+};

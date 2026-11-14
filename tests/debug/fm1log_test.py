@@ -5,7 +5,7 @@ import struct
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools' / 'device'))
 import fm1log
 import hbdeploy
@@ -58,6 +58,40 @@ def test_short_log_is_read_from_the_start(monkeypatch, capsys):
 
 def test_cli_bytes_flag_defaults_to_whole_ring():
     assert fm1log.build_parser().parse_args([]).bytes == 0
+
+
+class FakeUsbDevice:
+    """Answers D_USB with a fixed dump (usb_debug_fill layout in usb_hub.c)."""
+
+    def __init__(self, dump):
+        self.dump = bytes(dump)
+
+    def ask(self, cmd, payload=b''):
+        assert cmd == fm1log.D_USB
+        return self.dump
+
+
+def _usb_dump_header():
+    d = bytearray(51)        # [0] OK, no devices, no MSC candidates
+    d[49] = 0xFF             # mounted: none
+    return d
+
+
+def test_print_usb_decodes_usb_net_candidate(capsys):
+    d = _usb_dump_header() + bytes([2, 4, 2, 1, 0x81, 0x02])
+    fm1log.print_usb(FakeUsbDevice(d))
+    out = capsys.readouterr().out
+    assert 'usb-net:   addr 2  cfg 4 iface 2 alt 1  ep in=1 out=2' in out
+
+
+def test_print_usb_reports_no_usb_net_candidate(capsys):
+    fm1log.print_usb(FakeUsbDevice(_usb_dump_header() + bytes(6)))
+    assert 'usb-net:   none' in capsys.readouterr().out
+
+
+def test_print_usb_tolerates_old_firmware_without_usb_net_block(capsys):
+    fm1log.print_usb(FakeUsbDevice(_usb_dump_header()))
+    assert 'usb-net' not in capsys.readouterr().out
     assert fm1log.build_parser().parse_args(['--bytes', '1000']).bytes == 1000
 
 

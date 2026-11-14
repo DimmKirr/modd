@@ -65,7 +65,7 @@ tasks:
     desc: Run Python unit tests (genconfig, defconfigs, tooling)
     deps: [vendor:ensure]
     cmds:
-      - uv run --quiet python -m pytest tests/ -v --ignore-glob="tests/e2e_*"
+      - uv run --quiet python -m pytest tests/ -v --ignore-glob="**/e2e_*"
 
   test:e2e:
     desc: Run E2E tests via fm1-emu emulator + Playwright
@@ -78,7 +78,7 @@ tasks:
       FM1_WEB_DIR: '{{env "FM1_WEB_DIR" | default (printf "%s/.fm1-emulator/web" .HOME)}}'
       PLAYWRIGHT_BROWSERS_PATH: '{{env "PLAYWRIGHT_BROWSERS_PATH" | default (printf "%s/.cache/ms-playwright" .HOME)}}'
     cmds:
-      - uv run --quiet python -m pytest tests/e2e_boot_test.py tests/e2e_components_test.py tests/e2e_usb_safety_test.py tests/e2e_audio_test.py tests/e2e_audio_engines_test.py tests/e2e_ble_test.py tests/e2e_weather_test.py -v {{.CLI_ARGS}}
+      - uv run --quiet python -m pytest tests/boot/e2e_boot_test.py tests/boot/e2e_components_test.py tests/usb/e2e_usb_safety_test.py tests/audio/e2e_audio_test.py tests/audio/e2e_audio_engines_test.py tests/ble/e2e_ble_test.py tests/wifi/e2e_weather_test.py -v {{.CLI_ARGS}}
 
   test:e2e:walkthrough:
     desc: Walk every UI page in the modd theme and screenshot each one
@@ -91,7 +91,7 @@ tasks:
       FM1_WEB_DIR: '{{env "FM1_WEB_DIR" | default (printf "%s/.fm1-emulator/web" .HOME)}}'
       PLAYWRIGHT_BROWSERS_PATH: '{{env "PLAYWRIGHT_BROWSERS_PATH" | default (printf "%s/.cache/ms-playwright" .HOME)}}'
     cmds:
-      - uv run --quiet python -m pytest tests/e2e_ui_walkthrough_test.py -v {{.CLI_ARGS}}
+      - uv run --quiet python -m pytest tests/ui/e2e_ui_walkthrough_test.py -v {{.CLI_ARGS}}
 
   emulator:build:
     desc: Build WASM from a local fm1-emu checkout (requires the Rust WASM target)
@@ -317,6 +317,76 @@ tasks:
           fi
         } | tee "$LOG"
         ln -sf "logs/${TS}-debug.log" .scratch/debug/debug.log
+
+  debug:usb:
+    desc: "Dump USB host state, SIE registers, and USB log lines (-- --wait N | --follow [--for N])"
+    silent: true
+    cmds:
+      - mkdir -p .scratch/debug/logs
+      - |
+        TS="$(date -u +%Y-%m-%dT%H%M%SZ)"
+        LOG=".scratch/debug/logs/${TS}-usb.log"
+        FULL=".scratch/debug/logs/${TS}-usb-full.log"
+        DO_FOLLOW=false; WAIT=0; FOR=""
+        set -- {{.CLI_ARGS}}
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --follow) DO_FOLLOW=true ;;
+            --wait)   WAIT="$2"; shift ;;
+            --for)    FOR="--for $2"; shift ;;
+          esac
+          shift
+        done
+        if [ "$WAIT" != "0" ]; then
+          echo "waiting ${WAIT}s (plug the hub/drive now)..."
+          sleep "$WAIT"
+        fi
+        {
+          echo "=== debug:usb $(date -Iseconds) ==="
+          echo ""
+          echo "=== USB host state (D_USB) ==="
+          uv run --quiet --with python-rtmidi python tools/device/fm1log.py --usb 2>&1
+          echo ""
+          echo "=== device status ==="
+          uv run --quiet --with python-rtmidi python tools/device/fm1log.py --hello 2>&1
+          echo ""
+          echo "=== USB log lines ==="
+          if [ "$DO_FOLLOW" = "true" ]; then
+            uv run --quiet --with python-rtmidi python tools/device/fm1log.py --follow $FOR 2>&1
+          else
+            uv run --quiet --with python-rtmidi python tools/device/fm1log.py 2>&1 | tee "$FULL" \
+              | grep -iE 'usb|otg|hub|enum|msc|udisk|vbus|host|routing|sense|csw|inq|lun|usbnet|dhcp|net:'
+            echo "(unfiltered ring: $FULL)"
+          fi
+        } | tee "$LOG"
+        ln -sf "logs/${TS}-usb.log" .scratch/debug/usb.log
+
+  debug:usb:host:
+    desc: "Enumerate the USB tree as this computer sees it (plug the dock in here) and diff it against the newest FM-1 usb log"
+    silent: true
+    cmds:
+      - mkdir -p .scratch/debug/logs
+      - |
+        TS="$(date -u +%Y-%m-%dT%H%M%SZ)"
+        LOG=".scratch/debug/logs/${TS}-usb-host.log"
+        FM1=""
+        case " {{.CLI_ARGS}} " in *" --fm1 "*) ;; *)
+          LATEST="$(ls -t .scratch/debug/logs/*-usb-full.log 2>/dev/null | head -1)"
+          [ -n "$LATEST" ] && FM1="--fm1 $LATEST" ;;
+        esac
+        python3 .scratch/tools/host-usb-test/host-usb-test.py $FM1 {{.CLI_ARGS}} 2>&1 | tee "$LOG"
+        ln -sf "logs/${TS}-usb-host.log" .scratch/debug/usb-host.log
+
+  dock:modules:
+    desc: "Collect fm1-dock's prebuilt .dock modules for a USB disk / SD card (task dock:modules -- /path/to/disk; default build/dock)"
+    deps: [vendor:ensure]
+    vars:
+      DEST: '{{default "build/dock" .CLI_ARGS}}'
+    cmds:
+      - mkdir -p '{{.DEST}}'
+      - cp firmware/upstream/fm1-dock/docs/modules/*.dock '{{.DEST}}/'
+      - ls -la '{{.DEST}}'
+      - 'echo "copy these to the disk root; modd lists them by the name in their header, 8.3 aliases are fine"'
 
   settings:reset:
     desc: Reset FM-1 settings to defaults (erases saved settings, device reboots)

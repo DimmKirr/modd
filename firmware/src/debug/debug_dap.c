@@ -15,6 +15,10 @@
 #define DBG_D_LOG   0x20u
 #define DBG_D_WIFI      0x25u
 #define DBG_D_WIFI_BSS  0x26u
+#ifdef CONFIG_USB_HOST
+#define DBG_D_USB       0x2Au
+static uint32_t usb_debug_fill(uint8_t *b, uint32_t max);
+#endif
 #define DBG_D_OK    0x00u
 #define DBG_D_BAD   0x0Au
 
@@ -165,6 +169,14 @@ static void modd_debug_poll(void)
         wifi_wl0_probe_request(len >= 4u ? dbg_rd32(dbg_dec) : 0u);   /* 0: release + scan, 2: retry refused writes + scan */
         r[0] = DBG_D_OK;
         break;
+#endif
+#ifdef CONFIG_USB_HOST
+    case DBG_D_USB: {
+        static uint8_t ub[160];   /* 51 + 12 devices x 4 + 4 MSC candidates x 9 */
+        rn = usb_debug_fill(ub, sizeof ub);
+        dbg_reply(cmd, seq, ub, rn);
+        return;
+    }
 #endif
     default:
         r[0] = DBG_D_BAD;

@@ -13,6 +13,7 @@ typedef struct udisk_entry {
     char     name[UDISK_NAME_MAX];
     uint32_t size;
     uint8_t  is_dir;
+    char     detail[8];                         /* the size as text, formatted when the directory is read */
 } udisk_entry_t;
 
 /* state */
@@ -25,6 +26,7 @@ static uint32_t udisk_scroll;
 
 #ifndef CONFIG_UDISK
 /* stubs when CONFIG_UDISK is not set */
+static uint8_t  udisk_active;                /* never set: the disk cannot hold host mode */
 static void     udisk_init(void)  { udisk_mounted = 0; udisk_nentry = 0; udisk_cursor = 0; udisk_scroll = 0; udisk_cwd[0] = '/'; udisk_cwd[1] = 0; }
 static void     udisk_poll(void)  { (void)0; }
 static void     udisk_activate(void)   { (void)0; }

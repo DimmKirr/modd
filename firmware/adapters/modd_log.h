@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #ifdef CONFIG_DEBUG_LOG
-#define MODD_LOG_LINES    256
+#define MODD_LOG_LINES    CONFIG_DEBUG_LOG_LINES
 #define MODD_LOG_LINE_LEN 48
 #else
 #define MODD_LOG_LINES    32
