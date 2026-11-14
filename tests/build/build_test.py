@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools' / 'build'))
 import build
 import fm1pkg_make
@@ -210,3 +210,12 @@ def test_engines_without_audio_passes_dry_run(tmp_path, monkeypatch):
         '#define CONFIG_ENGINE_NOISE 1\n'
         '#define CONFIG_HAL_SYS_MELODEE 1\n')
     build.build(dry_run=True)
+
+
+def test_linker_script_follows_the_memory_map():
+    """DOCK selects app_dock.ld (module RAM at 0x01C30000 kept free); the
+    nonfree WiFi map wins when present; everything else links with app.ld."""
+    assert build.linker_script(set()) == 'app.ld'
+    assert build.linker_script({'AUDIO', 'UDISK'}) == 'app.ld'
+    assert build.linker_script({'DOCK', 'AUDIO'}) == 'app_dock.ld'
+    assert build.linker_script({'WIFI_NONFREE'}) == 'app_wifi_nonfree.ld'

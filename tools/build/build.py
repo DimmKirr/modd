@@ -29,6 +29,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import fm1pkg_make
@@ -213,14 +214,43 @@ class _QemuRunner(_X86Runner):
                          ' (qemu)')
 
 
-def _can_exec_x86(glibc):
-    """True when this kernel runs an x86-64 ELF by itself (Rosetta, binfmt_misc)."""
+def _can_exec_x86(glibc, tc_path=None):
+    """True when an x86-64 ld.so can run the toolchain (Rosetta, binfmt_misc).
+
+    A simple ``ld.so --version`` succeeds even when Rosetta is absent (the
+    loader itself is a static binary).  We therefore also compile a trivial
+    file with the real toolchain when *tc_path* is given; a SIGSEGV (exit 139)
+    means the instruction-level emulation layer is missing."""
     ld = Path(glibc) / 'lib' / 'ld-linux-x86-64.so.2'
     try:
-        return subprocess.run([str(ld), '--version'], capture_output=True,
-                              timeout=10).returncode == 0
+        if subprocess.run([str(ld), '--version'], capture_output=True,
+                          timeout=10).returncode != 0:
+            return False
     except (OSError, subprocess.TimeoutExpired):
         return False
+    if tc_path is None:
+        return True
+    import tempfile
+    clang = str(Path(tc_path) / 'pi32v2' / 'bin' / 'clang')
+    lib_path = f'{glibc}/lib'
+    with tempfile.NamedTemporaryFile(suffix='.c', mode='w', delete=False) as f:
+        f.write('void _x(void){}\n')
+        src = f.name
+    obj = src.replace('.c', '.o')
+    try:
+        r = subprocess.run(
+            [str(ld), '--library-path', lib_path, clang,
+             '-target', 'pi32v2', '-c', src, '-o', obj],
+            capture_output=True, timeout=30)
+        return r.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    finally:
+        for p in (src, obj):
+            try:
+                os.unlink(p)
+            except OSError:
+                pass
 
 
 class _DockerRunner:
@@ -261,7 +291,7 @@ def _pick_runner(tc_path):
     if is_linux:
         glibc, stdcpp = _find_x86_libs(tc_path)
         if glibc and stdcpp:
-            if _can_exec_x86(glibc):
+            if _can_exec_x86(glibc, tc_path):
                 return _RosettaRunner(tc_path, glibc, stdcpp)
             if shutil.which('qemu-x86_64'):
                 return _QemuRunner(tc_path, glibc, stdcpp)
@@ -433,6 +463,34 @@ def gen_engine_tables():
                     str(dst)], check=True, cwd=str(ROOT))
 
 
+def extract_section(elf, section):
+    """objcopy one section to build/<name>.bin and return its bytes.
+
+    objcopy writes to a path that never existed before (a fresh token in the
+    name) and Python copies it to the canonical name afterwards. Deleting
+    build/data.bin on the host and having the Docker runner recreate it in the
+    next second is what Docker Desktop's shared-folder cache trips over
+    ("No such file or directory" from objcopy, one build in a few)."""
+    name = section[1:]
+    fresh = OUT / f'{name}.{time.time_ns()}.tmp'
+    tc('common/bin/objcopy', '-O', 'binary', '-j', section, str(elf), str(fresh))
+    blob = fresh.read_bytes() if fresh.exists() else b''
+    fresh.unlink(missing_ok=True)
+    (OUT / f'{name}.bin').write_bytes(blob)
+    return blob
+
+
+def linker_script(enabled):
+    """The memory map for a set of CONFIG_* names: app_wifi_nonfree.ld carries the
+    nonfree WiFi stack's larger RAM; app_dock.ld keeps fm1-dock's module
+    region (0x01C30000, 272 KiB) free. Kconfig forbids DOCK with WiFi."""
+    if 'WIFI_NONFREE' in enabled:
+        return 'app_wifi_nonfree.ld'
+    if 'DOCK' in enabled:
+        return 'app_dock.ld'
+    return 'app.ld'
+
+
 def build(dry_run=False):
     gen_inc = [f'-I{GEN}']
     if str(GEN) != str(OUT / 'gen'):
@@ -442,7 +500,8 @@ def build(dry_run=False):
              '-Ifirmware/src/udisk',  # FatFs project config: ffconf.h, diskio.h
              '-Ifirmware/upstream/optimist/firmware/src/ble',
              '-Ifirmware/vendor/lwip/src/include',
-             '-Ifirmware/src/wifi']
+             '-Ifirmware/src/net',   # lwipopts.h, arch/cc.h
+             '-Ifirmware/src/wifi']  # wifi_rf_tables.h
 
     config_h = GEN / 'config.h'
     if not config_h.exists():
@@ -640,33 +699,25 @@ def build(dry_run=False):
             lto_plugin = ['--plugin', str(gold),
                           '--plugin-opt=mcpu=r3',
                           '--plugin-opt=-pi32v2-large-program=true']
-    ld_script = FW / ('app_wifi.ld' if 'WIFI_NONFREE' in enabled else 'app.ld')
+    ld_script = FW / linker_script(enabled)
     link_args = [*lto_plugin, '--gc-sections', '-T', str(ld_script), *objs]
     if vendor_libs:
         link_args += ['--allow-multiple-definition',
                       '--start-group', *vendor_libs, '--end-group']
     tc('pi32v2/bin/ld', *link_args, '-Map', str(OUT / 'modd.map'), '-o', str(elf))
 
-    for sect in ('text.bin', 'data.bin'):
-        (OUT / sect).unlink(missing_ok=True)
-    tc('common/bin/objcopy', '-O', 'binary', '-j', '.text',
-       str(elf), str(OUT / 'text.bin'))
-    tc('common/bin/objcopy', '-O', 'binary', '-j', '.data',
-       str(elf), str(OUT / 'data.bin'))
-
-    text_size = (OUT / 'text.bin').stat().st_size
+    text = extract_section(elf, '.text')
+    extract_section(elf, '.data')
+    text_size = len(text)
     print(f'build: {elf.relative_to(ROOT)} ({text_size} bytes text)')
     # JieLi objcopy accepts one section per invocation. Assemble relocated
     # code/data at linker load addresses, never their runtime RAM addresses.
     symbols = tc('common/bin/objdump', '-t', elf, capture=True)
-    body = bytearray((OUT / 'text.bin').read_bytes())
+    body = bytearray(text)
     for section, symbol in (('.ram_text', '_rt_load'), ('.dsp_text', '_dsp_load'),
                             ('.dsp_tables', '_dt_load'), ('.data', '_data_load'),
                             ('.audio_text', '_audio_load')):
-        binary = OUT / f'{section[1:]}.bin'
-        binary.unlink(missing_ok=True)
-        tc('common/bin/objcopy', '-O', 'binary', '-j', section, elf, binary)
-        blob = binary.read_bytes() if binary.exists() else b''
+        blob = extract_section(elf, section)
         if not blob:
             continue
         match = re.search(r'^([0-9a-f]+) .*\s' + symbol + r'$', symbols, re.M)
