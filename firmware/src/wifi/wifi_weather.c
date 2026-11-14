@@ -5,6 +5,9 @@
  * current weather from Open-Meteo. Non-blocking, callback-driven. */
 
 #ifdef CONFIG_LWIP
+#ifndef CONFIG_WEATHER_LOCATION
+#define CONFIG_WEATHER_LOCATION ""
+#endif
 
 /* ---- weather data ----------------------------------------------------- */
 
@@ -270,13 +273,57 @@ static void weather_init(void)
     weather_lon[0] = 0;
 }
 
+static int weather_parse_location(void)
+{
+    const char *s = CONFIG_WEATHER_LOCATION;
+    if (!s[0]) return 0;
+    /* "lat,lon,city,country" */
+    uint32_t i = 0, f = 0;
+    const char *fields[4] = {0, 0, 0, 0};
+    uint32_t lengths[4] = {0, 0, 0, 0};
+    fields[0] = s;
+    while (s[i]) {
+        if (s[i] == ',' && f < 3) {
+            lengths[f] = (uint32_t)(&s[i] - fields[f]);
+            f++;
+            fields[f] = &s[i + 1];
+        }
+        i++;
+    }
+    lengths[f] = (uint32_t)(&s[i] - fields[f]);
+    if (f < 1) return 0;  /* need at least lat,lon */
+    uint32_t k;
+    k = lengths[0] < sizeof(weather_lat) - 1 ? lengths[0] : sizeof(weather_lat) - 1;
+    for (i = 0; i < k; i++) weather_lat[i] = fields[0][i];
+    weather_lat[k] = 0;
+    k = lengths[1] < sizeof(weather_lon) - 1 ? lengths[1] : sizeof(weather_lon) - 1;
+    for (i = 0; i < k; i++) weather_lon[i] = fields[1][i];
+    weather_lon[k] = 0;
+    if (f >= 2 && lengths[2]) {
+        k = lengths[2] < sizeof(weather_dat.city) - 1 ? lengths[2] : sizeof(weather_dat.city) - 1;
+        for (i = 0; i < k; i++) weather_dat.city[i] = fields[2][i];
+        weather_dat.city[k] = 0;
+    }
+    if (f >= 3 && lengths[3]) {
+        k = lengths[3] < sizeof(weather_dat.country) - 1 ? lengths[3] : sizeof(weather_dat.country) - 1;
+        for (i = 0; i < k; i++) weather_dat.country[i] = fields[3][i];
+        weather_dat.country[k] = 0;
+    }
+    return 1;
+}
+
 static void weather_fetch_start(void)
 {
     if (weather_state != WEATHER_IDLE && weather_state != WEATHER_DONE)
         return;
     modd_log("wifi: weather fetch start");
-    weather_state = WEATHER_GEO_FETCH;
     weather_retries = 0;
+    if (weather_parse_location()) {
+        modd_log("wifi: using fixed location");
+        weather_state = WEATHER_WEATHER_FETCH;
+    } else {
+        weather_state = WEATHER_GEO_FETCH;
+    }
 }
 
 static void weather_poll(void)
@@ -300,7 +347,7 @@ static void weather_poll(void)
         break;
 
     case WEATHER_WEATHER_FETCH: {
-        char path[160];
+        char path[200];
         uint32_t pi = 0;
         const char *s;
 
@@ -317,6 +364,10 @@ static void weather_poll(void)
         while (*s && pi < sizeof(path) - 60) path[pi++] = *s++;
         s = "&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m";
         while (*s && pi < sizeof(path) - 1) path[pi++] = *s++;
+#ifdef CONFIG_WEATHER_UNIT_F
+        s = "&temperature_unit=fahrenheit&wind_speed_unit=mph";
+        while (*s && pi < sizeof(path) - 1) path[pi++] = *s++;
+#endif
         path[pi] = 0;
 
         if (http_get("api.open-meteo.com", path, weather_wx_cb, 0) == 0) {

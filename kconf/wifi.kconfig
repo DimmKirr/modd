@@ -41,6 +41,30 @@ config WIFI_PASSWORD
       to an encrypted AP. Baked into the firmware at compile time.
       Leave empty to disable auto-connect for encrypted networks.
 
+config WEATHER
+    bool "Weather client (Open-Meteo)"
+    depends on LWIP
+    default n
+    help
+      Async weather fetcher: geo-locates via ip-api.com, then
+      current conditions from Open-Meteo. Non-blocking, callback-driven.
+
+config WEATHER_LOCATION
+    string "Fixed location (lat,lon,city,country)"
+    depends on WEATHER
+    default ""
+    help
+      When non-empty, skip IP geolocation and use this location.
+      Format: "lat,lon,city,country". Example: "40.7128,-74.0060,New York,US".
+
+config WEATHER_UNIT_F
+    bool "Fahrenheit (default: Celsius)"
+    depends on WEATHER
+    default n
+    help
+      Display temperature in Fahrenheit. Open-Meteo returns the value
+      in the requested unit, so no firmware-side conversion is needed.
+
 config LLM
     bool "LLM inference (via local proxy)"
     depends on LWIP

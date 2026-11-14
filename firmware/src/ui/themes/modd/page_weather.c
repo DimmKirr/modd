@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* modd WEATHER: pixel-art weather page under VIEW_CONN (GLO hold).
+/* modd WEATHER: pixel-art weather page under VIEW_CONN (FX hold).
  * Uses the shared weather_art data from the Felucca theme dir and the font5x7
  * bitmap face. Sky gradient and text colours follow the active palette (T_*
  * tokens); sprite art keeps its own fixed palette. */
@@ -173,47 +173,47 @@ static void mwx_draw_weather(const struct weather_data *w)
     cv_begin(UI_W, UI_PANEL_H, sky_top);
     mwx_sky(UI_W, UI_PANEL_H, sky_top, sky_bot);
 
-    mwx_art(8, 10, (uint32_t)art, 2);
+    /* sprite at 3x (was 2x), centered vertically in the upper half */
+    mwx_art(6, 6, (uint32_t)art, 3);
 
-    mwx_text(96, 14, temp, 4, fg, sh);
+    /* big temperature to the right of the sprite */
+    mwx_text(96, 10, temp, 4, fg, sh);
 #ifdef CONFIG_WEATHER_UNIT_F
-    mwx_text(96 + mwx_text_w(temp, 4) + 8, 16, "F", 2, fg, sh);
+    mwx_text(96 + mwx_text_w(temp, 4) + 6, 10, "F", 2, fg, sh);
 #else
-    mwx_text(96 + mwx_text_w(temp, 4) + 8, 16, "C", 2, fg, sh);
+    mwx_text(96 + mwx_text_w(temp, 4) + 6, 10, "C", 2, fg, sh);
 #endif
 
+    /* condition name */
     s = mwx_fit(cond, 2, UI_W - 96 - 6);
-    mwx_text(96, 50, cond, s, fg, sh);
+    mwx_text(96, 46, cond, s, fg, sh);
 
-    if (w->city[0]) {
-        char loc[32];
-        uint32_t li = 0;
-        const char *c = w->city;
-        while (*c && li < sizeof(loc) - 6)
-            loc[li++] = *c++;
-        if (w->country[0]) {
-            loc[li++] = ',';
-            loc[li++] = ' ';
-            c = w->country;
-            while (*c && li < sizeof(loc) - 1)
-                loc[li++] = *c++;
-        }
-        loc[li] = 0;
-        mwx_text(10, (int32_t)UI_PANEL_H - 40, loc,
-                 mwx_fit(loc, 2, UI_W - 20), T_MID, sh);
-    }
-
+    /* single info line: "City, CC · 82% · 7.2 km/h" */
     {
-        char info[24];
+        char info[48];
         uint32_t ii = 0;
         const char *c;
+        if (w->city[0]) {
+            for (c = w->city; *c && ii < sizeof(info) - 20; c++)
+                info[ii++] = *c;
+            if (w->country[0]) {
+                info[ii++] = ','; info[ii++] = ' ';
+                for (c = w->country; *c && ii < sizeof(info) - 16; c++)
+                    info[ii++] = *c;
+            }
+            info[ii++] = ' ';
+        }
         for (c = hum; *c; c++) info[ii++] = *c;
-        info[ii++] = ' '; info[ii++] = ' ';
+        info[ii++] = ' ';
         for (c = wind; *c; c++) info[ii++] = *c;
-        for (c = " KM/H"; *c; c++) info[ii++] = *c;
+#ifdef CONFIG_WEATHER_UNIT_F
+        for (c = " MPH"; *c && ii < sizeof(info) - 1; c++) info[ii++] = *c;
+#else
+        for (c = " KM/H"; *c && ii < sizeof(info) - 1; c++) info[ii++] = *c;
+#endif
         info[ii] = 0;
-        mwx_text(10, (int32_t)UI_PANEL_H - 20, info,
-                 mwx_fit(info, 2, UI_W - 20), T_MID, sh);
+        mwx_text(10, (int32_t)UI_PANEL_H - 22, info,
+                 mwx_fit(info, 1, UI_W - 20), T_MID, sh);
     }
 
     cv_blit(0, UI_Y_PANEL);
@@ -225,22 +225,9 @@ static void mwx_draw(void)
 {
     const struct weather_data *w = weather_get();
 
-    if (w->valid) {
-        char temp[8], hum[8], wind[8];
-        mwx_fmt_temp(temp, w->temp_c);
-        mwx_fmt_hum(hum, w->humidity);
-        mwx_fmt_wind(wind, w->wind_kmh);
-#ifdef CONFIG_WEATHER_UNIT_F
-        ui_card(0, "TEMP", temp, "F", T_THEME, -1, 0);
-#else
-        ui_card(0, "TEMP", temp, "C", T_THEME, -1, 0);
-#endif
-        ui_card(1, "HUMID", hum, "", T_THEME, (int32_t)w->humidity * 10, 0);
-        ui_card(2, "WIND", wind, "km/h", T_MID, -1, 0);
-        ui_card(3, "WMO", weather_condition_name(w->wmo_code), "", T_MID, -1, 0);
-    } else {
+    if (!w->valid) {
         ui_card(0, "TEMP", "---", "", T_DIM, -1, 0);
-        ui_card(1, "HUMID", "---", "", T_DIM, -1, 0);
+        ui_card(1, "HUM", "---", "", T_DIM, -1, 0);
         ui_card(2, "WIND", "---", "", T_DIM, -1, 0);
         ui_card(3, "WMO", "---", "", T_DIM, -1, 0);
     }
@@ -254,7 +241,7 @@ static void mwx_draw(void)
 
     mwx_frame++;
 
-    ui_footer("wifi", w->valid ? w->city : "---", "WEATHER");
+    ui_footer("", w->valid ? w->city : "---", "");
 }
 
 static void mwx_enter(void)

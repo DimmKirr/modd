@@ -3,8 +3,8 @@
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """E2E: Weather page in the emulator.
 
-Builds the felucca defconfig (WiFi + lwIP), boots in fm1-emu,
-navigates to the WEATHER page,
+Builds the modd_dev_network defconfig (WiFi + lwIP + USB-NET), boots in fm1-emu
+with ?wifi=oss&net=internet, navigates to the WEATHER page (FX hold -> VIEW_CONN),
 and tests:
   1. Weather page renders without crashing
   2. Loading state shows spinner and "FETCHING WEATHER" text
@@ -12,10 +12,10 @@ and tests:
   4. PLAY button triggers a refresh attempt without crashing
   5. Cards show placeholder "---" values before data arrives
   6. Page survives multiple visits (enter/leave cycle)
-  7. With FM1_E2E_WIFI=SSID:PASSWORD and an fm1-emu that has the WiFi chip
-     (--oss-wifi, from 0.4.x): the firmware joins the emulator's own AP
-     (Home:fm1pass), fetches real weather through the page, and the data card
-     is drawn. Skipped without the variable.
+  7. The firmware joins the emulator's virtual AP and fetches real weather
+
+WiFi credentials: WIFI_SSID / WIFI_PASSWORD from .env (via task), or
+FM1_E2E_WIFI=SSID:PASSWORD, or the emulator default (Home / fm1pass).
 """
 import os
 import re
@@ -29,15 +29,18 @@ from e2e_fixtures import E2ETestCase, _run_timestamp, RESULTS_DIR, e2e_build, e2
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILD = ROOT / 'build'
-FWSC = BUILD / 'modd.fwsc'
+
+DEFCONFIG = 'modd_dev_network'
+FWSC = BUILD / DEFCONFIG / 'modd.fwsc'
 
 TEST_RESULTS = RESULTS_DIR / f'{_run_timestamp}-e2e_weather_test'
 
-DEFCONFIG = 'modd_dev_network'
-
-# "SSID:PASSWORD": the firmware built to join that AP, the emulator booted with its WiFi
-# chip and the page's network behind it (fm1-emu `?oss-wifi=1&internet=1`)
-WIFI = os.environ.get('FM1_E2E_WIFI')
+_wifi_env = os.environ.get('FM1_E2E_WIFI')
+if _wifi_env:
+    WIFI_SSID, WIFI_PASSWORD = _wifi_env.split(':', 1)
+else:
+    WIFI_SSID = 'Home'
+    WIFI_PASSWORD = 'fm1pass'
 
 
 def _set_wifi_credentials(config_h, ssid, password):
@@ -49,13 +52,31 @@ def _set_wifi_credentials(config_h, ssid, password):
 
 # Firmware hold threshold is 500 ms of emulated time; 800 ms wall-clock was
 # occasionally delivered as a tap by the WASM emulator, so keep a wide margin.
-GLO_HOLD_MS = 1500
+FX_HOLD_MS = 1500
+
+# JS snippet: hash the top header strip of the panel canvas (first 14 rows).
+# Returns a simple sum of pixel values as a fingerprint.
+_CANVAS_HASH_JS = '''() => {
+    const c = document.getElementById('panel');
+    const o = document.createElement('canvas');
+    o.width = c.width; o.height = c.height;
+    const g = o.getContext('2d');
+    g.drawImage(c, 0, 0);
+    const d = g.getImageData(0, 0, o.width, o.height).data;
+    let s = 0;
+    for (let i = 0; i < d.length; i += 4) s += d[i] ^ d[i+1] ^ d[i+2];
+    return s;
+}'''
 
 
 def _navigate_to_weather(ctrl, page):
-    """From HOME: a GLO hold opens VIEW_CONN. In the modd theme WEATHER is
-    the first page in that view, so a single hold lands on it directly."""
-    ctrl.press_button('glo', hold_ms=GLO_HOLD_MS, delay_ms=500)
+    """From HOME: FX hold opens VIEW_CONN. WEATHER is the first page in
+    that view, so a single hold lands on it directly."""
+    home_hash = page.evaluate(_CANVAS_HASH_JS)
+    ctrl.press_button('fx', hold_ms=FX_HOLD_MS, delay_ms=500)
+    weather_hash = page.evaluate(_CANVAS_HASH_JS)
+    assert weather_hash != home_hash, \
+        'canvas unchanged after FX hold: navigation to Weather failed'
 
 
 class TestWeatherPage(E2ETestCase):
@@ -73,10 +94,8 @@ class TestWeatherPage(E2ETestCase):
                 f'configs/{DEFCONFIG}_defconfig does not exist.\n')
         else:
             try:
-                gen_dir = None
-                if WIFI:
-                    gen_dir = e2e_genconfig(DEFCONFIG, TEST_RESULTS)
-                    _set_wifi_credentials(gen_dir / 'config.h', *WIFI.split(':', 1))
+                gen_dir = e2e_genconfig(DEFCONFIG, TEST_RESULTS)
+                _set_wifi_credentials(gen_dir / 'config.h', WIFI_SSID, WIFI_PASSWORD)
                 r, _ = e2e_build(DEFCONFIG, TEST_RESULTS, gen_dir=gen_dir)
                 cls._build_ok = r.returncode == 0
             except (RuntimeError, FileNotFoundError, subprocess.TimeoutExpired):
@@ -87,8 +106,10 @@ class TestWeatherPage(E2ETestCase):
                 'Weather page E2E tests run once this defconfig builds.\n')
         try:
             super().setUpClass()
-            if WIFI:
-                cls.emu_url += '&oss-wifi=1&internet=1'
+            cls.emu_url += (
+                f'&wifi=oss&net=internet'
+                f'&wifi-ssid={WIFI_SSID}&wifi-password={WIFI_PASSWORD}'
+            )
         except unittest.SkipTest:
             pass
 
@@ -120,6 +141,7 @@ class TestWeatherPage(E2ETestCase):
 
             page.wait_for_timeout(500)
             self.screenshot(page, 'WEATHER-page-renders')
+            self.screenshot_lcd(page, 'WEATHER-page-renders')
 
             status = page.locator('#status').text_content()
             self.assertNotIn('halted', status)
@@ -141,6 +163,7 @@ class TestWeatherPage(E2ETestCase):
             # The error state needs the --oss-wifi emulator or a device.
             page.wait_for_timeout(5_000)
             self.screenshot(page, 'WEATHER-no-data')
+            self.screenshot_lcd(page, 'WEATHER-no-data')
 
             status = page.locator('#status').text_content()
             self.assertNotIn('halted', status)
@@ -149,17 +172,18 @@ class TestWeatherPage(E2ETestCase):
             page.close()
 
     def test_weather_shows_data_over_the_virtual_ap(self):
-        """FM1_E2E_WIFI: the firmware joins the emulator's AP and real weather data is drawn."""
-        if not WIFI:
-            self.skipTest('FM1_E2E_WIFI not set (SSID:PASSWORD; the emulator AP is Home:fm1pass)')
+        """The firmware joins the emulator's virtual AP and weather data is drawn."""
         page = self._boot_page()
         try:
             # scan, autojoin, WPA2, DHCP, geo, weather: about 20 s of emulated time
             page.wait_for_timeout(25_000)
             ctrl = self.controls(page)
+            ctrl.press_button('home')
+            page.wait_for_timeout(500)
             _navigate_to_weather(ctrl, page)
             page.wait_for_timeout(1_500)
             self.screenshot(page, 'WEATHER-data')
+            self.screenshot_lcd(page, 'WEATHER-data')
             status = page.locator('#status').text_content()
             self.assertNotIn('halted', status)
             # The data card is a dithered sky gradient whose hue depends on the
@@ -195,11 +219,13 @@ class TestWeatherPage(E2ETestCase):
             page.wait_for_timeout(500)
 
             self.screenshot(page, 'WEATHER-before-refresh')
+            self.screenshot_lcd(page, 'WEATHER-before-refresh')
 
             ctrl.press_button('play')
             page.wait_for_timeout(1_000)
 
             self.screenshot(page, 'WEATHER-after-refresh')
+            self.screenshot_lcd(page, 'WEATHER-after-refresh')
 
             status = page.locator('#status').text_content()
             self.assertNotIn('halted', status)
@@ -216,6 +242,7 @@ class TestWeatherPage(E2ETestCase):
             page.wait_for_timeout(500)
 
             self.screenshot(page, 'WEATHER-cards-placeholder')
+            self.screenshot_lcd(page, 'WEATHER-cards-placeholder')
 
             status = page.locator('#status').text_content()
             self.assertNotIn('halted', status)
@@ -233,17 +260,20 @@ class TestWeatherPage(E2ETestCase):
             _navigate_to_weather(ctrl, page)
             page.wait_for_timeout(500)
             self.screenshot(page, 'WEATHER-visit-1')
+            self.screenshot_lcd(page, 'WEATHER-visit-1')
 
             # Leave: a HOME tap opens VIEW_HOME
             ctrl.press_button('home')
             page.wait_for_timeout(500)
             self.screenshot(page, 'WEATHER-left-to-HOME')
+            self.screenshot_lcd(page, 'WEATHER-left-to-HOME')
 
             # Return: the CONN view remembers its last page, so a single
-            # GLO hold lands on WEATHER again
-            ctrl.press_button('glo', hold_ms=GLO_HOLD_MS, delay_ms=500)
+            # FX hold lands on WEATHER again
+            ctrl.press_button('fx', hold_ms=FX_HOLD_MS, delay_ms=500)
             page.wait_for_timeout(500)
             self.screenshot(page, 'WEATHER-visit-2')
+            self.screenshot_lcd(page, 'WEATHER-visit-2')
 
             status = page.locator('#status').text_content()
             self.assertNotIn('halted', status)
@@ -263,6 +293,7 @@ class TestWeatherPage(E2ETestCase):
             frames = self.stop_canvas_capture(page)
 
             self.screenshot(page, 'WEATHER-spinner')
+            self.screenshot_lcd(page, 'WEATHER-spinner')
 
             if len(frames) >= 3:
                 self.frames_to_gif(frames, name='weather-spinner', fps=5)
