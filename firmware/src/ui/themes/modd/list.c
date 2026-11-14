@@ -4,7 +4,6 @@
  * status line under the rows. Draws into the caller's canvas with the Melodee renderer (cv_*), so
  * it is included after gfx.c. Nothing here touches a disk: a source answers from its cache. */
 
-#define UI_LIST_X_PAD 8
 
 static void ui_list_hints(const ui_list_t *l, char *out, uint32_t max);
 
@@ -55,25 +54,25 @@ static void ui_list_draw(ui_list_t *l, int32_t y0, int32_t h)
         uint16_t bg = sel ? T_SURF : T_BG;
         uint16_t fg = sel ? T_THEME : T_TEXT;
         modd_list_entry_t e = {"", "", LIST_FILE};
-        int32_t x = UI_LIST_X_PAD;
+        int32_t x = UI_INSET;
         s->entry(idx, &e);
         if (sel)
-            cv_rrect(2, y, MT_W - 4, l->row_h - 2, 4, T_SURF, T_BG);
+            cv_rrect(2, y, UI_W - 4, l->row_h - 2, 4, T_SURF, T_BG);
         if (e.kind == LIST_FOLDER) {
-            cv_text_fit(x, y + 2, TY_LB, "/", T_ACCENT, bg, 8);
+            cv_text_fit(x, UI_TEXT_Y(y, l->row_h), TY_LB, "/", T_ACCENT, bg, 8);
             x += 8;
         }
-        cv_text_fit(x, y + 2, TY_LB, e.name ? e.name : "", fg, bg, 150);
+        cv_text_fit(x, UI_TEXT_Y(y, l->row_h), TY_LB, e.name ? e.name : "", fg, bg, 150);
         if (e.detail && e.detail[0])
-            cv_text_r(MT_W - UI_LIST_X_PAD, y + 2, TY_LB, e.detail, ui_list_detail_col(e.kind), bg);
+            cv_text_r(UI_W - UI_INSET, UI_TEXT_Y(y, l->row_h), TY_LB, e.detail, ui_list_detail_col(e.kind), bg);
     }
     if (n > l->vis) {                           /* the position mark: a thumb on the right edge */
         int32_t track = (int32_t)l->vis * l->row_h - 2, thumb, ty;
         thumb = track * (int32_t)l->vis / (int32_t)n;
         if (thumb < 6) thumb = 6;
         ty = (track - thumb) * (int32_t)l->scroll / (int32_t)(n - l->vis);
-        cv_rect(MT_W - 3, y0, 2, track, T_LINE);
-        cv_rect(MT_W - 3, y0 + ty, 2, thumb, T_MID);
+        cv_rect(UI_W - 3, y0, 2, track, T_LINE);
+        cv_rect(UI_W - 3, y0 + ty, 2, thumb, T_MID);
     }
     status = l->msg ? l->msg : (s->status ? s->status() : 0);
     if (!status && n == 0)
@@ -84,7 +83,7 @@ static void ui_list_draw(ui_list_t *l, int32_t y0, int32_t h)
         status = hints;
     }
     if (status[0])
-        cv_text_c(MT_W / 2, y0 + (int32_t)l->vis * l->row_h + 2, TY_LB, status,
+        cv_text_c(UI_W / 2, y0 + (int32_t)l->vis * l->row_h + 2, TY_LB, status,
                   l->msg ? T_THEME : T_DIM, T_BG);
 }
 

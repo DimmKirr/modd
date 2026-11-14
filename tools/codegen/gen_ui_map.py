@@ -26,6 +26,34 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+def load_defconfig(name: str, root: Path | None = None) -> set[str]:
+    """Read a defconfig and return the set of enabled CONFIG_* symbols."""
+    root = root or ROOT
+    path = root / 'configs' / f'{name}_defconfig'
+    enabled: set[str] = set()
+    if not path.is_file():
+        return enabled
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if line.startswith('#') or '=' not in line:
+            continue
+        key, val = line.split('=', 1)
+        if val == 'y':
+            enabled.add(key)
+    return enabled
+
+
+def _guards_met(guards: list[str], config: set[str]) -> bool:
+    """Check whether all Kconfig guards are satisfied by the active config."""
+    for g in guards:
+        g = g.strip()
+        if g.startswith('defined(') and g.endswith(')'):
+            g = g[len('defined('):-1]
+        if g not in config:
+            return False
+    return True
+
+
 MARKER_START = "<!-- ui-nav-diagram:start -->"
 MARKER_END = "<!-- ui-nav-diagram:end -->"
 CTRL_MARKER_START = "<!-- ui-controls-table:start -->"
@@ -583,7 +611,7 @@ def load_nav_map(theme: str, root: Path | None = None) -> dict:
 
 # ── Control path: nav map -> ordered action sequence ──────────────────────
 
-def control_path(nav_map: dict) -> list[dict]:
+def control_path(nav_map: dict, config: set[str] | None = None) -> list[dict]:
     """Convert a nav map into an ordered list of actions to visit every page.
 
     Each action is a dict:
@@ -596,6 +624,9 @@ def control_path(nav_map: dict) -> list[dict]:
     multi-page views with the select encoder.  Each action includes the
     page name expected after the action completes, enabling callers to
     screenshot, assert, or log at each step.
+
+    When *config* is provided (a set of enabled CONFIG_* symbols), pages
+    whose Kconfig guards are not satisfied are skipped.
     """
     steps: list[dict] = []
     btn_for_view = nav_map["btn_for_view"]
@@ -603,6 +634,12 @@ def control_path(nav_map: dict) -> list[dict]:
     for view_name, pages_in_view in nav_map["view_groups"].items():
         btn = btn_for_view.get(view_name)
         if not btn:
+            continue
+
+        if config is not None:
+            pages_in_view = [p for p in pages_in_view
+                             if _guards_met(p.get("guards", []), config)]
+        if not pages_in_view:
             continue
 
         is_hold = btn.endswith("_hold")

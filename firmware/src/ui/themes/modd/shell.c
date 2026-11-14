@@ -19,7 +19,7 @@ static void shell_draw(void)
         return;
 
     gfx_frame(1);
-    gfx_fill(0, 0, MT_W, MT_H, T_BG);
+    gfx_fill(0, 0, UI_W, UI_H, T_BG);
     ui_header();
     if (p->draw)
         p->draw();

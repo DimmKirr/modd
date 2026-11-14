@@ -14,16 +14,16 @@ static void mfiles_draw(void)
 {
     mt_panel_begin();
     if (!udisk_is_mounted()) {
-        cv_text_c(MT_W / 2, ty_y(MT_H_PANEL / 2 - 10, TY_TX), TY_TX,
+        cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 - 10, TY_TX), TY_TX,
                   "No USB Disk", T_DIM, T_BG);
-        cv_text_c(MT_W / 2, ty_y(MT_H_PANEL / 2 + 10, TY_LB), TY_LB,
+        cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 + 10, TY_LB), TY_LB,
                   udisk_active ? "OTG:HOST" : "OTG:DEVICE", T_MID, T_BG);
     } else {
         const char *path = LIST_UDISK.title ? LIST_UDISK.title() : "/";
         cv_text_fit(MFILES_X_PAD, 0, TY_LB, "USB DISK", T_ACCENT, T_BG, 80);
-        cv_text_fit(MFILES_X_PAD, 14, TY_LB, path, T_TEXT, T_BG, MT_W - 16);
-        cv_rect(0, 28, MT_W, 1, T_LINE);
-        ui_list_draw(&mfiles_list, MFILES_LIST_Y, MT_H_PANEL - MFILES_LIST_Y);
+        cv_text_fit(MFILES_X_PAD, 14, TY_LB, path, T_TEXT, T_BG, UI_W - 16);
+        cv_rect(0, 28, UI_W, 1, T_LINE);
+        ui_list_draw(&mfiles_list, MFILES_LIST_Y, UI_PANEL_H - MFILES_LIST_Y);
     }
     mt_panel_end();
 

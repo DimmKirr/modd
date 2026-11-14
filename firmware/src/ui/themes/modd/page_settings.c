@@ -7,14 +7,11 @@
  * INSTR (CONFIG_DOCK): modd's engines, the installed dock modules and the .dock files on a
  * USB disk; OCT+ starts one, installing it from the disk first (dock.c, dock_disk.c). */
 
-#define MSET_ROW_H    20
-#define MSET_X_PAD    8
-#define MSET_TAB_H    16
-#define MSET_CANVAS_Y MT_Y_CARD
-#define MSET_CANVAS_H ((uint32_t)(MT_Y_FOOT - MT_Y_CARD))
-#define MSET_LIST_Y   (MSET_TAB_H + 4)
+#define MSET_CANVAS_Y UI_Y_CARD
+#define MSET_CANVAS_H ((uint32_t)(UI_Y_FOOT - UI_Y_CARD))
+#define MSET_LIST_Y   (UI_TAB_H + UI_RULE_H + UI_GAP)
 #define MSET_LIST_H   (MSET_CANVAS_H - (uint32_t)MSET_LIST_Y)
-#define MSET_VISIBLE  (MSET_LIST_H / MSET_ROW_H)
+#define MSET_VISIBLE  (MSET_LIST_H / UI_ROW_H)
 
 static struct {
     uint8_t tab;
@@ -76,16 +73,16 @@ static void minstr_progress(const char *what, uint32_t pct)
     char b[8];
     minstr_fmt_pct(b, pct);
     gfx_frame(1);
-    cv_begin(MT_W, MSET_ROW_H, T_BG);
-    cv_text_fit(MSET_X_PAD, 3, TY_LB, what, T_THEME, T_BG, 120);
-    cv_text_r(MT_W - MSET_X_PAD, 3, TY_LB, b, T_DIM, T_BG);
-    cv_blit(0, (uint32_t)(MT_Y_FOOT - MSET_ROW_H));
+    cv_begin(UI_W, UI_ROW_H, T_BG);
+    cv_text_fit(UI_INSET, UI_TEXT_Y(0, UI_ROW_H), TY_LB, what, T_THEME, T_BG, 120);
+    cv_text_r(UI_W - UI_INSET, UI_TEXT_Y(0, UI_ROW_H), TY_LB, b, T_DIM, T_BG);
+    cv_blit(0, (uint32_t)(UI_Y_FOOT - UI_ROW_H));
     gfx_frame(0);
 }
 
 static void minstr_enter(void)
 {
-    ui_list_init(&minstr_list, &LIST_INSTR, MSET_ROW_H);
+    ui_list_init(&minstr_list, &LIST_INSTR, UI_ROW_H);
     minstr_list.cursor = dock_cur == DOCK_NONE ? 0 : dock_cur + 1u;
     dock_progress = minstr_progress;
     ui_list_open(&minstr_list);
@@ -155,28 +152,22 @@ static void mset_draw_network(int32_t y0)
     };
     const char *stname = (uint32_t)st < 7u ? WIFI_ST[(uint32_t)st] : "?";
 
-    cv_text_fit(MSET_X_PAD, y + 3, TY_LB, "STATUS", T_DIM, T_BG, 100);
-    cv_text_r(MSET_CANVAS_H > 0 ? (int32_t)MT_W - MSET_X_PAD : 0,
-              y + 3, TY_LB, stname,
-              st == WIFI_STATE_CONNECTED ? T_THEME : T_DIM, T_BG);
-    y += MSET_ROW_H;
+    ui_row(y, "STATUS", stname, st == WIFI_STATE_CONNECTED ? T_THEME : T_DIM, 0);
+    y += UI_ROW_H;
 
     ip = wifi_get_ip();
     if (ip) { mset_fmt_ip(buf, ip); } else { buf[0] = '-'; buf[1] = 0; }
-    cv_text_fit(MSET_X_PAD, y + 3, TY_LB, "IP", T_DIM, T_BG, 100);
-    cv_text_r((int32_t)MT_W - MSET_X_PAD, y + 3, TY_LB, buf, T_DIM, T_BG);
-    y += MSET_ROW_H;
+    ui_row(y, "IP", buf, T_DIM, 0);
+    y += UI_ROW_H;
 
     ip = wifi_get_gw();
     if (ip) { mset_fmt_ip(buf, ip); } else { buf[0] = '-'; buf[1] = 0; }
-    cv_text_fit(MSET_X_PAD, y + 3, TY_LB, "GATEWAY", T_DIM, T_BG, 100);
-    cv_text_r((int32_t)MT_W - MSET_X_PAD, y + 3, TY_LB, buf, T_DIM, T_BG);
-    y += MSET_ROW_H;
+    ui_row(y, "GATEWAY", buf, T_DIM, 0);
+    y += UI_ROW_H;
 
     ip = wifi_get_dns();
     if (ip) { mset_fmt_ip(buf, ip); } else { buf[0] = '-'; buf[1] = 0; }
-    cv_text_fit(MSET_X_PAD, y + 3, TY_LB, "DNS", T_DIM, T_BG, 100);
-    cv_text_r((int32_t)MT_W - MSET_X_PAD, y + 3, TY_LB, buf, T_DIM, T_BG);
+    ui_row(y, "DNS", buf, T_DIM, 0);
 }
 #endif
 
@@ -184,6 +175,7 @@ static void mset_draw_display(int32_t y0)
 {
     uint32_t i;
     char pos[8];
+    static const char *const SWATCH_LABELS[] = {"1", "2", "3", "4"};
     i = 0;
     pos[i++] = (char)('0' + (ux.pal + 1u) / 10u);
     if (pos[0] == '0') i = 0;
@@ -193,37 +185,31 @@ static void mset_draw_display(int32_t y0)
     pos[i++] = (char)('0' + UI_NPALETTES % 10u);
     pos[i] = 0;
 
-    cv_text_c(MT_W / 2, ty_y(y0 + 20, TY_VL), TY_VL,
-              UI_PALETTES[ux.pal].name, T_THEME, T_BG);
-    cv_text_c(MT_W / 2, ty_y(y0 + 52, TY_LB), TY_LB, pos, T_DIM, T_BG);
-    for (i = 0; i < 4u; i++)
-        cv_rrect(72 + 26 * (int32_t)i, y0 + 70, 20, 10, 3,
-                 UI_PALETTES[ux.pal].trk[i], T_BG);
+    ui_showcase_t sc = {
+        .title          = UI_PALETTES[ux.pal].name,
+        .subtitle       = pos,
+        .swatches       = UI_PALETTES[ux.pal].trk,
+        .n_swatches     = 4,
+        .swatch_labels  = SWATCH_LABELS,
+    };
+    ui_showcase_draw(y0, (int32_t)(MSET_CANVAS_H - (uint32_t)y0), &sc);
 }
 
 static void settings_draw(void)
 {
-    uint32_t t, n, r;
+    uint32_t n, r;
 
-    cv_begin(MT_W, MSET_CANVAS_H, T_BG);
+    cv_begin(UI_W, MSET_CANVAS_H, T_BG);
 
-    /* tab bar: pinned at top of canvas (right below header) */
+    /* tab bar */
     {
-        int32_t x = MSET_X_PAD;
-        for (t = 0; t < (uint32_t)SMTAB_COUNT; t++) {
-            if (!mset_tab_visible((uint8_t)t))
-                continue;
-            uint8_t sel = (t == mset.tab);
-            uint16_t fg = sel ? T_THEME : T_DIM;
-            uint16_t bg = sel ? T_SURF : T_BG;
-
-            if (sel)
-                cv_rrect(x - 2, 0, 42, MSET_TAB_H, 3, T_SURF, T_BG);
-
-            cv_text_fit(x, 3, TY_LB, SMTAB_NAME[t], fg, bg, 38);
-            x += 44;
-        }
-        cv_rect(0, MSET_TAB_H, MT_W, 1, T_LINE);
+        ui_tabs_t tabs = {
+            .labels  = SMTAB_NAME,
+            .count   = SMTAB_COUNT,
+            .active  = mset.tab,
+            .visible = mset_tab_visible,
+        };
+        ui_tabs_draw(&tabs);
     }
 
     /* item list for current tab */
@@ -232,17 +218,10 @@ static void settings_draw(void)
         uint32_t idx = mset.scroll + r;
         const sys_menu_item_t *item = mset_tab_item(mset.tab, idx);
         if (!item) break;
-        int32_t y = MSET_LIST_Y + (int32_t)r * MSET_ROW_H;
+        int32_t y = MSET_LIST_Y + (int32_t)r * UI_ROW_H;
         uint8_t sel = (idx == mset.row);
-        uint16_t bg = sel ? T_SURF : T_BG;
         uint16_t fg = sel ? T_THEME : T_TEXT;
-
-        if (sel)
-            cv_rrect(2, y, MT_W - 4, MSET_ROW_H - 2, 4, T_SURF, T_BG);
-
-        cv_text_fit(MSET_X_PAD, y + 3, TY_LB, item->name, T_DIM, bg, 120);
-        cv_text_r(MT_W - MSET_X_PAD, y + 3, TY_LB,
-                  item->values[item->get()], fg, bg);
+        ui_row(y, item->name, item->values[item->get()], fg, sel);
     }
 
     if (mset.tab == SMTAB_DISPLAY) {
@@ -255,12 +234,12 @@ static void settings_draw(void)
 #endif
 #if defined(CONFIG_SYS_MENU_NETWORK) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
     if (mset.tab == SMTAB_NETWORK) {
-        int32_t info_y = MSET_LIST_Y + (int32_t)n * MSET_ROW_H + 6;
+        int32_t info_y = MSET_LIST_Y + (int32_t)n * UI_ROW_H + 6;
         mset_draw_network(info_y);
     } else
 #endif
     if (n == 0)
-        cv_text_c(MT_W / 2, ty_y(MSET_LIST_Y + 30, TY_LB), TY_LB,
+        cv_text_c(UI_W / 2, ty_y(MSET_LIST_Y + 30, TY_LB), TY_LB,
                   "(no items)", T_DIM, T_BG);
 
     cv_blit(0, MSET_CANVAS_Y);

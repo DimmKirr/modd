@@ -27,7 +27,7 @@ sys.path.insert(0, str(ROOT / 'tests'))
 sys.path.insert(0, str(ROOT / 'tools' / 'codegen'))
 
 from fm1_controls import FM1Controls
-from gen_ui_map import control_path, discover_themes, load_nav_map
+from gen_ui_map import control_path, discover_themes, load_defconfig, load_nav_map
 
 EMU_DIR = Path(os.environ.get('FM1_WEB_DIR', Path.home() / '.fm1-emulator' / 'web'))
 FWSC = ROOT / 'build' / 'modd.fwsc'
@@ -176,7 +176,9 @@ def capture_theme(theme: str, build: bool = True) -> Path:
         raise SystemExit(1)
 
     nav_map = load_nav_map(theme, root=ROOT)
-    steps = control_path(nav_map)
+    defconfig = THEME_DEFCONFIG.get(theme, theme)
+    config = load_defconfig(defconfig, root=ROOT)
+    steps = control_path(nav_map, config=config if config else None)
     out_dir = ROOT / 'docs' / 'ui' / 'themes' / theme / 'screenshots'
 
     if build:

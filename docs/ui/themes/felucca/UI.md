@@ -106,7 +106,7 @@ Always active, handled by the shell or keyboard overlay:
 | EFFECTS |  |  | DST | CHO | DLY | REV |  |
 | SCALE |  |  | ROOT | SCL | OCT | TRN |  |
 | EDIT |  |  | knob1 | knob2 | knob3 | knob4 |  |
-| MIXER |  | algorithm | knob1 | knob2 | knob3 |  |  |
+| MIXER |  | T1 LVL | T2 LVL | T3 LVL | T4 LVL |  |  |
 | VOICE |  |  | VCE | HOLD | GLD | UNI |  |
 | FILES | select |  |  |  |  |  |  |
 | ARPEGGIO |  |  | MODE | TIME | RANGE | GATE |  |

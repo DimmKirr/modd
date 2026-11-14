@@ -59,7 +59,7 @@ static void mdisk_row(int32_t y, const char *label, const char *val,
                       uint16_t val_color)
 {
     cv_text_fit(MDISK_X_PAD, y, TY_LB, label, T_DIM, T_BG, 80);
-    cv_text_r(MT_W - MDISK_X_PAD, y, TY_LB, val, val_color, T_BG);
+    cv_text_r(UI_W - MDISK_X_PAD, y, TY_LB, val, val_color, T_BG);
 }
 
 static void mdisk_draw(void)
@@ -67,13 +67,13 @@ static void mdisk_draw(void)
     mt_panel_begin();
 
     cv_text_fit(MDISK_X_PAD, 0, TY_LB, "DISK INFO", T_ACCENT, T_BG, 100);
-    cv_rect(0, 14, MT_W, 1, T_LINE);
+    cv_rect(0, 14, UI_W, 1, T_LINE);
 
     char buf[24];
     uint32_t row = 0;
 
     if (!udisk_is_mounted()) {
-        uint32_t rh = (MT_H_PANEL - MDISK_HDR_H) / MDISK_NROWS_UNMOUNTED;
+        uint32_t rh = (UI_PANEL_H - MDISK_HDR_H) / MDISK_NROWS_UNMOUNTED;
 
         const char *st = "Not mounted";
         if (uhost.state == UHOST_ERROR) st = "Error";
@@ -90,7 +90,7 @@ static void mdisk_draw(void)
             mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "PID", buf, T_TEXT);
         }
     } else {
-        uint32_t rh = (MT_H_PANEL - MDISK_HDR_H) / MDISK_NROWS_MOUNTED;
+        uint32_t rh = (UI_PANEL_H - MDISK_HDR_H) / MDISK_NROWS_MOUNTED;
 
         mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Status", "Mounted", T_THEME);
         row++;

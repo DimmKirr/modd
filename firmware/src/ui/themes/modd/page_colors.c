@@ -28,11 +28,11 @@ static void colors_draw(void)
     pos[i] = 0;
 
     mt_panel_begin();
-    cv_text_c(MT_W / 2, ty_y(MT_H_PANEL / 2 - 10, TY_VL), TY_VL, UI_PALETTES[ux.pal].name, T_THEME, T_BG);
-    cv_text_c(MT_W / 2, ty_y(MT_H_PANEL / 2 + 22, TY_LB), TY_LB, "turn a knob to change", T_DIM, T_BG);
+    cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 - 10, TY_VL), TY_VL, UI_PALETTES[ux.pal].name, T_THEME, T_BG);
+    cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 + 22, TY_LB), TY_LB, "turn a knob to change", T_DIM, T_BG);
     /* the four track colours, as swatches */
     for (i = 0; i < 4u; i++)
-        cv_rrect(72 + 26 * (int32_t)i, MT_H_PANEL - 22, 20, 10, 3, UI_PALETTES[ux.pal].trk[i], T_BG);
+        cv_rrect(72 + 26 * (int32_t)i, UI_PANEL_H - 22, 20, 10, 3, UI_PALETTES[ux.pal].trk[i], T_BG);
     mt_panel_end();
     ui_footer("settings", pos, "COLORS");
 }

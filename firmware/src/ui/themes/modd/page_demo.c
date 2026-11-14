@@ -4,7 +4,6 @@
  * SELECT switches screens, K1-K4 adjust per-screen values. */
 
 #define MDEMO_SCREENS  6
-#define MDEMO_ROW_H   16
 
 static const char *MDEMO_NAMES[] = {
     "CARDS", "LIST", "GRAPH", "TEXT", "EDIT", "MODALS"
@@ -86,7 +85,7 @@ static const char *MDEMO_LIST[] = {
 
 static void mdemo_draw_list(void)
 {
-    uint32_t i, visible = MT_H_PANEL / MDEMO_ROW_H;
+    uint32_t i, visible = UI_PANEL_H / UI_ROW_H;
     char n[4], s[4];
 
     mdemo_fmt(n, MDEMO_LIST_N);
@@ -99,13 +98,13 @@ static void mdemo_draw_list(void)
     mt_panel_begin();
     for (i = 0; i < visible && (i + mdemo.scroll) < MDEMO_LIST_N; i++) {
         uint32_t idx = i + mdemo.scroll;
-        int32_t y = (int32_t)i * MDEMO_ROW_H;
+        int32_t y = (int32_t)i * UI_ROW_H;
         uint8_t sel = (idx == mdemo.val[0]);
         uint16_t bg = sel ? T_SURF : T_BG;
         uint16_t fg = sel ? T_THEME : T_TEXT;
 
         if (sel)
-            cv_rrect(2, y, MT_W - 4, MDEMO_ROW_H, 3, T_SURF, T_BG);
+            cv_rrect(2, y, UI_W - 4, UI_ROW_H, 3, T_SURF, T_BG);
 
         {
             char num[4];
@@ -113,9 +112,9 @@ static void mdemo_draw_list(void)
             num[1] = '0' + (char)(idx % 10);
             num[2] = 0;
             if (idx < 10) num[0] = ' ';
-            cv_text_fit(8, y + 2, TY_LB, num, T_DIM, bg, 16);
+            cv_text_fit(8, UI_TEXT_Y(y, UI_ROW_H), TY_LB, num, T_DIM, bg, 16);
         }
-        cv_text_fit(28, y + 2, TY_LB, MDEMO_LIST[idx], fg, bg, 160);
+        cv_text_fit(28, UI_TEXT_Y(y, UI_ROW_H), TY_LB, MDEMO_LIST[idx], fg, bg, 160);
         {
             int32_t bw = (int32_t)idx * 40 / MDEMO_LIST_N;
             cv_rrect(200, y + 4, bw < 2 ? 2 : bw, 8, 2, fg, bg);
@@ -130,7 +129,7 @@ static void mdemo_draw_graph(void)
 {
     uint32_t i;
     uint32_t bar_w = 12, gap = 3, n_bars = 16;
-    int32_t base_x = (int32_t)(MT_W - n_bars * (bar_w + gap)) / 2;
+    int32_t base_x = (int32_t)(UI_W - n_bars * (bar_w + gap)) / 2;
 
     ui_card(0, "BARS", "16", "", T_MID, -1, 0);
     ui_card(1, "FRAME", "", "", T_DIM, (int32_t)(mdemo.frame % 1000), 0);
@@ -140,14 +139,14 @@ static void mdemo_draw_graph(void)
     mt_panel_begin();
     for (i = 0; i < n_bars; i++) {
         uint32_t seed = (mdemo.frame / 3 + i * 37) & 0xFF;
-        int32_t bar_h = (int32_t)((seed * (MT_H_PANEL - 8)) >> 8);
+        int32_t bar_h = (int32_t)((seed * (UI_PANEL_H - 8)) >> 8);
         if (bar_h < 4) bar_h = 4;
         int32_t x = base_x + (int32_t)i * (int32_t)(bar_w + gap);
-        int32_t y = (int32_t)MT_H_PANEL - bar_h - 2;
+        int32_t y = (int32_t)UI_PANEL_H - bar_h - 2;
         uint16_t c = (i == (mdemo.frame / 4) % n_bars) ? T_ACCENT : T_THEME;
         cv_rrect(x, y, (int32_t)bar_w, bar_h, 2, c, T_BG);
     }
-    cv_rect(base_x - 2, (int32_t)MT_H_PANEL - 2,
+    cv_rect(base_x - 2, (int32_t)UI_PANEL_H - 2,
             (int32_t)(n_bars * (bar_w + gap)) + 4, 1, T_LINE);
     mt_panel_end();
 }
@@ -163,12 +162,12 @@ static void mdemo_draw_text(void)
 
     mt_panel_begin();
 
-    cv_text_fit(8, 4, TY_LB, "LB: The quick brown fox", T_TEXT, T_BG, MT_W - 16);
-    cv_text_fit(8, 20, TY_TX, "TX: ABCDEFGH", T_TEXT, T_BG, MT_W - 16);
-    cv_text_fit(8, 42, TY_VL, "VL: 12345", T_TEXT, T_BG, MT_W - 16);
+    cv_text_fit(8, 4, TY_LB, "LB: The quick brown fox", T_TEXT, T_BG, UI_W - 16);
+    cv_text_fit(8, 20, TY_TX, "TX: ABCDEFGH", T_TEXT, T_BG, UI_W - 16);
+    cv_text_fit(8, 42, TY_VL, "VL: 12345", T_TEXT, T_BG, UI_W - 16);
 
-    cv_text_c(MT_W / 2, ty_y(72, TY_LB), TY_LB, "CENTERED TEXT", T_THEME, T_BG);
-    cv_text_r(MT_W - 8, ty_y(88, TY_LB), TY_LB, "RIGHT ALIGNED", T_ACCENT, T_BG);
+    cv_text_c(UI_W / 2, ty_y(72, TY_LB), TY_LB, "CENTERED TEXT", T_THEME, T_BG);
+    cv_text_r(UI_W - 8, ty_y(88, TY_LB), TY_LB, "RIGHT ALIGNED", T_ACCENT, T_BG);
     cv_text_fit(8, 88, TY_LB, "LEFT", T_MID, T_BG, 60);
 
     cv_rrect(8, 104, 60, 14, 4, T_SURF, T_BG);
@@ -200,16 +199,16 @@ static void mdemo_draw_edit(void)
 
     mt_panel_begin();
 
-    cv_text_fit(8, 4, TY_LB, "INLINE TEXT EDITOR", T_DIM, T_BG, MT_W - 16);
-    cv_text_fit(8, 16, TY_LB, "K1: cursor  K2: character", T_DIM, T_BG, MT_W - 16);
+    cv_text_fit(8, 4, TY_LB, "INLINE TEXT EDITOR", T_DIM, T_BG, UI_W - 16);
+    cv_text_fit(8, 16, TY_LB, "K1: cursor  K2: character", T_DIM, T_BG, UI_W - 16);
 
-    cv_rrect(4, 34, MT_W - 8, 28, 4, T_SURF, T_BG);
-    cv_text_fit(10, 42, TY_TX, mdemo_text, T_TEXT, T_SURF, MT_W - 20);
+    cv_rrect(4, 34, UI_W - 8, 28, 4, T_SURF, T_BG);
+    cv_text_fit(10, 42, TY_TX, mdemo_text, T_TEXT, T_SURF, UI_W - 20);
 
     /* cursor underline */
     if (mdemo.edit_cursor < tl || tl < 31) {
         int32_t cx = 10 + (int32_t)mdemo.edit_cursor * 8;
-        if (cx > MT_W - 18) cx = MT_W - 18;
+        if (cx > UI_W - 18) cx = UI_W - 18;
         if ((mdemo.frame / 8) & 1)
             cv_rect(cx, 56, 8, 2, T_ACCENT);
     }
@@ -230,10 +229,10 @@ static void mdemo_draw_edit(void)
             info[6] = '('; info[7] = 'e'; info[8] = 'n';
             info[9] = 'd'; info[10] = ')'; info[11] = 0;
         }
-        cv_text_fit(8, 72, TY_LB, info, T_MID, T_BG, MT_W - 16);
+        cv_text_fit(8, 72, TY_LB, info, T_MID, T_BG, UI_W - 16);
     }
 
-    cv_text_fit(8, 92, TY_LB, "Turn K2 to change char value", T_DIM, T_BG, MT_W - 16);
+    cv_text_fit(8, 92, TY_LB, "Turn K2 to change char value", T_DIM, T_BG, UI_W - 16);
 
     mt_panel_end();
 }
@@ -258,38 +257,38 @@ static void mdemo_draw_modals(void)
 
     mt_panel_begin();
 
-    cv_text_fit(8, 2, TY_LB, "MODAL TYPES (K1 to select)", T_DIM, T_BG, MT_W - 16);
+    cv_text_fit(8, 2, TY_LB, "MODAL TYPES (K1 to select)", T_DIM, T_BG, UI_W - 16);
 
     for (i = 0; i < MDEMO_MODAL_N; i++) {
-        int32_t y = 18 + (int32_t)i * MDEMO_ROW_H;
+        int32_t y = 18 + (int32_t)i * UI_ROW_H;
         uint8_t sel = ((uint8_t)i == mdemo.modal_sel);
         uint16_t bg = sel ? T_SURF : T_BG;
         uint16_t fg = sel ? T_THEME : T_TEXT;
 
         if (sel)
-            cv_rrect(2, y, MT_W - 4, MDEMO_ROW_H, 3, T_SURF, T_BG);
+            cv_rrect(2, y, UI_W - 4, UI_ROW_H, 3, T_SURF, T_BG);
 
         {
             char num[4];
             num[0] = '0' + (char)(i + 1);
             num[1] = '.';
             num[2] = 0;
-            cv_text_fit(8, y + 2, TY_LB, num, T_DIM, bg, 16);
+            cv_text_fit(8, UI_TEXT_Y(y, UI_ROW_H), TY_LB, num, T_DIM, bg, 16);
         }
-        cv_text_fit(28, y + 2, TY_LB, MDEMO_MODAL_NAMES[i], fg, bg, 160);
+        cv_text_fit(28, UI_TEXT_Y(y, UI_ROW_H), TY_LB, MDEMO_MODAL_NAMES[i], fg, bg, 160);
     }
 
     /* draw a mock modal overlay for the selected type */
     {
-        int32_t mx = 20, my = 72, mw = MT_W - 40, mh = 46;
+        int32_t mx = 20, my = 72, mw = UI_W - 40, mh = 46;
         cv_rrect(mx, my, mw, mh, 6, T_SURF, T_BG);
         cv_rect(mx, my, mw, 14, T_THEME);
-        cv_text_c(MT_W / 2, ty_y(my + 2, TY_LB), TY_LB,
+        cv_text_c(UI_W / 2, ty_y(my + 2, TY_LB), TY_LB,
                   MDEMO_MODAL_NAMES[mdemo.modal_sel], T_INK, T_THEME);
 
         switch (mdemo.modal_sel) {
         case 0:
-            cv_text_c(MT_W / 2, ty_y(my + 20, TY_LB), TY_LB,
+            cv_text_c(UI_W / 2, ty_y(my + 20, TY_LB), TY_LB,
                       "Are you sure?", T_TEXT, T_SURF);
             cv_rrect(mx + 10, my + 32, 60, 12, 3, T_ACCENT, T_SURF);
             cv_text_c(mx + 40, ty_y(my + 34, TY_LB), TY_LB, "YES", T_INK, T_ACCENT);
@@ -297,10 +296,10 @@ static void mdemo_draw_modals(void)
             cv_text_c(mw - 20, ty_y(my + 34, TY_LB), TY_LB, "NO", T_TEXT, T_DIM);
             break;
         case 1:
-            cv_text_c(MT_W / 2, ty_y(my + 20, TY_LB), TY_LB,
+            cv_text_c(UI_W / 2, ty_y(my + 20, TY_LB), TY_LB,
                       "Operation complete.", T_TEXT, T_SURF);
-            cv_rrect(MT_W / 2 - 25, my + 32, 50, 12, 3, T_THEME, T_SURF);
-            cv_text_c(MT_W / 2, ty_y(my + 34, TY_LB), TY_LB, "OK", T_INK, T_THEME);
+            cv_rrect(UI_W / 2 - 25, my + 32, 50, 12, 3, T_THEME, T_SURF);
+            cv_text_c(UI_W / 2, ty_y(my + 34, TY_LB), TY_LB, "OK", T_INK, T_THEME);
             break;
         case 2:
             cv_rrect(mx + 10, my + 18, mw - 20, 14, 3, T_BG, T_SURF);
@@ -351,7 +350,7 @@ static int mdemo_knob(uint32_t id, int32_t clicks)
 
         if (mdemo.screen == 1 && ki == 0) {
             /* list selection */
-            uint32_t visible = MT_H_PANEL / MDEMO_ROW_H;
+            uint32_t visible = UI_PANEL_H / UI_ROW_H;
             int32_t r = (int32_t)mdemo.val[0] + clicks;
             if (r < 0) r = 0;
             if (r >= MDEMO_LIST_N) r = MDEMO_LIST_N - 1;

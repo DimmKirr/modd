@@ -5,12 +5,10 @@
  * T_* palette tokens, mt_panel canvas + ui_card status bar). Opened via
  * GLO tap toggle from any page when CONFIG_DEBUG_LOG is enabled. */
 
-#define MDBG_ROW_H    13
-#define MDBG_VIS      (MT_H_PANEL / MDBG_ROW_H)
-#define MDBG_X_PAD    4
+#define MDBG_VIS      (UI_PANEL_H / UI_ROW_H_XS)
 #define MDBG_TS_W     56
-#define MDBG_MSG_X    (MDBG_X_PAD + MDBG_TS_W)
-#define MDBG_MSG_W    (MT_W - MDBG_MSG_X - 2)
+#define MDBG_MSG_X    (UI_INSET_S + MDBG_TS_W)
+#define MDBG_MSG_W    (UI_W - MDBG_MSG_X - 2)
 #define MDBG_WRAP_AT  22
 
 static uint32_t mdbg_last_count;
@@ -81,25 +79,25 @@ static void mdbg_draw(void)
     mt_panel_begin();
 
     if (n == 0) {
-        cv_text_c(MT_W / 2, ty_y(MT_H_PANEL / 2, &AF_XS), &AF_XS,
+        cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2, &AF_XS), &AF_XS,
                   "(no log)", T_DIM, T_BG);
     } else {
         for (i = 0; row < MDBG_VIS && (modd_log_scroll + i) < n; i++) {
             uint32_t idx = modd_log_scroll + i;
             const char *line = modd_log_line(idx);
-            int32_t ry = (int32_t)(row * MDBG_ROW_H);
+            int32_t ry = (int32_t)(row * UI_ROW_H_XS);
             uint32_t len = 0;
             char ts[10];
 
             while (line[len]) len++;
 
             mdbg_fmt_ts(ts, modd_log_time(idx));
-            cv_text_fit(MDBG_X_PAD, ry + 1, &AF_XS, ts, T_DIM, T_BG, MDBG_TS_W - 2);
+            cv_text_fit(UI_INSET_S, ry + 1, &AF_XS, ts, T_DIM, T_BG, MDBG_TS_W - 2);
             cv_text_fit(MDBG_MSG_X, ry + 1, &AF_XS, line, T_TEXT, T_BG, MDBG_MSG_W);
             row++;
 
             if (len > MDBG_WRAP_AT && row < MDBG_VIS) {
-                ry = (int32_t)(row * MDBG_ROW_H);
+                ry = (int32_t)(row * UI_ROW_H_XS);
                 cv_text_fit(MDBG_MSG_X, ry + 1, &AF_XS,
                             line + MDBG_WRAP_AT, T_TEXT, T_BG, MDBG_MSG_W);
                 row++;

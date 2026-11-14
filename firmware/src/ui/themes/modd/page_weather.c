@@ -140,7 +140,7 @@ static void mwx_fmt_wind(char *buf, uint16_t w)
 static void mwx_draw_loading(void)
 {
     mt_panel_begin();
-    cv_text_c(MT_W / 2, ty_y(MT_H_PANEL / 2 - 10, TY_TX), TY_TX,
+    cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 - 10, TY_TX), TY_TX,
               "Fetching...", T_DIM, T_BG);
     mt_panel_end();
 }
@@ -148,9 +148,9 @@ static void mwx_draw_loading(void)
 static void mwx_draw_error(void)
 {
     mt_panel_begin();
-    cv_text_c(MT_W / 2, ty_y(MT_H_PANEL / 2 - 16, TY_TX), TY_TX,
+    cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 - 16, TY_TX), TY_TX,
               "No Data", T_DIM, T_BG);
-    cv_text_c(MT_W / 2, ty_y(MT_H_PANEL / 2 + 8, TY_LB), TY_LB,
+    cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 + 8, TY_LB), TY_LB,
               "check WiFi", T_DIM, T_BG);
     mt_panel_end();
 }
@@ -170,15 +170,19 @@ static void mwx_draw_weather(const struct weather_data *w)
     mwx_fmt_hum(hum, w->humidity);
     mwx_fmt_wind(wind, w->wind_kmh);
 
-    cv_begin(MT_W, MT_H_PANEL, sky_top);
-    mwx_sky(MT_W, MT_H_PANEL, sky_top, sky_bot);
+    cv_begin(UI_W, UI_PANEL_H, sky_top);
+    mwx_sky(UI_W, UI_PANEL_H, sky_top, sky_bot);
 
     mwx_art(8, 10, (uint32_t)art, 2);
 
     mwx_text(96, 14, temp, 4, fg, sh);
+#ifdef CONFIG_WEATHER_UNIT_F
+    mwx_text(96 + mwx_text_w(temp, 4) + 8, 16, "F", 2, fg, sh);
+#else
     mwx_text(96 + mwx_text_w(temp, 4) + 8, 16, "C", 2, fg, sh);
+#endif
 
-    s = mwx_fit(cond, 2, MT_W - 96 - 6);
+    s = mwx_fit(cond, 2, UI_W - 96 - 6);
     mwx_text(96, 50, cond, s, fg, sh);
 
     if (w->city[0]) {
@@ -195,8 +199,8 @@ static void mwx_draw_weather(const struct weather_data *w)
                 loc[li++] = *c++;
         }
         loc[li] = 0;
-        mwx_text(10, (int32_t)MT_H_PANEL - 40, loc,
-                 mwx_fit(loc, 2, MT_W - 20), T_MID, sh);
+        mwx_text(10, (int32_t)UI_PANEL_H - 40, loc,
+                 mwx_fit(loc, 2, UI_W - 20), T_MID, sh);
     }
 
     {
@@ -208,11 +212,11 @@ static void mwx_draw_weather(const struct weather_data *w)
         for (c = wind; *c; c++) info[ii++] = *c;
         for (c = " KM/H"; *c; c++) info[ii++] = *c;
         info[ii] = 0;
-        mwx_text(10, (int32_t)MT_H_PANEL - 20, info,
-                 mwx_fit(info, 2, MT_W - 20), T_MID, sh);
+        mwx_text(10, (int32_t)UI_PANEL_H - 20, info,
+                 mwx_fit(info, 2, UI_W - 20), T_MID, sh);
     }
 
-    cv_blit(0, MT_Y_PANEL);
+    cv_blit(0, UI_Y_PANEL);
 }
 
 /* ── page vtable ─────────────────────────────────────────────────── */
@@ -226,7 +230,11 @@ static void mwx_draw(void)
         mwx_fmt_temp(temp, w->temp_c);
         mwx_fmt_hum(hum, w->humidity);
         mwx_fmt_wind(wind, w->wind_kmh);
+#ifdef CONFIG_WEATHER_UNIT_F
+        ui_card(0, "TEMP", temp, "F", T_THEME, -1, 0);
+#else
         ui_card(0, "TEMP", temp, "C", T_THEME, -1, 0);
+#endif
         ui_card(1, "HUMID", hum, "", T_THEME, (int32_t)w->humidity * 10, 0);
         ui_card(2, "WIND", wind, "km/h", T_MID, -1, 0);
         ui_card(3, "WMO", weather_condition_name(w->wmo_code), "", T_MID, -1, 0);

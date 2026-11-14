@@ -11,18 +11,108 @@
  * setting. modd always sets Rubik. */
 static uint32_t ty_pixel(void) { return 0; }
 
-#define MT_W       240
-#define MT_H       240
-#define MT_Y_HEAD  0
-#define MT_H_HEAD  30
-#define MT_Y_CARD  34
-#define MT_CARD_W  57
-#define MT_CARD_H  48
-#define MT_CARD_X(c) (2 + 60 * (int32_t)(c))
-#define MT_Y_PANEL 84                 /* the page's own area */
-#define MT_H_PANEL 124
-#define MT_Y_FOOT  212
-#define MT_H_FOOT  28
+#define UI_W       240
+#define UI_H       240
+#define UI_Y_HEAD  0
+#define UI_HEAD_H  30
+#define UI_Y_CARD  34
+#define UI_CARD_W  57
+#define UI_CARD_H  48
+#define UI_CARD_X(c) (2 + 60 * (int32_t)(c))
+#define UI_Y_PANEL 84                 /* the page's own area */
+#define UI_PANEL_H 124
+#define UI_Y_FOOT  212
+#define UI_FOOT_H  28
+
+/* shared layout tokens: all pages and widgets use these, never local defines */
+#define UI_ROW_H     20               /* standard row for menus/lists */
+#define UI_ROW_H_XS  13               /* compact row (debug log) */
+#define UI_INSET      8               /* horizontal content inset */
+#define UI_INSET_S    4               /* narrow inset (compact views) */
+#define UI_GAP        4               /* standard gap between sections */
+#define UI_GAP_L      8               /* large gap (between distinct groups) */
+#define UI_RULE_H     1               /* separator line thickness */
+#define UI_TEXT_Y(y, h) ty_y((y) + (h) / 2, TY_LB)
+#define UI_TAB_H     16               /* tab bar height */
+
+/* tab bar widget: content-sized tabs with selection highlight and rule */
+typedef struct {
+    const char *const *labels;
+    uint32_t count;
+    uint8_t  active;
+    int (*visible)(uint8_t idx);
+} ui_tabs_t;
+
+static int32_t ui_tabs_draw(const ui_tabs_t *t)
+{
+    uint32_t i;
+    int32_t x = UI_INSET;
+    for (i = 0; i < t->count; i++) {
+        if (t->visible && !t->visible((uint8_t)i))
+            continue;
+        int32_t tw = text_w(TY_LB, t->labels[i]);
+        int32_t pad = UI_INSET_S * 2;
+        uint8_t sel = (i == t->active);
+        uint16_t fg = sel ? T_THEME : T_DIM;
+        uint16_t bg = sel ? T_SURF : T_BG;
+        if (sel)
+            cv_rrect(x - UI_INSET_S, 0, tw + pad, UI_TAB_H, 3, T_SURF, T_BG);
+        cv_text_fit(x, ty_y(UI_TAB_H / 2, TY_LB), TY_LB, t->labels[i], fg, bg, tw);
+        x += tw + pad + UI_GAP;
+    }
+    cv_rect(0, UI_TAB_H, UI_W, UI_RULE_H, T_LINE);
+    return UI_TAB_H + UI_RULE_H;
+}
+
+/* key-value row widget: label left, value right, optional selection highlight */
+static void ui_row(int32_t y, const char *label, const char *value,
+                   uint16_t val_color, uint8_t selected)
+{
+    uint16_t bg = selected ? T_SURF : T_BG;
+    if (selected)
+        cv_rrect(2, y, UI_W - 4, UI_ROW_H - 2, 4, T_SURF, T_BG);
+    cv_text_fit(UI_INSET, UI_TEXT_Y(y, UI_ROW_H), TY_LB, label, T_DIM, bg, 120);
+    cv_text_r(UI_W - UI_INSET, UI_TEXT_Y(y, UI_ROW_H), TY_LB, value, val_color, bg);
+}
+
+/* showcase widget: centered title, subtitle, optional color swatches with labels */
+typedef struct {
+    const char *title;
+    const char *subtitle;
+    const uint16_t *swatches;
+    uint32_t n_swatches;
+    const char *const *swatch_labels;
+} ui_showcase_t;
+
+static void ui_showcase_draw(int32_t y0, int32_t h, const ui_showcase_t *s)
+{
+    int32_t cy = y0 + UI_GAP;
+    cv_rect(UI_INSET, y0, UI_W - UI_INSET * 2, UI_RULE_H, T_LINE);
+    cy += UI_RULE_H + UI_GAP;
+
+    if (s->title && s->title[0]) {
+        int32_t th = h / 3;
+        if (th < 24) th = 24;
+        cv_text_c(UI_W / 2, ty_y(cy + th / 2, TY_VL), TY_VL, s->title, T_THEME, T_BG);
+        cy += th;
+    }
+    if (s->subtitle && s->subtitle[0]) {
+        cv_text_c(UI_W / 2, ty_y(cy + UI_GAP_L, TY_LB), TY_LB, s->subtitle, T_MID, T_BG);
+        cy += UI_GAP_L * 2 + 10;
+    }
+    if (s->swatches && s->n_swatches) {
+        uint32_t i;
+        int32_t sw = 20, gap = 6;
+        int32_t total = (int32_t)s->n_swatches * (sw + gap) - gap;
+        int32_t sx = (UI_W - total) / 2;
+        for (i = 0; i < s->n_swatches; i++) {
+            int32_t x = sx + (int32_t)i * (sw + gap);
+            cv_rrect(x, cy, sw, 10, 3, s->swatches[i], T_BG);
+            if (s->swatch_labels && s->swatch_labels[i])
+                cv_text_c(x + sw / 2, cy + 14, TY_LB, s->swatch_labels[i], T_DIM, T_BG);
+        }
+    }
+}
 
 #if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
 static void mt_wifi_icon(int32_t x, int32_t base, uint32_t bars, uint16_t on, uint16_t off)
@@ -55,11 +145,11 @@ static void mt_render_header(void)
     char pos[8];
     uint32_t i = 0, cur = nav_cur + 1u, n = nav_npage;
 
-    cv_begin(MT_W, MT_H_HEAD, T_BG);
+    cv_begin(UI_W, UI_HEAD_H, T_BG);
     if (p)
-        cv_text(6, ty_y(MT_H_HEAD / 2, TY_TX), TY_TX, p->title ? p->title : p->name, T_TEXT);
+        cv_text(6, ty_y(UI_HEAD_H / 2, TY_TX), TY_TX, p->title ? p->title : p->name, T_TEXT);
 
-    int32_t rx = MT_W - 6;
+    int32_t rx = UI_W - 6;
     if (n > 1u) {
         if (cur >= 10u) pos[i++] = (char)('0' + cur / 10u);
         pos[i++] = (char)('0' + cur % 10u);
@@ -67,37 +157,37 @@ static void mt_render_header(void)
         if (n >= 10u) pos[i++] = (char)('0' + n / 10u);
         pos[i++] = (char)('0' + n % 10u);
         pos[i] = 0;
-        rx = cv_text_r(MT_W - 6, ty_y(MT_H_HEAD / 2, TY_LB), TY_LB, pos, T_MID, T_BG);
+        rx = cv_text_r(UI_W - 6, ty_y(UI_HEAD_H / 2, TY_LB), TY_LB, pos, T_MID, T_BG);
     }
 
 #if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
     {
         uint32_t wb = mt_wifi_bars();
-        mt_wifi_icon(rx - 16, MT_H_HEAD - 6, wb, wb == 3u ? T_THEME : T_MID, T_LINE);
+        mt_wifi_icon(rx - 16, UI_HEAD_H - 6, wb, wb == 3u ? T_THEME : T_MID, T_LINE);
     }
 #endif
 
-    cv_rect(0, MT_H_HEAD - 1, MT_W, 1, T_LINE);
-    cv_blit(0, MT_Y_HEAD);
+    cv_rect(0, UI_HEAD_H - 1, UI_W, 1, T_LINE);
+    cv_blit(0, UI_Y_HEAD);
 }
 
 /* footer, Melodee's sound bar: engine left, preset centred, title right */
 static void mt_render_footer(const char *eng, const char *preset, const char *title)
 {
-    int32_t y = ty_y(MT_H_FOOT / 2, TY_LB), l = 8, r = MT_W - 8, maxw, w, x;
-    cv_begin(MT_W, MT_H_FOOT, T_SURF);
+    int32_t y = ty_y(UI_FOOT_H / 2, TY_LB), l = 8, r = UI_W - 8, maxw, w, x;
+    cv_begin(UI_W, UI_FOOT_H, T_SURF);
     if (eng && *eng)
         l = cv_text_on(8, y, TY_LB, eng, T_MID, T_SURF) + 10;
     if (title && *title)
-        r = cv_text_r(MT_W - 8, y, TY_LB, title, T_MID, T_SURF) - 10;
+        r = cv_text_r(UI_W - 8, y, TY_LB, title, T_MID, T_SURF) - 10;
     if (preset && *preset && (maxw = r - l) > 20) {
         const aafont_t *f = ty_fit(TY_TX, preset, maxw);
         w = text_w(f, preset);
         if (w > maxw) w = maxw;
         x = l + (maxw - w) / 2;
-        cv_text_fit(x, ty_y(MT_H_FOOT / 2, f), f, preset, T_TEXT, T_SURF, maxw);
+        cv_text_fit(x, ty_y(UI_FOOT_H / 2, f), f, preset, T_TEXT, T_SURF, maxw);
     }
-    cv_blit(0, MT_Y_FOOT);
+    cv_blit(0, UI_Y_FOOT);
 }
 
 /* card c of four: label, value with its unit, a 3 px gauge for ratio 0..1000 in the caller's
@@ -110,35 +200,35 @@ static void mt_render_card(uint32_t c, const char *label, const char *val,
     (void)icon;
     if (c > 3u)
         return;
-    cv_begin(MT_CARD_W, MT_CARD_H, T_BG);
-    cv_rrect(0, 0, MT_CARD_W, MT_CARD_H, 6, T_SURF, T_BG);
+    cv_begin(UI_CARD_W, UI_CARD_H, T_BG);
+    cv_rrect(0, 0, UI_CARD_W, UI_CARD_H, 6, T_SURF, T_BG);
     if (label && *label)
-        cv_text_fit(6, 4, TY_LB, label, T_MID, T_SURF, MT_CARD_W - 12);
+        cv_text_fit(6, 4, TY_LB, label, T_MID, T_SURF, UI_CARD_W - 12);
     if (val && *val) {
-        vf = ty_fit(TY_TX, val, MT_CARD_W - 12);
+        vf = ty_fit(TY_TX, val, UI_CARD_W - 12);
         x = cv_text_on(6, 20, vf, val, color ? color : T_TEXT, T_SURF);
-        if (unit && *unit && x + 4 + text_w(TY_LB, unit) <= MT_CARD_W - 6)
+        if (unit && *unit && x + 4 + text_w(TY_LB, unit) <= UI_CARD_W - 6)
             cv_text_on(x + 3, 20 + (vf->cap - TY_LB->cap), TY_LB, unit, T_MID, T_SURF);
     }
     if (ratio >= 0) {
-        int32_t r = ratio > 1000 ? 1000 : ratio, w = MT_CARD_W - 12;
-        cv_rect(6, MT_CARD_H - 8, w, 3, T_LINE);
-        cv_rect(6, MT_CARD_H - 8, w * r / 1000, 3, color ? color : T_THEME);
+        int32_t r = ratio > 1000 ? 1000 : ratio, w = UI_CARD_W - 12;
+        cv_rect(6, UI_CARD_H - 8, w, 3, T_LINE);
+        cv_rect(6, UI_CARD_H - 8, w * r / 1000, 3, color ? color : T_THEME);
     }
-    cv_blit(MT_CARD_X(c), MT_Y_CARD);
+    cv_blit(UI_CARD_X(c), UI_Y_CARD);
 }
 
 /* a page's panel: the area between the cards and the sound bar, cleared to BG */
-static void mt_panel_begin(void) { cv_begin(MT_W, MT_H_PANEL, T_BG); }
-static void mt_panel_end(void)   { cv_blit(0, MT_Y_PANEL); }
+static void mt_panel_begin(void) { cv_begin(UI_W, UI_PANEL_H, T_BG); }
+static void mt_panel_end(void)   { cv_blit(0, UI_Y_PANEL); }
 
 static const ui_theme_t modd_theme = {
-    .screen_w  = MT_W,
-    .screen_h  = MT_H,
-    .header_h  = MT_H_HEAD,
-    .footer_h  = MT_H_FOOT,
-    .card_h    = MT_CARD_H,
-    .card_w    = MT_CARD_W,
+    .screen_w  = UI_W,
+    .screen_h  = UI_H,
+    .header_h  = UI_HEAD_H,
+    .footer_h  = UI_FOOT_H,
+    .card_h    = UI_CARD_H,
+    .card_w    = UI_CARD_W,
 
     .font_s    = &AF_LB,
     .font_m    = &AF_TX,
