@@ -12,8 +12,9 @@ config WIFI
       Mutually exclusive with BLE in this version.
 
 config WIFI_LWIP
-    bool "lwIP TCP/IP stack"
+    bool "IP networking over WiFi (lwIP)"
     depends on WIFI
+    select LWIP
     default y
 
 # kc2mm:label "WPA"
@@ -39,6 +40,40 @@ config WIFI_PASSWORD
       WPA2-PSK password used by the WiFi config page when connecting
       to an encrypted AP. Baked into the firmware at compile time.
       Leave empty to disable auto-connect for encrypted networks.
+
+config LLM
+    bool "LLM inference (via local proxy)"
+    depends on LWIP
+    default n
+    help
+      Async LLM client that sends prompts to a local HTTP proxy, which
+      forwards them as HTTPS POST to OpenRouter. The proxy host is set
+      via CONFIG_LLM_PROXY_HOST; the API key is baked via .env.
+
+config LLM_PROXY_HOST
+    string "LLM proxy host (IP or hostname)"
+    depends on LLM
+    default ""
+    help
+      Host running the LLM proxy (e.g. "192.168.1.100"). The proxy
+      listens on port 8484 and bridges plain HTTP GET from the FM-1
+      to HTTPS POST on OpenRouter.
+
+config LLM_MODEL
+    string "OpenRouter model slug"
+    depends on LLM
+    default "deepseek/deepseek-v4.1-flash-1017"
+    help
+      Model identifier passed to the proxy for OpenRouter inference.
+
+config OPENROUTER_API_KEY
+    string "OpenRouter API key"
+    depends on LLM
+    default ""
+    help
+      API key for OpenRouter LLM inference, sent to the local proxy.
+      Baked into the firmware at compile time. OPENROUTER_API_KEY=...
+      in the environment (or .env) overrides this at build time.
 
 config WIFI_AUTOJOIN
     bool "Auto-join after scan"

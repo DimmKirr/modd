@@ -2,12 +2,13 @@
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 
 /* The lwIP sources included below are BSD-3-Clause (see firmware/vendor/lwip/COPYING). */
-/* Unity-build include for lwIP 2.2.0 core sources.
+/* Unity-build include for lwIP 2.2.0 core sources, built under CONFIG_LWIP.
  * This file #includes the minimal set of lwIP .c files required for
  * TCP, UDP, DNS, DHCP, ARP, and ICMP on a bare-metal NO_SYS=1 target.
+ * Links (WiFi, USB) add their netif on top; see net.c.
  *
  * Include paths required by the build:
- *   firmware/src/wifi/          (lwipopts.h, arch/cc.h)
+ *   firmware/src/net/           (lwipopts.h, arch/cc.h)
  *   firmware/vendor/lwip/src/include/  (lwIP headers)
  *
  * lwIP functions are NOT static -- this is intentional. lwIP is designed

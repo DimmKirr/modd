@@ -2,12 +2,13 @@
 menu "CDP"
 
 config CDP
-    bool "Chrome DevTools Protocol server over WiFi"
-    depends on WIFI && WIFI_LWIP
+    bool "Chrome DevTools Protocol server over IP"
+    depends on LWIP
     default n
     help
       Embeds a minimal CDP (Chrome DevTools Protocol) server in the
-      firmware. Listens on a TCP port over WiFi. Chrome DevTools or
+      firmware. Listens on a TCP port over any lwIP link (WiFi, USB
+      network). Chrome DevTools or
       Playwright can connect via WebSocket to inspect memory, read
       audio metrics, send MIDI, and stream logs.
 

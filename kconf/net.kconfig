@@ -1,0 +1,23 @@
+# kc2mm:ignore
+menu "Network"
+
+config LWIP
+    bool "lwIP TCP/IP stack"
+    default n
+    help
+      lwIP 2.x (BSD) with IPv4, TCP, UDP, DHCP and DNS. Link-agnostic:
+      WIFI_LWIP (the on-chip radio) and USB_NET (USB ethernet, iPhone
+      tethering) each add a network interface on top of it.
+
+config USB_NET
+    bool "USB network link (iPhone tethering)"
+    depends on USB_HOST
+    select LWIP
+    default n
+    help
+      Drives Apple's USB tethering interface (iPhone with Personal
+      Hotspot on, behind the OTG hub) as an lwIP interface. Holds the
+      OTG port in host mode while enabled, so USB-MIDI to a computer is
+      off at the same time. Needs no radio: coexists with BLE.
+
+endmenu

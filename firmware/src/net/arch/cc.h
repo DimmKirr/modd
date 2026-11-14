@@ -50,8 +50,17 @@ typedef uintptr_t mem_ptr_t;
 #define X32_F  "x"
 #define SZT_F  "u"
 
+/* --- static pools --------------------------------------------------------- */
+/* lwIP's memp pools, pbuf pool and heap are ~20 KB of zero-initialised memory: section
+ * .pool_net. app.ld keeps it with the other big buffers in POOL; app_dock.ld (CONFIG_DOCK)
+ * places it in the dock module's RAM region instead, which POOL cannot spare: a network
+ * link and a running module are exclusive (dock.c refuses one while the other is up). */
+#define LWIP_DECLARE_MEMORY_ALIGNED(variable_name, size) \
+    u8_t variable_name[LWIP_MEM_ALIGN_BUFFER(size)] \
+        __attribute__((aligned(4), section(".pool_net")))
+
 /* --- sys_now: millisecond tick for lwIP timers ------------------------- */
-/* Implemented in wifi_lwip.c; returns the global fm1_ms counter. */
+/* Implemented in net/net.c; returns the global fm1_ms counter. */
 u32_t sys_now(void);
 
 #endif /* LWIP_ARCH_CC_H */

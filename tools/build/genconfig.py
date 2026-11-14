@@ -52,6 +52,8 @@ COMPONENT_SYMBOLS = {
     'MIDI_MELODEE': 'midi:melodee',
     'USB_HOST': 'usb-host',
     'UDISK': 'udisk',
+    'LWIP': 'net:lwip',
+    'USB_NET': 'usb-net',
     'USB_AUDIO': 'usb-audio',
     'INPUT': 'input',
     'UI_FELUCCA': 'ui:felucca',
@@ -131,7 +133,8 @@ def main():
 
     # Environment overrides for string Kconfig symbols (build output only).
     # Taskfile dotenv loads .env; WIFI_PASSWORD=x overrides CONFIG_WIFI_PASSWORD.
-    ENV_OVERRIDES = ['WIFI_SSID', 'WIFI_PASSWORD', 'WIFI_MAC_OVERRIDE']
+    ENV_OVERRIDES = ['WIFI_SSID', 'WIFI_PASSWORD', 'WIFI_MAC_OVERRIDE',
+                      'OPENROUTER_API_KEY']
     for name in ENV_OVERRIDES:
         val = os.environ.get(name)
         if val is not None:

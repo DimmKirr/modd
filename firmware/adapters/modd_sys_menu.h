@@ -11,6 +11,9 @@
 enum {
     SMTAB_DISPLAY, SMTAB_CONTROL, SMTAB_AUDIO,
     SMTAB_MIDI, SMTAB_SYSTEM,
+#ifdef CONFIG_DOCK
+    SMTAB_INSTR,
+#endif
 #ifdef CONFIG_SYS_MENU_NETWORK
     SMTAB_NETWORK,
 #endif
@@ -22,6 +25,9 @@ enum {
 
 static const char *const SMTAB_NAME[SMTAB_COUNT] = {
     "DISPLAY", "CONTROL", "AUDIO", "MIDI", "SYSTEM",
+#ifdef CONFIG_DOCK
+    "INSTR",
+#endif
 #ifdef CONFIG_SYS_MENU_NETWORK
     "NET",
 #endif
@@ -81,6 +87,16 @@ static void    sm_wifi_on_set(uint8_t v)
 }
 #endif
 
+#ifdef CONFIG_USB_NET
+/* USB network link (net/usbnet.c, included later). Not persisted: ON
+ * holds the port in host mode, which would hide the FM-1 from a computer
+ * at boot, so it is a per-session choice made with the phone on the hub. */
+static uint8_t usbnet_wanted;
+static void    usbnet_set_wanted(uint8_t on);
+static uint8_t sm_usbnet_get(void) { return usbnet_wanted; }
+static void    sm_usbnet_set(uint8_t v) { usbnet_set_wanted(v > 0u); }
+#endif
+
 #ifdef CONFIG_SYS_MENU_BLE
 static uint8_t sm_ble_on_get(void) { return sys_settings.ble_on; }
 static void    sm_ble_on_set(uint8_t v)
@@ -131,8 +147,11 @@ static const sys_menu_item_t SYS_MENU[] = {
 #ifdef CONFIG_SYS_MENU_MIDI_CH
     { "MIDI CH",    SMTAB_MIDI,  16,  SM_MIDI_CH,   sm_midi_ch_get,  sm_midi_ch_set },
 #endif
-#ifdef CONFIG_SYS_MENU_NETWORK
+#if defined(CONFIG_SYS_MENU_NETWORK) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
     { "WIFI",         SMTAB_NETWORK, 2, SM_ONOFF,   sm_wifi_on_get,  sm_wifi_on_set },
+#endif
+#if defined(CONFIG_SYS_MENU_NETWORK) && defined(CONFIG_USB_NET)
+    { "USB NET",      SMTAB_NETWORK, 2, SM_ONOFF,   sm_usbnet_get,   sm_usbnet_set },
 #endif
 #ifdef CONFIG_SYS_MENU_BLE
     { "BLUETOOTH",    SMTAB_BLE,  2,  SM_ONOFF,     sm_ble_on_get,   sm_ble_on_set },

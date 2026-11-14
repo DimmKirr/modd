@@ -29,11 +29,13 @@ def test_cdp_kconfig_parses(kconf):
     assert cdp.type == BOOL
 
 
-def test_cdp_depends_on_wifi(kconf):
+def test_cdp_depends_on_lwip(kconf):
+    """CDP needs the IP stack, whichever link carries it (WiFi or USB)."""
     cdp = kconf.syms['CDP']
     dep = expr_str(cdp.direct_dep)
-    assert 'WIFI' in dep, f'CDP must depend on WIFI, got: {dep}'
-    assert 'WIFI_LWIP' in dep, f'CDP must depend on WIFI_LWIP, got: {dep}'
+    assert 'LWIP' in dep, f'CDP must depend on LWIP, got: {dep}'
+    assert 'WIFI' not in dep.replace('WIFI_LWIP', ''), \
+        f'CDP must not depend on the WiFi radio, got: {dep}'
 
 
 def test_cdp_port_default(kconf):

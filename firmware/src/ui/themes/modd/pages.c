@@ -4,7 +4,9 @@
 
 #include "ui/themes/modd/page_home.c"
 #include "ui/themes/modd/page_settings.c"
-#include "ui/themes/modd/page_weather.c"
+#ifdef CONFIG_LWIP
+#include "ui/themes/modd/page_weather.c"   /* any IP link: WiFi or USB */
+#endif
 #ifdef CONFIG_UDISK
 #include "ui/themes/modd/page_files.c"
 #include "ui/themes/modd/page_disk.c"
@@ -23,7 +25,9 @@ static void shell_register_pages(void)
     nav_register(&PAGE_SETTINGS);
 
     /* VIEW_CONN (GLO hold): weather + demo */
+#ifdef CONFIG_LWIP
     nav_register(&PAGE_WEATHER);
+#endif
     nav_register(&PAGE_DEMO);
 
     /* VIEW_DEMO (SAVE hold): USB disk file browser + disk info */

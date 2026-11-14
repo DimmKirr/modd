@@ -4,7 +4,7 @@
 /* Clean-room async HTTP/1.1 GET client on lwIP raw TCP API.
  * Single concurrent request, callback-based, no malloc. */
 
-#ifdef CONFIG_WIFI_LWIP
+#ifdef CONFIG_LWIP
 
 #include "lwip/tcp.h"
 #include "lwip/dns.h"
@@ -42,7 +42,7 @@ static struct {
     uint32_t       content_length;
     uint8_t        have_content_length;
     uint32_t       start_ms;
-} http_state;
+} http_state __attribute__((section(".pool_net")));   /* 2.3 KB: with the network memory (cc.h) */
 
 /* ---- forward declarations --------------------------------------------- */
 
@@ -347,7 +347,7 @@ static void http_poll(void)
     }
 }
 
-#else /* !CONFIG_WIFI_LWIP */
+#else /* !CONFIG_LWIP */
 
 typedef void (*http_done_cb)(int status, const uint8_t *body,
                              uint32_t body_len, void *ctx);
@@ -357,4 +357,4 @@ static int  http_get(const char *host, const char *path,
 static int  http_busy(void) { return 0; }
 static void http_poll(void) {}
 
-#endif /* CONFIG_WIFI_LWIP */
+#endif /* CONFIG_LWIP */

@@ -57,6 +57,12 @@ static void wifi_init(void)
     /* weather: reset state machine */
     weather_init();
 
+    /* LLM: reset state machine, configure proxy host */
+    llm_init();
+#ifdef CONFIG_LLM_PROXY_HOST
+    llm_set_proxy(CONFIG_LLM_PROXY_HOST);
+#endif
+
     wifi_cfg_ssid = 0;
     wifi_cfg_pass = 0;
 
@@ -269,9 +275,6 @@ static void wifi_poll(void)
     wifi_timer_poll();
     wifi_sdio_poll_irq();
     wifi_sta_poll();
-    wifi_lwip_poll();
-    http_poll();
-    weather_poll();
 #ifdef CONFIG_WIFI_DEBUG_WLCTL0_PROBE
     wifi_wlctl0_probe_poll();
     wifi_wl0_retry_poll();

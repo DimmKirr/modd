@@ -22,7 +22,7 @@ static uint32_t wifi_debug_fill(uint8_t *b)
     /* scan / BSS */
     b[22] = (uint8_t)wifi_sta.nresults;
     b[23] = (uint8_t)wifi_bss_count;
-#ifdef CONFIG_WIFI_LWIP
+#ifdef CONFIG_LWIP
     b[24] = weather_state;
     b[25] = weather_dat.valid;
     dbg_wr32(b + 26, (uint32_t)(int32_t)weather_dat.temp_c);
