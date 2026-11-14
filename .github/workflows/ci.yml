@@ -145,7 +145,7 @@ jobs:
             echo 'No E2E results were captured.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          mapfile -d '' screenshots < <(find tests/results -type f -path '*/screenshots/*.png' -print0 | sort -z)
+          mapfile -d '' screenshots < <(find tests/results -type f -path '*/screenshots/*/*.png' -print0 | sort -z)
           if (( ${#screenshots[@]} == 0 )); then
             echo 'No E2E screenshots were captured; see the e2e-results artifact.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
