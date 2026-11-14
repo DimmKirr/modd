@@ -243,7 +243,7 @@ static void settings_draw(void)
                   "(no items)", T_DIM, T_BG);
 
     cv_blit(0, MSET_CANVAS_Y);
-    ui_footer("settings", SMTAB_NAME[mset.tab], "MENU");
+    ui_footer("BACK", SMTAB_NAME[mset.tab], "OK");
 }
 
 static void mset_step_value(int32_t dir)

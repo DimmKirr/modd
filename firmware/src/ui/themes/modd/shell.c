@@ -71,10 +71,22 @@ static void shell_button(uint32_t id, uint32_t down)
     if (!down && shell_btn_held == id + 1u) {
         uint32_t held_us = fm1_micros() - shell_btn_us;
         shell_btn_held = 0;
-        if (held_us > modd_controls.hold_us &&
-            modd_controls.btn_hold[id] != VIEW_NONE) {
-            nav_open_view(modd_controls.btn_hold[id]);
-            return;
+        if (held_us > modd_controls.hold_us) {
+#ifdef CONFIG_DEBUG_LOG
+            if (id == BTN_GLO) {
+                if (nav_cur == nav_dbg_idx)
+                    nav_set_page(nav_dbg_return);
+                else {
+                    nav_dbg_return = nav_cur;
+                    nav_set_page(nav_dbg_idx);
+                }
+                return;
+            }
+#endif
+            if (modd_controls.btn_hold[id] != VIEW_NONE) {
+                nav_open_view(modd_controls.btn_hold[id]);
+                return;
+            }
         }
     }
     const modd_page_t *p = nav_active();
@@ -87,17 +99,10 @@ static void shell_button(uint32_t id, uint32_t down)
 #endif
     if (p && p->button && p->button(id, down))
         return;
-#ifdef CONFIG_DEBUG_LOG
     if (!down && id == BTN_GLO) {
-        if (nav_cur == nav_dbg_idx) {
-            nav_set_page(nav_dbg_return);
-        } else {
-            nav_dbg_return = nav_cur;
-            nav_set_page(nav_dbg_idx);
-        }
+        tooltip_toggle();
         return;
     }
-#endif
     if (!down && modd_controls.btn_tap[id] != VIEW_NONE) {
         nav_open_view(modd_controls.btn_tap[id]);
     }

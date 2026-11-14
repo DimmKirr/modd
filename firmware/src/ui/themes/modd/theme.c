@@ -35,6 +35,17 @@ static uint32_t ty_pixel(void) { return 0; }
 #define UI_TEXT_Y(y, h) ty_y((y) + (h) / 2, TY_LB)
 #define UI_TAB_H     16               /* tab bar height */
 
+/* shared formatting: unsigned int to decimal string */
+static void ui_fmt_u32(char *out, uint32_t v)
+{
+    char tmp[12];
+    uint32_t i = 0, j = 0;
+    if (v == 0) { out[0] = '0'; out[1] = 0; return; }
+    while (v && i < 11) { tmp[i++] = '0' + (char)(v % 10u); v /= 10u; }
+    while (i) out[j++] = tmp[--i];
+    out[j] = 0;
+}
+
 /* tab bar widget: content-sized tabs with selection highlight and rule */
 typedef struct {
     const char *const *labels;
@@ -171,21 +182,40 @@ static void mt_render_header(void)
     cv_blit(0, UI_Y_HEAD);
 }
 
-/* footer, Melodee's sound bar: engine left, preset centred, title right */
-static void mt_render_footer(const char *eng, const char *preset, const char *title)
+/* footer: action hints for OCT-/OCT+ in left/right, context label centred.
+ * Non-empty left/right are rendered as tinted pills so the user can tell
+ * at a glance which buttons do something (action bar) vs. passive info
+ * (context bar).  Upstream Felucca/Melodee/SLOOP flip the whole footer to
+ * keycap-labelled hints in action mode; this is modd's simpler take. */
+static void mt_render_footer(const char *left, const char *center, const char *right)
 {
     int32_t y = ty_y(UI_FOOT_H / 2, TY_LB), l = 8, r = UI_W - 8, maxw, w, x;
     cv_begin(UI_W, UI_FOOT_H, T_SURF);
-    if (eng && *eng)
-        l = cv_text_on(8, y, TY_LB, eng, T_MID, T_SURF) + 10;
-    if (title && *title)
-        r = cv_text_r(UI_W - 8, y, TY_LB, title, T_MID, T_SURF) - 10;
-    if (preset && *preset && (maxw = r - l) > 20) {
-        const aafont_t *f = ty_fit(TY_TX, preset, maxw);
-        w = text_w(f, preset);
+
+    if (left && *left) {
+        int32_t tw = text_w(TY_LB, left);
+        int32_t pw = tw + 12;
+        uint16_t pill = ux_mix(T_SURF, T_THEME, 18);
+        cv_rrect(4, 5, pw, UI_FOOT_H - 10, 4, pill, T_SURF);
+        cv_text_fit(10, y, TY_LB, left, T_TEXT, pill, tw);
+        l = pw + 10;
+    }
+
+    if (right && *right) {
+        int32_t tw = text_w(TY_LB, right);
+        int32_t pw = tw + 12;
+        uint16_t pill = ux_mix(T_SURF, T_THEME, 18);
+        cv_rrect(UI_W - 4 - pw, 5, pw, UI_FOOT_H - 10, 4, pill, T_SURF);
+        cv_text_fit(UI_W - 4 - pw + 6, y, TY_LB, right, T_TEXT, pill, tw);
+        r = UI_W - pw - 8;
+    }
+
+    if (center && *center && (maxw = r - l) > 20) {
+        const aafont_t *f = ty_fit(TY_TX, center, maxw);
+        w = text_w(f, center);
         if (w > maxw) w = maxw;
         x = l + (maxw - w) / 2;
-        cv_text_fit(x, ty_y(UI_FOOT_H / 2, f), f, preset, T_TEXT, T_SURF, maxw);
+        cv_text_fit(x, ty_y(UI_FOOT_H / 2, f), f, center, T_MID, T_SURF, maxw);
     }
     cv_blit(0, UI_Y_FOOT);
 }

@@ -27,10 +27,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 def load_defconfig(name: str, root: Path | None = None) -> set[str]:
-    """Read a defconfig and return the set of enabled CONFIG_* symbols."""
+    """Return the set of enabled CONFIG_* symbols for a defconfig.
+
+    Prefers the fully-resolved build/<name>/gen/config.h (includes Kconfig
+    defaults and dependencies) when a build exists for *name*.  Falls back to
+    parsing the raw defconfig file.
+    """
     root = root or ROOT
+    config_h = root / 'build' / name / 'gen' / 'config.h'
+    if config_h.is_file():
+        enabled: set[str] = set()
+        for line in config_h.read_text().splitlines():
+            if line.startswith('#define CONFIG_'):
+                sym = line.split()[1]
+                enabled.add(sym)
+        if enabled:
+            return enabled
     path = root / 'configs' / f'{name}_defconfig'
-    enabled: set[str] = set()
+    enabled = set()
     if not path.is_file():
         return enabled
     for line in path.read_text().splitlines():
@@ -105,6 +119,28 @@ def parse_controls(path: Path, controls_name: str) -> tuple[dict[str, str], dict
         result: dict[str, str] = {}
         in_block = False
         for line in block.splitlines():
+            if label in line and "{" in line:
+                in_block = True
+                continue
+            if in_block and "}" in line:
+                break
+            if in_block:
+                m = re.search(r"\[(BTN_\w+)\]\s*=\s*(VIEW_\w+)", line)
+                if m and m.group(2) != "VIEW_NONE":
+                    result[m.group(1)] = m.group(2)
+        return result
+
+    return extract_map(".btn_tap"), extract_map(".btn_hold")
+
+
+def _parse_controls_c(path: Path) -> tuple[dict[str, str], dict[str, str]]:
+    """Parse a standalone controls.c that has one modd_controls_t initializer."""
+    text = path.read_text()
+
+    def extract_map(label: str) -> dict[str, str]:
+        result: dict[str, str] = {}
+        in_block = False
+        for line in text.splitlines():
             if label in line and "{" in line:
                 in_block = True
                 continue
@@ -574,10 +610,14 @@ def load_nav_map(theme: str, root: Path | None = None) -> dict:
     if not theme_dir.is_dir():
         raise SystemExit(f"Theme directory not found: {theme_dir}")
 
-    controls_name = theme if theme in ("felucca", "melodee", "sloop") else "felucca"
-    tap_map, hold_map = parse_controls(
-        root / "firmware" / "adapters" / "modd_controls.h", controls_name
-    )
+    theme_controls = theme_dir / "controls.c"
+    if theme_controls.is_file():
+        tap_map, hold_map = _parse_controls_c(theme_controls)
+    else:
+        controls_name = theme if theme in ("felucca", "melodee", "sloop") else "felucca"
+        tap_map, hold_map = parse_controls(
+            root / "firmware" / "adapters" / "modd_controls.h", controls_name
+        )
     pages = parse_pages(theme_dir / "pages.c")
     page_details = parse_page_details(theme_dir)
 
@@ -598,6 +638,9 @@ def load_nav_map(theme: str, root: Path | None = None) -> dict:
     for btn, view in hold_map.items():
         key = btn.replace("BTN_", "").lower() + "_hold"
         btn_for_view.setdefault(view, key)
+    # shell.c hardcodes GLO hold -> debug log (VIEW_GLO) outside the controls map
+    if "VIEW_GLO" in view_groups and "VIEW_GLO" not in btn_for_view:
+        btn_for_view["VIEW_GLO"] = "glo_hold"
 
     return {
         "theme": theme,

@@ -18,7 +18,7 @@ typedef struct ui_theme {
     const void *font_l;
 
     void (*render_header)(void);
-    void (*render_footer)(const char *eng, const char *preset, const char *title);
+    void (*render_footer)(const char *left, const char *center, const char *right);
     void (*render_card)(uint32_t slot, const char *label, const char *val,
                         const char *unit, uint16_t color, int32_t ratio,
                         uint32_t icon);

@@ -13,10 +13,10 @@ static void ui_header(void)
         ui_active_theme->render_header();
 }
 
-static void ui_footer(const char *eng, const char *preset, const char *title)
+static void ui_footer(const char *left, const char *center, const char *right)
 {
     if (ui_active_theme && ui_active_theme->render_footer)
-        ui_active_theme->render_footer(eng, preset, title);
+        ui_active_theme->render_footer(left, center, right);
 }
 
 static void ui_card(uint32_t slot, const char *label, const char *val,

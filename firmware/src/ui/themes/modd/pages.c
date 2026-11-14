@@ -24,7 +24,7 @@ static void shell_register_pages(void)
     /* VIEW_SETTINGS (HOME hold) */
     nav_register(&PAGE_SETTINGS);
 
-    /* VIEW_CONN (GLO hold): weather + demo */
+    /* VIEW_CONN (FX hold): weather + demo */
 #ifdef CONFIG_LWIP
     nav_register(&PAGE_WEATHER);
 #endif

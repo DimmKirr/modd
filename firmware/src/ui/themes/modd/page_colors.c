@@ -34,7 +34,7 @@ static void colors_draw(void)
     for (i = 0; i < 4u; i++)
         cv_rrect(72 + 26 * (int32_t)i, UI_PANEL_H - 22, 20, 10, 3, UI_PALETTES[ux.pal].trk[i], T_BG);
     mt_panel_end();
-    ui_footer("settings", pos, "COLORS");
+    ui_footer("", pos, "");
 }
 
 static int colors_knob(uint32_t id, int32_t clicks)

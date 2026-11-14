@@ -15,11 +15,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[4] / 'tools' / 'codegen'))
 
-from e2e_fixtures import E2ETestCase
-from gen_ui_map import load_nav_map, control_path
+from e2e_fixtures import E2ETestCase, fwsc_path, defconfig_name, ROOT
+from gen_ui_map import load_nav_map, load_defconfig, control_path
 
-ROOT = Path(__file__).resolve().parents[4]
-FWSC_PATH = ROOT / 'build' / 'modd.fwsc'
+FWSC_PATH = fwsc_path()
+DEFCONFIG = defconfig_name()
 THEME = 'modd'
 
 
@@ -70,25 +70,47 @@ class UIWalkthroughTest(E2ETestCase):
                                  delay_ms=500)
             page.wait_for_timeout(1_000)
 
+    def _screenshot_tooltip(self, panel, page, label):
+        """Tap GLO to show tooltip overlay, screenshot, tap again to dismiss."""
+        panel.press_button('glo', delay_ms=300)
+        page.wait_for_timeout(1_000)
+        self.screenshot(page, f'{label}-tooltip')
+        self.screenshot_lcd(page, f'{label}-tooltip')
+        panel.press_button('glo', delay_ms=300)
+        page.wait_for_timeout(500)
+
     def test_walkthrough_all_pages(self):
         page = self.new_emu_page(mhz=10)
         visited = []
         try:
             self._load_and_boot(page)
             panel = self.controls(page)
-            steps = control_path(self.nav_map)
+            config = load_defconfig(DEFCONFIG, root=ROOT)
+            steps = control_path(self.nav_map, config=config)
+
+            # Firmware boots to HOME; capture it before any navigation.
+            boot_view = steps[0]['view'] if steps else None
+            if boot_view and steps[0]['action'] == 'press':
+                label = f'{steps[0]["view"]}-{steps[0]["page"]}'
+                self.screenshot(page, label)
+                self.screenshot_lcd(page, label)
+                self._screenshot_tooltip(panel, page, label)
+                visited.append(steps[0]['page'])
+                steps = steps[1:]
 
             for step in steps:
                 self._execute_step(panel, page, step)
                 label = f'{step["view"]}-{step["page"]}'
                 self.screenshot(page, label)
                 self.screenshot_lcd(page, label)
+                self._screenshot_tooltip(panel, page, label)
                 visited.append(step['page'])
 
             self.assertGreater(len(visited), 0, 'No pages visited')
 
-            all_names = [p['name'] for p in self.nav_map['pages']]
-            for name in all_names:
+            expected = [s['page'] for s in
+                        control_path(self.nav_map, config=config)]
+            for name in expected:
                 self.assertIn(name, visited,
                               f'Page {name} was not visited during walkthrough')
 

@@ -8,7 +8,7 @@ static void wifi_pg_draw(void)
     cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 - 10, TY_VL), TY_VL, "WiFi", T_TEXT, T_BG);
     cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 + 22, TY_LB), TY_LB, "not yet", T_DIM, T_BG);
     mt_panel_end();
-    ui_footer("settings", "", "WIFI");
+    ui_footer("", "", "");
 }
 
 static const modd_page_t PAGE_WIFI = {

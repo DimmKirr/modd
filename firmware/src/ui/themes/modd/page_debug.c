@@ -30,15 +30,7 @@ static void mdbg_fmt_ts(char *out, uint32_t ms)
     out[9] = 0;
 }
 
-static void mdbg_fmt_u32(char *out, uint32_t v)
-{
-    char tmp[8];
-    uint32_t i = 0, j = 0;
-    if (v == 0) { out[0] = '0'; out[1] = 0; return; }
-    while (v && i < 7) { tmp[i++] = '0' + (char)(v % 10u); v /= 10u; }
-    while (i > 0) out[j++] = tmp[--i];
-    out[j] = 0;
-}
+static void mdbg_fmt_u32(char *out, uint32_t v) { ui_fmt_u32(out, v); }
 
 static int mdbg_at_bottom(void)
 {
@@ -106,7 +98,7 @@ static void mdbg_draw(void)
     }
 
     mt_panel_end();
-    ui_footer("debug", "---", "LOG");
+    ui_footer("", "---", "");
 }
 
 static int mdbg_knob(uint32_t id, int32_t clicks)

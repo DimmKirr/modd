@@ -8,15 +8,7 @@
 #define MDISK_NROWS_MOUNTED   7
 #define MDISK_NROWS_UNMOUNTED 3
 
-static void mdisk_fmt_u32(char *out, uint32_t v)
-{
-    char tmp[12];
-    uint32_t i = 0, j = 0;
-    if (v == 0) { out[0] = '0'; out[1] = 0; return; }
-    while (v && i < 11) { tmp[i++] = '0' + (char)(v % 10u); v /= 10u; }
-    while (i) out[j++] = tmp[--i];
-    out[j] = 0;
-}
+static void mdisk_fmt_u32(char *out, uint32_t v) { ui_fmt_u32(out, v); }
 
 static void mdisk_fmt_mb(char *out, uint32_t sectors)
 {
@@ -149,7 +141,7 @@ static void mdisk_draw(void)
         else if (uhost.state == UHOST_ERROR) mid = "ERR";
         else if (uhost.state == UHOST_ATTACHED) mid = "WAIT";
         else if (udisk_active) mid = "SCAN";
-        ui_footer("save", mid, "DISK");
+        ui_footer("", mid, "");
     }
 }
 

@@ -100,7 +100,7 @@ static void ui_list_knob(ui_list_t *l, int32_t clicks)
 }
 
 static const char *const UI_LIST_GLYPH[LIST_N_ACTIONS] = {"-", "--", "+", "++"};
-static const char *const UI_LIST_LABEL[LIST_N_ACTIONS] = {"back", 0, "select", 0};
+static const char *const UI_LIST_LABEL[LIST_N_ACTIONS] = {"back", 0, "ok", 0};
 
 static int ui_list_up(ui_list_t *l);
 

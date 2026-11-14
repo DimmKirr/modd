@@ -23,7 +23,7 @@ static void conn_draw(void)
     cv_text_c(UI_W / 2, ty_y(90, TY_LB), TY_LB, "turn SELECT to toggle", T_DIM, T_BG);
 
     mt_panel_end();
-    ui_footer("settings", "", "CONN");
+    ui_footer("", "", "");
 }
 
 static int conn_knob(uint32_t id, int32_t clicks)

@@ -33,7 +33,7 @@ static void mfiles_draw(void)
         else if (uhost.state == UHOST_ERROR) mid = "ERR";
         else if (uhost.state == UHOST_ATTACHED) mid = "WAIT";
         else if (udisk_active) mid = "SCAN";
-        ui_footer("save", mid, "FILES");
+        ui_footer("BACK", mid, "OPEN");
     }
 }
 

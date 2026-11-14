@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 void ui_header(void);
-void ui_footer(const char *eng, const char *preset, const char *title);
+void ui_footer(const char *left, const char *center, const char *right);
 void ui_card(uint32_t slot, const char *label, const char *val,
              const char *unit, uint16_t color, int32_t ratio, uint32_t icon);
 

@@ -6,7 +6,7 @@
 Navigation model: each button opens a VIEW; SELECT encoder cycles pages
 within that view. Multi-page views:
   VIEW_GLO (glo btn):         MIXER, VOICE (GLO->DEBUG only with CONFIG_DEBUG_LOG)
-  VIEW_CONN (long-glo):       BLE, WEATHER, WIFI
+  VIEW_CONN (long-fx):        WEATHER, DEMO
   VIEW_SETTINGS (long-home):  SYS, ABOUT, DEBUG
   VIEW_SAVE (save btn):       FILES
 
@@ -17,10 +17,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from e2e_fixtures import E2ETestCase
+from e2e_fixtures import E2ETestCase, fwsc_path
 
-ROOT = Path(__file__).resolve().parents[4]
-FWSC = ROOT / 'build' / 'modd.fwsc'
+FWSC = fwsc_path()
 
 LCD_MIN_PIXELS = 500
 LCD_REGION = (370, 42, 480, 480)
@@ -175,17 +174,17 @@ class TestAllViews(E2ETestCase):
             page.close()
 
     # ------------------------------------------------------------------
-    # VIEW_CONN: long-GLO opens BLE; SELECT cycles BLE/WEATHER/WIFI
+    # VIEW_CONN: long-FX opens WEATHER/DEMO; SELECT cycles pages
     # ------------------------------------------------------------------
 
     def test_06_conn_view_pages(self):
-        """Long-GLO opens CONN view: BLE (+ WEATHER/WIFI if enabled)."""
+        """Long-FX opens CONN view: WEATHER (+ DEMO)."""
         page = self._boot()
         try:
             ctrl = self.controls(page)
-            ctrl.press_button('glo', hold_ms=600, delay_ms=500)
+            ctrl.press_button('fx', hold_ms=600, delay_ms=500)
             page.wait_for_timeout(500)
-            self._verify_page(page, 'CONN-page1', 'long-glo')
+            self._verify_page(page, 'CONN-page1', 'long-fx')
 
             ctrl.rotate_encoder('select', direction=1, steps=1, delay_ms=200)
             page.wait_for_timeout(500)

@@ -328,7 +328,7 @@ static void mdemo_draw(void)
 
     mdemo.frame++;
 
-    ui_footer("DEMO", MDEMO_NAMES[mdemo.screen], "DEMO");
+    ui_footer("", MDEMO_NAMES[mdemo.screen], "");
 }
 
 static void mdemo_enter(void)
