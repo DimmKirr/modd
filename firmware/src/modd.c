@@ -723,8 +723,8 @@ static void modd_ble_sync(void) {}
 #endif /* CONFIG_LWIP */
 #include "net/net.c"
 #include "net/http.c"
-#include "wifi/wifi_llm.c"       /* LLM client on http.c; link-agnostic */
 #include "wifi/wifi_weather.c"   /* weather client on http.c; link-agnostic */
+#include "wifi/wifi_llm.c"       /* LLM client on http.c; link-agnostic */
 #include "net/usbnet.c"          /* USB network link (CONFIG_USB_NET), stubs otherwise */
 
 /* --- WiFi module (GPL-3.0 clean-room driver) --- */

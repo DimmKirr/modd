@@ -1,0 +1,69 @@
+# modd_dev_network: no audio, but full UI + networking stack. Tests the weather
+# page, lwIP, USB network (iPhone tethering), and debug over GLO.
+CONFIG_FIRMWARE_NAME="modd"
+
+# HAL (Melodee variant: cache, clock, power management)
+CONFIG_HAL_SYS_MELODEE=y
+CONFIG_HAL_IRQ_MELODEE=y
+CONFIG_HAL_LCD_MELODEE=y
+CONFIG_HAL_GUARD_MELODEE=y
+CONFIG_HAL_FLASH_MELODEE=y
+CONFIG_HAL_UART_MELODEE=y
+CONFIG_HAL_USB_MELODEE=y
+CONFIG_HAL_TIMER_MELODEE=y
+CONFIG_HAL_MELODEE_CACHE=y
+CONFIG_HAL_MELODEE_CLOCK=y
+CONFIG_HAL_MELODEE_POWER=y
+
+# UI (modd theme on Melodee's renderer; it ships its own button map)
+CONFIG_HAL_INPUT_MELODEE=y
+CONFIG_INPUT=y
+CONFIG_UI_MODD=y
+CONFIG_SPLASH_LOGO=y
+CONFIG_GEN_MELODEE_UI=y
+
+# USB (host + device)
+CONFIG_USB=y
+CONFIG_USB_HOST=y
+CONFIG_USB_HUB_MAX_DEVICES=12
+
+# Network (lwIP + USB tethering)
+CONFIG_LWIP=y
+CONFIG_USB_NET=y
+
+# WiFi (enables the weather page via lwIP)
+CONFIG_WIFI=y
+CONFIG_WIFI_LWIP=y
+CONFIG_WIFI_WPA=y
+CONFIG_WIFI_PASSWORD=""
+CONFIG_WIFI_AUTOJOIN=y
+CONFIG_WIFI_DEBUG_AUTOSCAN=y
+
+# Network clients (both link-agnostic, depend on LWIP)
+CONFIG_WEATHER=y
+CONFIG_WEATHER_LOCATION="40.7829,-73.9654,New York,US"
+CONFIG_WEATHER_UNIT_F=y
+CONFIG_LLM=y
+
+# Debug (GLO opens debug page)
+CONFIG_DEBUG=y
+CONFIG_DEBUG_LOG=y
+CONFIG_DEBUG_LOG_LINES=400
+CONFIG_DEBUG_DAP=y
+
+# Scheduler (needed for network tasks)
+CONFIG_SCHED=y
+CONFIG_SCHED_MAX_TASKS=6
+CONFIG_SCHED_STACK_CANARY=y
+
+# Boot + MIDI (needed for DAP's SysEx wire)
+CONFIG_BOOT_MELODEE=y
+CONFIG_OTA=y
+CONFIG_MIDI_MELODEE=y
+
+# Disabled subsystems
+# CONFIG_AUDIO is not set
+CONFIG_FLASH=y
+# CONFIG_MIDI_UART is not set
+# CONFIG_DUAL_CORE is not set
+# CONFIG_BLE is not set

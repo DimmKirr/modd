@@ -33,7 +33,7 @@ FWSC = BUILD / 'modd.fwsc'
 
 TEST_RESULTS = RESULTS_DIR / f'{_run_timestamp}-e2e_weather_test'
 
-DEFCONFIG = 'felucca'
+DEFCONFIG = 'modd_dev_network'
 
 # "SSID:PASSWORD": the firmware built to join that AP, the emulator booted with its WiFi
 # chip and the page's network behind it (fm1-emu `?oss-wifi=1&internet=1`)
@@ -53,11 +53,8 @@ GLO_HOLD_MS = 1500
 
 
 def _navigate_to_weather(ctrl, page):
-    """From HOME: a GLO hold opens VIEW_CONN on its first page (WIFI); a
-    second GLO hold advances within the view to WEATHER. SELECT cannot be
-    used for this: the WIFI page consumes it for its AP list."""
-    ctrl.press_button('glo', hold_ms=GLO_HOLD_MS, delay_ms=500)
-    page.wait_for_timeout(300)
+    """From HOME: a GLO hold opens VIEW_CONN. In the modd theme WEATHER is
+    the first page in that view, so a single hold lands on it directly."""
     ctrl.press_button('glo', hold_ms=GLO_HOLD_MS, delay_ms=500)
 
 
@@ -165,9 +162,11 @@ class TestWeatherPage(E2ETestCase):
             self.screenshot(page, 'WEATHER-data')
             status = page.locator('#status').text_content()
             self.assertNotIn('halted', status)
-            # The data card is a dithered sky gradient, so match any strongly blue
-            # pixel rather than one flat fill; without data the area is dark with text.
-            blue = page.evaluate('''() => {
+            # The data card is a dithered sky gradient whose hue depends on the
+            # time of day (blue, pink, orange, …).  Without data the area is
+            # the cream page background.  Detect any strongly saturated pixels:
+            # max channel minus min channel > 40 and max > 120.
+            coloured = page.evaluate('''() => {
                 const c = document.getElementById('panel');
                 const o = document.createElement('canvas');
                 o.width = c.width; o.height = c.height;
@@ -175,10 +174,14 @@ class TestWeatherPage(E2ETestCase):
                 g.drawImage(c, 0, 0);
                 const d = g.getImageData(0, 0, o.width, o.height).data;
                 let n = 0;
-                for (let i = 0; i < d.length; i += 4) if (d[i + 2] > d[i] + 25 && d[i + 2] > 140) n++;
+                for (let i = 0; i < d.length; i += 4) {
+                    const mx = Math.max(d[i], d[i+1], d[i+2]);
+                    const mn = Math.min(d[i], d[i+1], d[i+2]);
+                    if (mx - mn > 40 && mx > 120) n++;
+                }
                 return n;
             }''')
-            self.assertGreater(blue, 2000, 'no weather data card on the panel')
+            self.assertGreater(coloured, 2000, 'no weather data card on the panel')
         finally:
             self.write_log(page, 'weather-data.log')
             page.close()
