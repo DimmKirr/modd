@@ -39,10 +39,9 @@ static void mfiles_draw(void)
 
 static int mfiles_knob(uint32_t id, int32_t clicks)
 {
-    if (!udisk_is_mounted() || id != ENC_ALGO)
+    if (!udisk_is_mounted())
         return 0;
-    ui_list_knob(&mfiles_list, clicks);
-    return 1;
+    return ui_list_input(&mfiles_list, id, clicks);
 }
 
 static int mfiles_button(uint32_t id, uint32_t down)
@@ -61,20 +60,33 @@ static void mfiles_status(void) { ui_list_poll(&mfiles_list); }
 static void mfiles_enter(void)
 {
     ui_list_init(&mfiles_list, &LIST_UDISK, MFILES_ROW_H);
+    mfiles_list.enc = ENC_ALGO;
     ui_list_open(&mfiles_list);
 }
 
-static void mfiles_leave(void) { ui_list_close(&mfiles_list); }
+static void mfiles_leave(void)
+{
+    ui_list_close(&mfiles_list);
+}
 
 static const modd_page_t PAGE_FILES = {
     .name   = "FILES",
     .title  = "Files",
+#ifdef CONFIG_HOME_PAGE_FILES
+    .view   = VIEW_HOME,
+    .flags  = PAGEF_HOME,
+#else
     .view   = VIEW_DEMO,
     .flags  = PAGEF_SYSTEM,
+#endif
     .enter  = mfiles_enter,
     .leave  = mfiles_leave,
     .draw   = mfiles_draw,
     .status = mfiles_status,
     .knob   = mfiles_knob,
     .button = mfiles_button,
+    .help_text =
+        "ALGO    Scroll list\n"
+        "OCT+    Open / select\n"
+        "OCT-    Back / close",
 };

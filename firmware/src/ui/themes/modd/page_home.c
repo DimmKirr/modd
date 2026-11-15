@@ -19,4 +19,7 @@ static const modd_page_t PAGE_HOME = {
     .view  = VIEW_HOME,
     .flags = PAGEF_HOME,
     .draw  = home_draw,
+    .help_text =
+        "HOME hold  Settings\n"
+        "GLO hold   Weather",
 };

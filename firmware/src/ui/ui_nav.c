@@ -40,6 +40,7 @@ static void nav_set_page(uint32_t idx)
         return;
     if (nav_cur < nav_npage && nav_pages[nav_cur]->leave)
         nav_pages[nav_cur]->leave();
+    hints_visible = 0;
     nav_cur = idx;
     nav_view = nav_pages[idx]->view;
     if (nav_view < VIEW_COUNT)
@@ -120,7 +121,13 @@ static void nav_build_views(void)
 static void nav_boot(void)
 {
     nav_build_views();
-    nav_open_view(VIEW_HOME);
+    /* nav_open_view skips when nav_view already equals the target: at boot,
+       nav_init sets nav_view = VIEW_HOME, so the home page's enter callback
+       never fires.  Force it through nav_set_page instead. */
+    if (nav_view_last[VIEW_HOME] != NAV_NO_PAGE)
+        nav_set_page(nav_view_last[VIEW_HOME]);
+    else
+        nav_open_view(VIEW_HOME);
 }
 
 /* ----------------------------------------------------------- modal --- */

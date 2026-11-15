@@ -276,4 +276,6 @@ static const modd_page_t PAGE_WEATHER = {
     .draw   = mwx_draw,
     .status = mwx_status,
     .button = mwx_button,
+    .help_text =
+        "PLAY    Refresh",
 };

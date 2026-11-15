@@ -42,7 +42,7 @@
 #ifdef CONFIG_WIFI
 #include "ui/themes/felucca/page_weather.c"
 #endif
-#ifdef CONFIG_DEBUG_LOG
+#ifdef CONFIG_DEBUG_LOG_BUF
 #include "ui/themes/felucca/page_debug.c"
 #endif
 #ifdef CONFIG_SYS_MENU

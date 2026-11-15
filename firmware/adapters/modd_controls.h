@@ -32,7 +32,18 @@
 #define ENC_K3       4
 #define ENC_K4       5
 #define ENC_PRESET   6
+#define ENC_COUNT    7
 #define ENC_NONE     0xFF  /* no encoder assigned to this role */
+
+/* physical control display names (shared by tooltips, help text, badges) */
+static const char *const CTL_BTN_NAME[BTN_COUNT] = {
+    "OCT-", "OCT+", "FX", "SEL", "ENV", "LFO", "EDIT", "GLO",
+    "HOME", "SAVE", "ARP", "SEQ", "PLAY", "REC",
+};
+
+static const char *const CTL_ENC_NAME[ENC_COUNT] = {
+    "SELECT", "ALGO", "K1", "K2", "K3", "K4", "PRE",
+};
 
 /* what SELECT encoder does when no page claims it */
 #define CTL_SELECT_PAGE   0   /* cycle pages within current view */

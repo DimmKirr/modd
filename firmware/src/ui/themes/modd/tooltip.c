@@ -4,10 +4,8 @@
  * Opened by GLO tap, dismissed by any button press. Draws a translucent
  * panel over the page listing each button's tap and hold action. */
 
-static const char *const TT_BTN_NAME[BTN_COUNT] = {
-    "OCT-", "OCT+", "FX", "SCL", "ENV", "LFO", "EDIT", "GLO",
-    "HOME", "SAVE", "ARP", "SEQ", "PLAY", "REC",
-};
+/* button display names: use the shared CTL_BTN_NAME from modd_controls.h */
+#define TT_BTN_NAME CTL_BTN_NAME
 
 static const char *const TT_VIEW_NAME[VIEW_COUNT] = {
     "home", "env", "lfo", "fx", "scl", "edit", "glo", "save",
@@ -21,10 +19,40 @@ static const char *tt_action(uint8_t view)
     return "?";
 }
 
-static void tt_draw(void)
+/* draw page-local help: each line is "CONTROL  Description" */
+static void tt_draw_help(const char *text)
+{
+    int32_t y = 0;
+    const char *p = text;
+    cv_begin(UI_W, UI_PANEL_H, T_BG);
+
+    cv_text_fit(UI_INSET, ty_y(y + UI_ROW_H / 2, TY_LB), TY_LB,
+                "PAGE CONTROLS", T_DIM, T_BG, UI_W - UI_INSET * 2);
+    y += UI_ROW_H;
+    cv_rect(UI_INSET, y - 1, UI_W - UI_INSET * 2, UI_RULE_H, T_LINE);
+
+    while (*p && y + UI_ROW_H_XS <= (int32_t)UI_PANEL_H) {
+        char line[48];
+        uint32_t n = 0;
+        while (*p && *p != '\n' && n < sizeof(line) - 1u)
+            line[n++] = *p++;
+        line[n] = 0;
+        if (*p == '\n') p++;
+        if (n == 0) continue;
+        cv_text_fit(UI_INSET, ty_y(y + UI_ROW_H_XS / 2, TY_LB), TY_LB,
+                    line, T_TEXT, T_BG, UI_W - UI_INSET * 2);
+        y += UI_ROW_H_XS + 1;
+    }
+
+    mt_panel_end();
+    ui_footer("", "CONTROLS", "");
+}
+
+/* draw the global button-to-view map (fallback when page has no help_text) */
+static void tt_draw_global(void)
 {
     int32_t y = 0, col2x = UI_W / 2;
-    uint32_t i, row = 0;
+    uint32_t i;
 
     cv_begin(UI_W, UI_PANEL_H, T_BG);
 
@@ -55,7 +83,6 @@ static void tt_draw(void)
         cv_text_fit(col2x, ty, &AF_XS, desc, T_MID, T_BG, UI_W - col2x - UI_INSET);
 
         y += UI_ROW_H_XS + 1;
-        row++;
     }
 
 #ifdef CONFIG_DEBUG_LOG
@@ -70,6 +97,15 @@ static void tt_draw(void)
 
     mt_panel_end();
     ui_footer("", "CONTROLS", "");
+}
+
+static void tt_draw(void)
+{
+    const modd_page_t *p = nav_active();
+    if (p && p->help_text)
+        tt_draw_help(p->help_text);
+    else
+        tt_draw_global();
 }
 
 static int tt_button(uint32_t id, uint32_t down)

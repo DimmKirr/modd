@@ -46,6 +46,7 @@ typedef struct {
     uint32_t cursor, scroll;
     uint32_t vis;                               /* rows the last draw had room for */
     uint8_t row_h;
+    uint8_t enc;                                /* encoder that scrolls (ENC_NONE = none) */
     const char *msg;                            /* the last action's message, until the next move */
     uint32_t press_us;                          /* an OCT button went down (0: none) */
     uint8_t press_id;

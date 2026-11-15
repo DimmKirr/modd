@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* modd COLORS settings: pick the palette. Any knob steps through UI_PALETTES (Melodee's set plus
- * MODD and MODD NIGHT from the logo); the choice applies at once and is saved when the settings
+ * CLAY and DAWN from the logo); the choice applies at once and is saved when the settings
  * store is built in (CONFIG_SYS_MENU). */
 
 static void colors_apply(uint32_t i)

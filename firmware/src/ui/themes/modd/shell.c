@@ -6,6 +6,43 @@
 
 /* ----------------------------------------------------------- drawing --- */
 
+/* zone-based hints: defer footer badges above each pill */
+static void shell_draw_zones(void)
+{
+    if (mt_foot[0].w)
+        hint_defer_badge(mt_foot[0].x, UI_Y_FOOT + 4 - HINT_BADGE_H,
+                         BTN_OCTDN, 1, ui_hint_btn_color(BTN_OCTDN));
+    if (mt_foot[1].w)
+        hint_defer_badge(mt_foot[1].x, UI_Y_FOOT + 4 - HINT_BADGE_H,
+                         BTN_OCTUP, 1, ui_hint_btn_color(BTN_OCTUP));
+}
+
+/* text fallback for pages without zone widgets (HOME, demo, debug) */
+static void shell_draw_hints(const modd_page_t *p)
+{
+    if (!p->help_text) return;
+    const char *s = p->help_text;
+    int32_t y = 2;
+    cv_begin(UI_W, UI_PANEL_H, T_BG);
+    cv_text_fit(UI_INSET, ty_y(y + UI_ROW_H / 2, TY_LB), TY_LB,
+                "PAGE CONTROLS", T_DIM, T_BG, UI_W - UI_INSET * 2);
+    y += UI_ROW_H;
+    cv_rect(UI_INSET, y - 1, UI_W - UI_INSET * 2, UI_RULE_H, T_LINE);
+    while (*s && y + UI_ROW_H_XS <= (int32_t)UI_PANEL_H) {
+        char line[48];
+        uint32_t n = 0;
+        while (*s && *s != '\n' && n < sizeof(line) - 1u)
+            line[n++] = *s++;
+        line[n] = 0;
+        if (*s == '\n') s++;
+        if (n == 0) continue;
+        cv_text_fit(UI_INSET, ty_y(y + UI_ROW_H_XS / 2, TY_LB), TY_LB,
+                    line, T_TEXT, T_BG, UI_W - UI_INSET * 2);
+        y += UI_ROW_H_XS + 2;
+    }
+    mt_panel_end();
+}
+
 static void shell_draw(void)
 {
     const modd_page_t *p = nav_active();
@@ -14,18 +51,30 @@ static void shell_draw(void)
 
     if (p->status)
         p->status();
+    toast_tick();
 
     if (!nav_dirty)
         return;
 
     gfx_frame(1);
     gfx_fill(0, 0, UI_W, UI_H, T_BG);
+    mt_zone_count = 0;
+    mt_badge_count = 0;
+    hint_n_rects = 0;
+    mt_foot[0].w = mt_foot[1].w = 0;
     ui_header();
     if (p->draw)
         p->draw();
+    if (hints_visible && !nav_modal) {
+        shell_draw_zones();
+        if (mt_zone_count == 0 && p->help_text)
+            shell_draw_hints(p);
+        hint_draw_deferred_badges();
+    }
     if (nav_modal && nav_modal->draw)
         nav_modal->draw();
     gfx_frame(0);
+    toast_draw();
     nav_dirty = 0;
 }
 
@@ -64,6 +113,10 @@ static void shell_button(uint32_t id, uint32_t down)
     if (id >= BTN_COUNT) return;
     if (nav_modal && nav_modal->button && nav_modal->button(id, down))
         return;
+    if (toast.kind == TOAST_ERROR && !down) {
+        toast_clear();
+        return;
+    }
     if (down) {
         shell_btn_held = id + 1u;
         shell_btn_us = fm1_input_btn_press_us(id);
@@ -89,6 +142,17 @@ static void shell_button(uint32_t id, uint32_t down)
             }
         }
     }
+    /* GLO: shell owns this button entirely.
+     * short tap toggles contextual hints; hold is debug log (above).
+     * consume both press and release so the gesture never leaks to the page. */
+    if (id == BTN_GLO) {
+        if (down) return;                       /* press consumed (held timer already recorded) */
+        if (shell_btn_held == 0) {              /* short tap: held was cleared, not a hold action */
+            hints_visible = !hints_visible;
+            nav_dirty = 1;
+        }
+        return;
+    }
     const modd_page_t *p = nav_active();
 #ifdef CONFIG_DOCK
     /* on HOME the octave buttons are the module's (a panel module shifts its own octave) */
@@ -99,10 +163,6 @@ static void shell_button(uint32_t id, uint32_t down)
 #endif
     if (p && p->button && p->button(id, down))
         return;
-    if (!down && id == BTN_GLO) {
-        tooltip_toggle();
-        return;
-    }
     if (!down && modd_controls.btn_tap[id] != VIEW_NONE) {
         nav_open_view(modd_controls.btn_tap[id]);
     }

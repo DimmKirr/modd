@@ -145,4 +145,6 @@ static const modd_page_t PAGE_DEBUG = {
     .draw   = mdbg_draw,
     .status = mdbg_status,
     .knob   = mdbg_knob,
+    .help_text =
+        "ALGO    Scroll log",
 };

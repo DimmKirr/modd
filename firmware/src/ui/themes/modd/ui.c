@@ -15,5 +15,6 @@
 #include "ui/themes/modd/list.c"
 #include "ui/themes/modd/leds.c"
 #include "ui/themes/modd/tooltip.c"
+#include "ui/themes/modd/toast.c"
 #include "ui/themes/modd/shell.c"
 #include "ui/themes/modd/pages.c"

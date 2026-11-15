@@ -14,6 +14,7 @@ static void ui_list_init(ui_list_t *l, const modd_list_src_t *src, uint8_t row_h
     l->scroll = 0;
     l->vis = 4;
     l->row_h = row_h;
+    l->enc = ENC_NONE;
     l->msg = 0;
     l->press_us = 0;
     l->press_id = 0;
@@ -66,14 +67,7 @@ static void ui_list_draw(ui_list_t *l, int32_t y0, int32_t h)
         if (e.detail && e.detail[0])
             cv_text_r(UI_W - UI_INSET, UI_TEXT_Y(y, l->row_h), TY_LB, e.detail, ui_list_detail_col(e.kind), bg);
     }
-    if (n > l->vis) {                           /* the position mark: a thumb on the right edge */
-        int32_t track = (int32_t)l->vis * l->row_h - 2, thumb, ty;
-        thumb = track * (int32_t)l->vis / (int32_t)n;
-        if (thumb < 6) thumb = 6;
-        ty = (track - thumb) * (int32_t)l->scroll / (int32_t)(n - l->vis);
-        cv_rect(UI_W - 3, y0, 2, track, T_LINE);
-        cv_rect(UI_W - 3, y0 + ty, 2, thumb, T_MID);
-    }
+    ui_scrollbar(y0, (int32_t)l->vis * l->row_h, n, l->vis, l->scroll);
     status = l->msg ? l->msg : (s->status ? s->status() : 0);
     if (!status && n == 0)
         status = "(empty)";
@@ -85,6 +79,11 @@ static void ui_list_draw(ui_list_t *l, int32_t y0, int32_t h)
     if (status[0])
         cv_text_c(UI_W / 2, y0 + (int32_t)l->vis * l->row_h + 2, TY_LB, status,
                   l->msg ? T_THEME : T_DIM, T_BG);
+    if (hints_visible && l->enc != ENC_NONE) {
+        int32_t zh = (int32_t)l->vis * l->row_h + l->row_h;
+        uint8_t eid = l->enc;
+        ui_zone_enc(1, y0, UI_W - 2, zh, UI_Y_CARD, &eid, 1);
+    }
 }
 
 static void ui_list_knob(ui_list_t *l, int32_t clicks)
@@ -97,6 +96,13 @@ static void ui_list_knob(ui_list_t *l, int32_t clicks)
     l->msg = 0;
     ui_list_clamp(l);
     nav_dirty = 1;
+}
+
+static int ui_list_input(ui_list_t *l, uint32_t id, int32_t clicks)
+{
+    if (l->enc == ENC_NONE || id != l->enc) return 0;
+    ui_list_knob(l, clicks);
+    return 1;
 }
 
 static const char *const UI_LIST_GLYPH[LIST_N_ACTIONS] = {"-", "--", "+", "++"};

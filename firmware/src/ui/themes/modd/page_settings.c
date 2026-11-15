@@ -2,8 +2,7 @@
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* modd SETTINGS: tabbed menu driven by modd_sys_menu adapter.
  * HOME hold opens VIEW_SETTINGS (single page, tabs only).
- * SELECT switches tabs, ALGO scrolls rows, PRESET changes value.
- * OCT+ confirms/toggles, OCT- closes settings.
+ * SELECT switches tabs, ALGO scrolls rows, OCT+/- steps value.
  * INSTR (CONFIG_DOCK): modd's engines, the installed dock modules and the .dock files on a
  * USB disk; OCT+ starts one, installing it from the disk first (dock.c, dock_disk.c). */
 
@@ -83,6 +82,7 @@ static void minstr_progress(const char *what, uint32_t pct)
 static void minstr_enter(void)
 {
     ui_list_init(&minstr_list, &LIST_INSTR, UI_ROW_H);
+    minstr_list.enc = ENC_ALGO;
     minstr_list.cursor = dock_cur == DOCK_NONE ? 0 : dock_cur + 1u;
     dock_progress = minstr_progress;
     ui_list_open(&minstr_list);
@@ -103,6 +103,34 @@ static void settings_status(void)
 {
     if (mset.tab == SMTAB_INSTR)
         ui_list_poll(&minstr_list);
+#ifdef CONFIG_SYS_MENU_NETWORK
+    if (mset.tab == SMTAB_NETWORK) {
+        static uint32_t prev_wifi_st, prev_ip;
+        uint32_t ws = (uint32_t)wifi_get_state();
+        uint32_t ip = net_get_ip();
+        if (ws != prev_wifi_st || ip != prev_ip) {
+            prev_wifi_st = ws;
+            prev_ip = ip;
+            nav_dirty = 1;
+        }
+    }
+#endif
+}
+#else
+static void settings_status(void)
+{
+#ifdef CONFIG_SYS_MENU_NETWORK
+    if (mset.tab == SMTAB_NETWORK) {
+        static uint32_t prev_wifi_st, prev_ip;
+        uint32_t ws = (uint32_t)wifi_get_state();
+        uint32_t ip = net_get_ip();
+        if (ws != prev_wifi_st || ip != prev_ip) {
+            prev_wifi_st = ws;
+            prev_ip = ip;
+            nav_dirty = 1;
+        }
+    }
+#endif
 }
 #endif /* CONFIG_DOCK */
 
@@ -126,7 +154,7 @@ static void mset_next_tab(int32_t dir)
 #endif
 }
 
-#if defined(CONFIG_SYS_MENU_NETWORK) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
+#ifdef CONFIG_SYS_MENU_NETWORK
 static void mset_fmt_ip(char *buf, uint32_t ip)
 {
     uint32_t i, v, d;
@@ -141,109 +169,193 @@ static void mset_fmt_ip(char *buf, uint32_t ip)
     *p = 0;
 }
 
+static const char *mset_link_name(void)
+{
+#ifdef CONFIG_USB_NET
+    if (ecm_is_up()) return "ETH";
+    if (usbnet_is_up()) return "iPHONE";
+#endif
+#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+    if (wifi_get_ip()) return "WIFI";
+#endif
+    return "-";
+}
+
 static void mset_draw_network(int32_t y0)
 {
     char buf[20];
     uint32_t ip;
     int32_t y = y0;
-    wifi_state_t st = (wifi_state_t)wifi_get_state();
-    static const char *const WIFI_ST[] = {
-        "OFF", "IDLE", "SCAN", "AUTH", "ASSOC", "WPA", "OK"
-    };
-    const char *stname = (uint32_t)st < 7u ? WIFI_ST[(uint32_t)st] : "?";
 
-    ui_row(y, "STATUS", stname, st == WIFI_STATE_CONNECTED ? T_THEME : T_DIM, 0);
+    ui_row(y, "LINK", mset_link_name(), net_get_ip() ? T_THEME : T_DIM, 0);
     y += UI_ROW_H;
 
-    ip = wifi_get_ip();
+    ip = net_get_ip();
     if (ip) { mset_fmt_ip(buf, ip); } else { buf[0] = '-'; buf[1] = 0; }
     ui_row(y, "IP", buf, T_DIM, 0);
     y += UI_ROW_H;
 
-    ip = wifi_get_gw();
+    ip = net_get_gw();
     if (ip) { mset_fmt_ip(buf, ip); } else { buf[0] = '-'; buf[1] = 0; }
     ui_row(y, "GATEWAY", buf, T_DIM, 0);
     y += UI_ROW_H;
 
-    ip = wifi_get_dns();
+    ip = net_get_dns();
     if (ip) { mset_fmt_ip(buf, ip); } else { buf[0] = '-'; buf[1] = 0; }
     ui_row(y, "DNS", buf, T_DIM, 0);
 }
 #endif
 
-static void mset_draw_display(int32_t y0)
-{
-    uint32_t i;
-    char pos[8];
-    static const char *const SWATCH_LABELS[] = {"1", "2", "3", "4"};
-    i = 0;
-    pos[i++] = (char)('0' + (ux.pal + 1u) / 10u);
-    if (pos[0] == '0') i = 0;
-    pos[i++] = (char)('0' + (ux.pal + 1u) % 10u);
-    pos[i++] = '/';
-    if (UI_NPALETTES >= 10u) pos[i++] = (char)('0' + UI_NPALETTES / 10u);
-    pos[i++] = (char)('0' + UI_NPALETTES % 10u);
-    pos[i] = 0;
+/* DISPLAY tab: THEME row (virtual, index 0) + regular sys_menu items after it.
+ * THEME shows 4 colour swatches inline between the label and the palette name. */
+#define MSET_DISPLAY_THEME 0
+#define MSET_DISPLAY_EXTRA 1
 
-    ui_showcase_t sc = {
-        .title          = UI_PALETTES[ux.pal].name,
-        .subtitle       = pos,
-        .swatches       = UI_PALETTES[ux.pal].trk,
-        .n_swatches     = 4,
-        .swatch_labels  = SWATCH_LABELS,
-    };
-    ui_showcase_draw(y0, (int32_t)(MSET_CANVAS_H - (uint32_t)y0), &sc);
+static uint32_t mset_display_count(void)
+{
+    return MSET_DISPLAY_EXTRA + mset_tab_count(SMTAB_DISPLAY);
 }
+
+static void mset_draw_theme_row(int32_t y, uint8_t selected)
+{
+    uint16_t bg = selected ? T_SURF : T_BG;
+    if (selected)
+        cv_rrect(2, y, UI_W - 4, UI_ROW_H - 2, 4, T_SURF, T_BG);
+    cv_text_fit(UI_INSET, UI_TEXT_Y(y, UI_ROW_H), TY_LB, "THEME",
+                T_DIM, bg, 120);
+    /* 4 colour swatches, 8x8 with 3 px gap, right of centre */
+    {
+        uint32_t sw = 8, gap = 3, k;
+        int32_t bx = (int32_t)(UI_W / 2 - (sw * 4 + gap * 3) / 2);
+        int32_t by = y + ((int32_t)UI_ROW_H - (int32_t)sw) / 2;
+        for (k = 0; k < 4u; k++)
+            cv_rrect(bx + (int32_t)(k * (sw + gap)), by,
+                     (int32_t)sw, (int32_t)sw, 2,
+                     UI_PALETTES[ux.pal].trk[k], bg);
+    }
+    cv_text_r(UI_W - UI_INSET, UI_TEXT_Y(y, UI_ROW_H), TY_LB,
+              UI_PALETTES[ux.pal].name,
+              selected ? T_THEME : T_TEXT, bg);
+}
+
+/* two-pass blit: the canvas buffer is 240x124; the content area is taller,
+ * so we draw in two bands using cv_oy to keep all drawing code in
+ * canvas-relative coordinates.
+ * Origin: hugelton/Felucca firmware/src/ui_menu.c @ v1.6.1 (a53ecf42) (2-pass blit pattern) */
+#define MSET_BAND1  124u
+#define MSET_BAND2  (MSET_CANVAS_H - MSET_BAND1)
 
 static void settings_draw(void)
 {
-    uint32_t n, r;
+    uint32_t n, r, pass;
 
-    cv_begin(UI_W, MSET_CANVAS_H, T_BG);
+    ui_tabs_t tabs = {
+        .labels  = SMTAB_NAME,
+        .count   = SMTAB_COUNT,
+        .active  = mset.tab,
+        .enc     = ENC_SELECT,
+        .visible = mset_tab_visible,
+    };
 
-    /* tab bar */
-    {
-        ui_tabs_t tabs = {
-            .labels  = SMTAB_NAME,
-            .count   = SMTAB_COUNT,
-            .active  = mset.tab,
-            .visible = mset_tab_visible,
-        };
-        ui_tabs_draw(&tabs);
-    }
+    n = mset.tab == SMTAB_DISPLAY ? mset_display_count() : mset_tab_count(mset.tab);
 
-    /* item list for current tab */
-    n = mset_tab_count(mset.tab);
-    for (r = 0; r < MSET_VISIBLE && (mset.scroll + r) < n; r++) {
-        uint32_t idx = mset.scroll + r;
-        const sys_menu_item_t *item = mset_tab_item(mset.tab, idx);
-        if (!item) break;
-        int32_t y = MSET_LIST_Y + (int32_t)r * UI_ROW_H;
-        uint8_t sel = (idx == mset.row);
-        uint16_t fg = sel ? T_THEME : T_TEXT;
-        ui_row(y, item->name, item->values[item->get()], fg, sel);
-    }
+    for (pass = 0; pass < 2u; pass++) {
+        uint32_t band_h = pass ? MSET_BAND2 : MSET_BAND1;
+        int32_t  band_oy = pass ? -(int32_t)MSET_BAND1 : 0;
 
-    if (mset.tab == SMTAB_DISPLAY) {
-        mset_draw_display(MSET_LIST_Y);
-    } else
+        cv_begin(UI_W, band_h, T_BG);
+        cv_oy = band_oy;
+
+        if (!pass)
+            ui_tabs_draw(&tabs);
+
+        /* item list for current tab */
 #ifdef CONFIG_DOCK
-    if (mset.tab == SMTAB_INSTR) {
-        mset_draw_instr(MSET_LIST_Y);
-    } else
+        if (mset.tab == SMTAB_INSTR) {
+            if (!pass) mset_draw_instr(MSET_LIST_Y);
+        } else
 #endif
-#if defined(CONFIG_SYS_MENU_NETWORK) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
-    if (mset.tab == SMTAB_NETWORK) {
-        int32_t info_y = MSET_LIST_Y + (int32_t)n * UI_ROW_H + 6;
-        mset_draw_network(info_y);
-    } else
+#ifdef CONFIG_SYS_MENU_NETWORK
+        if (mset.tab == SMTAB_NETWORK) {
+            for (r = 0; r < MSET_VISIBLE && (mset.scroll + r) < n; r++) {
+                uint32_t idx = mset.scroll + r;
+                int32_t y = MSET_LIST_Y + (int32_t)r * UI_ROW_H;
+                uint8_t sel = (idx == mset.row);
+                uint32_t mi = mset.tab == SMTAB_DISPLAY ? idx - MSET_DISPLAY_EXTRA : idx;
+                const sys_menu_item_t *item = mset_tab_item(mset.tab, mi);
+                if (!item) break;
+                uint16_t fg = sel ? T_THEME : T_TEXT;
+                ui_row(y, item->name, item->values[item->get()], fg, sel);
+            }
+            {
+                int32_t info_y = MSET_LIST_Y + (int32_t)n * UI_ROW_H + 6;
+                mset_draw_network(info_y);
+            }
+        } else
 #endif
-    if (n == 0)
-        cv_text_c(UI_W / 2, ty_y(MSET_LIST_Y + 30, TY_LB), TY_LB,
-                  "(no items)", T_DIM, T_BG);
+        {
+            for (r = 0; r < MSET_VISIBLE && (mset.scroll + r) < n; r++) {
+                uint32_t idx = mset.scroll + r;
+                int32_t y = MSET_LIST_Y + (int32_t)r * UI_ROW_H;
+                uint8_t sel = (idx == mset.row);
+                if (mset.tab == SMTAB_DISPLAY && idx == MSET_DISPLAY_THEME) {
+                    mset_draw_theme_row(y, sel);
+                } else {
+                    uint32_t mi = mset.tab == SMTAB_DISPLAY ? idx - MSET_DISPLAY_EXTRA : idx;
+                    const sys_menu_item_t *item = mset_tab_item(mset.tab, mi);
+                    if (!item) break;
+                    uint16_t fg = sel ? T_THEME : T_TEXT;
+                    ui_row(y, item->name, item->values[item->get()], fg, sel);
+                }
+            }
+            if (n == 0)
+                cv_text_c(UI_W / 2, ty_y(MSET_LIST_Y + 30, TY_LB), TY_LB,
+                          "(no items)", T_DIM, T_BG);
+        }
 
-    cv_blit(0, MSET_CANVAS_Y);
-    ui_footer("BACK", SMTAB_NAME[mset.tab], "OK");
+        ui_scrollbar(MSET_LIST_Y, (int32_t)MSET_LIST_H, n, MSET_VISIBLE, mset.scroll);
+
+        /* hint zones (only in pass 0 to avoid double-registering) */
+        if (!pass && hints_visible && n > 0
+#ifdef CONFIG_DOCK
+            && mset.tab != SMTAB_INSTR
+#endif
+        ) {
+            uint32_t vis = n < MSET_VISIBLE ? n : MSET_VISIBLE;
+            int32_t zh = (int32_t)vis * UI_ROW_H;
+            uint8_t eids[1] = { ENC_ALGO };
+            ui_zone_enc(1, MSET_LIST_Y, UI_W - 2, zh, MSET_CANVAS_Y, eids, 1);
+        }
+
+        if (!pass)
+            ui_tabs_place_badge(&tabs, MSET_CANVAS_Y);
+
+        cv_oy = 0;
+        cv_blit(0, MSET_CANVAS_Y + (pass ? MSET_BAND1 : 0u));
+    }
+
+    /* footer: prev/next value for the selected row (always show both) */
+    {
+        const char *fl = "", *fr = "";
+        if (mset.tab == SMTAB_DISPLAY && mset.row == MSET_DISPLAY_THEME) {
+            uint32_t pi = ux.pal > 0 ? ux.pal - 1u : UI_NPALETTES - 1u;
+            uint32_t ni = ux.pal + 1u < UI_NPALETTES ? ux.pal + 1u : 0u;
+            fl = UI_PALETTES[pi].name;
+            fr = UI_PALETTES[ni].name;
+        } else {
+            uint32_t mi = (mset.tab == SMTAB_DISPLAY)
+                        ? mset.row - MSET_DISPLAY_EXTRA : mset.row;
+            const sys_menu_item_t *fi = mset_tab_item(mset.tab, mi);
+            if (fi && fi->n_values > 1) {
+                uint8_t fv = fi->get();
+                uint8_t pv = fv > 0 ? fv - 1u : fi->n_values - 1u;
+                uint8_t nv = fv + 1u < fi->n_values ? fv + 1u : 0u;
+                fl = fi->values[pv];
+                fr = fi->values[nv];
+            }
+        }
+        ui_footer(fl, "", fr);
+    }
 }
 
 static void mset_step_value(int32_t dir)
@@ -254,7 +366,7 @@ static void mset_step_value(int32_t dir)
         return;
     }
 #endif
-    if (mset.tab == SMTAB_DISPLAY) {
+    if (mset.tab == SMTAB_DISPLAY && mset.row == MSET_DISPLAY_THEME) {
         uint32_t n = UI_NPALETTES;
         uint32_t next = (uint32_t)((int32_t)ux.pal
             + (dir > 0 ? 1 : -1) + (int32_t)n) % n;
@@ -268,7 +380,8 @@ static void mset_step_value(int32_t dir)
         return;
     }
     {
-        const sys_menu_item_t *item = mset_tab_item(mset.tab, mset.row);
+        uint32_t mi = (mset.tab == SMTAB_DISPLAY) ? mset.row - MSET_DISPLAY_EXTRA : mset.row;
+        const sys_menu_item_t *item = mset_tab_item(mset.tab, mi);
         if (item && item->n_values > 0) {
             uint8_t v = item->get();
             if (dir > 0)
@@ -291,12 +404,11 @@ static int settings_knob(uint32_t id, int32_t clicks)
         return 1;
     }
     if (id == ENC_ALGO) {
-        uint32_t n = mset_tab_count(mset.tab);
+        uint32_t n = mset.tab == SMTAB_DISPLAY ? mset_display_count()
+                                                : mset_tab_count(mset.tab);
 #ifdef CONFIG_DOCK
-        if (mset.tab == SMTAB_INSTR) {
-            ui_list_knob(&minstr_list, clicks);
-            return 1;
-        }
+        if (mset.tab == SMTAB_INSTR)
+            return ui_list_input(&minstr_list, id, clicks);
 #endif
         int32_t r = (int32_t)mset.row + clicks;
         if (r < 0) r = 0;
@@ -307,10 +419,6 @@ static int settings_knob(uint32_t id, int32_t clicks)
         if (mset.row >= mset.scroll + MSET_VISIBLE)
             mset.scroll = (uint8_t)(mset.row - MSET_VISIBLE + 1u);
         nav_dirty = 1;
-        return 1;
-    }
-    if (id == ENC_K1) {
-        mset_step_value(clicks);
         return 1;
     }
     return 0;
@@ -335,7 +443,7 @@ static int settings_button(uint32_t id, uint32_t down)
         return 1;
     }
     if (id == BTN_OCTDN) {
-        nav_open_view(VIEW_HOME);
+        mset_step_value(-1);
         return 1;
     }
     return 0;
@@ -373,9 +481,12 @@ static const modd_page_t PAGE_SETTINGS = {
     .leave  = settings_leave,
 #endif
     .draw   = settings_draw,
-#ifdef CONFIG_DOCK
     .status = settings_status,
-#endif
     .knob   = settings_knob,
     .button = settings_button,
+    .help_text =
+        "SELECT  Switch tab\n"
+        "ALGO    Select row\n"
+        "OCT+    Value up\n"
+        "OCT-    Value down",
 };

@@ -36,6 +36,10 @@ typedef struct modd_page {
     /* declarative knob map (NULL = custom .knob only) */
     const param_slot_t *knob_map;
     uint8_t             knob_count;
+
+    /* page-local help: shown by GLO tap instead of the global control map.
+     * one line per active control, e.g. "SELECT  Switch tab\nALGO    Scroll rows" */
+    const char *help_text;
 } modd_page_t;
 
 /* a shell registers pages at startup */

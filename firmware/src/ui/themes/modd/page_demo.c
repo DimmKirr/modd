@@ -3,10 +3,10 @@
 /* modd DEMO: 6-screen kitchen-sink UI showcase under VIEW_DEMO (FX hold).
  * SELECT switches screens, K1-K4 adjust per-screen values. */
 
-#define MDEMO_SCREENS  6
+#define MDEMO_SCREENS  7
 
 static const char *MDEMO_NAMES[] = {
-    "CARDS", "LIST", "GRAPH", "TEXT", "EDIT", "MODALS"
+    "CARDS", "LIST", "GRAPH", "TEXT", "EDIT", "MODALS", "TOAST"
 };
 
 static char mdemo_text[32] = "Hello FM-1!";
@@ -60,7 +60,7 @@ static void mdemo_draw_cards(void)
     cv_rect(8, 4, 24, 12, T_BG);     cv_text_fit(36, 6, TY_LB, "BG", T_DIM, T_BG, 60);
     cv_rect(8, 20, 24, 12, T_SURF);  cv_text_fit(36, 22, TY_LB, "SURF", T_DIM, T_BG, 60);
     cv_rect(8, 36, 24, 12, T_THEME); cv_text_fit(36, 38, TY_LB, "THEME", T_TEXT, T_BG, 60);
-    cv_rect(8, 52, 24, 12, T_ACCENT);cv_text_fit(36, 54, TY_LB, "ACCENT", T_TEXT, T_BG, 60);
+    cv_rect(8, 52, 24, 12, T_ACCENT);cv_text_fit(36, 54, TY_LB, "ACC", T_TEXT, T_BG, 60);
 
     cv_rect(124, 4, 24, 12, T_TEXT);  cv_text_fit(152, 6, TY_LB, "TEXT", T_DIM, T_BG, 60);
     cv_rect(124, 20, 24, 12, T_MID);  cv_text_fit(152, 22, TY_LB, "MID", T_DIM, T_BG, 60);
@@ -90,7 +90,7 @@ static void mdemo_draw_list(void)
 
     mdemo_fmt(n, MDEMO_LIST_N);
     mdemo_fmt(s, (int16_t)mdemo.val[0]);
-    ui_card(0, "ITEMS", n, "", T_MID, -1, 0);
+    ui_card(0, "ITM", n, "", T_MID, -1, 0);
     ui_card(1, "SEL", s, "", T_THEME, (int32_t)mdemo.val[0] * 1000 / MDEMO_LIST_N, 0);
     ui_card(2, "", "", "", T_DIM, -1, 0);
     ui_card(3, "", "", "", T_DIM, -1, 0);
@@ -116,10 +116,11 @@ static void mdemo_draw_list(void)
         }
         cv_text_fit(28, UI_TEXT_Y(y, UI_ROW_H), TY_LB, MDEMO_LIST[idx], fg, bg, 160);
         {
-            int32_t bw = (int32_t)idx * 40 / MDEMO_LIST_N;
+            int32_t bw = (int32_t)idx * 30 / MDEMO_LIST_N;
             cv_rrect(200, y + 4, bw < 2 ? 2 : bw, 8, 2, fg, bg);
         }
     }
+    ui_scrollbar(0, (int32_t)visible * UI_ROW_H, MDEMO_LIST_N, visible, mdemo.scroll);
     mt_panel_end();
 }
 
@@ -132,9 +133,9 @@ static void mdemo_draw_graph(void)
     int32_t base_x = (int32_t)(UI_W - n_bars * (bar_w + gap)) / 2;
 
     ui_card(0, "BARS", "16", "", T_MID, -1, 0);
-    ui_card(1, "FRAME", "", "", T_DIM, (int32_t)(mdemo.frame % 1000), 0);
+    ui_card(1, "FRM", "", "", T_DIM, (int32_t)(mdemo.frame % 1000), 0);
     ui_card(2, "ANIM", "ON", "", T_THEME, -1, 0);
-    ui_card(3, "STYLE", "BAR", "", T_DIM, -1, 0);
+    ui_card(3, "STL", "BAR", "", T_DIM, -1, 0);
 
     mt_panel_begin();
     for (i = 0; i < n_bars; i++) {
@@ -155,29 +156,30 @@ static void mdemo_draw_graph(void)
 
 static void mdemo_draw_text(void)
 {
-    ui_card(0, "FONT", "S", "", T_MID, -1, 0);
-    ui_card(1, "FONT", "M", "", T_MID, -1, 0);
-    ui_card(2, "FONT", "L", "", T_MID, -1, 0);
-    ui_card(3, "DEMO", "TXT", "", T_DIM, -1, 0);
+    ui_card(0, "LB", "16", "", T_MID, -1, 0);
+    ui_card(1, "TX", "20", "", T_MID, -1, 0);
+    ui_card(2, "VL", "28", "", T_MID, -1, 0);
+    ui_card(3, "XS", "12", "", T_DIM, -1, 0);
 
     mt_panel_begin();
 
-    cv_text_fit(8, 4, TY_LB, "LB: The quick brown fox", T_TEXT, T_BG, UI_W - 16);
+    /* three font sizes: LB(16), TX(20), VL(28) */
+    cv_text_fit(8, 2, TY_LB, "LB: The quick brown fox", T_TEXT, T_BG, UI_W - 16);
     cv_text_fit(8, 20, TY_TX, "TX: ABCDEFGH", T_TEXT, T_BG, UI_W - 16);
     cv_text_fit(8, 42, TY_VL, "VL: 12345", T_TEXT, T_BG, UI_W - 16);
 
-    cv_text_c(UI_W / 2, ty_y(72, TY_LB), TY_LB, "CENTERED TEXT", T_THEME, T_BG);
-    cv_text_r(UI_W - 8, ty_y(88, TY_LB), TY_LB, "RIGHT ALIGNED", T_ACCENT, T_BG);
-    cv_text_fit(8, 88, TY_LB, "LEFT", T_MID, T_BG, 60);
+    /* alignment demos: all share the same top Y to keep a clear gap from VL */
+    cv_text_fit(8, 76, TY_LB, "LEFT", T_MID, T_BG, 60);
+    cv_text_c(UI_W / 2, 76, TY_LB, "CENTER", T_THEME, T_BG);
+    cv_text_r(UI_W - 8, 76, TY_LB, "RIGHT", T_ACCENT, T_BG);
 
-    cv_rrect(8, 104, 60, 14, 4, T_SURF, T_BG);
-    cv_text_c(38, ty_y(107, TY_LB), TY_LB, "RRECT4", T_TEXT, T_SURF);
-
-    cv_rrect(76, 104, 60, 14, 8, T_THEME, T_BG);
-    cv_text_c(106, ty_y(107, TY_LB), TY_LB, "RRECT8", T_INK, T_THEME);
-
-    cv_rrect(144, 104, 60, 14, 2, T_ACCENT, T_BG);
-    cv_text_c(174, ty_y(107, TY_LB), TY_LB, "RRECT2", T_INK, T_ACCENT);
+    /* rounded-rect button styles (AF_XS = 12px, fits inside 16px buttons) */
+    cv_rrect(8, 96, 60, 16, 4, T_SURF, T_BG);
+    cv_text_c(38, ty_y(96 + 8, &AF_XS), &AF_XS, "CANCEL", T_TEXT, T_SURF);
+    cv_rrect(76, 96, 60, 16, 4, T_THEME, T_BG);
+    cv_text_c(106, ty_y(96 + 8, &AF_XS), &AF_XS, "OK", T_INK, T_THEME);
+    cv_rrect(144, 96, 60, 16, 4, T_ACCENT, T_BG);
+    cv_text_c(174, ty_y(96 + 8, &AF_XS), &AF_XS, "DELETE", T_INK, T_ACCENT);
 
     mt_panel_end();
 }
@@ -250,10 +252,10 @@ static void mdemo_draw_modals(void)
     char s[4];
 
     mdemo_fmt(s, (int16_t)(mdemo.modal_sel + 1));
-    ui_card(0, "MODALS", "3", "", T_MID, -1, 0);
+    ui_card(0, "MDL", "3", "", T_MID, -1, 0);
     ui_card(1, "SEL", s, "", T_THEME, (int32_t)(mdemo.modal_sel + 1) * 333, 0);
     ui_card(2, "", "", "", T_DIM, -1, 0);
-    ui_card(3, "STYLE", "MOCK", "", T_ACCENT, -1, 0);
+    ui_card(3, "STL", "MOCK", "", T_ACCENT, -1, 0);
 
     mt_panel_begin();
 
@@ -280,36 +282,115 @@ static void mdemo_draw_modals(void)
 
     /* draw a mock modal overlay for the selected type */
     {
-        int32_t mx = 20, my = 72, mw = UI_W - 40, mh = 46;
+        int32_t mw = UI_W - 32, mh = 72;
+        int32_t mx = 16, my = 34;
+        int32_t title_h = 16, btn_h = 16;
+        int32_t body_y = my + title_h;
+        int32_t btn_y  = my + mh - btn_h - 4;
+        /* scrim: clear the area behind the modal so list text doesn't bleed */
+        cv_rect(0, 30, UI_W, UI_PANEL_H - 30, T_BG);
         cv_rrect(mx, my, mw, mh, 6, T_SURF, T_BG);
-        cv_rect(mx, my, mw, 14, T_THEME);
-        cv_text_c(UI_W / 2, ty_y(my + 2, TY_LB), TY_LB,
+        cv_rect(mx, my, mw, title_h, T_THEME);
+        cv_text_c(UI_W / 2, ty_y(my + title_h / 2, &AF_XS), &AF_XS,
                   MDEMO_MODAL_NAMES[mdemo.modal_sel], T_INK, T_THEME);
 
         switch (mdemo.modal_sel) {
         case 0:
-            cv_text_c(UI_W / 2, ty_y(my + 20, TY_LB), TY_LB,
-                      "Are you sure?", T_TEXT, T_SURF);
-            cv_rrect(mx + 10, my + 32, 60, 12, 3, T_ACCENT, T_SURF);
-            cv_text_c(mx + 40, ty_y(my + 34, TY_LB), TY_LB, "YES", T_INK, T_ACCENT);
-            cv_rrect(mw - 50, my + 32, 60, 12, 3, T_DIM, T_SURF);
-            cv_text_c(mw - 20, ty_y(my + 34, TY_LB), TY_LB, "NO", T_TEXT, T_DIM);
+            cv_text_c(UI_W / 2, ty_y(body_y + (btn_y - body_y) / 2, &AF_XS),
+                      &AF_XS, "Are you sure?", T_TEXT, T_SURF);
+            {
+                int32_t bw = (mw - 30) / 2;
+                cv_rrect(mx + 8, btn_y, bw, btn_h, 3, T_ACCENT, T_SURF);
+                cv_text_c(mx + 8 + bw / 2, ty_y(btn_y + btn_h / 2, &AF_XS),
+                          &AF_XS, "YES", T_INK, T_ACCENT);
+                cv_rrect(mx + mw - 8 - bw, btn_y, bw, btn_h, 3, T_DIM, T_SURF);
+                cv_text_c(mx + mw - 8 - bw / 2, ty_y(btn_y + btn_h / 2, &AF_XS),
+                          &AF_XS, "NO", T_TEXT, T_DIM);
+            }
             break;
         case 1:
-            cv_text_c(UI_W / 2, ty_y(my + 20, TY_LB), TY_LB,
-                      "Operation complete.", T_TEXT, T_SURF);
-            cv_rrect(UI_W / 2 - 25, my + 32, 50, 12, 3, T_THEME, T_SURF);
-            cv_text_c(UI_W / 2, ty_y(my + 34, TY_LB), TY_LB, "OK", T_INK, T_THEME);
+            cv_text_c(UI_W / 2, ty_y(body_y + (btn_y - body_y) / 2, &AF_XS),
+                      &AF_XS, "Operation complete.", T_TEXT, T_SURF);
+            cv_rrect(UI_W / 2 - 25, btn_y, 50, btn_h, 3, T_THEME, T_SURF);
+            cv_text_c(UI_W / 2, ty_y(btn_y + btn_h / 2, &AF_XS),
+                      &AF_XS, "OK", T_INK, T_THEME);
             break;
         case 2:
-            cv_rrect(mx + 10, my + 18, mw - 20, 14, 3, T_BG, T_SURF);
-            cv_text_fit(mx + 14, my + 21, TY_LB, "type here...", T_DIM, T_BG, mw - 30);
-            cv_rect(mx + 70, my + 30, 6, 1, T_ACCENT);
+            cv_rrect(mx + 10, body_y + 4, mw - 20, btn_h, 3, T_BG, T_SURF);
+            cv_text_fit(mx + 14, ty_y(body_y + 4 + btn_h / 2, &AF_XS),
+                        &AF_XS, "type here...", T_DIM, T_BG, mw - 30);
+            cv_rect(mx + 70, body_y + btn_h + 6, 6, 1, T_ACCENT);
             break;
         }
     }
 
     mt_panel_end();
+}
+
+/* --- Screen 6: Toast showcase --- */
+
+#define MDEMO_TOAST_N 6
+static const char *MDEMO_TOAST_MSGS[] = {
+    "(clear)",
+    "Scanning WiFi",
+    "Connecting WiFi",
+    "Acquiring IP",
+    "Fetching weather",
+    "WiFi disconnected"
+};
+static const uint8_t MDEMO_TOAST_KIND[] = {
+    TOAST_NONE,
+    TOAST_STATUS,
+    TOAST_STATUS,
+    TOAST_STATUS,
+    TOAST_STATUS,
+    TOAST_ERROR
+};
+
+static void mdemo_draw_toast(void)
+{
+    uint32_t visible = (UI_PANEL_H - 40) / UI_ROW_H;
+    char s[4];
+    mdemo_fmt(s, (int16_t)mdemo.val[0]);
+    ui_card(0, "TST", s, "", T_THEME, (int32_t)mdemo.val[0] * 200, 0);
+    ui_card(1, "KIND", mdemo.val[0] == 0 ? "CLR" :
+            (MDEMO_TOAST_KIND[mdemo.val[0]] == TOAST_STATUS ? "STS" : "ERR"),
+            "", mdemo.val[0] == 0 ? T_DIM :
+            (MDEMO_TOAST_KIND[mdemo.val[0]] == TOAST_STATUS ? T_THEME : T_REC),
+            -1, 0);
+    ui_card(2, "", "", "", T_DIM, -1, 0);
+    ui_card(3, "", "", "", T_DIM, -1, 0);
+
+    mt_panel_begin();
+    cv_text_fit(8, 4, TY_LB, "TOAST NOTIFICATIONS", T_DIM, T_BG, UI_W - 16);
+    cv_text_fit(8, 20, TY_LB, "K1: cycle toast states", T_DIM, T_BG, UI_W - 16);
+    {
+        uint32_t i;
+        for (i = 0; i < visible && (i + mdemo.scroll) < MDEMO_TOAST_N; i++) {
+            uint32_t idx = i + mdemo.scroll;
+            int32_t y = 40 + (int32_t)i * UI_ROW_H;
+            uint8_t sel = ((uint8_t)idx == mdemo.val[0]);
+            uint16_t bg = sel ? T_SURF : T_BG;
+            uint16_t fg = sel ? T_THEME : T_TEXT;
+            if (sel)
+                cv_rrect(2, y, UI_W - 4, UI_ROW_H, 3, T_SURF, T_BG);
+            cv_text_fit(8, UI_TEXT_Y(y, UI_ROW_H), TY_LB,
+                        MDEMO_TOAST_MSGS[idx], fg, bg, UI_W - 16);
+        }
+        ui_scrollbar(0, 40 + (int32_t)visible * UI_ROW_H,
+                     MDEMO_TOAST_N, visible, mdemo.scroll);
+    }
+    mt_panel_end();
+}
+
+static void mdemo_toast_set(uint8_t idx)
+{
+    if (idx >= MDEMO_TOAST_N) return;
+    if (idx == 0) { toast_clear(); return; }
+    if (MDEMO_TOAST_KIND[idx] == TOAST_STATUS)
+        toast_status(MDEMO_TOAST_MSGS[idx]);
+    else
+        toast_error(MDEMO_TOAST_MSGS[idx]);
 }
 
 /* --- Main draw dispatch --- */
@@ -323,6 +404,7 @@ static void mdemo_draw(void)
     case 3: mdemo_draw_text();   break;
     case 4: mdemo_draw_edit();   break;
     case 5: mdemo_draw_modals(); break;
+    case 6: mdemo_draw_toast();  break;
     default: mdemo_draw_cards(); break;
     }
 
@@ -345,6 +427,16 @@ static void mdemo_enter(void)
 
 static int mdemo_knob(uint32_t id, int32_t clicks)
 {
+    if (id == ENC_SELECT) {
+        int32_t s = (int32_t)mdemo.screen + clicks;
+        if (s < 0 || s >= MDEMO_SCREENS)
+            return 0;   /* let nav_cycle handle it: go to adjacent page */
+        mdemo.screen = (uint8_t)s;
+        mdemo.val[0] = mdemo.val[1] = mdemo.val[2] = mdemo.val[3] = 0;
+        mdemo.scroll = 0;
+        nav_dirty = 1;
+        return 1;
+    }
     if (id >= ENC_K1 && id <= ENC_K4) {
         uint32_t ki = id - ENC_K1;
 
@@ -386,6 +478,17 @@ static int mdemo_knob(uint32_t id, int32_t clicks)
             if (r < 0) r = 0;
             if (r >= MDEMO_MODAL_N) r = MDEMO_MODAL_N - 1;
             mdemo.modal_sel = (uint8_t)r;
+        } else if (mdemo.screen == 6 && ki == 0) {
+            uint32_t visible = (UI_PANEL_H - 40) / UI_ROW_H;
+            int32_t r = (int32_t)mdemo.val[0] + clicks;
+            if (r < 0) r = 0;
+            if (r >= MDEMO_TOAST_N) r = MDEMO_TOAST_N - 1;
+            mdemo.val[0] = (uint8_t)r;
+            if (mdemo.val[0] < mdemo.scroll)
+                mdemo.scroll = mdemo.val[0];
+            if (mdemo.val[0] >= mdemo.scroll + visible)
+                mdemo.scroll = (uint8_t)(mdemo.val[0] - visible + 1u);
+            mdemo_toast_set(mdemo.val[0]);
         } else {
             int32_t v = (int32_t)mdemo.val[ki] + clicks;
             if (v < 0) v = 0;
@@ -415,4 +518,11 @@ static const modd_page_t PAGE_DEMO = {
     .draw   = mdemo_draw,
     .knob   = mdemo_knob,
     .key    = mdemo_key,
+    .help_text =
+        "K1      Frame rate\n"
+        "K2      Scroll speed\n"
+        "K3      Knob 1 test\n"
+        "K4      Note count\n"
+        "OCT+    Next sub-page\n"
+        "OCT-    Prev sub-page",
 };
