@@ -2,7 +2,7 @@
 
 Auto-generated from `firmware/src/ui/themes/modd/pages.c` and `firmware/adapters/modd_controls.h`.
 
-Regenerate: `task docs:ui-map -- modd`
+Regenerate: `task docs:themes:ui:diagram`
 
 - **Solid arrows** (`-->`) = button tap navigation
 - **Dashed arrows** (`-.->`) = button hold navigation
@@ -15,36 +15,39 @@ Regenerate: `task docs:ui-map -- modd`
 flowchart TD
 
     BOOT(["Boot Splash"]):::boot
-    BOOT --> P_HOME
+    BOOT --> sg_HOME
 
-    P_HOME["modd"]
+    subgraph sg_HOME["Home"]
+        P_FILES_HOME["Files<br/><small>⚙ HOME_PAGE_FILES</small>"]
+        P_HOME["modd<br/><small>⚙ !HOME_PAGE_FILES</small>"]
+    end
 
-    P_DEBUG["Log<br/><small>⚙ DEBUG_LOG</small>"]
+    P_DEBUG["Log<br/><small>⚙ DEBUG_LOG_BUF</small>"]
 
     subgraph sg_CONN["Connectivity"]
         P_WEATHER["Weather<br/><small>⚙ LWIP</small>"]
-        P_DEMO["DEMO"]
+        P_DEMO["DEMO<br/><small>⚙ PAGE_DEMO</small>"]
     end
 
-    P_SETTINGS["Settings"]
+    P_SETTINGS["Settings<br/><small>⚙ SYS_MENU</small>"]
 
     subgraph sg_DEMO["Demo"]
-        P_FILES["Files<br/><small>⚙ UDISK</small>"]
+        P_FILES_DEMO["Files<br/><small>⚙ UDISK · !HOME_PAGE_FILES</small>"]
         P_DISK["Disk<br/><small>⚙ UDISK</small>"]
     end
 
     %% Encoder: cycle pages within a view
     P_WEATHER <-..-> P_DEMO
-    P_FILES <-..-> P_DISK
+    P_FILES_DEMO <-..-> P_DISK
 
     %% Buttons: tap navigates between views
-    BTN_GLO[/"GLO"/] --> P_DEBUG
-    BTN_HOME[/"HOME"/] --> P_HOME
+    BTN_HOME[/"HOME"/] --> sg_HOME
 
     %% Buttons: hold navigates to secondary views
-    BTN_FX_H[/"FX hold"/] -.-> sg_DEMO
-    BTN_GLO_H[/"GLO hold"/] -.-> sg_CONN
+    BTN_FX_H[/"FX hold"/] -.-> sg_CONN
+    BTN_GLO_H[/"GLO hold"/] -.-> P_DEBUG
     BTN_HOME_H[/"HOME hold"/] -.-> P_SETTINGS
+    BTN_SAVE_H[/"SAVE hold"/] -.-> sg_DEMO
 
     classDef boot fill:#E8E4DF,stroke:#6E675E,color:#333
 ```
@@ -68,11 +71,11 @@ Always active, handled by the shell or keyboard overlay:
 
 | Page | Select | Algo | Knob 1 | Knob 2 | Knob 3 | Knob 4 | Buttons |
 |------|--------|------|--------|--------|--------|--------|---------|
+| Files |  |  |  |  |  |  | OCTDN |
 | modd |  |  |  |  |  |  |  |
 | Settings |  |  |  |  |  |  | OCTUP, OCTDN |
 | Weather |  |  |  |  |  |  | PLAY |
 | DEMO |  |  |  |  |  |  |  |
-| Files |  |  |  |  |  |  | OCTDN |
 | Disk |  |  |  |  |  |  |  |
 | Log |  |  |  |  |  |  |  |
 <!-- ui-controls-table:end -->

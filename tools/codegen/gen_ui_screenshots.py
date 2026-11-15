@@ -30,7 +30,11 @@ from fm1_controls import FM1Controls
 from gen_ui_map import control_path, discover_themes, load_defconfig, load_nav_map
 
 EMU_DIR = Path(os.environ.get('FM1_WEB_DIR', Path.home() / '.fm1-emulator' / 'web'))
-FWSC = ROOT / 'build' / 'modd.fwsc'
+
+
+def _fwsc_path(defconfig: str) -> Path:
+    """Firmware package for a defconfig: build/<defconfig>/modd.fwsc."""
+    return ROOT / 'build' / defconfig / 'modd.fwsc'
 
 THEME_DEFCONFIG = {
     'felucca': 'felucca',
@@ -76,11 +80,12 @@ def _build_firmware(theme: str) -> Path:
     if r.returncode != 0:
         print(f'  Build failed:\n{r.stderr}', file=sys.stderr)
         raise SystemExit(1)
-    if not FWSC.is_file():
-        print(f'  Build succeeded but {FWSC} not found', file=sys.stderr)
+    fwsc = _fwsc_path(defconfig)
+    if not fwsc.is_file():
+        print(f'  Build succeeded but {fwsc} not found', file=sys.stderr)
         raise SystemExit(1)
-    print(f'  Built {FWSC}')
-    return FWSC
+    print(f'  Built {fwsc}')
+    return fwsc
 
 
 def _boot_emulator(page, fwsc: Path) -> None:
@@ -184,7 +189,7 @@ def capture_theme(theme: str, build: bool = True) -> Path:
     if build:
         fwsc = _build_firmware(theme)
     else:
-        fwsc = FWSC
+        fwsc = _fwsc_path(defconfig)
         if not fwsc.is_file():
             print(f'Firmware not built ({fwsc}). Pass --build or run "task build".', file=sys.stderr)
             raise SystemExit(1)

@@ -61,11 +61,29 @@ def _guards_met(guards: list[str], config: set[str]) -> bool:
     """Check whether all Kconfig guards are satisfied by the active config."""
     for g in guards:
         g = g.strip()
+        negated = g.startswith('!')
+        if negated:
+            g = g[1:].strip()
         if g.startswith('defined(') and g.endswith(')'):
             g = g[len('defined('):-1]
-        if g not in config:
+        if (g in config) == negated:
             return False
     return True
+
+
+def _negate(guard: str) -> str:
+    """Flip a guard: CONFIG_X <-> !CONFIG_X."""
+    guard = guard.strip()
+    if guard.startswith('!'):
+        return guard[1:].strip()
+    if re.fullmatch(r'\w+|defined\(\w+\)', guard):
+        return '!' + guard
+    return f'!({guard})'
+
+
+def _exclusive(a: list[str], b: list[str]) -> bool:
+    """True when two guard lists can never both hold (one has X, the other !X)."""
+    return any(_negate(g) in b for g in a)
 
 
 MARKER_START = "<!-- ui-nav-diagram:start -->"
@@ -164,11 +182,17 @@ def parse_pages(path: Path) -> list[dict]:
     view_comment = ""
     for line in path.read_text().splitlines():
         stripped = line.strip()
-        # Track #ifdef / #if / #endif
-        if stripped.startswith("#ifdef ") or stripped.startswith("#if "):
-            cond = stripped.split("//")[0].strip()
+        # Track #ifdef / #ifndef / #if / #else / #endif
+        if stripped.startswith("#ifndef "):
+            cond = stripped.split("//")[0].split("/*")[0].strip()
+            guards.append(_negate(cond.removeprefix("#ifndef ")))
+        elif stripped.startswith("#ifdef ") or stripped.startswith("#if "):
+            cond = stripped.split("//")[0].split("/*")[0].strip()
             cond = cond.removeprefix("#ifdef ").removeprefix("#if ")
             guards.append(cond)
+        elif stripped.startswith("#else"):
+            if guards:
+                guards[-1] = _negate(guards[-1])
         elif stripped.startswith("#endif"):
             if guards:
                 guards.pop()
@@ -469,8 +493,8 @@ def parse_hw_controls(path: Path) -> tuple[list[tuple[str, int]], list[tuple[str
     """Return (buttons, encoders): [(name, id)] from BTN_* and ENC_* defines."""
     buttons: list[tuple[str, int]] = []
     encoders: list[tuple[str, int]] = []
-    btn_pat = re.compile(r"#define\s+(BTN_(\w+))\s+(\d+)")
-    enc_pat = re.compile(r"#define\s+(ENC_(\w+))\s+(\d+)")
+    btn_pat = re.compile(r"#define\s+(BTN_(\w+))\s+(\d+)\b")
+    enc_pat = re.compile(r"#define\s+(ENC_(\w+))\s+(\d+)\b")
 
     for line in path.read_text().splitlines():
         m = btn_pat.match(line.strip())
@@ -478,7 +502,7 @@ def parse_hw_controls(path: Path) -> tuple[list[tuple[str, int]], list[tuple[str
             buttons.append((m.group(2), int(m.group(3))))
             continue
         m = enc_pat.match(line.strip())
-        if m:
+        if m and m.group(2) not in ("COUNT", "NONE"):
             encoders.append((m.group(2), int(m.group(3))))
 
     return buttons, encoders
@@ -574,8 +598,12 @@ def generate_controls_table(page_controls: dict, page_details: dict, pages: list
         "| Page | Select | Algo | Knob 1 | Knob 2 | Knob 3 | Knob 4 | Buttons |",
         "|------|--------|------|--------|--------|--------|--------|---------|",
     ]
+    seen: set[str] = set()
     for p in pages:
         sym = p["symbol"]
+        if sym in seen:
+            continue  # registered under two views (alternative configs)
+        seen.add(sym)
         d = page_details.get(sym, {})
         title = d.get("title") or d.get("name") or sym
         c = page_controls.get(sym, {"knobs": {}, "buttons": []})
@@ -641,6 +669,7 @@ def load_nav_map(theme: str, root: Path | None = None) -> dict:
     # shell.c hardcodes GLO hold -> debug log (VIEW_GLO) outside the controls map
     if "VIEW_GLO" in view_groups and "VIEW_GLO" not in btn_for_view:
         btn_for_view["VIEW_GLO"] = "glo_hold"
+        hold_map["BTN_GLO"] = "VIEW_GLO"
 
     return {
         "theme": theme,
@@ -716,24 +745,12 @@ def generate_mermaid(theme: str) -> str:
         # Try the renamed variant (felucca -> reluca in git status, but source is felucca)
         raise SystemExit(f"Theme directory not found: {theme_dir}")
 
-    views = parse_views(ROOT / "firmware" / "src" / "ui" / "ui_view.h")
-    controls_name = theme if theme in ("felucca", "melodee", "sloop") else "felucca"
-    tap_map, hold_map = parse_controls(
-        ROOT / "firmware" / "adapters" / "modd_controls.h", controls_name
-    )
-    pages = parse_pages(theme_dir / "pages.c")
+    # One source for pages, views and button maps (theme controls.c when present)
+    nav = load_nav_map(theme)
+    pages = nav["pages"]
+    view_groups = nav["view_groups"]
+    tap_map, hold_map = nav["tap_map"], nav["hold_map"]
     page_details = parse_page_details(theme_dir)
-
-    # Resolve view: prefer comment from pages.c, fall back to .view in source
-    for p in pages:
-        if not p["view"] and p["symbol"] in page_details:
-            p["view"] = page_details[p["symbol"]].get("view", "")
-
-    # Group pages by view
-    view_groups: dict[str, list[dict]] = {}
-    for p in pages:
-        vw = p["view"] or "VIEW_HOME"
-        view_groups.setdefault(vw, []).append(p)
 
     # Friendly view labels
     view_label = {
@@ -752,8 +769,16 @@ def generate_mermaid(theme: str) -> str:
         "VIEW_DEMO": "Demo",
     }
 
-    def _node_id(sym: str) -> str:
-        return sym.replace("FPAGE_", "F_").replace("PAGE_", "P_")
+    sym_count: dict[str, int] = {}
+    for p in pages:
+        sym_count[p["symbol"]] = sym_count.get(p["symbol"], 0) + 1
+
+    def _node_id(p: dict) -> str:
+        nid = p["symbol"].replace("FPAGE_", "F_").replace("PAGE_", "P_")
+        if sym_count[p["symbol"]] > 1:
+            # same page registered under two views (alternative configs)
+            nid += "_" + (p["view"] or "VIEW_HOME").replace("VIEW_", "")
+        return nid
 
     def _display(sym: str) -> str:
         d = page_details.get(sym, {})
@@ -774,7 +799,7 @@ def generate_mermaid(theme: str) -> str:
     def _view_target(vw: str) -> str:
         group = view_groups.get(vw, [])
         if len(group) == 1:
-            return _node_id(group[0]["symbol"])
+            return _node_id(group[0])
         return vw.replace("VIEW_", "sg_")
 
     # Boot -> HOME target
@@ -795,7 +820,7 @@ def generate_mermaid(theme: str) -> str:
 
         if len(group) == 1:
             p = group[0]
-            nid = _node_id(p["symbol"])
+            nid = _node_id(p)
             label = _display(p["symbol"])
             lines_final.append(f'    {nid}["{label}{_guard_note(p["guards"])}"]')
         else:
@@ -803,7 +828,7 @@ def generate_mermaid(theme: str) -> str:
             sg_id = vw.replace("VIEW_", "sg_")
             lines_final.append(f'    subgraph {sg_id}["{sg_label}"]')
             for p in group:
-                nid = _node_id(p["symbol"])
+                nid = _node_id(p)
                 label = _display(p["symbol"])
                 lines_final.append(f'        {nid}["{label}{_guard_note(p["guards"])}"]')
             lines_final.append("    end")
@@ -814,9 +839,10 @@ def generate_mermaid(theme: str) -> str:
     for vw, group in view_groups.items():
         if len(group) < 2:
             continue
-        ids = [_node_id(p["symbol"]) for p in group]
-        for i in range(len(ids) - 1):
-            lines_final.append(f"    {ids[i]} <-..-> {ids[i+1]}")
+        for a, b in zip(group, group[1:]):
+            if _exclusive(a["guards"], b["guards"]):
+                continue  # alternatives, never built together
+            lines_final.append(f"    {_node_id(a)} <-..-> {_node_id(b)}")
 
     # Button tap navigation
     lines_final.append("")
