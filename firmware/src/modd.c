@@ -1115,6 +1115,7 @@ static void ui_task(void)
     modd_log("ui: task start");
     for (;;) {
         uint32_t m = fm1_ms;
+        sched_mark(1);          /* watchdog, uboot combo, master ADC */
         fm1_wdt_feed();
 #ifdef CONFIG_DEBUG_UI_HB
         {
@@ -1158,8 +1159,10 @@ static void ui_task(void)
         }
 #endif
 #ifdef CONFIG_INPUT
+        sched_mark(2);          /* input: button and knob handlers */
         ui_input();
 #endif
+        sched_mark(3);          /* BLE sync */
 #ifdef CONFIG_BLE
         modd_ble_sync();
 #ifdef MODD_BLE_STUB
@@ -1172,13 +1175,16 @@ static void ui_task(void)
 #if defined(CONFIG_UI_FELUCCA)
         fsh_draw();
 #elif defined(CONFIG_UI_MODD)
-        shell_draw();
+        shell_draw();           /* marks 10-17 inside */
+        sched_mark(30);         /* LEDs */
         ui_leds();
 #endif
         while (fm1_ms - m < 15u) {
 #ifdef CONFIG_INPUT
+            sched_mark(31);     /* input, between frames */
             ui_input();
 #endif
+            sched_mark(0);      /* other tasks' time is not the UI's */
             yield();
         }
     }

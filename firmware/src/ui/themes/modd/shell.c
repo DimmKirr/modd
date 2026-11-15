@@ -49,6 +49,7 @@ static void shell_draw(void)
     if (!p)
         return;
 
+    sched_mark(10);             /* page status + toast tick */
     if (p->status)
         p->status();
     toast_tick();
@@ -56,24 +57,31 @@ static void shell_draw(void)
     if (!nav_dirty)
         return;
 
+    sched_mark(11);             /* frame begin + clear */
     gfx_frame(1);
     gfx_fill(0, 0, UI_W, UI_H, T_BG);
     mt_zone_count = 0;
     mt_badge_count = 0;
     hint_n_rects = 0;
     mt_foot[0].w = mt_foot[1].w = 0;
+    sched_mark(12);             /* header */
     ui_header();
+    sched_mark(13);             /* page draw */
     if (p->draw)
         p->draw();
+    sched_mark(14);             /* hints */
     if (hints_visible && !nav_modal) {
         shell_draw_zones();
         if (mt_zone_count == 0 && p->help_text)
             shell_draw_hints(p);
         hint_draw_deferred_badges();
     }
+    sched_mark(15);             /* modal */
     if (nav_modal && nav_modal->draw)
         nav_modal->draw();
+    sched_mark(16);             /* frame end */
     gfx_frame(0);
+    sched_mark(17);             /* toast */
     toast_draw();
     nav_dirty = 0;
 }
