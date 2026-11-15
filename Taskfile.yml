@@ -303,8 +303,14 @@ tasks:
         done
         {
           echo "=== logs:debug $(date -Iseconds) ==="
-          echo "=== config.h symbols ==="
-          grep '^#define CONFIG_' {{.BUILD_DIR}}/gen/config.h 2>/dev/null
+          # config.masked.h: config.h with the secret symbols masked (genconfig.py
+          # SECRET_SYMBOLS). Never print config.h itself: this log gets shared.
+          echo "=== config symbols (secrets masked) ==="
+          if [ -f {{.BUILD_DIR}}/gen/config.masked.h ]; then
+            grep '^#define CONFIG_' {{.BUILD_DIR}}/gen/config.masked.h
+          else
+            echo "(no config.masked.h: run task build)"
+          fi
           echo ""
           echo "=== .bss/.pool sizes (from linker map) ==="
           grep -E '^\.(bss|pool)\b|_bss_(start|end)|_pool_(start|end)' {{.BUILD_DIR}}/modd.map 2>/dev/null

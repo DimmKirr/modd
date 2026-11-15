@@ -14,6 +14,30 @@ from kconfiglib import Kconfig
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# Symbols whose values are secret. config.h carries them (the firmware needs
+# them); config.masked.h does not, and it is the only one debug dumps and
+# logs may print. Add every new credential symbol here.
+SECRET_SYMBOLS = ('WIFI_PASSWORD', 'OPENROUTER_API_KEY')
+SECRET_MASK = '***'
+
+
+def mask_secrets(header_text):
+    """config.h text with every secret symbol's value replaced by a mask.
+
+    An empty value stays visible as "": whether a secret is set at all is a
+    useful debug fact and gives nothing away.
+    """
+    out = []
+    for line in header_text.splitlines():
+        for name in SECRET_SYMBOLS:
+            prefix = f'#define CONFIG_{name} '
+            if line.startswith(prefix):
+                empty = line[len(prefix):].strip() == '""'
+                line = prefix + ('""' if empty else f'"{SECRET_MASK}"')
+        out.append(line)
+    return '\n'.join(out) + '\n'
+
+
 COMPONENT_SYMBOLS = {
     'AUDIO': 'audio',
     'DUAL_CORE': 'dual-core',
@@ -150,6 +174,7 @@ def main():
                 sym.set_value(val)
                 print(f'genconfig: {name} overridden from environment')
     kconf.write_autoconf(str(out / 'config.h'))
+    (out / 'config.masked.h').write_text(mask_secrets((out / 'config.h').read_text()))
     components = write_manifest(kconf, out)
     print(f'genconfig: wrote {out / "config.h"}')
     print(f'genconfig: manifest ({len(components)} components): {", ".join(components)}')

@@ -5,6 +5,7 @@
 
 Results are written to tests/results/<timestamp>-test_genconfig/<subtest>/.
 """
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -270,3 +271,36 @@ def test_usb_net_selects_lwip_and_needs_usb_host():
     assert k.syms['USB_NET'].str_value == 'y'
     assert k.syms['LWIP'].str_value == 'y', 'USB_NET must select LWIP'
     assert k.syms['WIFI'].str_value == 'n'
+
+
+def test_secret_symbols_are_masked_for_debug_dumps():
+    """config.h keeps the secrets the firmware needs; config.masked.h, the
+    only header a debug dump may print, shows a mask instead."""
+    genconfig = ROOT / 'tools' / 'build' / 'genconfig.py'
+    out = _outdir('masked_secrets')
+    env = dict(os.environ, WIFI_PASSWORD='pw-for-this-test',
+               OPENROUTER_API_KEY='key-for-this-test')
+    r = subprocess.run(
+        [sys.executable, str(genconfig), '--defconfig', 'modd',
+         '--outdir', str(out)],
+        capture_output=True, text=True, cwd=str(ROOT), env=env)
+    assert r.returncode == 0, r.stderr
+    header = (out / 'config.h').read_text()
+    masked = (out / 'config.masked.h').read_text()
+    assert '#define CONFIG_WIFI_PASSWORD "pw-for-this-test"' in header
+    assert 'pw-for-this-test' not in masked
+    assert 'key-for-this-test' not in masked
+    assert '#define CONFIG_WIFI_PASSWORD "***"' in masked
+    # everything that is not a secret is unchanged
+    plain = [l for l in header.splitlines()
+             if 'WIFI_PASSWORD' not in l and 'OPENROUTER_API_KEY' not in l]
+    assert all(l in masked.splitlines() for l in plain)
+
+
+def test_debug_log_task_prints_only_the_masked_config():
+    taskfile = (ROOT / 'Taskfile.yml').read_text()
+    assert 'gen/config.masked.h' in taskfile
+    for line in taskfile.splitlines():
+        if 'gen/config.h' in line and ('grep' in line or 'cat' in line):
+            raise AssertionError(f'Taskfile prints config.h: {line.strip()}')
+
