@@ -151,7 +151,7 @@ static void weather_geo_cb(int status, const uint8_t *body,
     (void)ctx;
 
     if (status != 200 || !body || body_len == 0) {
-        modd_log_int("wifi: geo failed status=", (int32_t)status);
+        modd_log_int("weather: geo failed status=", (int32_t)status);
         toast_error("Weather unavailable");
         weather_state = WEATHER_IDLE;
         weather_retries++;
@@ -162,7 +162,7 @@ static void weather_geo_cb(int status, const uint8_t *body,
     /* extract lat, lon, city, countryCode */
     if (mini_json_extract(body, body_len, "lat", weather_lat, sizeof(weather_lat)) == 0 ||
         mini_json_extract(body, body_len, "lon", weather_lon, sizeof(weather_lon)) == 0) {
-        modd_log("wifi: geo missing lat/lon");
+        modd_log("weather: geo missing lat/lon");
         weather_state = WEATHER_IDLE;
         weather_retries++;
         weather_last_ms = fm1_ms;
@@ -183,7 +183,7 @@ static void weather_geo_cb(int status, const uint8_t *body,
         weather_dat.country[i] = 0;
     }
 
-    modd_log("wifi: geo ok");
+    modd_log("weather: geo ok");
     weather_state = WEATHER_WEATHER_FETCH;
 }
 
@@ -218,7 +218,7 @@ static void weather_wx_cb(int status, const uint8_t *body,
     (void)ctx;
 
     if (status != 200 || !body || body_len == 0) {
-        modd_log_int("wifi: weather failed status=", (int32_t)status);
+        modd_log_int("weather: failed status=", (int32_t)status);
         toast_error("Weather unavailable");
         weather_state = WEATHER_IDLE;
         weather_retries++;
@@ -257,7 +257,7 @@ static void weather_wx_cb(int status, const uint8_t *body,
 
     weather_dat.updated_ms = fm1_ms;
     weather_dat.valid = 1;
-    modd_log_int("wifi: weather ok temp=", (int32_t)weather_dat.temp_c);
+    modd_log_int("weather: ok temp=", (int32_t)weather_dat.temp_c);
     toast_clear();
     weather_state = WEATHER_DONE;
     weather_last_ms = fm1_ms;
@@ -319,11 +319,11 @@ static void weather_fetch_start(void)
 {
     if (weather_state != WEATHER_IDLE && weather_state != WEATHER_DONE)
         return;
-    modd_log("wifi: weather fetch start");
+    modd_log("weather: fetch start");
     toast_status("Fetching weather");
     weather_retries = 0;
     if (weather_parse_location()) {
-        modd_log("wifi: using fixed location");
+        modd_log("weather: using fixed location");
         weather_state = WEATHER_WEATHER_FETCH;
     } else {
         weather_state = WEATHER_GEO_FETCH;

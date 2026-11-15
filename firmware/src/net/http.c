@@ -55,7 +55,7 @@ static void  http_finish(int status);
 
 static void http_finish(int status)
 {
-    modd_log_int("wifi: http done status=", (int32_t)status);
+    modd_log_int("http: done status=", (int32_t)status);
     if (http_state.cb) {
         const uint8_t *body = 0;
         uint32_t body_len = 0;
@@ -157,12 +157,12 @@ static void http_dns_cb(const char *name, const ip_addr_t *addr, void *arg)
     (void)arg;
 
     if (!addr || http_state.state != HTTP_DNS_WAIT) {
-        modd_log("wifi: http dns failed");
+        modd_log("http: dns failed");
         http_finish(-1);
         return;
     }
 
-    modd_log("wifi: http dns resolved");
+    modd_log("http: dns resolved");
     http_state.server_ip = *addr;
     http_state.pcb = tcp_new();
     if (!http_state.pcb) {
@@ -192,12 +192,12 @@ static err_t http_connected_cb(void *arg, struct tcp_pcb *tpcb, err_t err)
     (void)arg;
 
     if (err != ERR_OK || http_state.state != HTTP_CONNECTING) {
-        modd_log("wifi: http connect failed");
+        modd_log("http: connect failed");
         http_finish(-1);
         return ERR_OK;
     }
 
-    modd_log("wifi: http connected, sending GET");
+    modd_log("http: connected, sending GET");
     /* build GET request */
     s = "GET ";
     while (*s) req[rlen++] = *s++;
@@ -263,7 +263,7 @@ static err_t http_recv_cb(void *arg, struct tcp_pcb *tpcb, struct pbuf *p,
             http_state.content_length = http_parse_content_length(
                 http_state.buf, body_off, &http_state.have_content_length);
             http_state.state = HTTP_RECV_BODY;
-            modd_log_int("wifi: http status=", (int32_t)http_state.status_code);
+            modd_log_int("http: status=", (int32_t)http_state.status_code);
         }
     }
 
@@ -285,7 +285,7 @@ static void http_err_cb(void *arg, err_t err)
     (void)arg;
     (void)err;
     /* pcb is already freed by lwIP when err_cb fires */
-    modd_log("wifi: http tcp error");
+    modd_log("http: tcp error");
     http_state.pcb = 0;
     http_finish(-1);
 }
@@ -301,7 +301,7 @@ static int http_get(const char *host, const char *path,
     if (http_state.state != HTTP_IDLE)
         return -1;
 
-    modd_log("wifi: http GET");
+    modd_log("http: GET");
     /* copy host */
     for (i = 0; i < sizeof(http_state.host) - 1 && host[i]; i++)
         http_state.host[i] = host[i];
@@ -342,7 +342,7 @@ static void http_poll(void)
         return;
     /* timeout check */
     if (fm1_ms - http_state.start_ms > HTTP_TIMEOUT_MS) {
-        modd_log("wifi: http timeout");
+        modd_log("http: timeout");
         http_finish(-1);
     }
 }
