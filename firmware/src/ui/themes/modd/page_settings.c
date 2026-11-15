@@ -18,6 +18,34 @@ static struct {
     uint8_t scroll;
 } mset;
 
+#ifdef CONFIG_SYS_MENU_NETWORK
+static const char *mset_link_name(void);
+
+/* NET tab: redraw when anything it shows changes. The rows are LINK, IP,
+ * GATEWAY and DNS, and they do not all change at the same moment: a link
+ * attaches before it has an address, and goes before its DNS is dropped. */
+static void mset_network_status(void)
+{
+    static uint32_t prev[4];
+    static const char *prev_link;
+    uint32_t cur[4];
+    const char *link = mset_link_name();
+    uint32_t i, changed = (link != prev_link);
+
+    cur[0] = (uint32_t)wifi_get_state();
+    cur[1] = net_get_ip();
+    cur[2] = net_get_gw();
+    cur[3] = net_get_dns();
+    for (i = 0; i < 4u; i++) {
+        if (cur[i] != prev[i]) changed = 1;
+        prev[i] = cur[i];
+    }
+    prev_link = link;
+    if (changed)
+        nav_dirty = 1;
+}
+#endif
+
 static uint32_t mset_tab_count(uint8_t tab)
 {
     uint32_t n = 0, i;
@@ -104,32 +132,16 @@ static void settings_status(void)
     if (mset.tab == SMTAB_INSTR)
         ui_list_poll(&minstr_list);
 #ifdef CONFIG_SYS_MENU_NETWORK
-    if (mset.tab == SMTAB_NETWORK) {
-        static uint32_t prev_wifi_st, prev_ip;
-        uint32_t ws = (uint32_t)wifi_get_state();
-        uint32_t ip = net_get_ip();
-        if (ws != prev_wifi_st || ip != prev_ip) {
-            prev_wifi_st = ws;
-            prev_ip = ip;
-            nav_dirty = 1;
-        }
-    }
+    if (mset.tab == SMTAB_NETWORK)
+        mset_network_status();
 #endif
 }
 #else
 static void settings_status(void)
 {
 #ifdef CONFIG_SYS_MENU_NETWORK
-    if (mset.tab == SMTAB_NETWORK) {
-        static uint32_t prev_wifi_st, prev_ip;
-        uint32_t ws = (uint32_t)wifi_get_state();
-        uint32_t ip = net_get_ip();
-        if (ws != prev_wifi_st || ip != prev_ip) {
-            prev_wifi_st = ws;
-            prev_ip = ip;
-            nav_dirty = 1;
-        }
-    }
+    if (mset.tab == SMTAB_NETWORK)
+        mset_network_status();
 #endif
 }
 #endif /* CONFIG_DOCK */

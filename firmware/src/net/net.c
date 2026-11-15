@@ -74,6 +74,15 @@ static void net_on_down(struct netif *nif)
 {
     (void)nif;
     net_elect_default();
+    /* No link left with an address: the DNS servers came with the lease
+     * that just ended, and lwIP keeps them until a new lease overwrites
+     * them. Clear them, so nothing shows or uses a resolver that is gone. */
+    if (!netif_default) {
+        uint8_t i;
+        for (i = 0; i < DNS_MAX_SERVERS; i++)
+            dns_setserver(i, NULL);
+        modd_log("net: no link left, dns cleared");
+    }
 }
 
 static uint32_t net_get_ip(void)
@@ -89,6 +98,8 @@ static uint32_t net_get_gw(void)
 static uint32_t net_get_dns(void)
 {
     const ip_addr_t *d = dns_getserver(0);
+    if (!netif_default)
+        return 0;
     return d ? ip_2_ip4(d)->addr : 0;
 }
 
