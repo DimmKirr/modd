@@ -15,6 +15,7 @@ static void ui_header(void)
 
 static void ui_footer(const char *left, const char *center, const char *right)
 {
+    if (toast_active()) return;
     if (ui_active_theme && ui_active_theme->render_footer)
         ui_active_theme->render_footer(left, center, right);
 }

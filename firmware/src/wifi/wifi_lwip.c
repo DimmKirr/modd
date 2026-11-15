@@ -107,6 +107,7 @@ static void wifi_lwip_status_cb(struct netif *nif)
 {
     if (nif->ip_addr.addr) {
         modd_log("wifi: dhcp bound");
+        toast_clear();
         net_on_up(nif);
     }
 }

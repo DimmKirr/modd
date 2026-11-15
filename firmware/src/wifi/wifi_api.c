@@ -156,6 +156,7 @@ static uint32_t wifi_get_dns(void)
 static void wifi_on_connected(void)
 {
     modd_log("wifi: associated, starting DHCP");
+    toast_status("Acquiring IP");
     wifi_mac_tighten_filter();
     wifi_lwip_start_dhcp();
 }
@@ -164,6 +165,7 @@ static void wifi_on_connected(void)
 static void wifi_on_disconnected(void)
 {
     modd_log("wifi: disconnected");
+    toast_error("WiFi disconnected");
     wifi_lwip_stop_dhcp();
 }
 

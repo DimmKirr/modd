@@ -363,11 +363,16 @@ static void fm1_fault(const fm1_crash_t *c)
 #endif
 #include "modd_debug.h"
 #include "modd_log.h"
+#include "modd_toast.h"
 #include "ui/ui_view.h"
 #include "modd_controls.h"
 #include "modd_usb_audio.h"
 #include "modd_editor.h"
 #include "modd_console.h"
+
+#ifdef CONFIG_UI_MODD
+static uint8_t modd_lights = 3; /* LIGHTS_HIGH default; SYS_MENU overrides from flash */
+#endif
 
 #ifdef CONFIG_SYS_MENU
 #include "modd_settings.h"
@@ -397,7 +402,18 @@ void udelay(uint32_t us) { (void)us; }
 void delay(unsigned int n) { (void)n; }
 void delay_us(unsigned int us) { (void)us; }
 void hw_udelay(unsigned int us) { (void)us; }
-void os_time_dly(uint32_t ticks) { fm1_delay_ms(ticks * 10); }
+
+/* Yielding delay for USB host settle times. When the cooperative scheduler
+ * is active, sleep_ms lets the UI task run during hardware waits (OTG switch,
+ * bus reset, enumeration). Falls back to busy-wait without the scheduler. */
+#ifdef CONFIG_SCHED
+static void sleep_ms(uint32_t ms);
+#define usb_settle_ms(ms) sleep_ms(ms)
+#else
+#define usb_settle_ms(ms) fm1_delay_ms(ms)
+#endif
+
+void os_time_dly(uint32_t ticks) { usb_settle_ms(ticks * 10); }
 void wdt_clear(void) { fm1_wdt_feed(); }
 void log_print(const char *fmt, ...) { (void)fmt; }
 int putchar(int c) { (void)c; return c; }
@@ -412,7 +428,7 @@ int gpio_set_output_clk(unsigned int gpio, int clk) { (void)gpio; (void)clk; ret
 void gpio_set_output_channle(unsigned int gpio, unsigned int ch) { (void)gpio; (void)ch; }
 uint32_t get_jiffies(void) { return jiffies; }
 uint32_t time_lapse(uint32_t *r, uint32_t us) { uint32_t now = jiffies; uint32_t elapsed = now - *r; *r = now; return elapsed >= us; }
-void usb_mdelay(unsigned int ms) { fm1_delay_ms(ms); }
+void usb_mdelay(unsigned int ms) { usb_settle_ms(ms); }
 int usb_host_timeout(unsigned int ms) { (void)ms; return 0; }
 
 static uint8_t ep0buf[64 + 4] __attribute__((aligned(4)));
@@ -874,6 +890,7 @@ static int32_t master_iir;
 #include "modd_page.h"
 #include "modd_modal.h"
 #include "ui/ui_theme.h"
+static uint8_t hints_visible;                   /* GLO tap badge overlay (theme.c draws, shell.c toggles) */
 #include "ui/ui_nav.c"
 #include "ui/ui_elements.c"
 
@@ -1370,7 +1387,8 @@ static void fm1_main(void)
 #endif
 
 #ifdef CONFIG_WIFI
-    wifi_init();
+    if (sys_settings.wifi_on)
+        wifi_init();
 #endif
 #ifdef CONFIG_WIFI_NONFREE
     modd_log("nf: wifi init");
@@ -1391,6 +1409,12 @@ static void fm1_main(void)
     }
     audio_init();
     modd_log("audio: init OK");
+#if MODD_DUAL_CORE
+    if (fm1_multicore_start())
+        modd_log("dual-core: CPU1 online");
+    else
+        modd_log("dual-core: CPU1 failed, single-core fallback");
+#endif
 #endif
 
     /* ---- Phase 2: ISR active, ready to play ---- */
@@ -1416,7 +1440,7 @@ static void fm1_main(void)
 #ifdef CONFIG_SCHED
     sched_init();
 #if defined(CONFIG_WIFI)
-    {
+    if (sys_settings.wifi_on) {
         static uint32_t wifi_stack[1024] __attribute__((section(".pool")));
         sched_create(wifi_task, wifi_stack, sizeof wifi_stack);
         modd_log("sched: wifi task created");

@@ -168,6 +168,7 @@ static uint32_t wifi_sta_ie(uint8_t *buf, uint8_t id, const uint8_t *data, uint8
 
 static void wifi_sta_set_state(wifi_state_t s)
 {
+    wifi_state_t prev = wifi_sta.state;
 #ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_int("wifi: sta state=", (int32_t)s);
     if (wifi_sta.resp_log_n > WIFI_STA_RESP_LOG_MAX)
@@ -179,6 +180,13 @@ static void wifi_sta_set_state(wifi_state_t s)
     wifi_sta.state_enter_ms = wifi_sta_now_ms();
     if (s == WIFI_STATE_ASSOC)
         wifi_sta.assoc_sent = 0;
+
+    if (s == WIFI_STATE_SCANNING)
+        toast_status("Scanning WiFi");
+    else if (s >= WIFI_STATE_AUTH && s <= WIFI_STATE_WPA)
+        toast_status("Connecting WiFi");
+    else if (s == WIFI_STATE_IDLE && prev >= WIFI_STATE_AUTH)
+        toast_error("WiFi failed");
 }
 
 static int wifi_sta_timed_out(void)

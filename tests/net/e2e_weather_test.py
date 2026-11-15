@@ -83,6 +83,7 @@ class TestWeatherPage(E2ETestCase):
     """Weather page in the emulator with wifi defconfig."""
 
     _build_ok = False
+    _base_emu_url = None
 
     @classmethod
     def setUpClass(cls):
@@ -106,6 +107,7 @@ class TestWeatherPage(E2ETestCase):
                 'Weather page E2E tests run once this defconfig builds.\n')
         try:
             super().setUpClass()
+            cls._base_emu_url = cls.emu_url
             cls.emu_url += (
                 f'&wifi=oss&net=internet'
                 f'&wifi-ssid={WIFI_SSID}&wifi-password={WIFI_PASSWORD}'
@@ -113,14 +115,24 @@ class TestWeatherPage(E2ETestCase):
         except unittest.SkipTest:
             pass
 
-    def _boot_page(self):
+    def _boot_page(self, wifi=True):
         if not self._build_ok:
             self.skipTest(f'{DEFCONFIG} defconfig build failed')
         if not FWSC.is_file():
             self.skipTest('No .fwsc produced')
         if not self._browser:
             self.skipTest('Emulator not available')
-        page = self.new_emu_page()
+        if wifi:
+            page = self.new_emu_page()
+        else:
+            page = self._browser.new_page()
+            page._console_logs = []
+            page.on('console', lambda msg: page._console_logs.append(
+                f'[{msg.type}] {msg.text}'))
+            page.on('pageerror', lambda err: page._console_logs.append(
+                f'[pageerror] {err}'))
+            page.goto(self._base_emu_url)
+            page.evaluate("async () => { await import('./main.js'); }")
         page.locator('#open').set_input_files(str(FWSC))
         page.wait_for_function(
             'document.getElementById("status").textContent.includes("ready")')
@@ -152,15 +164,12 @@ class TestWeatherPage(E2ETestCase):
             page.close()
 
     def test_weather_shows_no_data(self):
-        """Weather page shows error state when no network is available."""
-        page = self._boot_page()
+        """Weather page shows loading/error state when no network is available."""
+        page = self._boot_page(wifi=False)
         try:
             ctrl = self.controls(page)
             _navigate_to_weather(ctrl, page)
 
-            # fm1-emu v0.3.0 has no WiFi hardware: the fetch state machine
-            # never fails over, so the spinner stays (observed for 25 s).
-            # The error state needs the --oss-wifi emulator or a device.
             page.wait_for_timeout(5_000)
             self.screenshot(page, 'WEATHER-no-data')
             self.screenshot_lcd(page, 'WEATHER-no-data')
@@ -234,8 +243,8 @@ class TestWeatherPage(E2ETestCase):
             page.close()
 
     def test_weather_cards_placeholder(self):
-        """Cards show --- placeholder values before weather data arrives."""
-        page = self._boot_page()
+        """Cards show --- placeholder values when no network is available."""
+        page = self._boot_page(wifi=False)
         try:
             ctrl = self.controls(page)
             _navigate_to_weather(ctrl, page)
@@ -252,7 +261,7 @@ class TestWeatherPage(E2ETestCase):
 
     def test_weather_page_revisit(self):
         """Leave and re-enter the weather page without crash."""
-        page = self._boot_page()
+        page = self._boot_page(wifi=False)
         try:
             ctrl = self.controls(page)
 
@@ -283,7 +292,7 @@ class TestWeatherPage(E2ETestCase):
 
     def test_weather_spinner_animates(self):
         """Capture frames during loading to verify spinner animation."""
-        page = self._boot_page()
+        page = self._boot_page(wifi=False)
         try:
             ctrl = self.controls(page)
             _navigate_to_weather(ctrl, page)

@@ -152,6 +152,7 @@ static void weather_geo_cb(int status, const uint8_t *body,
 
     if (status != 200 || !body || body_len == 0) {
         modd_log_int("wifi: geo failed status=", (int32_t)status);
+        toast_error("Weather unavailable");
         weather_state = WEATHER_IDLE;
         weather_retries++;
         weather_last_ms = fm1_ms;
@@ -218,6 +219,7 @@ static void weather_wx_cb(int status, const uint8_t *body,
 
     if (status != 200 || !body || body_len == 0) {
         modd_log_int("wifi: weather failed status=", (int32_t)status);
+        toast_error("Weather unavailable");
         weather_state = WEATHER_IDLE;
         weather_retries++;
         weather_last_ms = fm1_ms;
@@ -256,6 +258,7 @@ static void weather_wx_cb(int status, const uint8_t *body,
     weather_dat.updated_ms = fm1_ms;
     weather_dat.valid = 1;
     modd_log_int("wifi: weather ok temp=", (int32_t)weather_dat.temp_c);
+    toast_clear();
     weather_state = WEATHER_DONE;
     weather_last_ms = fm1_ms;
     weather_retries = 0;
@@ -317,6 +320,7 @@ static void weather_fetch_start(void)
     if (weather_state != WEATHER_IDLE && weather_state != WEATHER_DONE)
         return;
     modd_log("wifi: weather fetch start");
+    toast_status("Fetching weather");
     weather_retries = 0;
     if (weather_parse_location()) {
         modd_log("wifi: using fixed location");
