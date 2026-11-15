@@ -1,11 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* Debug log adapter: fixed-size ring buffer for diagnostic messages.
- * Any module can call modd_log() to push a line; the debug UI page
- * reads the ring to display recent messages on the LCD. */
+/* Debug log adapter: diagnostic messages go to the HW debug box (DBG_WR_EN,
+ * MMIO 0x1EEE240) on every build, and optionally to a RAM ring buffer
+ * (CONFIG_DEBUG_LOG_BUF) for the LCD debug page. */
 #ifndef MODD_LOG_H
 #define MODD_LOG_H
 #include <stdint.h>
+
+#define FM1_DBG_CON_ADDR 0x1EEE244u
+
+static void modd_log_hw(const char *s)
+{
+    volatile uint32_t *wr = (volatile uint32_t *)FM1_DBG_CON_ADDR;
+    while (*s)
+        *wr = (uint32_t)(uint8_t)*s++;
+    *wr = (uint32_t)'\n';
+}
 
 #ifdef CONFIG_DEBUG_LOG
 #define MODD_LOG_LINES    CONFIG_DEBUG_LOG_LINES
@@ -14,6 +24,8 @@
 #define MODD_LOG_LINES    32
 #define MODD_LOG_LINE_LEN 40
 #endif
+
+#ifdef CONFIG_DEBUG_LOG_BUF
 
 static char     modd_log_buf[MODD_LOG_LINES][MODD_LOG_LINE_LEN];
 static uint32_t modd_log_ts[MODD_LOG_LINES];
@@ -55,20 +67,33 @@ static uint32_t modd_log_time(uint32_t idx)
     return modd_log_ts[(base + idx) % MODD_LOG_LINES];
 }
 
+#else /* !CONFIG_DEBUG_LOG_BUF */
+
+static volatile uint32_t modd_log_ms;
+
+static void modd_log_init(void) {}
+
+#endif /* CONFIG_DEBUG_LOG_BUF */
+
 #ifdef CONFIG_DEBUG_LOG
 
 static void modd_log(const char *msg)
 {
-    uint32_t slot = modd_log_head % MODD_LOG_LINES;
-    char *dst = modd_log_buf[slot];
-    uint32_t i;
-    for (i = 0; i < MODD_LOG_LINE_LEN - 1 && msg[i]; i++)
-        dst[i] = msg[i];
-    dst[i] = 0;
-    modd_log_ts[slot] = modd_log_ms;
-    modd_log_head = (modd_log_head + 1) % MODD_LOG_LINES;
-    if (modd_log_count < MODD_LOG_LINES)
-        modd_log_count++;
+    modd_log_hw(msg);
+#ifdef CONFIG_DEBUG_LOG_BUF
+    {
+        uint32_t slot = modd_log_head % MODD_LOG_LINES;
+        char *dst = modd_log_buf[slot];
+        uint32_t i;
+        for (i = 0; i < MODD_LOG_LINE_LEN - 1 && msg[i]; i++)
+            dst[i] = msg[i];
+        dst[i] = 0;
+        modd_log_ts[slot] = modd_log_ms;
+        modd_log_head = (modd_log_head + 1) % MODD_LOG_LINES;
+        if (modd_log_count < MODD_LOG_LINES)
+            modd_log_count++;
+    }
+#endif
 #ifdef CONFIG_DEBUG_DAP
     {
         char b[12];
@@ -128,6 +153,25 @@ static void modd_log_hex(const char *prefix, const uint8_t *data, uint32_t len)
     modd_log(line);
 }
 
+static void modd_log_ip(const char *prefix, uint32_t ip)
+{
+    char line[MODD_LOG_LINE_LEN];
+    uint32_t i = 0, octet, d;
+    while (i < MODD_LOG_LINE_LEN - 16 && prefix[i]) {
+        line[i] = prefix[i];
+        i++;
+    }
+    for (d = 0; d < 4; d++) {
+        octet = (ip >> (d * 8)) & 0xFFu;
+        if (octet >= 100) line[i++] = '0' + (char)(octet / 100);
+        if (octet >= 10)  line[i++] = '0' + (char)((octet / 10) % 10);
+        line[i++] = '0' + (char)(octet % 10);
+        if (d < 3) line[i++] = '.';
+    }
+    line[i] = 0;
+    modd_log(line);
+}
+
 #else /* !CONFIG_DEBUG_LOG */
 
 static void modd_log(const char *msg) { (void)msg; }
@@ -138,6 +182,10 @@ static void modd_log_int(const char *prefix, int32_t val)
 static void modd_log_hex(const char *prefix, const uint8_t *data, uint32_t len)
 {
     (void)prefix; (void)data; (void)len;
+}
+static void modd_log_ip(const char *prefix, uint32_t ip)
+{
+    (void)prefix; (void)ip;
 }
 
 #endif /* CONFIG_DEBUG_LOG */

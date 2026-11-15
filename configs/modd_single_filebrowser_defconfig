@@ -1,0 +1,53 @@
+# modd_single_filebrowser: file browser as the home page, no audio.
+# Minimal: only FILES + DISK pages (2 total).
+CONFIG_FIRMWARE_NAME="modd"
+
+# HAL (Melodee variant: cache, clock, power management)
+CONFIG_HAL_SYS_MELODEE=y
+CONFIG_HAL_IRQ_MELODEE=y
+CONFIG_HAL_LCD_MELODEE=y
+CONFIG_HAL_GUARD_MELODEE=y
+CONFIG_HAL_FLASH_MELODEE=y
+CONFIG_HAL_UART_MELODEE=y
+CONFIG_HAL_USB_MELODEE=y
+CONFIG_HAL_TIMER_MELODEE=y
+CONFIG_HAL_MELODEE_CACHE=y
+CONFIG_HAL_MELODEE_CLOCK=y
+CONFIG_HAL_MELODEE_POWER=y
+
+# UI (modd theme, files as home)
+CONFIG_HAL_INPUT_MELODEE=y
+CONFIG_INPUT=y
+CONFIG_UI_MODD=y
+CONFIG_SPLASH_LOGO=y
+CONFIG_GEN_MELODEE_UI=y
+# CONFIG_PAGE_DEMO is not set
+
+# USB (host + device + mass storage)
+CONFIG_USB=y
+CONFIG_USB_HOST=y
+CONFIG_USB_HUB_MAX_DEVICES=12
+CONFIG_UDISK=y
+CONFIG_HOME_PAGE_FILES=y
+CONFIG_STORAGE_MELODEE=y
+
+# Boot + MIDI (minimal)
+CONFIG_BOOT_MELODEE=y
+CONFIG_OTA=y
+CONFIG_MIDI_MELODEE=y
+CONFIG_FLASH=y
+
+# Debug (HW stream only, no UI page)
+CONFIG_DEBUG=y
+CONFIG_DEBUG_LOG=y
+# CONFIG_DEBUG_LOG_BUF is not set
+# CONFIG_DEBUG_DAP is not set
+
+# Disabled subsystems
+# CONFIG_AUDIO is not set
+# CONFIG_LWIP is not set
+# CONFIG_SYS_MENU is not set
+# CONFIG_SCHED is not set
+# CONFIG_MIDI_UART is not set
+# CONFIG_DUAL_CORE is not set
+# CONFIG_BLE is not set

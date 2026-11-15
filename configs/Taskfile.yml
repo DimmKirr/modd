@@ -11,14 +11,21 @@ version: '3'
 tasks:
   _build:
     internal: true
+    deps:
+      - :fm1-platform:download:sdk
+      - :fm1-platform:download:toolchain
+      - :vendor:ensure
     vars:
       DEFCONFIG: '{{.DEFCONFIG}}'
       FWSC: 'build/{{.DEFCONFIG}}/modd.fwsc'
+    env:
+      JIELI_TOOLCHAIN: '{{env "JIELI_TOOLCHAIN" | default (printf "%s/.fm1-toolchain/toolchain" .HOME)}}'
+      AC79_SDK: '{{env "AC79_SDK" | default (printf "%s/.fm1-toolchain/AC79_SDK" .HOME)}}'
+      ALLOW_NONFREE: '{{env "ALLOW_NONFREE" | default ""}}'
     status:
       - test -f '{{.FWSC}}'
     cmds:
-      - task: :build
-        vars: { CLI_ARGS: '--defconfig {{.DEFCONFIG}}' }
+      - uv run --quiet python tools/build/build.py --defconfig {{.DEFCONFIG}}
 
   _test:
     internal: true
@@ -104,6 +111,25 @@ tasks:
     cmds:
       - task: _flash
         vars: { DEFCONFIG: modd_dev_network, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  # --- modd_single_filebrowser ---------------------------------------------------
+  build:modd_single_filebrowser:
+    desc: "Build modd_single_filebrowser defconfig (-> build/modd_single_filebrowser/modd.fwsc)"
+    cmds:
+      - task: _build
+        vars: { DEFCONFIG: modd_single_filebrowser }
+
+  test:modd_single_filebrowser:
+    desc: "Build + E2E test modd_single_filebrowser defconfig"
+    cmds:
+      - task: _test
+        vars: { DEFCONFIG: modd_single_filebrowser, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  flash:modd_single_filebrowser:
+    desc: "Flash modd_single_filebrowser defconfig"
+    cmds:
+      - task: _flash
+        vars: { DEFCONFIG: modd_single_filebrowser, CLI_ARGS: '{{.CLI_ARGS}}' }
 
   # --- modd_wifi_debug ------------------------------------------------------
   build:modd_wifi_debug:

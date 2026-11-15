@@ -8,16 +8,28 @@ config DEBUG
       the DEBUG UI page, and future debug instrumentation.
 
 config DEBUG_LOG
-    bool "Debug log ring buffer"
+    bool "Debug logging"
     default y if DEBUG
     depends on DEBUG
     help
-      Enable a ring buffer for diagnostic messages.
-      Subsystems write via modd_log(); the DEBUG page displays them.
+      Enable diagnostic logging via modd_log(). Lines are always
+      streamed to the HW debug box (DBG_WR_EN, MMIO 0x1EEE240)
+      where the emulator or a JTAG probe can capture them. The
+      optional RAM ring buffer (DEBUG_LOG_BUF) keeps recent lines
+      for the LCD debug page.
+
+config DEBUG_LOG_BUF
+    bool "Debug log RAM ring buffer"
+    default y
+    depends on DEBUG_LOG
+    help
+      Keep recent log lines in a RAM ring buffer so the DEBUG UI
+      page can display them. Disable to save ~13-26 KB of RAM
+      when only the HW debug stream is needed.
 
 config DEBUG_LOG_LINES
     int "Log ring buffer lines"
-    depends on DEBUG_LOG
+    depends on DEBUG_LOG_BUF
     range 64 1024
     default 248
     help

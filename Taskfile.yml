@@ -323,6 +323,7 @@ tasks:
           fi
         } | tee "$LOG"
         ln -sf "logs/${TS}-debug.log" .scratch/debug/debug.log
+        echo "Log saved: .scratch/debug/logs/${TS}-debug.log"
 
   debug:usb:
     desc: "Dump USB host state, SIE registers, and USB log lines (-- --wait N | --follow [--for N])"
@@ -366,6 +367,7 @@ tasks:
           fi
         } | tee "$LOG"
         ln -sf "logs/${TS}-usb.log" .scratch/debug/usb.log
+        echo "Log saved: .scratch/debug/logs/${TS}-usb.log"
 
   debug:usb:host:
     desc: "Enumerate the USB tree as this computer sees it (plug the dock in here) and diff it against the newest FM-1 usb log"
@@ -382,6 +384,7 @@ tasks:
         esac
         python3 .scratch/tools/host-usb-test/host-usb-test.py $FM1 {{.CLI_ARGS}} 2>&1 | tee "$LOG"
         ln -sf "logs/${TS}-usb-host.log" .scratch/debug/usb-host.log
+        echo "Log saved: .scratch/debug/logs/${TS}-usb-host.log"
 
   dock:modules:
     desc: "Collect fm1-dock's prebuilt .dock modules for a USB disk / SD card (task dock:modules -- /path/to/disk; default build/dock)"

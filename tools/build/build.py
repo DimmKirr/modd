@@ -32,6 +32,7 @@ import sys
 import time
 from pathlib import Path
 
+import check_colors
 import fm1pkg_make
 import lz4blk
 
@@ -534,7 +535,7 @@ def build(dry_run=False):
             print(f'ble_rf_tables: copied {src.name} -> {GEN.relative_to(ROOT)}/')
         else:
             raise SystemExit(f'{src} not found; WiFi builds need the shared RF init tables')
-    pending = enabled & {'MIDI_UART', 'DUAL_CORE'}
+    pending = enabled & {'MIDI_UART'}
     unsupported = {s for s in enabled if s.startswith('HAL_') and
                    s.endswith(('_FELUCCA', '_SLOOP'))}
     if pending or unsupported:
@@ -549,6 +550,9 @@ def build(dry_run=False):
         config_h.write_text(filtered)
 
     flags.append(f'-include{GEN}/config.h')
+
+    if 'DUAL_CORE' in enabled:
+        flags.append('-DMODD_DUAL_CORE=1')
 
     version = _firmware_version()
     flags.append(f'-DCONFIG_FIRMWARE_VERSION="{version}"')
@@ -587,7 +591,7 @@ def build(dry_run=False):
         print(f'Then build firmware/stub, firmware/loader and package {OUT.relative_to(ROOT)}/modd.fwsc')
         return
 
-    logo_src = ROOT / 'assets' / 'logo-dark.png'
+    logo_src = ROOT / 'assets' / 'logo.svg'
     logo_hdr = GEN / 'boot_logo.h'
     if logo_src.exists() and not logo_hdr.exists():
         GEN.mkdir(parents=True, exist_ok=True)
@@ -754,6 +758,18 @@ def main():
         genconfig(args.defconfig, outdir=GEN)
     if args.genconfig_only:
         return
+
+    palette_dir = GEN / 'melodee'
+    theme_dirs = [FW / 'src' / 'ui' / 'themes' / 'modd']
+    cc_errors = []
+    if palette_dir.exists():
+        cc_errors.extend(check_colors.check_palette(palette_dir))
+    cc_errors.extend(check_colors.check_theme_sources(theme_dirs))
+    if cc_errors:
+        print(f'check_colors: {len(cc_errors)} issue(s):')
+        for e in cc_errors:
+            print(f'  {e}')
+        raise SystemExit(1)
 
     build(dry_run=args.dry_run)
 

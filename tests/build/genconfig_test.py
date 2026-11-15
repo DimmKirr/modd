@@ -14,7 +14,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 KCONFIG = ROOT / 'Kconfig'
-RESULTS_DIR = Path(__file__).resolve().parent / 'results'
+RESULTS_DIR = Path(__file__).resolve().parents[1] / 'results'
 _run_ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H%M%SZ')
 RUN_DIR = RESULTS_DIR / f'{_run_ts}-test_genconfig'
 
