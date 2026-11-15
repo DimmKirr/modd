@@ -40,6 +40,15 @@ config USB_AUDIO
     help
       Stereo or 4-track capture. Melodee only.
 
+config USB_AUDIO_HOST
+    bool "USB Audio host (external DAC/sound card)"
+    depends on USB_HOST
+    default n
+    help
+      USB Audio Class host driver: use an external USB DAC or sound
+      card plugged into the hub as the FM-1's audio output. Not yet
+      implemented.
+
 config EDITOR
     bool "SysEx web editor protocol"
     depends on USB

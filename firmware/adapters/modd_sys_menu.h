@@ -14,6 +14,9 @@ enum {
 #ifdef CONFIG_DOCK
     SMTAB_INSTR,
 #endif
+#ifdef CONFIG_SYS_MENU_HARDWARE
+    SMTAB_HARDWARE,
+#endif
 #ifdef CONFIG_SYS_MENU_NETWORK
     SMTAB_NETWORK,
 #endif
@@ -27,6 +30,9 @@ static const char *const SMTAB_NAME[SMTAB_COUNT] = {
     "DISPLAY", "CONTROL", "AUDIO", "MIDI", "SYSTEM",
 #ifdef CONFIG_DOCK
     "INSTR",
+#endif
+#ifdef CONFIG_SYS_MENU_HARDWARE
+    "HW",
 #endif
 #ifdef CONFIG_SYS_MENU_NETWORK
     "NET",
@@ -77,7 +83,7 @@ static void    sm_midi_ch_set(uint8_t v)
 }
 #endif
 
-#ifdef CONFIG_SYS_MENU_NETWORK
+#if (defined(CONFIG_SYS_MENU_HARDWARE) || defined(CONFIG_SYS_MENU_NETWORK)) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
 static uint8_t sm_wifi_on_get(void) { return sys_settings.wifi_on; }
 static void    sm_wifi_on_set(uint8_t v)
 {
@@ -88,20 +94,19 @@ static void    sm_wifi_on_set(uint8_t v)
 #endif
 
 #ifdef CONFIG_USB_NET
-/* USB network link (net/usbnet.c, included later). Not persisted: ON
- * holds the port in host mode, which would hide the FM-1 from a computer
- * at boot, so it is a per-session choice made with the phone on the hub. */
 static uint8_t usbnet_wanted;
-static void    usbnet_set_wanted(uint8_t on);
-static uint8_t sm_usbnet_get(void) { return usbnet_wanted; }
-static void    sm_usbnet_set(uint8_t v) { usbnet_set_wanted(v > 0u); }
-#endif
-
-#ifdef CONFIG_USB_NET_ECM
 static uint8_t ecm_wanted;
+static void    usbnet_set_wanted(uint8_t on);
 static void    ecm_set_wanted(uint8_t on);
-static uint8_t sm_ecm_get(void) { return ecm_wanted; }
-static void    sm_ecm_set(uint8_t v) { ecm_set_wanted(v > 0u); }
+static uint8_t sm_usb_net_get(void) { return usbnet_wanted || ecm_wanted; }
+static void    sm_usb_net_set(uint8_t v)
+{
+    uint8_t on = v > 0u;
+    usbnet_set_wanted(on);
+    ecm_set_wanted(on);
+    sys_settings.usb_net_on = on;
+    sys_settings_dirty = 1;
+}
 #endif
 
 #ifdef CONFIG_SYS_MENU_BLE
@@ -142,6 +147,34 @@ static void sm_lights_set(uint8_t v) {
 }
 #endif
 
+/* --- DEVICES tab items --- */
+
+#if defined(CONFIG_SYS_MENU_HARDWARE) && defined(CONFIG_UDISK)
+static uint8_t udisk_is_active(void);
+static void    udisk_activate(void);
+static void    udisk_deactivate(void);
+static uint8_t sm_udisk_get(void) { return udisk_is_active(); }
+static void    sm_udisk_set(uint8_t v) {
+    if (v > 0u) udisk_activate(); else udisk_deactivate();
+}
+#endif
+
+#if defined(CONFIG_SYS_MENU_HARDWARE) && defined(CONFIG_USB_AUDIO)
+static uint8_t sm_usb_audio_get(void) { return 0; }
+static void    sm_usb_audio_set(uint8_t v) { (void)v; }
+#endif
+
+#if defined(CONFIG_SYS_MENU_HARDWARE) && defined(CONFIG_USB_AUDIO_HOST)
+static uint8_t sm_usb_audio_host_get(void) { return 0; }
+static void    sm_usb_audio_host_set(uint8_t v) { (void)v; }
+#endif
+
+#ifdef CONFIG_SYS_MENU_DEMO
+static uint8_t sm_demo_val;
+static uint8_t sm_demo_get(void) { return sm_demo_val; }
+static void    sm_demo_set(uint8_t v) { sm_demo_val = v; }
+#endif
+
 /* --- Item array (static, Kconfig-gated) --- */
 
 static const sys_menu_item_t SYS_MENU[] = {
@@ -154,19 +187,35 @@ static const sys_menu_item_t SYS_MENU[] = {
 #ifdef CONFIG_SYS_MENU_MIDI_CH
     { "MIDI CH",    SMTAB_MIDI,  16,  SM_MIDI_CH,   sm_midi_ch_get,  sm_midi_ch_set },
 #endif
-#if defined(CONFIG_SYS_MENU_NETWORK) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
-    { "WIFI",         SMTAB_NETWORK, 2, SM_ONOFF,   sm_wifi_on_get,  sm_wifi_on_set },
+#if defined(CONFIG_SYS_MENU_HARDWARE) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
+    { "WIFI",         SMTAB_HARDWARE, 2, SM_ONOFF,  sm_wifi_on_get,  sm_wifi_on_set },
 #endif
-#if defined(CONFIG_SYS_MENU_NETWORK) && defined(CONFIG_USB_NET)
-    { "USB NET",      SMTAB_NETWORK, 2, SM_ONOFF,   sm_usbnet_get,   sm_usbnet_set },
+#if defined(CONFIG_SYS_MENU_HARDWARE) && defined(CONFIG_UDISK)
+    { "DISK",         SMTAB_HARDWARE, 2, SM_ONOFF,   sm_udisk_get,    sm_udisk_set },
 #endif
-#if defined(CONFIG_SYS_MENU_NETWORK) && defined(CONFIG_USB_NET_ECM)
-    { "USB ETH",      SMTAB_NETWORK, 2, SM_ONOFF,   sm_ecm_get,      sm_ecm_set },
+#if defined(CONFIG_SYS_MENU_HARDWARE) && defined(CONFIG_USB_AUDIO)
+    { "AUDIO OUT",    SMTAB_HARDWARE, 2, SM_ONOFF,   sm_usb_audio_get, sm_usb_audio_set },
+#endif
+#if defined(CONFIG_SYS_MENU_HARDWARE) && defined(CONFIG_USB_AUDIO_HOST)
+    { "AUDIO IN",     SMTAB_HARDWARE, 2, SM_ONOFF,   sm_usb_audio_host_get, sm_usb_audio_host_set },
+#endif
+#if defined(CONFIG_SYS_MENU_HARDWARE) && defined(CONFIG_USB_NET)
+    { "ETHERNET",     SMTAB_HARDWARE, 2, SM_ONOFF,   sm_usb_net_get,  sm_usb_net_set },
 #endif
 #ifdef CONFIG_SYS_MENU_BLE
     { "BLUETOOTH",    SMTAB_BLE,  2,  SM_ONOFF,     sm_ble_on_get,   sm_ble_on_set },
     { "DISCOVERABLE", SMTAB_BLE,  2,  SM_ONOFF,     sm_ble_disc_get, sm_ble_disc_set },
     { "NAME",         SMTAB_BLE,  1,  SM_BLE_NAME,  sm_ble_name_get, sm_ble_name_set },
+#endif
+#ifdef CONFIG_SYS_MENU_DEMO
+    { "DEMO A",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
+    { "DEMO B",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
+    { "DEMO C",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
+    { "DEMO D",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
+    { "DEMO E",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
+    { "DEMO F",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
+    { "DEMO G",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
+    { "DEMO H",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
 #endif
     { 0, 0, 0, 0, 0, 0 }  /* sentinel */
 };

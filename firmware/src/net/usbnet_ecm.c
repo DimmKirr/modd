@@ -32,10 +32,15 @@ static uint8_t ecm_tx_frame[ECM_FRAME_MAX] __attribute__((section(".pool_net")))
 static uint32_t ecm_rx_len;
 static uint8_t ecm_rx_armed;
 static uint32_t ecm_rx_frames, ecm_tx_frames, ecm_rx_drops;
+static uint32_t ecm_rx_stalls, ecm_rx_errors;
+static uint32_t ecm_stats_next;
+static uint32_t ecm_rx_diag_n;
 
 static void ecm_select(void)
 {
     usb_host_sie_wr(SIE_FADDR, usb_ecm_cand.addr);
+    FM1_EP_TXFUNCADDR(ECM_HOST_EP) = usb_ecm_cand.addr;
+    FM1_EP_RXFUNCADDR(ECM_HOST_EP) = usb_ecm_cand.addr;
     uhost.ep0_mps = usb_ecm_cand.ep0_mps;
 }
 
@@ -94,6 +99,7 @@ static void ecm_status_cb(struct netif *nif)
 {
     if (nif->ip_addr.addr) {
         modd_log("ecm: dhcp bound");
+        toast_clear();
         net_on_up(nif);
     }
 }
@@ -117,7 +123,7 @@ static int ecm_attach(void)
     r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_CONFIG,
                         usb_ecm_cand.cfg_value, 0, 0, 0);
     if (r < 0) { modd_log_int("ecm: set cfg fail ", r); return r; }
-    fm1_delay_ms(50);
+    usb_settle_ms(50);
 
     r = usb_control_msg(0x01, 0x0B, usb_ecm_cand.data_alt,
                         usb_ecm_cand.data_iface, 0, 0);
@@ -142,8 +148,22 @@ static int ecm_attach(void)
                         usb_ecm_cand.ctrl_iface, 0, 0);
     if (r < 0) modd_log_int("ecm: set filter fail ", r);
 
+    /* Diagnostic: log the candidate the ECM parser found */
+    modd_log_int("ecm: addr=", usb_ecm_cand.addr);
+    modd_log_int("ecm: hub=", usb_ecm_cand.hub_addr);
+    modd_log_int("ecm: port=", usb_ecm_cand.hub_port);
+    modd_log_int("ecm: ep_in=", usb_ecm_cand.ep_in);
+    modd_log_int("ecm: ep_out=", usb_ecm_cand.ep_out);
+    modd_log_int("ecm: maxpkt=", usb_ecm_cand.max_packet);
+    modd_log_int("ecm: data_if=", usb_ecm_cand.data_iface);
+    modd_log_int("ecm: data_alt=", usb_ecm_cand.data_alt);
+
     fm1_usb_ep_txbuf(ECM_HOST_EP, ecm_dma_tx);
     fm1_usb_ep_rxbuf(ECM_HOST_EP, ecm_dma_rx);
+    /* H1 diag: do NOT call usb_hub_route_ep() — comment in
+     * usb_hub_mount_msc_idx says writing SIE addresses >= 0x80
+     * corrupts the CON1 state machine. MSC works through hubs
+     * with FADDR alone. */
     usb_host_sie_wr(SIE_INDEX, ECM_HOST_EP);
     usb_host_sie_wr(SIE_TXMAXP, 0xFFu);
     usb_host_sie_wr(SIE_TXCSR1, 0);
@@ -157,6 +177,16 @@ static int ecm_attach(void)
     usb_host_sie_wr(SIE_RXTYPE, (uint32_t)(0x20u | usb_ecm_cand.ep_in));
     fm1_usb_ep_enable((1u << USB_BULK_HOST_EP) | (1u << ECM_HOST_EP));
 
+    /* H3 diag: readback SIE state after EP setup */
+    usb_host_sie_wr(SIE_INDEX, ECM_HOST_EP);
+    modd_log_int("ecm: sie faddr=", (int32_t)usb_host_sie_rd(SIE_FADDR));
+    modd_log_int("ecm: sie txtype=", (int32_t)usb_host_sie_rd(SIE_TXTYPE));
+    modd_log_int("ecm: sie rxtype=", (int32_t)usb_host_sie_rd(SIE_RXTYPE));
+    modd_log_int("ecm: sie txcsr1=", (int32_t)usb_host_sie_rd(SIE_TXCSR1));
+    modd_log_int("ecm: sie rxcsr1=", (int32_t)usb_host_sie_rd(SIE_RXCSR1));
+    modd_log_int("ecm: ep2 txfa=", (int32_t)FM1_EP_TXFUNCADDR(ECM_HOST_EP));
+    modd_log_int("ecm: ep2 rxfa=", (int32_t)FM1_EP_RXFUNCADDR(ECM_HOST_EP));
+
     net_init();
     if (!ecm_up) {
         ip4_addr_t z;
@@ -169,9 +199,10 @@ static int ecm_attach(void)
     ecm_up = 1;
     ecm_rx_armed = 0;
     ecm_rx_len = 0;
-
+    ecm_rx_diag_n = 0;
     netif_set_up(&ecm_netif);
     netif_set_link_up(&ecm_netif);
+    toast_status("USB ethernet");
     dhcp_start(&ecm_netif);
 
     modd_log("ecm: attached");
@@ -186,6 +217,10 @@ static void ecm_detach(void)
     netif_set_down(&ecm_netif);
     net_on_down(&ecm_netif);
     ecm_rx_armed = 0;
+    if (ecm_wanted)
+        toast_error("ETH disconnected");
+    else
+        toast_clear();
     modd_log("ecm: detached");
 }
 
@@ -214,6 +249,13 @@ static void ecm_rx_poll(void)
         usb_host_sie_wr(SIE_RXTYPE, (uint32_t)(0x20u | usb_ecm_cand.ep_in));
         usb_host_sie_wr(SIE_RXCSR1, 0x20u);
         ecm_rx_armed = 1;
+        /* H3 diag: log SIE state on first 3 arm attempts */
+        if (ecm_rx_diag_n < 3) {
+            modd_log_int("ecm: rx arm faddr=", (int32_t)usb_host_sie_rd(SIE_FADDR));
+            modd_log_int("ecm: rx arm rxtype=", (int32_t)usb_host_sie_rd(SIE_RXTYPE));
+            modd_log_int("ecm: rx arm rxcsr1=", (int32_t)usb_host_sie_rd(SIE_RXCSR1));
+            ecm_rx_diag_n++;
+        }
         return;
     }
     csr = usb_host_sie_rd(SIE_RXCSR1);
@@ -221,13 +263,25 @@ static void ecm_rx_poll(void)
         usb_host_sie_wr(SIE_RXCSR1, 0);
         ecm_rx_armed = 0;
         ecm_rx_len = 0;
+        ecm_rx_stalls++;
         return;
     }
     if (csr & 0x0Cu) {
         usb_host_sie_wr(SIE_RXCSR1, 0x20u);
+        ecm_rx_errors++;
         return;
     }
-    if (!(csr & 0x01u)) return;
+    if (!(csr & 0x01u)) {
+        if (!(csr & 0x20u)) {
+            /* NAK: MUSB cleared ReqPkt without data. Re-arm. */
+            usb_host_sie_wr(SIE_RXCSR1, 0x20u);
+            if (ecm_rx_diag_n < 5) {
+                modd_log_int("ecm: nak rearm csr=", (int32_t)csr);
+                ecm_rx_diag_n++;
+            }
+        }
+        return;
+    }
     n = usb_host_sie_rd(SIE_RXCOUNT1) | (usb_host_sie_rd(SIE_RXCOUNT2) << 8);
     if (n > 64u) n = 64u;
     fm1_usb_rx_sync();
@@ -245,6 +299,20 @@ static void ecm_poll(void)
 {
     if (!ecm_up || otg.mode != OTG_HOST || uhost.state == UHOST_DISCONNECTED) return;
     ecm_rx_poll();
+    if (fm1_ms >= ecm_stats_next) {
+        ecm_stats_next = fm1_ms + 10000u;
+        if (ecm_rx_frames | ecm_tx_frames | ecm_rx_drops |
+            ecm_rx_stalls | ecm_rx_errors) {
+            modd_log_int("ecm: rx ", (int32_t)ecm_rx_frames);
+            modd_log_int("ecm: tx ", (int32_t)ecm_tx_frames);
+            if (ecm_rx_drops)
+                modd_log_int("ecm: drops ", (int32_t)ecm_rx_drops);
+            if (ecm_rx_stalls)
+                modd_log_int("ecm: stalls ", (int32_t)ecm_rx_stalls);
+            if (ecm_rx_errors)
+                modd_log_int("ecm: errors ", (int32_t)ecm_rx_errors);
+        }
+    }
 }
 
 static void ecm_init(void)
@@ -252,11 +320,16 @@ static void ecm_init(void)
     ecm_up = 0;
 #ifdef CONFIG_USB_NET_AUTO
     ecm_wanted = 1;
+#else
+    ecm_wanted = sys_settings.usb_net_on;
 #endif
 }
 
 static void ecm_set_wanted(uint8_t on)
 {
+#ifdef CONFIG_USB_NET_AUTO
+    if (!on) return;
+#endif
     ecm_wanted = on;
     modd_log(on ? "ecm: wanted" : "ecm: off");
 }

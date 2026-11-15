@@ -5,6 +5,7 @@
 
 static FATFS udisk_fs;
 static uint8_t udisk_active;
+static uint8_t udisk_is_active(void) { return udisk_active; }
 static void udisk_fmt_size(char *buf, uint32_t bytes);
 
 static void udisk_init(void)
@@ -192,13 +193,12 @@ static const char *udisk_list_title(void) { return udisk_cwd; }
 
 static void udisk_list_open(void)
 {
-    udisk_activate();
     udisk_list_was_mounted = udisk_mounted;
     if (udisk_mounted)
         udisk_opendir(udisk_cwd);
 }
 
-static void udisk_list_close(void) { udisk_deactivate(); }
+static void udisk_list_close(void) { }
 
 static int udisk_list_poll(void)
 {

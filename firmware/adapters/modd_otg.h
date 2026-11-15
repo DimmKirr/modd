@@ -75,7 +75,7 @@ static void otg_init(void)
 static void otg_switch_to_host(void)
 {
     usb_detach();
-    fm1_delay_ms(OTG_SETTLE_MS);
+    usb_settle_ms(OTG_SETTLE_MS);
     usb_host_init(ep0buf);
     modd_log("OTG: -> host");
     otg.mode = OTG_HOST;
@@ -118,7 +118,7 @@ static void otg_poll(uint32_t now_ms)
     if (otg.mode == OTG_DEVICE) {
         int should_switch;
 #ifdef CONFIG_SYS_MENU_USB_MODE
-        if (sys_settings.usb_mode == 0) {
+        if (sys_settings.usb_mode == 0 && !OTG_HOST_WANTED()) {
             should_switch = 0;
         } else
 #endif
@@ -126,8 +126,9 @@ static void otg_poll(uint32_t now_ms)
             /* VBUS is present: normally means a host is connected.
              * But powered hubs backfeed VBUS with no host activity.
              * If we see VBUS but no resets and no config for a while,
-             * force host mode to try hub enumeration. */
-            if (!usb.config && usb.resets == 0) {
+             * force host mode to try hub enumeration.
+             * Only when something actually wants host mode. */
+            if (!usb.config && usb.resets == 0 && OTG_HOST_WANTED()) {
                 if (otg.vbus_nohost_ms == 0) {
                     otg.vbus_nohost_ms = now_ms ? now_ms : 1;
                 } else if (now_ms - otg.vbus_nohost_ms >= OTG_VBUS_NOHOST_MS) {
@@ -153,6 +154,8 @@ static void otg_poll(uint32_t now_ms)
 #if defined(CONFIG_UDISK) || defined(CONFIG_USB_NET)
         if (OTG_HOST_WANTED())
             should_switch = 1;
+        else if (should_switch)
+            should_switch = 0;
 #endif
 
 otg_check_switch:
@@ -172,7 +175,6 @@ otg_check_switch:
             otg.cooldown_until = 0;
         }
     } else if (otg.mode == OTG_HOST) {
-        usb_host_poll();
 #if defined(CONFIG_UDISK) || defined(CONFIG_USB_NET)
         if (!OTG_HOST_WANTED()) {
             modd_log("OTG: host not wanted, -> device");
@@ -180,21 +182,19 @@ otg_check_switch:
             return;
         }
 #endif
+        usb_host_poll(now_ms);
         int failed = uhost.state == UHOST_ERROR;
-        int connected = usb_host_connected();
-        int idle = !connected || failed;
+        int idle = (uhost.state == UHOST_DISCONNECTED) || failed;
         if (idle) {
             if (otg.idle_ms == 0) {
                 otg.idle_ms = now_ms;
                 if (failed)
                     modd_log("OTG: host enum failed, waiting");
                 else
-                    modd_log("OTG: device removed, waiting");
+                    modd_log("OTG: no device found");
             } else if (now_ms - otg.idle_ms >= OTG_HOST_REMOVAL_MS) {
-                if (failed) {
-                    modd_log_int("OTG: cooldown ms", OTG_HOST_COOLDOWN_MS);
-                    otg.cooldown_until = now_ms + OTG_HOST_COOLDOWN_MS;
-                }
+                modd_log_int("OTG: cooldown ms", OTG_HOST_COOLDOWN_MS);
+                otg.cooldown_until = now_ms + OTG_HOST_COOLDOWN_MS;
                 otg_switch_to_device();
             }
         } else {

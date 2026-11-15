@@ -65,6 +65,9 @@ typedef struct __attribute__((packed)) {
 static uint8_t usb_enum_buf[256] __attribute__((aligned(4), section(".pool")));
 
 static int usb_hub_discover(void);
+#ifdef CONFIG_UDISK
+static uint8_t udisk_is_active(void);
+#endif
 #ifdef CONFIG_USB_NET
 static int usb_hub_parse_apple_net(uint8_t addr, uint8_t hub_addr, uint8_t hub_port,
                                    const usb_config_desc_t *cfg, uint16_t total);
@@ -106,7 +109,7 @@ static int usb_host_enumerate(void)
     /* 2. SET_ADDRESS(1) */
     r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_ADDRESS, 1, 0, 0, 0);
     if (r < 0) return -2;
-    fm1_delay_ms(10);
+    usb_settle_ms(10);
     usb_host_sie_wr(SIE_FADDR, 1);
 
     /* 3. GET_DESCRIPTOR(DEVICE) full 18 bytes at addr 1 */
@@ -118,21 +121,33 @@ static int usb_host_enumerate(void)
     modd_log_int("usb: PID ", dev.idProduct);
     modd_log_int("usb: #cfg ", dev.bNumConfigurations);
 
+    uhost.vid = dev.idVendor;
+    uhost.pid = dev.idProduct;
+    uhost.dev_class = dev.bDeviceClass;
+
+    uint8_t num_cfgs = dev.bNumConfigurations;
+    if (num_cfgs == 0) num_cfgs = 1;
+    uint8_t cfg_idx;
+
+    for (cfg_idx = 0; cfg_idx < num_cfgs; cfg_idx++) {
+
     /* 4. GET_DESCRIPTOR(CONFIG) header to learn wTotalLength */
     r = usb_control_msg(USB_DIR_IN, USB_REQ_GET_DESCRIPTOR,
-                        (USB_DT_CONFIG << 8), 0, usb_enum_buf, 9);
-    if (r < 0) return -4;
+                        (USB_DT_CONFIG << 8) | cfg_idx, 0, usb_enum_buf, 9);
+    if (r < 0) { if (cfg_idx == 0) return -4; continue; }
 
     usb_config_desc_t *cfg = (usb_config_desc_t *)usb_enum_buf;
     uint16_t total = cfg->wTotalLength;
-    modd_log_int("usb: cfg total ", total);
-    modd_log_int("usb: #iface ", cfg->bNumInterfaces);
+    if (cfg_idx == 0) {
+        modd_log_int("usb: cfg total ", total);
+        modd_log_int("usb: #iface ", cfg->bNumInterfaces);
+    }
     if (total > sizeof(usb_enum_buf)) total = sizeof(usb_enum_buf);
 
     /* 5. GET_DESCRIPTOR(CONFIG) full */
     r = usb_control_msg(USB_DIR_IN, USB_REQ_GET_DESCRIPTOR,
-                        (USB_DT_CONFIG << 8), 0, usb_enum_buf, total);
-    if (r < 0) return -5;
+                        (USB_DT_CONFIG << 8) | cfg_idx, 0, usb_enum_buf, total);
+    if (r < 0) { if (cfg_idx == 0) return -5; continue; }
 
     /* 6. Parse: find MSC BBB interface + bulk endpoints */
     uint8_t ep_in = 0, ep_out = 0;
@@ -174,23 +189,23 @@ static int usb_host_enumerate(void)
         pos += dlen;
     }
 
-    uhost.vid = dev.idVendor;
-    uhost.pid = dev.idProduct;
-    uhost.dev_class = dev.bDeviceClass;
-
-    if (!ep_in || !ep_out) {
+    if (!ep_in || !ep_out
+#ifndef CONFIG_UDISK
+        || 1  /* no disk support: skip MSC setup, try hub/net paths */
+#else
+        || !udisk_is_active()  /* disk disabled at runtime: skip MSC, try hub/net */
+#endif
+    ) {
         if (dev.bDeviceClass == 0x09) {
             modd_log("usb: hub detected, running discovery");
             r = usb_hub_discover();
             if (r == 0) {
-                modd_log("usb: hub MSC mounted");
+                modd_log("usb: hub device ready");
                 return 0;
             }
             return -6;
         }
 #ifdef CONFIG_USB_NET
-        /* The network link on the cable itself (a phone plugged straight in, the
-         * emulator's --usb ethernet): the hub path's parser, at address 1. */
         if (dev.idVendor == 0x05ACu /* Apple */ && usbnet_wanted) {
             if (usb_hub_parse_apple_net(1, 0, 0, cfg, total) && usbnet_attach() == 0) {
                 uhost.addr = 1;
@@ -216,6 +231,10 @@ static int usb_host_enumerate(void)
             }
         }
 #endif
+        if (cfg_idx + 1 < num_cfgs) {
+            modd_log_int("usb: trying config ", cfg_idx + 2);
+            continue;
+        }
         return -6;
     }
 
@@ -223,7 +242,7 @@ static int usb_host_enumerate(void)
     r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_CONFIG,
                         cfg->bConfigurationValue, 0, 0, 0);
     if (r < 0) return -7;
-    fm1_delay_ms(50);
+    usb_settle_ms(50);
     uhost.addr = 1;
     uhost.ep0_mps_msc = uhost.ep0_mps;
 
@@ -249,4 +268,7 @@ static int usb_host_enumerate(void)
     uhost.state = UHOST_ENUMERATED;
     modd_log("usb: enum ok");
     return 0;
+
+    } /* for cfg_idx */
+    return -6;
 }

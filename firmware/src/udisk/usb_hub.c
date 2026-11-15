@@ -634,16 +634,6 @@ static int usb_hub_discover_device(uint8_t addr, uint8_t parent_hub,
     }
     if (cur_ifc) usb_hub_log_iface(addr, cur_ifc, eps, neps);
 
-    /* SET_CONFIGURATION */
-    cfg = (usb_config_desc_t *)usb_enum_buf;
-    r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_CONFIG,
-                        cfg->bConfigurationValue, 0, 0, 0);
-    if (r < 0) {
-        modd_log_int("hub: set cfg fail r=", r);
-        return r;
-    }
-    fm1_delay_ms(50);
-
     /* Record in device table */
     usb_dev_entry_t *ent = usb_devtab_alloc();
     if (ent) {
@@ -654,28 +644,55 @@ static int usb_hub_discover_device(uint8_t addr, uint8_t parent_hub,
     }
 
     /* ---- Dispatch by class ---- */
+    /* SET_CONFIGURATION is only sent for devices we will actually use:
+     * hubs (must configure to enumerate ports), MSC (when disk enabled),
+     * CDC/vendor (when network enabled).  Skipping it for unwanted
+     * devices avoids bus traffic that can make cheap hubs unresponsive. */
 
-    if (ddev.bDeviceClass == USB_CLASS_HUB) {
-        /* Recurse into sub-hub */
+    if (ddev.bDeviceClass == USB_CLASS_HUB || iface_class == USB_CLASS_HUB) {
+        cfg = (usb_config_desc_t *)usb_enum_buf;
+        r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_CONFIG,
+                            cfg->bConfigurationValue, 0, 0, 0);
+        if (r < 0) { modd_log_int("hub: set cfg fail r=", r); return r; }
+        usb_settle_ms(200);
         modd_log("hub: sub-hub found");
         goto hub_enumerate_ports;
     }
 
-    /* For composite devices (bDeviceClass==0), use interface class */
+    cfg = (usb_config_desc_t *)usb_enum_buf;
+
     switch (iface_class) {
     case USB_CLASS_MSC:
-        usb_hub_parse_msc(addr, parent_hub, parent_port,
-                          ddev.idVendor, ddev.idProduct);
+#ifdef CONFIG_UDISK
+        if (udisk_is_active()) {
+            r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_CONFIG,
+                                cfg->bConfigurationValue, 0, 0, 0);
+            if (r < 0) { modd_log_int("hub: set cfg fail r=", r); return r; }
+            usb_settle_ms(50);
+            usb_hub_parse_msc(addr, parent_hub, parent_port,
+                              ddev.idVendor, ddev.idProduct);
+        } else {
+            modd_log_int("hub: MSC skipped (off) addr=", addr);
+        }
+#else
+        modd_log_int("hub: MSC skipped addr=", addr);
+#endif
         break;
     case USB_CLASS_CDC:
     case USB_CLASS_VENDOR:
+#ifdef CONFIG_USB_NET_ECM
+        if (ecm_wanted) {
+            r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_CONFIG,
+                                cfg->bConfigurationValue, 0, 0, 0);
+            if (r < 0) { modd_log_int("hub: set cfg fail r=", r); return r; }
+            usb_settle_ms(50);
+        }
+#endif
         usb_hub_on_cdc(addr, ddev.idVendor, ddev.idProduct);
         break;
     case USB_CLASS_BILLBOARD:
         usb_hub_on_billboard(addr, ddev.idVendor, ddev.idProduct);
         break;
-    case USB_CLASS_HUB:
-        goto hub_enumerate_ports;
     default:
         usb_hub_on_unknown(addr, iface_class, ddev.idVendor, ddev.idProduct);
         break;
@@ -685,8 +702,18 @@ static int usb_hub_discover_device(uint8_t addr, uint8_t parent_hub,
 hub_enumerate_ports:
     ;
     usb_hub_desc_t hdesc;
-    r = usb_control_msg(USB_RT_HUB_GET, HUB_REQ_GET_DESCRIPTOR,
-                        (USB_DT_HUB << 8), 0, (uint8_t *)&hdesc, 7);
+    {
+        uint8_t hd_try;
+        r = -1;
+        for (hd_try = 0; hd_try < 3 && r < 0; hd_try++) {
+            if (hd_try) {
+                usb_settle_ms(200);
+                usb_host_sie_wr(SIE_FADDR, addr);
+            }
+            r = usb_control_msg(USB_RT_HUB_GET, HUB_REQ_GET_DESCRIPTOR,
+                                (USB_DT_HUB << 8), 0, (uint8_t *)&hdesc, 7);
+        }
+    }
     if (r < 0) {
         modd_log_int("hub: hub desc fail r=", r);
         return r;
@@ -706,7 +733,7 @@ hub_enumerate_ports:
      * announce themselves on the ports */
     uint32_t pwr_delay = hdesc.bPwrOn2PwrGood * 2;
     if (pwr_delay < 100) pwr_delay = 100;
-    fm1_delay_ms(pwr_delay + 100);
+    usb_settle_ms(pwr_delay + 100);
 
     /* Enumerate each connected port. A hub that stops answering on EP0
      * (timeout or no response, not a stall) is abandoned: every further
@@ -744,7 +771,7 @@ hub_enumerate_ports:
             uint32_t post_status = 0;
             if (attempt) {
                 modd_log_int("hub: SET_ADDRESS retry ", (int32_t)attempt);
-                fm1_delay_ms(HUB_ADDR_RETRY_MS);
+                usb_settle_ms(HUB_ADDR_RETRY_MS);
             }
             if (attempt == HUB_ADDR_TRIES - 1u && (hdesc.wHubCharacteristics & 3u) == 1u) {
                 /* last try: a device that stays enabled but deaf through two resets (the
@@ -752,9 +779,9 @@ hub_enumerate_ports:
                  * switches port power individually, as Linux's hub_port_power_cycle does */
                 modd_log_int("hub: port power cycle p=", p);
                 usb_control_msg(USB_RT_PORT_CLR, HUB_REQ_CLEAR_FEATURE, HUB_FEAT_PORT_POWER, p, 0, 0);
-                fm1_delay_ms(HUB_PORT_OFF_MS);
+                usb_settle_ms(HUB_PORT_OFF_MS);
                 usb_control_msg(USB_RT_PORT_SET, HUB_REQ_SET_FEATURE, HUB_FEAT_PORT_POWER, p, 0, 0);
-                fm1_delay_ms(pwr_delay + 100);
+                usb_settle_ms(pwr_delay + 100);
             }
             r = usb_control_msg(USB_RT_PORT_SET, HUB_REQ_SET_FEATURE,
                                 HUB_FEAT_PORT_RESET, p, 0, 0);
@@ -762,7 +789,7 @@ hub_enumerate_ports:
             if (r < 0) { port_done = 1; break; }
 
             for (tries = 0; tries < 10; tries++) {
-                fm1_delay_ms(50);
+                usb_settle_ms(50);
                 r = usb_control_msg(USB_RT_PORT_GET, HUB_REQ_GET_STATUS,
                                     0, p, ps_buf, 4);
                 if (r < 4) break;
@@ -780,11 +807,11 @@ hub_enumerate_ports:
             if (!(post_status & HUB_PS_ENABLE)) { port_done = 1; break; }
             /* reset recovery before the first request: the spec's 10 ms the first time,
              * HUB_ADDR_RETRY_MS on a retry */
-            fm1_delay_ms(attempt ? HUB_ADDR_RETRY_MS : 20);
+            usb_settle_ms(attempt ? HUB_ADDR_RETRY_MS : 20);
 
             /* SET_ADDRESS at default addr 0: hub repeats to the just-reset port */
             usb_host_sie_wr(SIE_FADDR, 0);
-            fm1_delay_ms(10);
+            usb_settle_ms(10);
             r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_ADDRESS, new_addr, 0, 0, 0);
             if (r < 0) {
                 modd_log_int("hub: SET_ADDRESS fail r=", r);
@@ -797,11 +824,39 @@ hub_enumerate_ports:
             usb_host_sie_wr(SIE_FADDR, addr);
             continue;
         }
-        fm1_delay_ms(10);
+        usb_settle_ms(10);
 
         usb_hub_discover_device(new_addr, addr, p, depth + 1);
         usb_host_sie_wr(SIE_FADDR, addr);
         uhost.ep0_mps = my_mps;
+    }
+
+    /* Power off ports with unwanted devices to reduce current draw.
+     * Only on hubs with per-port power switching (wHubCharacteristics 1:0 == 01). */
+    if ((hdesc.wHubCharacteristics & 3u) == 1u) {
+        for (p = 1; p <= nports; p++) {
+            uint32_t i;
+            uint8_t wanted = 0;
+            for (i = 0; i < USB_MAX_DEVICES; i++) {
+                if (usb_devtab[i].addr == 0) continue;
+                if (usb_devtab[i].hub_addr != addr || usb_devtab[i].hub_port != p) continue;
+                uint8_t dc = usb_devtab[i].dev_class;
+                if (dc == USB_CLASS_HUB) { wanted = 1; break; }
+#ifdef CONFIG_UDISK
+                if (dc == USB_CLASS_MSC && udisk_is_active()) { wanted = 1; break; }
+#endif
+#ifdef CONFIG_USB_NET_ECM
+                if ((dc == USB_CLASS_CDC || dc == USB_CLASS_VENDOR) && ecm_wanted) { wanted = 1; break; }
+#endif
+#ifdef CONFIG_USB_NET
+                if ((dc == USB_CLASS_CDC || dc == USB_CLASS_VENDOR) && usbnet_wanted) { wanted = 1; break; }
+#endif
+            }
+            if (!wanted) {
+                usb_control_msg(USB_RT_PORT_CLR, HUB_REQ_CLEAR_FEATURE,
+                                HUB_FEAT_PORT_POWER, p, 0, 0);
+            }
+        }
     }
 
     return 0;
@@ -900,24 +955,25 @@ static int usb_hub_discover(void)
     }
     modd_log("hub: === discovery done ===");
 
-    if (r < 0) return r;
+    /* A hub going unresponsive at the end of discovery (hub_dead) does
+     * not invalidate devices already addressed: try candidates anyway. */
 
     /* Try each MSC candidate until one initializes */
-    uint8_t mi;
     int disk = 0;
-    for (mi = 0; mi < usb_hub_msc_count; mi++) {
-        r = usb_hub_mount_msc_idx(mi);
-        if (r < 0) continue;
-        r = msc_init_device();
-        if (r == 0) { disk = 1; break; }
-        modd_log_int("hub: MSC init fail r=", r);
+#ifdef CONFIG_UDISK
+    if (udisk_is_active()) {
+        uint8_t mi;
+        for (mi = 0; mi < usb_hub_msc_count; mi++) {
+            r = usb_hub_mount_msc_idx(mi);
+            if (r < 0) continue;
+            r = msc_init_device();
+            if (r == 0) { disk = 1; break; }
+            modd_log_int("hub: MSC init fail r=", r);
+        }
     }
-    if (usb_hub_msc_count == 0)
-        modd_log("hub: no MSC device found");
+#endif
 
 #ifdef CONFIG_USB_NET
-    /* The network link comes up next to the disk; the session is a
-     * success when either did. */
     if (usb_net_cand.addr && usbnet_wanted && usbnet_attach() == 0)
         return 0;
 #endif

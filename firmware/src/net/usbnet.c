@@ -41,6 +41,8 @@ static uint32_t usbnet_rx_frames, usbnet_tx_frames, usbnet_rx_drops;
 static void usbnet_select(void)
 {
     usb_host_sie_wr(SIE_FADDR, usb_net_cand.addr);
+    FM1_EP_TXFUNCADDR(USBNET_HOST_EP) = usb_net_cand.addr;
+    FM1_EP_RXFUNCADDR(USBNET_HOST_EP) = usb_net_cand.addr;
     uhost.ep0_mps = usb_net_cand.ep0_mps;
 }
 
@@ -109,7 +111,7 @@ static int usbnet_attach(void)
     usbnet_select();
     r = usb_control_msg(USB_DIR_OUT, USB_REQ_SET_CONFIG, usb_net_cand.cfg_value, 0, 0, 0);
     if (r < 0) { modd_log_int("usbnet: set cfg fail ", r); return r; }
-    fm1_delay_ms(50);
+    usb_settle_ms(50);
     /* SET_INTERFACE: recipient interface, wValue = alternate setting */
     r = usb_control_msg(0x01, 0x0B, usb_net_cand.alt, usb_net_cand.iface, 0, 0);
     if (r < 0) { modd_log_int("usbnet: set iface fail ", r); return r; }
@@ -230,7 +232,13 @@ static void usbnet_rx_poll(void)
         usb_host_sie_wr(SIE_RXCSR1, 0x20u);
         return;
     }
-    if (!(csr & 0x01u)) return;                       /* nothing yet */
+    if (!(csr & 0x01u)) {
+        if (!(csr & 0x20u)) {
+            /* NAK: MUSB cleared ReqPkt without data. Re-arm. */
+            usb_host_sie_wr(SIE_RXCSR1, 0x20u);
+        }
+        return;
+    }
     n = usb_host_sie_rd(SIE_RXCOUNT1) | (usb_host_sie_rd(SIE_RXCOUNT2) << 8);
     if (n > 64u) n = 64u;
     fm1_usb_rx_sync();
@@ -257,12 +265,15 @@ static void usbnet_init(void)
 #ifdef CONFIG_USB_NET_AUTO
     usbnet_wanted = 1;
 #else
-    usbnet_wanted = 0;
+    usbnet_wanted = sys_settings.usb_net_on;
 #endif
 }
 
 static void usbnet_set_wanted(uint8_t on)
 {
+#ifdef CONFIG_USB_NET_AUTO
+    if (!on) return;
+#endif
     usbnet_wanted = on;
     modd_log(on ? "usbnet: wanted" : "usbnet: off");
 }

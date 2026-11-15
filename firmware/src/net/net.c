@@ -56,9 +56,14 @@ static void net_elect_default(void)
 
 static void net_on_up(struct netif *nif)
 {
-    uint32_t ip = nif->ip_addr.addr;
-    modd_log_hex("net: up ip=", (const uint8_t *)&ip, 4);
-    modd_log_hex("net: gw=", (const uint8_t *)&nif->gw.addr, 4);
+    modd_log_ip("net: ip ", nif->ip_addr.addr);
+    modd_log_ip("net: mask ", nif->netmask.addr);
+    modd_log_ip("net: gw ", nif->gw.addr);
+    {
+        const ip_addr_t *d = dns_getserver(0);
+        if (d && ip_2_ip4(d)->addr)
+            modd_log_ip("net: dns ", ip_2_ip4(d)->addr);
+    }
     net_elect_default();
 #ifdef CONFIG_LWIP
     weather_fetch_start();

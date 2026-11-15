@@ -30,7 +30,6 @@ CONFIG_USB_HUB_MAX_DEVICES=12
 # Network (lwIP + USB tethering)
 CONFIG_LWIP=y
 CONFIG_USB_NET=y
-CONFIG_USB_NET_ECM=y
 # host mode from boot for the link: the emulator's --usb ethernet needs no menu visit
 CONFIG_USB_NET_AUTO=y
 
@@ -42,7 +41,8 @@ CONFIG_WIFI_PASSWORD=""
 CONFIG_WIFI_AUTOJOIN=y
 CONFIG_WIFI_DEBUG_AUTOSCAN=y
 
-# Network clients (both link-agnostic, depend on LWIP)
+# Network clients (all link-agnostic, depend on LWIP)
+CONFIG_CDP=y
 CONFIG_WEATHER=y
 CONFIG_WEATHER_LOCATION="40.7829,-73.9654,New York,US"
 CONFIG_WEATHER_UNIT_F=y

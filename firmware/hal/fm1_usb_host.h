@@ -40,6 +40,15 @@
 #define USB_BULK_HOST_EP  1
 #define USB_EP0_MAXP_DEFAULT 64
 
+/* Per-EP function address registers (MUSB multipoint).
+ * These CANNOT be accessed through the CON1 byte-map (addresses >= 0x80
+ * corrupt the DONE flag). Direct memory-mapped writes are required.
+ * husb0_sie_base = 0x10000 + (64 * 0x60) * 4 = 0x16000
+ * SDK: WL82.h H0_EPn_TXFUNCADDR / H0_EPn_RXFUNCADDR */
+#define FM1_SIE_BASE        0x16000u
+#define FM1_EP_TXFUNCADDR(ep)  (*(volatile uint8_t *)(FM1_SIE_BASE + 0x80u + 8u * (ep)))
+#define FM1_EP_RXFUNCADDR(ep)  (*(volatile uint8_t *)(FM1_SIE_BASE + 0x84u + 8u * (ep)))
+
 /* bMaxPacketSize0 as a full-speed device may declare it; anything else
  * (a truncated read) falls back to 8, which every device accepts. */
 static uint8_t usb_ep0_mps_valid(uint8_t v)
@@ -70,6 +79,7 @@ static uint32_t usb_host_sie_rd(uint32_t r)
 #define UHOST_ENUMERATED    2
 #define UHOST_MSC_READY     3
 #define UHOST_ERROR         0xFF
+#define USB_HOST_DISC_MS    2000u
 
 typedef struct {
     uint8_t  state;
@@ -101,6 +111,7 @@ typedef struct {
     int8_t   ctl_r;
     uint8_t  ctl_csr0;
     uint8_t  ctl_faddr;
+    uint32_t disc_ms;      /* non-blocking disconnect debounce timestamp */
 } usb_host_t;
 
 static usb_host_t uhost;
@@ -142,10 +153,11 @@ static void usb_host_init(void *ep0)
     uhost.sector_size = 512;
     uhost.ep0_mps = USB_EP0_MAXP_DEFAULT;
     uhost.lun = 0;
+    uhost.disc_ms = 0;
     fm1_usb_reset();
-    fm1_delay_ms(25);
+    usb_settle_ms(25);
     fm1_usb_host_attach(ep0);
-    fm1_delay_ms(25);
+    usb_settle_ms(25);
     usb_host_sie_wr(SIE_INTRUSBE, 0);
     usb_host_sie_wr(SIE_INTRTX1E, 0);
     usb_host_sie_wr(SIE_INTRTX2E, 0);
@@ -170,6 +182,9 @@ static int usb_host_connected(void)
 /* Forward declarations for Phase 2-5 (defined in udisk/*.c, included after) */
 static int usb_host_enumerate(void);
 static int msc_init_device(void);
+#ifdef CONFIG_UDISK
+static uint8_t udisk_is_active(void);
+#endif
 static int msc_read_sectors(uint32_t lba, uint8_t *buf, uint32_t count);
 static int msc_write_sectors(uint32_t lba, const uint8_t *buf, uint32_t count);
 
@@ -240,24 +255,24 @@ static int usb_host_bus_reset(void)
     uint32_t attempt;
     for (attempt = 0; attempt < 3; attempt++) {
         usb_host_sie_wr(SIE_POWER, 0x08u);
-        fm1_delay_ms(30);
+        usb_settle_ms(30);
         usb_host_sie_wr(SIE_POWER, 0);
-        fm1_delay_ms(150);
+        usb_settle_ms(150);
         uint32_t dc = usb_host_sie_rd(SIE_DEVCTL);
         if (dc & 0x40u) return 1;   /* FSDev detected */
         if (dc & 0x20u) return -1;  /* LSDev: not supported */
         usb_host_log_hex8("usb: reset retry dc=", dc);
-        fm1_delay_ms(200);
+        usb_settle_ms(200);
     }
     return 0;
 }
 
-static void usb_host_poll(void)
+static void usb_host_poll(uint32_t now_ms)
 {
     if (uhost.state == UHOST_DISCONNECTED) {
         if (usb_host_connected()) {
             uhost.state = UHOST_ATTACHED;
-            fm1_delay_ms(200);
+            usb_settle_ms(200);
             if (!usb_host_connected()) {
                 uhost.state = UHOST_DISCONNECTED;
                 return;
@@ -274,14 +289,18 @@ static void usb_host_poll(void)
             }
             int r = usb_host_enumerate();
             if (r == 0) {
+                toast_status("USB connected");
                 modd_log_int("USB host: VID ", uhost.vid);
                 modd_log_int("USB host: PID ", uhost.pid);
                 modd_log("USB host: device connected");
                 if (uhost.state == UHOST_MSC_READY) {
                     modd_log_int("USB host: sectors ", (int32_t)uhost.capacity);
-                } else if (!uhost.ep_in || !uhost.ep_out) {
-                    /* no disk, the network link alone: nothing for MSC to initialise */
-                    modd_log("USB host: no disk");
+                } else if (!uhost.ep_in || !uhost.ep_out
+#ifdef CONFIG_UDISK
+                           || !udisk_is_active()
+#endif
+                ) {
+                    modd_log("USB host: ready (no MSC)");
                 } else {
                     r = msc_init_device();
                     if (r == 0) {
@@ -300,10 +319,18 @@ static void usb_host_poll(void)
         }
     } else if (uhost.state >= UHOST_ATTACHED) {
         if (!usb_host_connected()) {
-            modd_log("USB: device removed");
-            usb_host_log_hex8("usb: devctl=", usb_host_sie_rd(SIE_DEVCTL));
-            usb_host_log_hex8("usb: intrusb=", usb_host_sie_rd(SIE_INTRUSB));
-            uhost.state = UHOST_DISCONNECTED;
+            if (uhost.disc_ms == 0) {
+                uhost.disc_ms = now_ms ? now_ms : 1;
+            } else if (now_ms - uhost.disc_ms >= USB_HOST_DISC_MS) {
+                modd_log("USB: device removed");
+                usb_host_log_hex8("usb: devctl=", usb_host_sie_rd(SIE_DEVCTL));
+                usb_host_log_hex8("usb: intrusb=", usb_host_sie_rd(SIE_INTRUSB));
+                toast_status("USB removed");
+                uhost.state = UHOST_DISCONNECTED;
+                uhost.disc_ms = 0;
+            }
+        } else {
+            uhost.disc_ms = 0;
         }
     }
 }

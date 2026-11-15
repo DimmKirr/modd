@@ -39,6 +39,9 @@ typedef struct {
 #ifdef CONFIG_SYS_MENU_NETWORK
     uint8_t wifi_on;        /* 0 = OFF, 1 = ON (user preference; module checks at connect) */
 #endif
+#ifdef CONFIG_USB_NET
+    uint8_t usb_net_on;    /* 0 = OFF, 1 = ON (auto-detects ECM or iPhone) */
+#endif
 #ifdef CONFIG_UI_MODD
     uint8_t ui_pal;         /* palette: UI_PAL_TAG + index (ui/themes/modd/page_colors.c) */
     uint8_t ui_lights;      /* LED brightness: 0=OFF, 1=LOW, 2=MID, 3=HIGH, 4=FULL */
@@ -49,9 +52,7 @@ typedef struct {
 static sys_settings_t sys_settings;
 static volatile uint8_t sys_settings_dirty;
 
-#ifdef CONFIG_UI_MODD
-static uint8_t modd_lights;
-#endif
+/* modd_lights is declared in modd.c (needs to exist even without SYS_MENU) */
 
 static void sys_settings_defaults(void)
 {
@@ -61,8 +62,11 @@ static void sys_settings_defaults(void)
 #ifdef CONFIG_SYS_MENU_MIDI_CH
     sys_settings.midi_ch = 0;    /* channel 1 */
 #endif
-#ifdef CONFIG_SYS_MENU_NETWORK
-    sys_settings.wifi_on = 1;    /* ON */
+#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+    sys_settings.wifi_on = 0;    /* OFF */
+#endif
+#ifdef CONFIG_USB_NET
+    sys_settings.usb_net_on = 0;
 #endif
 #ifdef CONFIG_SYS_MENU_BLE
     sys_settings.ble_on = 1;     /* ON */
@@ -79,6 +83,19 @@ static void sys_settings_init(void)
 {
     sys_settings_defaults();
     sys_fl_load(&sys_settings, sizeof sys_settings);
+#ifdef CONFIG_SYS_MENU_MIDI_CH
+    if (sys_settings.midi_ch > 15u) sys_settings.midi_ch = 0;
+#endif
+#ifdef CONFIG_SYS_MENU_BLE
+    if (sys_settings.ble_on > 1u) sys_settings.ble_on = 1;
+    if (sys_settings.ble_discoverable > 1u) sys_settings.ble_discoverable = 1;
+#endif
+#ifdef CONFIG_USB_NET
+    if (sys_settings.usb_net_on > 1u) sys_settings.usb_net_on = 0;
+#endif
+#ifdef CONFIG_UI_MODD
+    if (sys_settings.ui_lights > 4u) sys_settings.ui_lights = 3;
+#endif
     sys_settings_dirty = 0;
 }
 

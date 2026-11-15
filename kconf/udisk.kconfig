@@ -28,4 +28,12 @@ config UDISK
       USB mass storage class with FAT32 filesystem.
       Provides file browsing via the FILES page.
 
+config HOME_PAGE_FILES
+    bool "File browser as home page"
+    depends on UDISK
+    default n
+    help
+      Register the FILES page as VIEW_HOME so it opens on boot
+      instead of the default HOME page.
+
 endmenu
