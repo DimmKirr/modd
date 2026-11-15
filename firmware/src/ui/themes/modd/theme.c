@@ -450,7 +450,9 @@ static void mt_render_header(void)
 #if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
         {
             uint32_t wb = mt_wifi_bars();
-            if (wb > 0 || wifi_get_state() != WIFI_STATE_OFF)
+            /* no icon once WiFi is switched off in Settings, even though the
+             * radio stays initialised until the next boot */
+            if (wb > 0 || (wifi_get_state() != WIFI_STATE_OFF && sys_settings.wifi_on))
                 mt_wifi_icon(ix - 11, UI_HEAD_H - 6, wb, wb == 3u ? T_THEME : T_MID, T_LINE);
         }
 #endif

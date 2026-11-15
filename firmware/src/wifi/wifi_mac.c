@@ -458,6 +458,12 @@ static void wifi_mac_rx(uint8_t *data, uint32_t len, int8_t rssi)
                 modd_log_hex("wifi: d4us snap=", data + 26, len > 40 ? 14 : len - 26);
         }
 #endif
+        /* addr1 is the receiver. The radio also hands over data frames meant
+         * for other stations, so take ours and group-addressed ones only.
+         * Without this a neighbour's 4-way handshake reaches our WPA code,
+         * which answers it and then logs its message 3 as a MIC failure. */
+        if (len < 10 || (!(data[4] & 0x01u) && !wifi_mac_addr_eq(data + 4, wifi_mac_addr)))
+            return;
         wifi_data_rx(data, len);
     }
 }

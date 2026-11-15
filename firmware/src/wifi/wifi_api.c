@@ -193,6 +193,31 @@ static void wifi_autoscan_poll(void)
 }
 #endif
 
+#if defined(CONFIG_WIFI_AUTOJOIN) && defined(CONFIG_WIFI_SSID) && !defined(CONFIG_WIFI_DEBUG_AUTOSCAN)
+/* Join without the panel. While WiFi is on and the station sits idle (not
+ * joined yet, or a join just failed, or the AP went away), scan; the end of
+ * a scan joins CONFIG_WIFI_SSID (wifi_sta_poll). First scan 2 s after the
+ * task starts, then every 15 s. With the debug auto-scan built in, that one
+ * does the scanning. */
+static void wifi_autojoin_poll(void)
+{
+    static uint32_t next_ms = 2000u;
+    uint32_t now = wifi_sta_now_ms();
+    if (wifi_sta.state != WIFI_STATE_IDLE || CONFIG_WIFI_SSID[0] == '\0')
+        return;
+#ifdef CONFIG_SYS_MENU_NETWORK
+    /* checked before the timer, so switching WiFi on scans straight away */
+    if (!sys_settings.wifi_on)
+        return;
+#endif
+    if ((int32_t)(now - next_ms) < 0)
+        return;
+    next_ms = now + 15000u;
+    modd_log("wifi: scan to join");
+    wifi_scan(0);
+}
+#endif
+
 #ifdef CONFIG_WIFI_DEBUG_WLCTL0_PROBE
 /* WL_CTL0 release probe (iteration 12i, 2026-11-04) [observations
  * 2026-11-04T00:04]. The running vendor radio reads 0x14000 = 0 while its MAC
@@ -277,12 +302,23 @@ static void wifi_poll(void)
     wifi_timer_poll();
     wifi_sdio_poll_irq();
     wifi_sta_poll();
+#ifdef CONFIG_SYS_MENU_NETWORK
+    /* Settings > HW > WIFI switched off while joining or joined: leave the
+     * network now, not at the next boot. The radio stays initialised, so
+     * switching it back on joins again. */
+    if (!sys_settings.wifi_on && wifi_sta.state >= WIFI_STATE_AUTH) {
+        wifi_disconnect();
+        toast_status("WiFi off");
+    }
+#endif
 #ifdef CONFIG_WIFI_DEBUG_WLCTL0_PROBE
     wifi_wlctl0_probe_poll();
     wifi_wl0_retry_poll();
 #endif
 #ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     wifi_autoscan_poll();
+#elif defined(CONFIG_WIFI_AUTOJOIN) && defined(CONFIG_WIFI_SSID)
+    wifi_autojoin_poll();
 #endif
 }
 

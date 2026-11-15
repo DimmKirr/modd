@@ -194,9 +194,14 @@ static uint32_t wifi_data_encrypt(uint8_t *frame, uint32_t len)
                           frame + hdr_len + 8, data_len,
                           frame + hdr_len + 8 + data_len);
 
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN   /* per packet: floods the log ring once traffic flows */
     modd_log_int("wifi: ccmp enc dlen=", (int32_t)data_len);
+#endif
     return hdr_len + 8 + data_len + 8; /* hdr + ccmp_hdr + data + MIC */
 }
+
+static uint32_t wifi_data_dec_fails;     /* unicast frames that failed CCMP */
+static uint32_t wifi_data_group_drops;   /* protected group frames, undecryptable without a GTK */
 
 /* Decrypt a received CCMP-protected 802.11 data frame in place.
  * Removes the CCMP header and MIC, clears Protected bit.
@@ -219,10 +224,16 @@ static uint32_t wifi_data_decrypt(uint8_t *frame, uint32_t len)
     if (wifi_wpa_ccmp_decrypt(frame, hdr_len,
                               frame + hdr_len + 8, data_len,
                               frame + hdr_len + 8 + data_len) != 0) {
-        modd_log("wifi: ccmp dec FAIL");
+        /* a frame sent to us alone that our pairwise key cannot open: the
+         * first few in full, then one line per 64 so it cannot fill the ring */
+        wifi_data_dec_fails++;
+        if (wifi_data_dec_fails <= 8u || (wifi_data_dec_fails & 63u) == 0u)
+            modd_log_int("wifi: ccmp dec FAIL n=", (int32_t)wifi_data_dec_fails);
         return 0;
     }
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN   /* per packet */
     modd_log_int("wifi: ccmp dec ok len=", (int32_t)data_len);
+#endif
 
     /* shift payload left to remove CCMP header */
     {
@@ -319,6 +330,15 @@ static void wifi_data_rx(const uint8_t *frame, uint32_t len)
 
     /* decrypt if protected */
     if (fc & WIFI_FC_PROTECTED) {
+        /* Broadcast and multicast frames are encrypted with the group key,
+         * which the handshake does not install yet (no GTK unwrap), so the
+         * pairwise key can never open them: drop them here, counted, rather
+         * than report each one as a decrypt failure. */
+        if (buf[4] & 0x01u) {
+            if (wifi_data_group_drops++ == 0u)
+                modd_log("wifi: group frames dropped (no group key)");
+            return;
+        }
         dlen = wifi_data_decrypt(buf, dlen);
         if (!dlen) return;
     }
@@ -330,8 +350,11 @@ static void wifi_data_rx(const uint8_t *frame, uint32_t len)
         hdr = (hdr + 3u) & ~3u;           /* L2PAD */
         if (dlen >= hdr + WIFI_SNAP_LEN) {
             ethertype = wifi_data_rd16be(buf + hdr + 6);
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN   /* per packet */
             modd_log_int("wifi: data_rx etype=", (int32_t)ethertype);
+#endif
             if (ethertype == WIFI_ETHERTYPE_EAPOL) {
+                if (buf[4] & 0x01u) return;   /* EAPOL-Key is unicast */
                 modd_log("wifi: eapol -> wpa");
                 uint8_t wpa_tx[256];
                 uint32_t wpa_tx_len = 0;

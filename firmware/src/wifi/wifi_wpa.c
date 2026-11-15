@@ -602,12 +602,20 @@ static uint32_t wifi_wpa_build_msg(uint8_t *buf, uint32_t buf_size,
 }
 
 /* Message 1: AP -> STA (ANonce, ACK, no MIC).
- * We generate SNonce, derive PTK, reply with message 2. */
+ * We generate SNonce, derive PTK, reply with message 2.
+ *
+ * Message 1 can arrive more than once before message 3: the AP retries it,
+ * or the radio delivers a retransmission.  The AP derives its PTK from
+ * whichever message 2 it took, so every reply to the same ANonce must
+ * carry the same SNonce.  A fresh one per copy leaves the two ends with
+ * different keys and message 3 fails its MIC.  Only a new ANonce, which is
+ * a new handshake, gets a new SNonce. */
 static int wifi_wpa_rx_msg1(uint8_t *eapol, uint32_t len,
                             uint8_t *tx_buf, uint32_t tx_size, uint32_t *tx_len)
 {
     uint32_t i;
     uint16_t ki;
+    uint8_t again;
 
     if (len < EAPOL_HDR_LEN)
         return -1;
@@ -616,13 +624,20 @@ static int wifi_wpa_rx_msg1(uint8_t *eapol, uint32_t len,
     if (!(ki & KI_ACK) || (ki & KI_MIC))
         return -1;
 
+    again = (wifi_wpa.step == 2);
     for (i = 0; i < WPA_NONCE_LEN; i++)
-        wifi_wpa.anonce[i] = eapol[EAPOL_NONCE + i];
+        if (wifi_wpa.anonce[i] != eapol[EAPOL_NONCE + i])
+            again = 0;
+
     for (i = 0; i < WPA_REPLAY_LEN; i++)
         wifi_wpa.replay[i] = eapol[EAPOL_REPLAY + i];
 
-    wifi_wpa_gen_nonce(wifi_wpa.snonce);
-    wifi_wpa_derive_ptk();
+    if (!again) {
+        for (i = 0; i < WPA_NONCE_LEN; i++)
+            wifi_wpa.anonce[i] = eapol[EAPOL_NONCE + i];
+        wifi_wpa_gen_nonce(wifi_wpa.snonce);
+        wifi_wpa_derive_ptk();
+    }
 
     /* RSN IE in Key Data (IEEE 802.11i §8.5.3.3: must match assoc req) */
     {
@@ -642,7 +657,8 @@ static int wifi_wpa_rx_msg1(uint8_t *eapol, uint32_t len,
                                      rsn_ie, sizeof rsn_ie);
     }
     wifi_wpa.step = 2;
-    modd_log("wifi: wpa msg1 -> msg2 sent");
+    modd_log(again ? "wifi: wpa msg1 again -> msg2 resent"
+                   : "wifi: wpa msg1 -> msg2 sent");
     return *tx_len ? 0 : -1;
 }
 
@@ -663,6 +679,7 @@ static int wifi_wpa_rx_msg3(uint8_t *eapol, uint32_t len,
 
     if (!wifi_wpa_verify_mic(eapol, len)) {
         modd_log("wifi: wpa msg3 mic FAIL");
+        modd_log_int("wifi: wpa msg3 len=", (int32_t)len);
         return -1;
     }
 
@@ -688,12 +705,26 @@ static int wifi_wpa_rx_eapol(uint8_t *eapol, uint32_t len,
                              uint8_t *tx_buf, uint32_t tx_size, uint32_t *tx_len)
 {
     uint16_t ki;
+    uint32_t eapol_len;
 
     *tx_len = 0;
     if (len < EAPOL_HDR_LEN)
         return -1;
     if (eapol[EAPOL_TYPE_OFF] != 3 || eapol[EAPOL_KEY_TYPE] != 2)
         return -1;
+
+    /* The frame ends where its own length field says, not where the
+     * received buffer does: the radio may hand over more (an FCS, padding),
+     * and the MIC covers the EAPOL frame alone. */
+    eapol_len = 4u + ((uint32_t)eapol[EAPOL_LEN_OFF] << 8 | eapol[EAPOL_LEN_OFF + 1u]);
+    if (eapol_len < EAPOL_HDR_LEN || eapol_len > len) {
+        modd_log_int("wifi: wpa eapol bad len=", (int32_t)eapol_len);
+        modd_log_int("wifi: wpa eapol have=", (int32_t)len);
+        return -1;
+    }
+    if (eapol_len != len)
+        modd_log_int("wifi: wpa eapol tail=", (int32_t)(len - eapol_len));
+    len = eapol_len;
 
     ki = (uint16_t)eapol[EAPOL_KEY_INFO] << 8 | eapol[EAPOL_KEY_INFO + 1u];
 

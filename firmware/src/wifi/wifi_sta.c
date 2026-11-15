@@ -174,6 +174,11 @@ static void wifi_sta_set_state(wifi_state_t s)
     if (wifi_sta.resp_log_n > WIFI_STA_RESP_LOG_MAX)
         modd_log_int("wifi: resp frames unlogged=",
                      (int32_t)(wifi_sta.resp_log_n - WIFI_STA_RESP_LOG_MAX));
+#else
+    /* a join attempt and how it ended: 3 auth, 4 assoc, 5 wpa, 6 connected,
+     * 1 idle again (it failed, or the link dropped) */
+    if (s >= WIFI_STATE_AUTH || prev >= WIFI_STATE_AUTH)
+        modd_log_int("wifi: sta state=", (int32_t)s);
 #endif
     wifi_sta.resp_log_n = 0;
     wifi_sta.state = s;

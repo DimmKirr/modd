@@ -47,3 +47,26 @@ def test_pbkdf2_yields_during_inner_loop():
     fn = src[fn_start:fn_end]
     assert 'yield()' in fn, \
         'wifi_pbkdf2_sha1 must yield inside the iteration loop'
+
+
+def test_4way_handshake_against_a_host_access_point():
+    """tests/wifi/wpa_handshake_test.c plays the AP against wifi_wpa.c on the
+    host: the 802.11i PMK vector, message 1 arriving one, two and five times
+    before message 3, and bytes left after the EAPOL frame (an FCS)."""
+    import subprocess
+    import tempfile
+
+    source = ROOT / 'tests' / 'wifi' / 'wpa_handshake_test.c'
+    with tempfile.NamedTemporaryFile(suffix='', delete=False) as tmp:
+        exe = tmp.name
+    cmd = ['cc', '-std=c99', '-Wall', '-Wno-unused-function', '-O2',
+           '-I', str(ROOT / 'firmware' / 'src'), '-o', exe, str(source)]
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        assert r.returncode == 0, f'compilation failed:\n{r.stderr}'
+        r = subprocess.run([exe], capture_output=True, text=True, timeout=120)
+        assert r.returncode == 0, r.stdout + r.stderr
+        assert 'all passed' in r.stdout
+    finally:
+        Path(exe).unlink(missing_ok=True)
+
