@@ -1,12 +1,41 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Origin: hugelton/Felucca-Engines src/dsp.c @ (c46e0086)
- *         https://github.com/hugelton/Felucca-Engines/blob/c46e0086f69bdc26df1cd144dca9e683cc4531dd/src/dsp.c
+ * Origin: hugelton/Felucca-Engines src/dsp.c @ (d0260074)
+ *         https://github.com/hugelton/Felucca-Engines/blob/d0260074ce100a47675814b7f38d61f11176c926/src/dsp.c
  * MIT notice: LICENSES/MIT-Felucca-Engines.txt */
 /* Shared DSP building blocks for the Felucca engines (all fixed point).
  * Voice output convention: add sample * amp to out[], where a full-scale
  * oscillator at amp = 1.0 (Q15 32767) contributes VOICE_FS. */
 #define VOICE_FS 24000           /* per-voice level: one voice peaks near -6 dBFS before the master */
+
+/* FE_OCT: octaves from 44.1 kHz to FS (0 at 32..62.3 kHz). modd runs at 44100. */
+#if FS < 62367
+#define FE_OCT 0
+#elif FS < 124734
+#define FE_OCT 1
+#else
+#define FE_OCT 2
+#endif
+#define FE_NOISE_PINK0_P 32690
+#define FE_NOISE_PINK0_G 3245
+#define FE_NOISE_PINK1_P 31555
+#define FE_NOISE_PINK1_G 9716
+#define FE_NOISE_PINK2_P 18678
+#define FE_NOISE_PINK2_G 17247
+#define FE_NOISE_BROWN_P 32580
+#define FE_NOISE_BROWN_G 3480
+#if FS == 44100
+#define FE_T(n) (n)
+#define FE_HOLD(n) (n)
+#define fe_pole(a) (a)
+#else
+#define FE_RATE_Q16 ((uint32_t)((65536ull * FS + 22050u) / 44100u))
+#define FE_T(n) ((int32_t)(((uint32_t)(n) * FE_RATE_Q16 + 32768u) >> 16))
+#define FE_HOLD(n) ((n) <= 1 ? (n) : FE_T(n))
+static inline int32_t fe_pole(int32_t a) { int32_t i = a >> 8; return FE_POLE[i] + (((FE_POLE[i + 1] - FE_POLE[i]) * (a & 255)) >> 8); }
+#endif
+static inline int32_t mul_wrap(int32_t a, int32_t b) { return (int32_t)((uint32_t)a * (uint32_t)b); }
+static inline int32_t shl(int32_t x, uint32_t n) { return (int32_t)((uint32_t)x << n); }
 
 static inline int32_t mulq15(int32_t a, int32_t b) { return (a * b) >> 15; }
 /* a * k / 65536 without 64-bit: a up to 2^31, k Q16 */
