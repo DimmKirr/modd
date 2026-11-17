@@ -20,7 +20,7 @@ directories:
   - path: .
     git:
       url: https://github.com/hugelton/Felucca
-      ref: v1.6.1
+      ref: v1.8.2
     # vendir initialises upstream submodules; firmware/engines is Felucca-Engines,
     # which is vendored separately below at the same pinned commit.
     excludePaths: [".git/**", "firmware/engines/**"]
@@ -30,8 +30,8 @@ directories:
   - path: .
     git:
       url: https://github.com/hugelton/Felucca-Engines
-      # Submodule pointer of Felucca v1.6.1 (MIT-licensed engines).
-      ref: c46e0086f69bdc26df1cd144dca9e683cc4531dd
+      # Felucca-Engines HEAD at the time of Felucca v1.8.2 (MIT-licensed engines).
+      ref: d0260074ce100a47675814b7f38d61f11176c926
     excludePaths: [".git/**"]
 
 - path: firmware/upstream/melodee
@@ -39,7 +39,7 @@ directories:
   - path: .
     git:
       url: https://github.com/keremimo/melodee
-      ref: v1.4.5
+      ref: v1.6.1
     excludePaths: [".git/**"]
 
 - path: firmware/upstream/sloop
@@ -47,7 +47,7 @@ directories:
   - path: .
     git:
       url: https://github.com/isod89/sloop-fm1
-      ref: v2.8
+      ref: v2.8.5
     excludePaths: [".git/**"]
 
 - path: firmware/upstream/fmlab
@@ -55,7 +55,7 @@ directories:
   - path: .
     git:
       url: https://github.com/jsmith13/fm_lab
-      ref: v1.1.0
+      ref: v1.4.0
     excludePaths: [".git/**"]
 
 - path: firmware/upstream/fm1-dock
@@ -63,7 +63,7 @@ directories:
   - path: .
     git:
       url: https://github.com/joakimeriksson/fm1-dock
-      ref: v0.8.2
+      ref: v0.9.0
     excludePaths: [".git/**"]
 
 - path: firmware/upstream/skiff
@@ -71,7 +71,7 @@ directories:
   - path: .
     git:
       url: https://github.com/illuminus5/skiff
-      ref: v2.2
+      ref: v2.7
     excludePaths: [".git/**"]
 
 - path: firmware/upstream/optimist
@@ -79,8 +79,18 @@ directories:
   - path: .
     git:
       url: https://github.com/w0ts/optimist
-      # No release tag covers the BLE stack revision modd was wired against.
-      ref: a4104fcdc78b5173ef058b282058c2366c627f9b
+      ref: 8e1a4e3f089caa36533d49cbe783ecea7819bd7f
+    # fm1base submodule uses SSH URL (git@github.com:), skip it and the
+    # third-party submodules; modd only needs the BLE source.
+    excludePaths: [".git/**", "fm1base/**", "third_party/**"]
+
+- path: firmware/upstream/jiant
+  contents:
+  - path: .
+    git:
+      url: https://github.com/juanjiant-bit/JIANT
+      # No release tags; pin to latest commit (JIANT FM V10).
+      ref: da8baa1eed7c4e75f1ed9bcf433797b3aeace107
     excludePaths: [".git/**"]
 
 - path: firmware/upstream/fm1-base

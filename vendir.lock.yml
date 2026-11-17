@@ -2,75 +2,74 @@ apiVersion: vendir.k14s.io/v1alpha1
 directories:
 - contents:
   - git:
-      commitTitle: Felucca 1.6.1...
-      sha: a53ecf428c29c780108fd70a31b71a32a6b5c313
+      commitTitle: Felucca 1.8.2
+      sha: 6162de864075ad9edb8cd35e0e45ba75faa5d0db
       tags:
-      - v1.6.1
+      - v1.8.2
     path: .
   path: firmware/upstream/felucca
 - contents:
   - git:
-      commitTitle: 'Felucca-Engines: ANALOG, LOFI, TRIO, WHEEL and NOISE under the
-        MIT licence...'
-      sha: c46e0086f69bdc26df1cd144dca9e683cc4531dd
+      commitTitle: 'engine_t: an optional post hook, once per block and part after
+        its voices...'
+      sha: d0260074ce100a47675814b7f38d61f11176c926
     path: .
   path: firmware/upstream/felucca-engines
 - contents:
   - git:
-      commitTitle: 'docs(manual): describe shared project root'
-      sha: 398ada1e09d864c12f3b778a43e45c7c2a8031b8
+      commitTitle: Merge release/1.6.1 into next
+      sha: 165d177a425944f3d30b0b669255a6ed0050c3a5
       tags:
-      - v1.4.5
+      - v1.6.1
     path: .
   path: firmware/upstream/melodee
 - contents:
   - git:
-      commitTitle: 'SLOOP 2.8: a NOTES piano-roll editor for the synth tracks and
-        the same per-step sheet on the drums (OCT+ : slide, nudge, fill, move, copy,
-        delete), the playing section A-D on the TRACKS screen, filter resonance on
-        every track filter, the FX filter on the drum track, drum TUNE on the noise
-        sounds, a settable punch-in fade (FX + SELECT), steadier external MIDI clock,
-        MIDI Bank Select (CC 0); fixes: USB RESCUE (OCT- at power-on) reliable, the
-        browser installer finds the FM-1 loader by its handshake (Windows generic
-        port names), the SONG sections take the theme''s colours, the in-browser return-to-stock
-        removed (use M-UPGRADE)'
-      sha: b77bf55e3bf804665b8f5dffb5955bd8443311f0
+      commitTitle: 'SLOOP 2.8.5: FM-1 units with the UC25HQ80 flash (JEDEC 0xB36014,
+        sold from late 2026, mostly AliExpress) were taken for an unknown chip: projects
+        stayed in RAM (flash error) and the update loader refused to install. The
+        app, the USB rescue and the update loader now know both parts (fm1_flash_id.h:
+        the Puya P25Q80 0x856014 and the UC25HQ80 0xB36014, the same size and commands);
+        the recovery test checks both and refuses any other. Thanks to Sven (The Firmware
+        Hub) for the heads-up'
+      sha: bac9c05ea7627449405aa10e48da21d75b6c8c56
       tags:
-      - v2.8
+      - v2.8.5
     path: .
   path: firmware/upstream/sloop
 - contents:
   - git:
-      commitTitle: BIT DEPTH, a GLOBAL setting; into 1.1.0...
-      sha: cf35dc26709ede9c974654dfc2135f8c25a00082
+      commitTitle: Release FM Lab 1.4.0 with guarded CPU1 voices...
+      sha: bc1ec0e0b23935ffab2106a0fce944ae7fbd8433
       tags:
-      - v1.1.0
+      - v1.4.0
     path: .
   path: firmware/upstream/fmlab
 - contents:
   - git:
-      commitTitle: 'Merge pull request #79 from joakimeriksson/docs-0.8.2...'
-      sha: 6199d250c10376fca0270b917da2e79c7c604691
+      commitTitle: 'Merge pull request #80 from joakimeriksson/empty-dock...'
+      sha: 5d161666f045b90dfcf95e03f6313527dfccd9de
       tags:
-      - v0.8.2
+      - v0.9.0
     path: .
   path: firmware/upstream/fm1-dock
 - contents:
   - git:
-      commitTitle: 'Skiff 2.2: USB MIDI, what the tracks play goes out timed with
-        the sound; clock, external-synth tracks, CCs, remote...'
-      sha: 76b5f9c9f6d523466f5c3910f9baf91110133b7b
+      commitTitle: 'Skiff 2.7: work the FM-1 from the Screen tab, full screen, the
+        Screen tab on the SMK-37, and fixes from the issues...'
+      sha: b257ddf6a15a21f6c5956abc9c19c0571daa8e15
       tags:
-      - v2.2
+      - v2.7
     path: .
   path: firmware/upstream/skiff
 - contents:
   - git:
-      commitTitle: 'chore: costs.json and the web builder''s data re-measured (make
-        costs-all JOBS=112 on gpufarm, 43f7e2e9)...'
-      sha: a4104fcdc78b5173ef058b282058c2366c627f9b
+      commitTitle: 'chore(costs): costs-all (fm1-base and classic) measured on gpufarm
+        at 17ea3fbe (0.4); every profile fits (mots-config 820,156 / 823,228, sd-card-mots
+        820,464, drum-machines 654,768 / 655,292); builder_test passes there...'
+      sha: 8e1a4e3f089caa36533d49cbe783ecea7819bd7f
       tags:
-      - v0.1
+      - v0.4
     path: .
   path: firmware/upstream/optimist
 - contents:
@@ -98,4 +97,11 @@ directories:
   - http: {}
     path: .
   path: firmware/vendor/fatfs
+- contents:
+  - git:
+      commitTitle: '[private-preview] Public release V10.7.42: FREEZE let go fixed,
+        silence lighter; CHANGELOG...'
+      sha: da8baa1eed7c4e75f1ed9bcf433797b3aeace107
+    path: .
+  path: firmware/upstream/jiant
 kind: LockConfig
