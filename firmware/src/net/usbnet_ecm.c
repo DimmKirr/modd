@@ -424,8 +424,18 @@ static void ecm_rx_poll(void)
         ecm_rx_len += n;
     }
     usb_host_sie_wr(SIE_RXCSR1, 0x10u);
-    ecm_rx_armed = 0;
-    if (n == usb_ecm_cand.max_packet) return;
+    if (n == usb_ecm_cand.max_packet) {
+        /* More packets coming for this frame — re-arm immediately so
+         * the IN is pending while we wait for the next piece. */
+        usb_host_sie_wr(SIE_RXCSR1, 0x20u);
+        ecm_rx_armed = 1;
+        return;
+    }
+    /* Frame complete.  Re-arm the IN before delivering to lwIP so the
+     * next frame's transfer is already in flight during IP processing
+     * (and during any synchronous TCP output the callback triggers). */
+    usb_host_sie_wr(SIE_RXCSR1, 0x20u);
+    ecm_rx_armed = 1;
     ecm_rx_deliver();
 }
 

@@ -136,9 +136,9 @@ static song_t song;
 #ifndef CONFIG_AUDIO
 
 /* When real engines are compiled (CONFIG_ENGINES), engines.c provides
- * ENGINES[] and NENGINES. Otherwise, provide a mock for the UI. */
+ * ENGINES[] and NENGINES. Otherwise, provide a mock set for the UI. */
 #ifndef CONFIG_ENGINES
-static const engine_t _eng_mock = {
+static const engine_t _eng_analog = {
     .name       = "ANALOG",
     .page_title = {"SYNTH 1", "SYNTH 2"},
     .edit       = {
@@ -151,53 +151,103 @@ static const engine_t _eng_mock = {
         { "DRV",  F_PCT,     0, 100,   0, 0, "%"  },
         { "MIX",  F_PCT,     0, 100, 100, 0, "%"  },
     },
-    .knob       = {0, 1, 2, 3},
-    .note_on    = 0,
-    .render     = 0,
+    .npresets = 12, .knob = {0, 1, 2, 3},
 };
-static const engine_t *const ENGINES[] = { &_eng_mock };
+static const engine_t _eng_fm6 = {
+    .name       = "FM6",
+    .page_title = {"FM OP 1-3", "FM OP 4-6"},
+    .edit       = {
+        { "ALGO", F_INT,  0, 31,   7, 0, ""  },
+        { "FB",   F_PCT,  0, 100, 40, 0, "%"  },
+        { "ATK",  F_TIME, 0, 999, 15, 0, "ms" },
+        { "REL",  F_TIME, 0, 999, 60, 0, "ms" },
+        { "MOD",  F_PCT,  0, 100, 72, 0, "%"  },
+        { "HARM", F_INT,  0,  15,  3, 0, ""   },
+        { "DTUN", F_SEMI, -24, 24, 0, 0, "st" },
+        { "MIX",  F_PCT,  0, 100, 90, 0, "%"  },
+    },
+    .npresets = 20, .knob = {0, 1, 4, 5},
+};
+static const engine_t _eng_noise = {
+    .name       = "NOISE",
+    .page_title = {"NOISE", ""},
+    .edit       = {
+        { "COL",  F_PCT,  0, 100, 50, 0, "%"  },
+        { "HPF",  F_CUTOFF, 20, 999, 80, 0, "Hz" },
+        { "ATK",  F_TIME, 0, 999,  5, 0, "ms" },
+        { "REL",  F_TIME, 0, 999, 200, 0, "ms" },
+        { "LVL",  F_PCT,  0, 100, 70, 0, "%"  },
+        { "PAN",  F_BIPCT, -100, 100, 0, 0, "" },
+        { "SND",  F_PCT,  0, 100, 30, 0, "%"  },
+        { "MIX",  F_PCT,  0, 100, 100, 0, "%"  },
+    },
+    .npresets = 6, .knob = {0, 1, 2, 3},
+};
+static const engine_t _eng_lofi = {
+    .name       = "LOFI",
+    .page_title = {"LOFI", ""},
+    .edit       = {
+        { "BITS", F_INT,  1,  16,  8, 0, ""   },
+        { "RATE", F_INT,  1, 100, 44, 0, "kHz"},
+        { "DRFT", F_PCT,  0, 100, 20, 0, "%"  },
+        { "FILT", F_CUTOFF, 20, 999, 500, 0, "Hz"},
+        { "ATK",  F_TIME, 0, 999, 12, 0, "ms" },
+        { "REL",  F_TIME, 0, 999, 150, 0, "ms"},
+        { "WARM", F_PCT,  0, 100, 65, 0, "%"  },
+        { "MIX",  F_PCT,  0, 100, 85, 0, "%"  },
+    },
+    .npresets = 8, .knob = {0, 1, 2, 6},
+};
+static const engine_t *const ENGINES[] = {
+    &_eng_analog, &_eng_fm6, &_eng_noise, &_eng_lofi
+};
 #undef NENGINES
-#define NENGINES 1
+#define NENGINES 4
 #endif /* !CONFIG_ENGINES */
+
+static void modd_song_init(void);   /* defined below, shared with the real audio_init() */
 
 static void modd_mock_init(void)
 {
     uint32_t k;
-    song.bpm = 120;
-    song.playing = 0;
-    song.sel = 0;
+    modd_song_init();
+    song.playing = 1;
     for (k = 0; k < NTRK; k++) {
-        uint32_t e;
-        trk[k].eng_req = 0;
-        for (e = 0; e < 8; e++)
-            trk[k].p[P_E0 + e] = 0;
-        trk[k].p[P_ATK]   = 10;
-        trk[k].p[P_DEC]   = 40;
-        trk[k].p[P_SUS]   = 80;
-        trk[k].p[P_REL]   = 88;
-        trk[k].p[P_LEVEL] = 100;
         trk[k].p[P_LFO]   = 50;
         trk[k].p[P_LFRT]  = 30;
         trk[k].p[P_DIST]  = 20;
         trk[k].p[P_DLY]   = 35;
         trk[k].p[P_REV]   = 45;
-        trk[k].p[P_ROOT]  = 0;
-        trk[k].p[P_SCALE] = 0;
-        trk[k].p[P_OCT]   = 0;
-        trk[k].p[P_ARP]   = 0;
-        trk[k].p[P_MONO]  = 0;
-        trk[k].p[P_HOLD]  = 0;
-        trk[k].p[P_GLI]   = 0;
-        trk[k].p[P_UNI]   = 0;
     }
-    trk[0].step[0].note[0] = 60;
-    trk[0].step[0].vel = 100;
-    trk[0].step[2].note[0] = 64;
-    trk[0].step[2].vel = 80;
-    trk[0].step[4].note[0] = 67;
-    trk[0].step[4].vel = 90;
-    trk[0].step[6].note[0] = 72;
-    trk[0].step[6].vel = 110;
+    /* track 0: ANALOG, preset 3, C minor, octave 0 */
+    trk[0].preset      = 3;
+    trk[0].p[P_ROOT]   = 0;    /* C */
+    trk[0].p[P_SCALE]  = 2;    /* minor */
+    trk[0].p[P_OCT]    = 0;
+    trk[0].step[0].note[0] = 60;  trk[0].step[0].vel = 100;
+    trk[0].step[2].note[0] = 64;  trk[0].step[2].vel = 80;
+    trk[0].step[4].note[0] = 67;  trk[0].step[4].vel = 90;
+    trk[0].step[6].note[0] = 72;  trk[0].step[6].vel = 110;
+
+    /* track 1: FM6, preset 7, D major, octave +1 */
+    trk[1].preset      = 7;
+    trk[1].p[P_ROOT]   = 2;    /* D */
+    trk[1].p[P_SCALE]  = 1;    /* major */
+    trk[1].p[P_OCT]    = 1;
+    trk[1].step[0].note[0] = 62;  trk[1].step[0].vel = 90;
+    trk[1].step[1].note[0] = 66;  trk[1].step[1].vel = 85;
+
+    /* track 2: NOISE, preset 1, E chromatic, octave -1 */
+    trk[2].preset      = 1;
+    trk[2].p[P_ROOT]   = 4;    /* E */
+    trk[2].p[P_SCALE]  = 0;    /* chromatic */
+    trk[2].p[P_OCT]    = -1;
+
+    /* track 3: LOFI, preset 5, A pentatonic, octave 0 */
+    trk[3].preset      = 5;
+    trk[3].p[P_ROOT]   = 9;    /* A */
+    trk[3].p[P_SCALE]  = 3;    /* pentatonic */
+    trk[3].p[P_OCT]    = 0;
 }
 
 #else /* CONFIG_AUDIO */
@@ -205,5 +255,29 @@ static void modd_mock_init(void)
 #define NENGINES 1
 #endif
 #endif /* CONFIG_AUDIO */
+
+/* Song and track defaults: called by audio_init() (real) and modd_mock_init()
+ * (UI-only). Sets engine assignments, BPM, selected track, per-track presets.
+ * Runs after tracks are zeroed and params_init() has applied engine defaults. */
+static void modd_song_init(void)
+{
+    uint32_t k;
+    song.bpm = 128;
+    song.sel = 1;
+    for (k = 0; k < NTRK; k++) {
+        trk[k].eng_req = (uint8_t)(k % NENGINES);
+        trk[k].engine  = (uint8_t)(k % NENGINES);
+        trk[k].p[P_ATK]   = 10;
+        trk[k].p[P_DEC]   = 40;
+        trk[k].p[P_SUS]   = 80;
+        trk[k].p[P_REL]   = 88;
+        trk[k].p[P_LEVEL] = 100;
+    }
+    /* track 1: FM6 (ENGINES[4]) when available */
+    if (NENGINES > 4) {
+        trk[1].eng_req = 4;
+        trk[1].engine  = 4;
+    }
+}
 
 #endif /* MODD_AUDIO_H */

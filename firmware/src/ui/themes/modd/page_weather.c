@@ -8,6 +8,19 @@
 #include "ui/themes/felucca/weather_colors.h"
 #include "ui/themes/felucca/weather_art.h"
 
+/* ── weather page data (MVC controller) ────────────────────────── */
+
+typedef struct {
+    const struct weather_data *w;
+    uint8_t  fetching;
+} wx_page_data_t;
+
+static void wx_page_read(wx_page_data_t *d)
+{
+    d->w        = weather_get();
+    d->fetching = weather_fetching() ? 1 : 0;
+}
+
 static uint32_t mwx_frame;
 
 /* ── pixel-art helpers (same primitives as Felucca, modd layout) ──── */
@@ -223,25 +236,26 @@ static void mwx_draw_weather(const struct weather_data *w)
 
 static void mwx_draw(void)
 {
-    const struct weather_data *w = weather_get();
+    wx_page_data_t d;
+    wx_page_read(&d);
 
-    if (!w->valid) {
+    if (!d.w->valid) {
         ui_card(0, "TEMP", "---", "", T_DIM, -1, 0);
         ui_card(1, "HUM", "---", "", T_DIM, -1, 0);
         ui_card(2, "WIND", "---", "", T_DIM, -1, 0);
         ui_card(3, "WMO", "---", "", T_DIM, -1, 0);
     }
 
-    if (weather_fetching() && !w->valid)
+    if (d.fetching && !d.w->valid)
         mwx_draw_loading();
-    else if (w->valid)
-        mwx_draw_weather(w);
+    else if (d.w->valid)
+        mwx_draw_weather(d.w);
     else
         mwx_draw_error();
 
     mwx_frame++;
 
-    ui_footer("", w->valid ? w->city : "---", "");
+    ui_footer("", d.w->valid ? d.w->city : "---", "");
 }
 
 static void mwx_enter(void)

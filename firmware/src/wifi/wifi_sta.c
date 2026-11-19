@@ -169,6 +169,8 @@ static uint32_t wifi_sta_ie(uint8_t *buf, uint8_t id, const uint8_t *data, uint8
 static void wifi_sta_set_state(wifi_state_t s)
 {
     wifi_state_t prev = wifi_sta.state;
+    if (prev == WIFI_STATE_CONNECTED && s != WIFI_STATE_CONNECTED)
+        modd_log_int("wifi: LEFT CONNECTED to=", (int32_t)s);
 #ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
     modd_log_int("wifi: sta state=", (int32_t)s);
     if (wifi_sta.resp_log_n > WIFI_STA_RESP_LOG_MAX)

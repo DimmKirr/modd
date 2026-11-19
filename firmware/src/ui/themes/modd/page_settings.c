@@ -21,6 +21,25 @@ static struct {
 #ifdef CONFIG_SYS_MENU_NETWORK
 static const char *mset_link_name(void);
 
+/* ── NET tab data (MVC controller) ─────────────────────────────── */
+
+typedef struct {
+    uint32_t ip;
+    uint32_t gw;
+    uint32_t dns;
+    const char *link;
+    uint8_t  connected;
+} net_tab_data_t;
+
+static void net_tab_read(net_tab_data_t *d)
+{
+    d->link = mset_link_name();
+    d->ip   = net_get_ip();
+    d->gw   = net_get_gw();
+    d->dns  = net_get_dns();
+    d->connected = d->ip ? 1 : 0;
+}
+
 /* NET tab: redraw when anything it shows changes. The rows are LINK, IP,
  * GATEWAY and DNS, and they do not all change at the same moment: a link
  * attaches before it has an address, and goes before its DNS is dropped. */
@@ -196,24 +215,22 @@ static const char *mset_link_name(void)
 static void mset_draw_network(int32_t y0)
 {
     char buf[20];
-    uint32_t ip;
     int32_t y = y0;
+    net_tab_data_t d;
+    net_tab_read(&d);
 
-    ui_row(y, "LINK", mset_link_name(), net_get_ip() ? T_THEME : T_DIM, 0);
+    ui_row(y, "LINK", d.link, d.connected ? T_THEME : T_DIM, 0);
     y += UI_ROW_H;
 
-    ip = net_get_ip();
-    if (ip) { mset_fmt_ip(buf, ip); } else { buf[0] = '-'; buf[1] = 0; }
+    if (d.ip) { mset_fmt_ip(buf, d.ip); } else { buf[0] = '-'; buf[1] = 0; }
     ui_row(y, "IP", buf, T_DIM, 0);
     y += UI_ROW_H;
 
-    ip = net_get_gw();
-    if (ip) { mset_fmt_ip(buf, ip); } else { buf[0] = '-'; buf[1] = 0; }
+    if (d.gw) { mset_fmt_ip(buf, d.gw); } else { buf[0] = '-'; buf[1] = 0; }
     ui_row(y, "GATEWAY", buf, T_DIM, 0);
     y += UI_ROW_H;
 
-    ip = net_get_dns();
-    if (ip) { mset_fmt_ip(buf, ip); } else { buf[0] = '-'; buf[1] = 0; }
+    if (d.dns) { mset_fmt_ip(buf, d.dns); } else { buf[0] = '-'; buf[1] = 0; }
     ui_row(y, "DNS", buf, T_DIM, 0);
 }
 #endif

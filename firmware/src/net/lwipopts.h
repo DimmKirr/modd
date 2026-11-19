@@ -40,15 +40,34 @@
 #define LWIP_DHCP_DOES_ACD_CHECK 0
 
 /* --- memory tuning (fits in ~12 KB RAM) -------------------------------- */
-#define MEM_SIZE                4096
+#ifdef CONFIG_EMU
+#define MEM_SIZE                32768
+#else
+#define MEM_SIZE                8192
+#endif
 #define MEM_ALIGNMENT           4
 #define PBUF_POOL_SIZE          8
 #define PBUF_POOL_BUFSIZE       1536
 
 /* --- TCP tuning -------------------------------------------------------- */
+#define MEMP_NUM_TCP_PCB        12
+#define MEMP_NUM_TCP_PCB_LISTEN 4
+#define SO_REUSE                1
 #define TCP_MSS                 1400
+#ifdef CONFIG_EMU
+#define TCP_SND_BUF             (8 * TCP_MSS)
+#define TCP_SND_QUEUELEN        ((4 * TCP_SND_BUF + TCP_MSS - 1) / TCP_MSS)
+#define MEMP_NUM_TCP_SEG        TCP_SND_QUEUELEN
+#define TCP_WND                 (4 * TCP_MSS)
+#else
 #define TCP_SND_BUF             (2 * TCP_MSS)
 #define TCP_WND                 (2 * TCP_MSS)
+#endif
+/* TIME_WAIT = 2 * TCP_MSL / TCP_SLOW_INTERVAL = 2 * 100 / 500 = 0, clamped
+ * to 1 slow tick = 500 ms. The emulator NAT reuses a fixed 4-tuple for every
+ * forwarded connection, so a long TIME_WAIT blocks subsequent requests.
+ * On real hardware each client uses a unique source port and this is harmless. */
+#define TCP_MSL                 100
 
 /* --- DNS --------------------------------------------------------------- */
 #define DNS_TABLE_SIZE          2

@@ -16,8 +16,11 @@ uint32_t sys_now(void) { return fm1_ms; }
 
 static uint8_t net_inited;
 
-#ifdef CONFIG_LWIP
+#ifdef CONFIG_WEATHER
 static void weather_fetch_start(void);
+#endif
+#ifdef CONFIG_RPC
+static void rpc_init(void);
 #endif
 
 static void net_init(void)
@@ -65,8 +68,11 @@ static void net_on_up(struct netif *nif)
             modd_log_ip("net: dns ", ip_2_ip4(d)->addr);
     }
     net_elect_default();
-#ifdef CONFIG_LWIP
+#ifdef CONFIG_WEATHER
     weather_fetch_start();
+#endif
+#ifdef CONFIG_RPC
+    rpc_init();
 #endif
 }
 

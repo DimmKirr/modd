@@ -4,7 +4,7 @@
 /* Async two-step weather fetcher: geo-locate via ip-api.com, then
  * current weather from Open-Meteo. Non-blocking, callback-driven. */
 
-#ifdef CONFIG_LWIP
+#if defined(CONFIG_LWIP) && defined(CONFIG_WEATHER)
 #ifndef CONFIG_WEATHER_LOCATION
 #define CONFIG_WEATHER_LOCATION ""
 #endif
@@ -414,7 +414,7 @@ static const struct weather_data *weather_get(void)
     return &weather_dat;
 }
 
-#else /* !CONFIG_LWIP */
+#else /* !CONFIG_WEATHER || !CONFIG_LWIP */
 
 struct weather_data {
     int16_t  temp_c;
@@ -434,4 +434,4 @@ static void weather_poll(void) {}
 static int  weather_fetching(void) { return 0; }
 static const struct weather_data *weather_get(void) { return &weather_dat; }
 
-#endif /* CONFIG_LWIP */
+#endif /* CONFIG_WEATHER && CONFIG_LWIP */

@@ -258,7 +258,10 @@ static int wifi_data_tx(const uint8_t *eth, uint32_t eth_len)
     uint8_t *frame = wifi_tx_frame;
     uint32_t frame_len;
 
-    if (wifi_sta.state != WIFI_STATE_CONNECTED) return -1;
+    if (wifi_sta.state != WIFI_STATE_CONNECTED) {
+        modd_log_int("wifi: tx drop state=", (int32_t)wifi_sta.state);
+        return -1;
+    }
 
     frame_len = wifi_data_eth_to_80211(eth, eth_len, frame);
     if (!frame_len) return -1;

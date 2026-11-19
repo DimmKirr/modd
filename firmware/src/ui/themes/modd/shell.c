@@ -197,6 +197,9 @@ static void shell_key(uint32_t note, uint32_t vel)
 static void shell_init(void)
 {
     uint32_t pal = UI_DEFAULT_INDEX;
+#ifndef CONFIG_AUDIO
+    modd_mock_init();
+#endif
     nav_init();
     ui_set_theme(&modd_theme);
 #ifdef CONFIG_SYS_MENU

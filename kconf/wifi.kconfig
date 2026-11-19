@@ -99,6 +99,16 @@ config OPENROUTER_API_KEY
       Baked into the firmware at compile time. OPENROUTER_API_KEY=...
       in the environment (or .env) overrides this at build time.
 
+config WIFI_DEFAULT_ON
+    bool "WiFi on at first boot"
+    depends on WIFI
+    default n
+    help
+      Start with wifi_on = 1 (factory default). Without this the user
+      must enable WiFi in the settings menu before the radio powers up.
+      Useful for emulator/test builds that need networking from boot
+      without saved settings on flash.
+
 config WIFI_AUTOJOIN
     bool "Auto-join after scan"
     depends on WIFI

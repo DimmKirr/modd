@@ -63,7 +63,11 @@ static void sys_settings_defaults(void)
     sys_settings.midi_ch = 0;    /* channel 1 */
 #endif
 #if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+#ifdef CONFIG_WIFI_DEFAULT_ON
+    sys_settings.wifi_on = 1;    /* ON (CONFIG_WIFI_DEFAULT_ON) */
+#else
     sys_settings.wifi_on = 0;    /* OFF */
+#endif
 #endif
 #ifdef CONFIG_USB_NET
     sys_settings.usb_net_on = 0;
