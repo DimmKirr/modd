@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from e2e_fixtures import E2ETestCase, fwsc_path
+from e2e_fixtures import E2ETestCase, fwsc_path, EMU_RUNNING_JS
 
 FWSC = fwsc_path()
 
@@ -41,8 +41,7 @@ class TestAllViews(E2ETestCase):
             'document.getElementById("status").textContent.includes("ready")')
         page.locator('#start').click()
         page.wait_for_function(
-            'document.getElementById("status")?.textContent'
-            '?.includes("instructions/s")',
+            EMU_RUNNING_JS,
             timeout=30_000)
         page.wait_for_function('''() => {
             const c = document.getElementById('panel');

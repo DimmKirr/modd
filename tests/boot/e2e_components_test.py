@@ -21,7 +21,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from e2e_fixtures import E2ETestCase, _run_timestamp, RESULTS_DIR, e2e_genconfig, e2e_build
+from e2e_fixtures import E2ETestCase, _run_timestamp, RESULTS_DIR, e2e_genconfig, e2e_build, EMU_RUNNING_JS
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILD = ROOT / 'build'
@@ -124,8 +124,7 @@ class TestMinimalComponents(E2ETestCase):
                 'document.getElementById("status").textContent.includes("ready")')
             page.locator('#start').click()
             page.wait_for_function(
-                'document.getElementById("status")?.textContent'
-                '?.includes("instructions/s")',
+                EMU_RUNNING_JS,
                 timeout=30_000)
             page.wait_for_timeout(5_000)
             status = page.locator('#status').text_content()

@@ -23,6 +23,9 @@ includes:
 
 vars:
   BUILD_DIR: build/modd
+  FM1_EMU_ROOT: '{{env "FM1_EMU_ROOT" | default "/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master"}}'
+  FM1_EMU_BIN: '{{.FM1_EMU_ROOT}}/target/release'
+  FM1_WEB_DIR: '{{env "FM1_WEB_DIR" | default (printf "%s/_site" .FM1_EMU_ROOT)}}'
 
 tasks:
   build:
@@ -79,9 +82,11 @@ tasks:
       - task: build
         vars:
           CLI_ARGS: ''
-      - fm1-emulator:download:wasm
+    preconditions:
+      - sh: test -f '{{.FM1_WEB_DIR}}/fm1_web.wasm'
+        msg: 'fm1_web.wasm not found in {{.FM1_WEB_DIR}}. Build the emulator or set FM1_WEB_DIR / FM1_EMU_ROOT.'
     env:
-      FM1_WEB_DIR: '{{env "FM1_WEB_DIR" | default (printf "%s/.fm1-emulator/web" .HOME)}}'
+      FM1_WEB_DIR: '{{.FM1_WEB_DIR}}'
       PLAYWRIGHT_BROWSERS_PATH: '{{env "PLAYWRIGHT_BROWSERS_PATH" | default (printf "%s/.cache/ms-playwright" .HOME)}}'
     cmds:
       - uv run --quiet python -m pytest tests/boot/e2e_boot_test.py tests/boot/e2e_components_test.py tests/usb/e2e_usb_safety_test.py tests/audio/e2e_audio_test.py tests/audio/e2e_audio_engines_test.py tests/ble/e2e_ble_test.py tests/net/e2e_weather_test.py -v {{.CLI_ARGS}}
@@ -92,21 +97,23 @@ tasks:
       - task: build
         vars:
           CLI_ARGS: ''
-      - fm1-emulator:download:wasm
+    preconditions:
+      - sh: test -f '{{.FM1_WEB_DIR}}/fm1_web.wasm'
+        msg: 'fm1_web.wasm not found in {{.FM1_WEB_DIR}}. Build the emulator or set FM1_WEB_DIR / FM1_EMU_ROOT.'
     env:
-      FM1_WEB_DIR: '{{env "FM1_WEB_DIR" | default (printf "%s/.fm1-emulator/web" .HOME)}}'
+      FM1_WEB_DIR: '{{.FM1_WEB_DIR}}'
       PLAYWRIGHT_BROWSERS_PATH: '{{env "PLAYWRIGHT_BROWSERS_PATH" | default (printf "%s/.cache/ms-playwright" .HOME)}}'
     cmds:
       - uv run --quiet python -m pytest tests/ui/themes/modd/e2e_ui_walkthrough_test.py -v {{.CLI_ARGS}}
 
   emulator:build:
     desc: Build WASM from a local fm1-emu checkout (requires the Rust WASM target)
-    requires:
-      vars: [EMU_SOURCE]
+    vars:
+      EMU_SOURCE: '{{.EMU_SOURCE | default .FM1_EMU_ROOT}}'
     preconditions:
       - test -f '{{.EMU_SOURCE}}/web/build.sh'
     cmds:
-      - bash '{{.EMU_SOURCE}}/web/build.sh' '{{.HOME}}/.fm1-emulator/web'
+      - bash '{{.EMU_SOURCE}}/web/build.sh' '{{.EMU_SOURCE}}/_site'
 
   flash:
     desc: "Build if needed, then flash firmware to FM-1 (default: USB-MIDI SysEx)"

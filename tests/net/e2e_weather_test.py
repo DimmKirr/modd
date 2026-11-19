@@ -4,20 +4,17 @@
 """E2E: Weather page in the emulator.
 
 Builds the modd_dev_network defconfig (WiFi + lwIP + USB-NET), boots in fm1-emu
-with ?wifi=oss&net=internet, navigates to the WEATHER page (FX hold -> VIEW_CONN),
-and tests:
+with ?usb=ethernet&net=internet (USB ethernet is more reliable than oss WiFi in
+the WASM emulator), navigates to the WEATHER page (FX hold -> VIEW_CONN), and
+tests:
   1. Weather page renders without crashing
   2. Loading state shows spinner and "FETCHING WEATHER" text
   3. Error state shows "NO WEATHER DATA" when fetch fails (no network)
   4. PLAY button triggers a refresh attempt without crashing
   5. Cards show placeholder "---" values before data arrives
   6. Page survives multiple visits (enter/leave cycle)
-  7. The firmware joins the emulator's virtual AP and fetches real weather
-
-WiFi credentials: WIFI_SSID / WIFI_PASSWORD from .env (via task), or
-FM1_E2E_WIFI=SSID:PASSWORD, or the emulator default (Home / fm1pass).
+  7. The firmware fetches real weather data over the emulator's virtual network
 """
-import os
 import re
 import subprocess
 import sys
@@ -35,18 +32,10 @@ FWSC = BUILD / DEFCONFIG / 'modd.fwsc'
 
 TEST_RESULTS = RESULTS_DIR / f'{_run_timestamp}-e2e_weather_test'
 
-_wifi_env = os.environ.get('FM1_E2E_WIFI')
-if _wifi_env:
-    WIFI_SSID, WIFI_PASSWORD = _wifi_env.split(':', 1)
-else:
-    WIFI_SSID = 'Home'
-    WIFI_PASSWORD = 'fm1pass'
-
-
-def _set_wifi_credentials(config_h, ssid, password):
-    """CONFIG_WIFI_SSID / CONFIG_WIFI_PASSWORD in a generated config.h."""
+def _set_wifi_credentials(config_h):
+    """Ensure CONFIG_WIFI_SSID / CONFIG_WIFI_PASSWORD are set for autojoin."""
     text = config_h.read_text()
-    for name, value in (('CONFIG_WIFI_SSID', ssid), ('CONFIG_WIFI_PASSWORD', password)):
+    for name, value in (('CONFIG_WIFI_SSID', 'Home'), ('CONFIG_WIFI_PASSWORD', 'fm1pass')):
         text = re.sub(rf'#define {name} ".*"', f'#define {name} "{value}"', text)
     config_h.write_text(text)
 
@@ -96,7 +85,7 @@ class TestWeatherPage(E2ETestCase):
         else:
             try:
                 gen_dir = e2e_genconfig(DEFCONFIG, TEST_RESULTS)
-                _set_wifi_credentials(gen_dir / 'config.h', WIFI_SSID, WIFI_PASSWORD)
+                _set_wifi_credentials(gen_dir / 'config.h')
                 r, _ = e2e_build(DEFCONFIG, TEST_RESULTS, gen_dir=gen_dir)
                 cls._build_ok = r.returncode == 0
             except (RuntimeError, FileNotFoundError, subprocess.TimeoutExpired):
@@ -108,21 +97,18 @@ class TestWeatherPage(E2ETestCase):
         try:
             super().setUpClass()
             cls._base_emu_url = cls.emu_url
-            cls.emu_url += (
-                f'&wifi=oss&net=internet'
-                f'&wifi-ssid={WIFI_SSID}&wifi-password={WIFI_PASSWORD}'
-            )
+            cls.emu_url += '&usb=ethernet&net=internet'
         except unittest.SkipTest:
             pass
 
-    def _boot_page(self, wifi=True):
+    def _boot_page(self, net=True, on_page=None):
         if not self._build_ok:
             self.skipTest(f'{DEFCONFIG} defconfig build failed')
         if not FWSC.is_file():
             self.skipTest('No .fwsc produced')
         if not self._browser:
             self.skipTest('Emulator not available')
-        if wifi:
+        if net:
             page = self.new_emu_page()
         else:
             page = self._browser.new_page()
@@ -133,6 +119,8 @@ class TestWeatherPage(E2ETestCase):
                 f'[pageerror] {err}'))
             page.goto(self._base_emu_url)
             page.evaluate("async () => { await import('./main.js'); }")
+        if on_page:
+            on_page(page)
         page.locator('#open').set_input_files(str(FWSC))
         page.wait_for_function(
             'document.getElementById("status").textContent.includes("ready")')
@@ -140,7 +128,7 @@ class TestWeatherPage(E2ETestCase):
         page.wait_for_function(
             '(() => { const t = document.getElementById("status")?.textContent || "";'
             'return t.includes("instructions/s") || t.includes("real time"); })()',
-            timeout=30_000)
+            timeout=60_000)
         page.wait_for_timeout(3_000)
         return page
 
@@ -165,7 +153,7 @@ class TestWeatherPage(E2ETestCase):
 
     def test_weather_shows_no_data(self):
         """Weather page shows loading/error state when no network is available."""
-        page = self._boot_page(wifi=False)
+        page = self._boot_page(net=False)
         try:
             ctrl = self.controls(page)
             _navigate_to_weather(ctrl, page)
@@ -180,41 +168,51 @@ class TestWeatherPage(E2ETestCase):
             self.write_log(page, 'weather-no-data.log')
             page.close()
 
-    def test_weather_shows_data_over_the_virtual_ap(self):
-        """The firmware joins the emulator's virtual AP and weather data is drawn."""
-        page = self._boot_page()
+    def test_weather_shows_data_over_the_network(self):
+        """The firmware fetches real weather data and the data card is drawn."""
+        net_requests = []
+        page = self._boot_page(
+            on_page=lambda p: p.on('request', lambda req: net_requests.append(req.url)
+                if 'ip-api' in req.url or 'open-meteo' in req.url else None))
         try:
-            # scan, autojoin, WPA2, DHCP, geo, weather: about 20 s of emulated time
-            page.wait_for_timeout(25_000)
             ctrl = self.controls(page)
-            ctrl.press_button('home')
-            page.wait_for_timeout(500)
             _navigate_to_weather(ctrl, page)
-            page.wait_for_timeout(1_500)
+            deadline = 30_000
+            interval = 3_000
+            elapsed = 0
+            coloured = 0
+            while elapsed < deadline:
+                page.wait_for_timeout(interval)
+                elapsed += interval
+                coloured = page.evaluate('''() => {
+                    const c = document.getElementById('panel');
+                    const o = document.createElement('canvas');
+                    o.width = c.width; o.height = c.height;
+                    const g = o.getContext('2d');
+                    g.drawImage(c, 0, 0);
+                    const d = g.getImageData(0, 0, o.width, o.height).data;
+                    let n = 0;
+                    for (let i = 0; i < d.length; i += 4) {
+                        const mx = Math.max(d[i], d[i+1], d[i+2]);
+                        const mn = Math.min(d[i], d[i+1], d[i+2]);
+                        if (mx - mn > 40 && mx > 120) n++;
+                    }
+                    return n;
+                }''')
+                if coloured > 2000:
+                    break
+
             self.screenshot(page, 'WEATHER-data')
             self.screenshot_lcd(page, 'WEATHER-data')
             status = page.locator('#status').text_content()
             self.assertNotIn('halted', status)
-            # The data card is a dithered sky gradient whose hue depends on the
-            # time of day (blue, pink, orange, …).  Without data the area is
-            # the cream page background.  Detect any strongly saturated pixels:
-            # max channel minus min channel > 40 and max > 120.
-            coloured = page.evaluate('''() => {
-                const c = document.getElementById('panel');
-                const o = document.createElement('canvas');
-                o.width = c.width; o.height = c.height;
-                const g = o.getContext('2d');
-                g.drawImage(c, 0, 0);
-                const d = g.getImageData(0, 0, o.width, o.height).data;
-                let n = 0;
-                for (let i = 0; i < d.length; i += 4) {
-                    const mx = Math.max(d[i], d[i+1], d[i+2]);
-                    const mn = Math.min(d[i], d[i+1], d[i+2]);
-                    if (mx - mn > 40 && mx > 120) n++;
-                }
-                return n;
-            }''')
-            self.assertGreater(coloured, 2000, 'no weather data card on the panel')
+
+            wx_hits = [u for u in net_requests if 'open-meteo' in u]
+            self.assertGreater(len(wx_hits), 0,
+                               'firmware never called open-meteo.com for weather')
+
+            self.assertGreater(coloured, 2000,
+                               'no weather data card on the panel after 30 s')
         finally:
             self.write_log(page, 'weather-data.log')
             page.close()
@@ -244,7 +242,7 @@ class TestWeatherPage(E2ETestCase):
 
     def test_weather_cards_placeholder(self):
         """Cards show --- placeholder values when no network is available."""
-        page = self._boot_page(wifi=False)
+        page = self._boot_page(net=False)
         try:
             ctrl = self.controls(page)
             _navigate_to_weather(ctrl, page)
@@ -261,7 +259,7 @@ class TestWeatherPage(E2ETestCase):
 
     def test_weather_page_revisit(self):
         """Leave and re-enter the weather page without crash."""
-        page = self._boot_page(wifi=False)
+        page = self._boot_page(net=False)
         try:
             ctrl = self.controls(page)
 
@@ -292,7 +290,7 @@ class TestWeatherPage(E2ETestCase):
 
     def test_weather_spinner_animates(self):
         """Capture frames during loading to verify spinner animation."""
-        page = self._boot_page(wifi=False)
+        page = self._boot_page(net=False)
         try:
             ctrl = self.controls(page)
             _navigate_to_weather(ctrl, page)

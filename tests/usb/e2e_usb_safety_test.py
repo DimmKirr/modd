@@ -27,7 +27,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from e2e_fixtures import E2ETestCase, _run_timestamp, RESULTS_DIR, EMU_DIR, e2e_genconfig, e2e_build
+from e2e_fixtures import E2ETestCase, _run_timestamp, RESULTS_DIR, EMU_DIR, e2e_genconfig, e2e_build, EMU_RUNNING_JS
 from emu_usb_patch import create_patched_emu, cleanup_patched_emu
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -250,8 +250,7 @@ class TestUSBLiveInEmulator(unittest.TestCase):
                 'document.getElementById("status").textContent.includes("ready")')
             page.locator('#start').click()
             page.wait_for_function(
-                'document.getElementById("status")?.textContent'
-                '?.includes("instructions/s")',
+                EMU_RUNNING_JS,
                 timeout=30_000)
             page.wait_for_timeout(3_000)
 
@@ -282,8 +281,7 @@ class TestUSBLiveInEmulator(unittest.TestCase):
                 'document.getElementById("status").textContent.includes("ready")')
             page.locator('#start').click()
             page.wait_for_function(
-                'document.getElementById("status")?.textContent'
-                '?.includes("instructions/s")',
+                EMU_RUNNING_JS,
                 timeout=30_000)
             page.wait_for_timeout(3_000)
 
@@ -310,8 +308,7 @@ class TestUSBLiveInEmulator(unittest.TestCase):
                 'document.getElementById("status").textContent.includes("ready")')
             page.locator('#start').click()
             page.wait_for_function(
-                'document.getElementById("status")?.textContent'
-                '?.includes("instructions/s")',
+                EMU_RUNNING_JS,
                 timeout=30_000)
             page.wait_for_timeout(3_000)
 

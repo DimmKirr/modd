@@ -20,7 +20,7 @@ import unittest
 from pathlib import Path
 
 # conftest.py (loaded by pytest automatically) puts tests/ on sys.path
-from e2e_fixtures import E2ETestCase, fwsc_path
+from e2e_fixtures import E2ETestCase, fwsc_path, EMU_RUNNING_JS
 
 FWSC = fwsc_path()
 
@@ -41,8 +41,7 @@ class TestModdSettings(E2ETestCase):
             'document.getElementById("status").textContent.includes("ready")')
         page.locator('#start').click()
         page.wait_for_function(
-            'document.getElementById("status")?.textContent'
-            '?.includes("instructions/s")',
+            EMU_RUNNING_JS,
             timeout=30_000)
         # wait for LCD content (non-black pixels in the LCD region)
         page.wait_for_function('''() => {

@@ -17,7 +17,9 @@ import sys
 from fm1_controls import FM1Controls
 
 ROOT = Path(__file__).resolve().parents[1]
-EMU_DIR = Path(os.environ.get('FM1_WEB_DIR', Path.home() / '.fm1-emulator' / 'web'))
+_EMU_ROOT = Path(os.environ.get('FM1_EMU_ROOT',
+                                  '/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master'))
+EMU_DIR = Path(os.environ.get('FM1_WEB_DIR', _EMU_ROOT / '_site'))
 
 
 def defconfig_name():
@@ -32,6 +34,11 @@ def fwsc_path(defconfig=None):
     dc = defconfig or defconfig_name()
     return ROOT / 'build' / dc / 'modd.fwsc'
 RESULTS_DIR = Path(__file__).resolve().parent / 'results'
+
+EMU_RUNNING_JS = (
+    '(() => { const s = document.getElementById("status")?.textContent || ""; '
+    'return s.includes("real time") || s.includes("instructions/s"); })()'
+)
 CHROMIUM_PATH = os.environ.get('CHROMIUM_PATH') or shutil.which('chromium')
 
 if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ:
@@ -237,15 +244,29 @@ class E2ETestCase(unittest.TestCase):
         FM1Controls(page).send_encoder(physical_enc, clicks, delay_ms=delay_ms)
 
     def screenshot(self, page, screen_name):
-        """Save the full emulator panel canvas to screenshots/full/."""
-        full_dir = self._results_dir() / 'screenshots' / 'full'
-        full_dir.mkdir(parents=True, exist_ok=True)
+        """Save full emulator panel + LCD crop to screenshots/full/ and lcd/."""
+        import base64 as _b64
         ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H%M%S.%f')[:-3] + 'Z'
         filename = f'{ts}-{screen_name}.png'
+        full_dir = self._results_dir() / 'screenshots' / 'full'
+        full_dir.mkdir(parents=True, exist_ok=True)
         page.locator('canvas#panel').screenshot(path=str(full_dir / filename))
+        lcd_dir = self._results_dir() / 'screenshots' / 'lcd'
+        lcd_dir.mkdir(parents=True, exist_ok=True)
+        data_url = page.evaluate('''() => {
+            const c = document.getElementById('panel');
+            const ctx = c.getContext('2d');
+            const tmp = document.createElement('canvas');
+            tmp.width = 480; tmp.height = 480;
+            tmp.getContext('2d').putImageData(
+                ctx.getImageData(370, 42, 480, 480), 0, 0);
+            return tmp.toDataURL('image/png');
+        }''')
+        raw = _b64.b64decode(data_url.split(',', 1)[1])
+        (lcd_dir / filename).write_bytes(raw)
 
     def screenshot_lcd(self, page, screen_name):
-        """Save a cropped LCD-only screenshot to screenshots/lcd/."""
+        """Save LCD crop only. Prefer screenshot() which captures both."""
         import base64
         lcd_dir = self._results_dir() / 'screenshots' / 'lcd'
         lcd_dir.mkdir(parents=True, exist_ok=True)

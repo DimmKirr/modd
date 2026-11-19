@@ -6,7 +6,16 @@
 #   build:<name>   - build firmware -> build/<name>/modd.fwsc
 #   test:<name>    - build + run e2e tests against that firmware
 #   flash:<name>   - flash the built firmware over USB-MIDI
+#
+# API tests run against fm1-live with --forward (screenshots + assertions):
+#   test:<name>:api  - build, boot fm1-live, run API smoke, save screenshots
+#   test:<name>:rpc  - build, run RPC bridge tests via Playwright WASM emulator
 version: '3'
+
+vars:
+  FM1_EMU_ROOT: '{{env "FM1_EMU_ROOT" | default "/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master"}}'
+  FM1_LIVE: '{{env "FM1_LIVE" | default (printf "%s/target/release/fm1-live" .FM1_EMU_ROOT)}}'
+  RPC_PORT: '{{env "RPC_PORT" | default "9222"}}'
 
 tasks:
   _build:
@@ -35,13 +44,16 @@ tasks:
     deps:
       - task: _build
         vars: { DEFCONFIG: '{{.DEFCONFIG}}' }
+    preconditions:
+      - sh: test -f '{{env "FM1_WEB_DIR" | default (printf "%s/_site/fm1_web.wasm" (env "FM1_EMU_ROOT" | default "/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master"))}}'
+        msg: 'fm1_web.wasm not found. Build the emulator or set FM1_WEB_DIR / FM1_EMU_ROOT.'
     env:
       MODD_FWSC: '{{.ROOT_DIR}}/{{.FWSC}}'
       MODD_DEFCONFIG: '{{.DEFCONFIG}}'
-      FM1_WEB_DIR: '{{env "FM1_WEB_DIR" | default (printf "%s/.fm1-emulator/web" .HOME)}}'
+      FM1_EMU_ROOT: '{{env "FM1_EMU_ROOT" | default "/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master"}}'
+      FM1_WEB_DIR: '{{env "FM1_WEB_DIR" | default (printf "%s/_site" (env "FM1_EMU_ROOT" | default "/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master"))}}'
       PLAYWRIGHT_BROWSERS_PATH: '{{env "PLAYWRIGHT_BROWSERS_PATH" | default (printf "%s/.cache/ms-playwright" .HOME)}}'
     cmds:
-      - task: :fm1-emulator:download:wasm
       - uv run --quiet python -m pytest tests/ -v --ignore-glob="**/bench_*" -k "e2e" {{.CLI_ARGS}}
 
   _flash:
@@ -55,6 +67,110 @@ tasks:
     cmds:
       - uv run --quiet --group flash python tools/device/fm1_install.py '{{.FWSC}}' --force --yes {{.CLI_ARGS}}
 
+  _test:api:
+    internal: true
+    desc: "Build firmware, boot fm1-live (live mode), run API UI tests, collect results + screenshots"
+    vars:
+      DEFCONFIG: '{{.DEFCONFIG}}'
+      FWSC: 'build/{{.DEFCONFIG}}/modd.fwsc'
+      EMU_FLAGS: '{{.EMU_FLAGS | default "--usb ethernet --net internet"}}'
+    deps:
+      - task: _build
+        vars: { DEFCONFIG: '{{.DEFCONFIG}}' }
+    preconditions:
+      - sh: test -f '{{.FM1_LIVE}}'
+        msg: 'fm1-live not found at {{.FM1_LIVE}}. Build fm1-emu or set FM1_LIVE.'
+    env:
+      RPC_HOST: '127.0.0.1:{{.RPC_PORT}}'
+      # Override .env so the firmware builds with the emulator's virtual AP
+      WIFI_SSID: 'Home'
+      WIFI_PASSWORD: 'fm1pass'
+      # fm1-live live mode needs a display (Xvfb :99 in CI/container)
+      DISPLAY: '{{env "DISPLAY" | default ":99"}}'
+    cmds:
+      - cmd: |
+          # Kill any leftover fm1-live on our port
+          STALE=$(lsof -ti tcp:{{.RPC_PORT}} 2>/dev/null || true)
+          if [ -n "$STALE" ]; then
+            echo "Killing stale process on port {{.RPC_PORT}}: $STALE"
+            kill $STALE 2>/dev/null || true
+            sleep 1
+          fi
+
+          echo "Starting fm1-live (live mode, {{.EMU_FLAGS}} --forward {{.RPC_PORT}}:{{.RPC_PORT}})..."
+          '{{.FM1_LIVE}}' \
+            --fwsc '{{.FWSC}}' \
+            {{.EMU_FLAGS}} \
+            --forward '{{.RPC_PORT}}:{{.RPC_PORT}}' \
+            > /tmp/fm1-live-$$.log 2>&1 &
+          EMU_PID=$!
+          echo "fm1-live PID=$EMU_PID"
+
+          # Wait for the firmware's RPC server to respond
+          echo "Waiting for port {{.RPC_PORT}}..."
+          for i in $(seq 1 60); do
+            if curl -sf --connect-timeout 1 --max-time 2 http://127.0.0.1:{{.RPC_PORT}}/api/info >/dev/null 2>&1; then
+              echo "Port {{.RPC_PORT}} ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+          if ! curl -sf --connect-timeout 2 --max-time 5 http://127.0.0.1:{{.RPC_PORT}}/api/info >/dev/null 2>&1; then
+            echo "ERROR: port {{.RPC_PORT}} not reachable after 60s"
+            kill $EMU_PID 2>/dev/null || true
+            cat /tmp/fm1-live-$$.log
+            rm -f /tmp/fm1-live-$$.log
+            exit 1
+          fi
+
+          # Run all API-driven UI tests (smoke + walkthrough)
+          TEST_EXIT=0
+          uv run --quiet --group ui-test python -m pytest \
+            tests/ui/themes/modd/http/ \
+            -v {{.CLI_ARGS}} || TEST_EXIT=$?
+
+          # Cleanup
+          kill $EMU_PID 2>/dev/null || true
+          wait $EMU_PID 2>/dev/null || true
+
+          # Copy fm1-live log into the latest test results dir
+          LATEST=$(ls -td tests/results/*-ui_walkthrough tests/results/*-http_smoke 2>/dev/null | head -1)
+          if [ -n "$LATEST" ]; then
+            cp /tmp/fm1-live-$$.log "$LATEST/fm1-live.log" 2>/dev/null || true
+            echo ""
+            echo "=== Results ==="
+            echo "results:      $LATEST/"
+            echo "screenshots:  $LATEST/screenshots/"
+            echo "emulator log: $LATEST/fm1-live.log"
+            ls "$LATEST/screenshots/" 2>/dev/null | sed 's/^/  /'
+          fi
+          rm -f /tmp/fm1-live-$$.log
+
+          exit $TEST_EXIT
+
+  _test:rpc:
+    internal: true
+    desc: "Build firmware, run RPC bridge tests via Playwright WASM emulator"
+    vars:
+      DEFCONFIG: '{{.DEFCONFIG}}'
+      FWSC: 'build/{{.DEFCONFIG}}/modd.fwsc'
+      TEST_PATTERN: '{{.TEST_PATTERN | default ""}}'
+    deps:
+      - task: _build
+        vars: { DEFCONFIG: '{{.DEFCONFIG}}' }
+    preconditions:
+      - sh: test -f '{{env "FM1_WEB_DIR" | default (printf "%s/_site/fm1_web.wasm" .FM1_EMU_ROOT)}}'
+        msg: 'fm1_web.wasm not found. Build the emulator or set FM1_WEB_DIR / FM1_EMU_ROOT.'
+    env:
+      MODD_FWSC: '{{.ROOT_DIR}}/{{.FWSC}}'
+      MODD_DEFCONFIG: '{{.DEFCONFIG}}'
+      FM1_EMU_ROOT: '{{.FM1_EMU_ROOT}}'
+      FM1_WEB_DIR: '{{env "FM1_WEB_DIR" | default (printf "%s/_site" .FM1_EMU_ROOT)}}'
+      PLAYWRIGHT_BROWSERS_PATH: '{{env "PLAYWRIGHT_BROWSERS_PATH" | default (printf "%s/.cache/ms-playwright" .HOME)}}'
+    cmds:
+      - uv run --quiet python -m pytest tests/rpc/ -v {{if .TEST_PATTERN}}-k "{{.TEST_PATTERN}}"{{end}} {{.CLI_ARGS}}
+
   # --- modd (default) -------------------------------------------------------
   build:modd:
     desc: "Build modd defconfig (-> build/modd/modd.fwsc)"
@@ -66,6 +182,24 @@ tasks:
     desc: "Build + E2E test modd defconfig"
     cmds:
       - task: _test
+        vars: { DEFCONFIG: modd, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  test:modd:api:
+    desc: "Build modd + run API smoke test via fm1-live with USB ethernet"
+    cmds:
+      - task: _test:api
+        vars: { DEFCONFIG: modd, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  test:modd:api:wifi:
+    desc: "Build modd + run API smoke test via fm1-live with WiFi OSS"
+    cmds:
+      - task: _test:api
+        vars: { DEFCONFIG: modd, EMU_FLAGS: '--wifi oss --net internet', CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  test:modd:rpc:
+    desc: "Build modd + run RPC bridge tests via Playwright"
+    cmds:
+      - task: _test:rpc
         vars: { DEFCONFIG: modd, CLI_ARGS: '{{.CLI_ARGS}}' }
 
   flash:modd:
@@ -106,6 +240,24 @@ tasks:
       - task: _test
         vars: { DEFCONFIG: modd_dev_network, CLI_ARGS: '{{.CLI_ARGS}}' }
 
+  test:modd_dev_network:api:
+    desc: "Build modd_dev_network + run API smoke test via fm1-live with USB ethernet"
+    cmds:
+      - task: _test:api
+        vars: { DEFCONFIG: modd_dev_network, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  test:modd_dev_network:api:wifi:
+    desc: "Build modd_dev_network + run API smoke test via fm1-live with WiFi OSS"
+    cmds:
+      - task: _test:api
+        vars: { DEFCONFIG: modd_dev_network, EMU_FLAGS: '--wifi oss --net internet', CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  test:modd_dev_network:rpc:
+    desc: "Build modd_dev_network + run RPC bridge tests via Playwright"
+    cmds:
+      - task: _test:rpc
+        vars: { DEFCONFIG: modd_dev_network, CLI_ARGS: '{{.CLI_ARGS}}' }
+
   flash:modd_dev_network:
     desc: "Flash modd_dev_network defconfig"
     cmds:
@@ -130,6 +282,43 @@ tasks:
     cmds:
       - task: _flash
         vars: { DEFCONFIG: modd_single_filebrowser, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  # --- modd_dev_rpc ---------------------------------------------------------
+  build:modd_dev_rpc:
+    desc: "Build modd_dev_rpc defconfig (-> build/modd_dev_rpc/modd.fwsc)"
+    cmds:
+      - task: _build
+        vars: { DEFCONFIG: modd_dev_rpc }
+
+  test:modd_dev_rpc:
+    desc: "Build + E2E test modd_dev_rpc defconfig"
+    cmds:
+      - task: _test
+        vars: { DEFCONFIG: modd_dev_rpc, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  test:modd_dev_rpc:api:
+    desc: "Build modd_dev_rpc + run API smoke test via fm1-live with USB ethernet"
+    cmds:
+      - task: _test:api
+        vars: { DEFCONFIG: modd_dev_rpc, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  test:modd_dev_rpc:api:wifi:
+    desc: "Build modd_dev_rpc + run API smoke test via fm1-live with WiFi OSS"
+    cmds:
+      - task: _test:api
+        vars: { DEFCONFIG: modd_dev_rpc, EMU_FLAGS: '--wifi oss --net internet', CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  test:modd_dev_rpc:rpc:
+    desc: "Build modd_dev_rpc + run RPC bridge tests via Playwright"
+    cmds:
+      - task: _test:rpc
+        vars: { DEFCONFIG: modd_dev_rpc, CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  flash:modd_dev_rpc:
+    desc: "Flash modd_dev_rpc defconfig"
+    cmds:
+      - task: _flash
+        vars: { DEFCONFIG: modd_dev_rpc, CLI_ARGS: '{{.CLI_ARGS}}' }
 
   # --- modd_wifi_debug ------------------------------------------------------
   build:modd_wifi_debug:

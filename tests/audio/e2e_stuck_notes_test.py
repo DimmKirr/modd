@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from e2e_fixtures import E2ETestCase
+from e2e_fixtures import E2ETestCase, EMU_RUNNING_JS
 
 FWSC_PATH = Path(__file__).resolve().parents[2] / 'build' / 'modd.fwsc'
 
@@ -118,7 +118,7 @@ class TestStuckNotes(E2ETestCase):
             'document.getElementById("status").textContent.includes("ready")')
         page.locator('#start').click()
         page.wait_for_function(
-            'document.getElementById("status")?.textContent?.includes("instructions/s")',
+            EMU_RUNNING_JS,
             timeout=30_000)
         # Wait for LCD content (firmware booted).
         page.wait_for_function('''() => {

@@ -32,7 +32,9 @@ sys.path.insert(0, str(ROOT / 'tests'))
 from e2e_fixtures import fwsc_path
 
 FWSC = fwsc_path()
-FM1_LIVE = Path.home() / '.fm1-emulator' / 'bin' / 'fm1-live'
+_EMU_ROOT = Path(os.environ.get('FM1_EMU_ROOT',
+                                  '/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master'))
+FM1_LIVE = Path(os.environ.get('FM1_LIVE', _EMU_ROOT / 'target' / 'release' / 'fm1-live'))
 RESULTS = ROOT / 'tests' / 'results'
 
 
