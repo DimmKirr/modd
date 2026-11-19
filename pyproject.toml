@@ -7,6 +7,7 @@ dependencies = [
     "kconfiglib>=14.1.0",
     "pillow>=12.3.0",
     "skidl>=3.0.0",
+    "websockets>=16.1.1",
 ]
 
 [dependency-groups]
@@ -29,8 +30,21 @@ unbrick = [
     "pycryptodomex>=3.20",
     "tqdm>=4.66",
 ]
+ui-test = [
+    "opencv-python-headless>=4.10",
+    "rapidocr-onnxruntime>=1.4.0",
+    "pillow>=12.3.0",
+    "pytest>=8.0",
+]
 
 [project.scripts]
+
+[tool.uv]
+# rapidocr-onnxruntime depends on opencv-python (full, needs Qt5/X11/libGL).
+# Replace it with the headless variant which has the same cv2 API but no GUI deps.
+override-dependencies = [
+    "opencv-python ; sys_platform == 'never'",
+]
 
 [tool.uv.sources]
 kconfig2mermaid = { git = "https://github.com/DimmKirr/kconfig2mermaid", tag = "v0.1.0" }

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""Unit tests for the CDP protocol message format.
+"""Unit tests for the RPC protocol message format.
 
-These tests validate the protocol specification from .scratch/fm-cdp/PROTOCOL.md
-without needing an emulator or hardware. They test JSON message construction,
-WebSocket framing, and the expected request/response shapes.
+These tests validate the JSON-RPC wire format without needing an emulator
+or hardware. They test JSON message construction, WebSocket framing, and
+the expected request/response shapes.
 """
 import base64
 import hashlib
@@ -15,10 +15,10 @@ import struct
 import pytest
 
 
-# --- CDP message format tests ---
+# --- RPC message format tests ---
 
-class TestCDPMessageFormat:
-    """Validate CDP JSON-RPC message shapes per PROTOCOL.md."""
+class TestRPCMessageFormat:
+    """Validate JSON-RPC message shapes per PROTOCOL.md."""
 
     def test_command_format(self):
         msg = {"id": 1, "method": "FM1.getInfo", "params": {}}

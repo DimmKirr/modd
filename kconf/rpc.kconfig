@@ -1,0 +1,20 @@
+# kc2mm:ignore
+menu "RPC"
+
+config RPC
+    bool "JSON-RPC server over IP (WebSocket + REST API)"
+    depends on LWIP
+    default n
+    help
+      Embeds a JSON-RPC server in the firmware. Listens on a TCP port
+      over any lwIP link (WiFi, USB network). Clients connect via
+      WebSocket for FM1.* RPC methods, or via HTTP for the REST API
+      (/api/*, /modd/*). Playwright and other tools can inspect memory,
+      read audio metrics, send MIDI, navigate pages, and stream logs.
+
+config RPC_PORT
+    int "RPC TCP listen port"
+    depends on RPC
+    default 9222
+
+endmenu

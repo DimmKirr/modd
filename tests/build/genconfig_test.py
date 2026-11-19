@@ -250,12 +250,12 @@ def test_wifi_defconfig_manifest_gains_net_lwip():
     assert 'net:lwip' in components
 
 
-def test_cdp_and_llm_follow_lwip_not_wifi():
+def test_rpc_and_llm_follow_lwip_not_wifi():
     """IP consumers depend on the stack, not on the WiFi link."""
     k = _kconfig_with('modd_minimal_defconfig')
     k.syms['LWIP'].set_value(2)
     assert k.syms['WIFI'].str_value == 'n'
-    for name in ('CDP', 'LLM'):
+    for name in ('RPC', 'LLM'):
         k.syms[name].set_value(2)
         assert k.syms[name].str_value == 'y', \
             f'{name} must be selectable with LWIP alone'

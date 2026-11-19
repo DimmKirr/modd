@@ -1,3 +1,11 @@
+config EMU
+    bool "Emulator build"
+    default n
+    help
+      Selects the emulator linker script with expanded POOL (464 KiB
+      instead of 336 KiB). Enables features that need more RAM than
+      real hardware has, such as the shadow framebuffer.
+
 menu "Debug"
 
 config DEBUG
@@ -45,5 +53,15 @@ config DEBUG_DAP
       Enable the fm1-dock SysEx debug protocol (D_HELLO, D_LOG).
       Adds a NOINIT byte ring buffer that survives resets; the host
       reads logs incrementally via tools/fm1log.py or hbdeploy.py.
+
+config DEBUG_FRAMEBUFFER
+    bool "Shadow framebuffer (emulator only)"
+    default y if EMU
+    depends on RPC && EMU
+    help
+      Keep a 240x240 RGB565 shadow copy of the LCD in RAM (112 KB).
+      Every lcd_blit/lcd_fill also writes to this buffer, and
+      GET /api/screenshot serves it as raw RGB565 (base64).
+      Only enable in emulator builds where RAM is not constrained.
 
 endmenu

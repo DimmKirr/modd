@@ -286,6 +286,7 @@ def _pick_runner(tc_path):
 
     is_x86 = platform.machine() in ('x86_64', 'AMD64')
     is_linux = platform.system() == 'Linux'
+    is_darwin = platform.system() == 'Darwin'
 
     if is_linux and is_x86:
         return _NativeRunner(tc_path)
@@ -297,6 +298,11 @@ def _pick_runner(tc_path):
                 return _RosettaRunner(tc_path, glibc, stdcpp)
             if shutil.which('qemu-x86_64'):
                 return _QemuRunner(tc_path, glibc, stdcpp)
+
+    if is_darwin:
+        glibc, stdcpp = _find_x86_libs(tc_path)
+        if glibc and stdcpp and shutil.which('qemu-x86_64'):
+            return _QemuRunner(tc_path, glibc, stdcpp)
 
     return _DockerRunner(tc_path)
 
@@ -492,6 +498,8 @@ def linker_script(enabled):
         return 'app_wifi_nonfree.ld'
     if 'DOCK' in enabled:
         return 'app_dock.ld'
+    if 'EMU' in enabled:
+        return 'app_emu.ld'
     return 'app.ld'
 
 

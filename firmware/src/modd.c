@@ -114,6 +114,9 @@ extern uint32_t _audio_start[], _audio_end[], _audio_load[];
 /* --- libc (freestanding: memset, memcpy, memmove, strlen) --- */
 #include "libc.c"
 
+/* --- shadow framebuffer (emulator-only, 112 KB) --- */
+#include "debug/debug_framebuffer.c"
+
 /* --- LCD driver (ST7789 240x240) --- */
 #if defined(CONFIG_UI_FELUCCA)
 #include "ui/themes/felucca/lcd.c"
@@ -904,6 +907,17 @@ static uint8_t hints_visible;                   /* GLO tap badge overlay (theme.
 #error "no UI theme selected: UI_MELODEE and UI_SLOOP are not implemented yet (kconf/ui.kconfig)"
 #endif
 
+/* --- RPC server (CONFIG_RPC): JSON-RPC over WebSocket + REST API on lwIP TCP --- */
+
+#ifdef CONFIG_RPC
+#include "rpc/rpc_tcp.c"
+#include "rpc/rpc_json.c"
+#include "rpc/rpc_ws.c"
+#include "rpc/rpc_fm1.c"
+#include "rpc/api_pages.c"
+#include "rpc/rpc_server.c"
+#endif /* CONFIG_RPC */
+
 /* --- main loop --- */
 
 /* TIMER5 ISR: 10 kHz system tick (input scan, USB poll, ms counter).
@@ -1103,6 +1117,9 @@ static void services_task(void)
         http_poll();
         weather_poll();
         llm_poll();
+#ifdef CONFIG_RPC
+        rpc_poll();
+#endif
         usbnet_poll();
         ecm_poll();
         yield();
@@ -1414,6 +1431,7 @@ static void fm1_main(void)
         song.master_q12 = (uint32_t)((a * a) >> 8);
     }
     audio_init();
+    modd_song_init();
     modd_log("audio: init OK");
 #if MODD_DUAL_CORE
     if (fm1_multicore_start())
@@ -1478,7 +1496,11 @@ static void fm1_main(void)
     }
 #endif
     {
-        static uint32_t services_stack[512] __attribute__((section(".pool")));
+#ifdef CONFIG_RPC
+        static uint32_t services_stack[2048] __attribute__((section(".pool")));
+#else
+        static uint32_t services_stack[1024] __attribute__((section(".pool")));
+#endif
         sched_create(services_task, services_stack, sizeof services_stack);
 #ifdef CONFIG_DEBUG
         modd_log("sched: services task created");
@@ -1597,6 +1619,9 @@ static void fm1_main(void)
         http_poll();
         weather_poll();
         llm_poll();
+#ifdef CONFIG_RPC
+        rpc_poll();
+#endif
         usbnet_poll();
         ecm_poll();
 #if defined(CONFIG_UI_FELUCCA)

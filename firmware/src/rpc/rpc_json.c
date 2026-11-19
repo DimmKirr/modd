@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* Minimal JSON parser for CDP messages.
+/* Minimal JSON parser for RPC messages.
  * Only handles the subset needed: {"id":N,"method":"X","params":{...}}
  * No malloc, no recursion, no floats. */
 
-#define CDP_JSON_MAX_TOKENS 32
+#define RPC_JSON_MAX_TOKENS 32
 
-struct cdp_tok {
+struct rpc_tok {
     uint16_t start;
     uint16_t end;
     uint8_t  type; /* 0=obj, 1=arr, 2=str, 3=prim */
@@ -14,8 +14,8 @@ struct cdp_tok {
 
 /* Minimal tokenizer: finds strings, numbers, objects, arrays.
  * Returns token count or -1 on error. */
-static int cdp_json_parse(const char *js, uint32_t len,
-                          struct cdp_tok *tokens, int max_tokens)
+static int rpc_json_parse(const char *js, uint32_t len,
+                          struct rpc_tok *tokens, int max_tokens)
 {
     int count = 0;
     uint32_t i = 0;
@@ -76,7 +76,7 @@ static int cdp_json_parse(const char *js, uint32_t len,
 }
 
 /* Compare token string content */
-static int cdp_tok_eq(const char *js, const struct cdp_tok *t, const char *s)
+static int rpc_tok_eq(const char *js, const struct rpc_tok *t, const char *s)
 {
     uint32_t tlen = t->end - t->start;
     uint32_t slen = 0;
@@ -89,7 +89,7 @@ static int cdp_tok_eq(const char *js, const struct cdp_tok *t, const char *s)
 }
 
 /* Extract integer value from a primitive token */
-static int32_t cdp_tok_int(const char *js, const struct cdp_tok *t)
+static int32_t rpc_tok_int(const char *js, const struct rpc_tok *t)
 {
     int32_t val = 0;
     int neg = 0;
@@ -117,7 +117,7 @@ static int32_t cdp_tok_int(const char *js, const struct cdp_tok *t)
 }
 
 /* Extract string token content into a buffer (not null-terminated unless fits) */
-static uint32_t cdp_tok_str(const char *js, const struct cdp_tok *t,
+static uint32_t rpc_tok_str(const char *js, const struct rpc_tok *t,
                             char *buf, uint32_t buf_size)
 {
     uint32_t tlen = t->end - t->start;
@@ -130,130 +130,132 @@ static uint32_t cdp_tok_str(const char *js, const struct cdp_tok *t,
 
 /* Find a key in a flat object (tokens[0] must be the object).
  * Returns token index of the value, or -1. */
-static int cdp_json_find(const char *js, const struct cdp_tok *tokens,
+static int rpc_json_find(const char *js, const struct rpc_tok *tokens,
                          int ntokens, const char *key)
 {
     int i;
     for (i = 1; i + 1 < ntokens; i++) {
-        if (tokens[i].type == 2 && cdp_tok_eq(js, &tokens[i], key))
+        if (tokens[i].type == 2 && rpc_tok_eq(js, &tokens[i], key))
             return i + 1;
     }
     return -1;
 }
 
-/* --- CDP JSON response builder --- */
+/* --- JSON response builder --- */
 
-#define CDP_TX_MAX 2048
+#define RPC_TX_MAX 2048
 
-struct cdp_tx {
-    char buf[CDP_TX_MAX];
+struct rpc_tx {
+    char buf[RPC_TX_MAX];
     uint32_t len;
 };
 
-static void cdp_tx_init(struct cdp_tx *tx)
+static struct rpc_tx rpc_tx_static;
+
+static void rpc_tx_init(struct rpc_tx *tx)
 {
     tx->len = 0;
 }
 
-static void cdp_tx_raw(struct cdp_tx *tx, const char *s)
+static void rpc_tx_raw(struct rpc_tx *tx, const char *s)
 {
-    while (*s && tx->len < CDP_TX_MAX - 1)
+    while (*s && tx->len < RPC_TX_MAX - 1)
         tx->buf[tx->len++] = *s++;
 }
 
-static void cdp_tx_char(struct cdp_tx *tx, char c)
+static void rpc_tx_char(struct rpc_tx *tx, char c)
 {
-    if (tx->len < CDP_TX_MAX - 1)
+    if (tx->len < RPC_TX_MAX - 1)
         tx->buf[tx->len++] = c;
 }
 
-static void cdp_tx_int(struct cdp_tx *tx, int32_t v)
+static void rpc_tx_int(struct rpc_tx *tx, int32_t v)
 {
     char tmp[12];
     int neg = 0, i = 0;
     if (v < 0) { neg = 1; v = -v; }
     if (v == 0) { tmp[i++] = '0'; }
     else { while (v > 0) { tmp[i++] = '0' + (v % 10); v /= 10; } }
-    if (neg) cdp_tx_char(tx, '-');
-    while (i > 0) cdp_tx_char(tx, tmp[--i]);
+    if (neg) rpc_tx_char(tx, '-');
+    while (i > 0) rpc_tx_char(tx, tmp[--i]);
 }
 
-static void cdp_tx_uint(struct cdp_tx *tx, uint32_t v)
+static void rpc_tx_uint(struct rpc_tx *tx, uint32_t v)
 {
     char tmp[12];
     int i = 0;
     if (v == 0) { tmp[i++] = '0'; }
     else { while (v > 0) { tmp[i++] = '0' + (v % 10); v /= 10; } }
-    while (i > 0) cdp_tx_char(tx, tmp[--i]);
+    while (i > 0) rpc_tx_char(tx, tmp[--i]);
 }
 
-static void cdp_tx_key_str(struct cdp_tx *tx, const char *key, const char *val)
+static void rpc_tx_key_str(struct rpc_tx *tx, const char *key, const char *val)
 {
-    cdp_tx_char(tx, '"');
-    cdp_tx_raw(tx, key);
-    cdp_tx_raw(tx, "\":\"");
-    cdp_tx_raw(tx, val);
-    cdp_tx_char(tx, '"');
+    rpc_tx_char(tx, '"');
+    rpc_tx_raw(tx, key);
+    rpc_tx_raw(tx, "\":\"");
+    rpc_tx_raw(tx, val);
+    rpc_tx_char(tx, '"');
 }
 
-static void cdp_tx_key_int(struct cdp_tx *tx, const char *key, int32_t val)
+static void rpc_tx_key_int(struct rpc_tx *tx, const char *key, int32_t val)
 {
-    cdp_tx_char(tx, '"');
-    cdp_tx_raw(tx, key);
-    cdp_tx_raw(tx, "\":");
-    cdp_tx_int(tx, val);
+    rpc_tx_char(tx, '"');
+    rpc_tx_raw(tx, key);
+    rpc_tx_raw(tx, "\":");
+    rpc_tx_int(tx, val);
 }
 
-static void cdp_tx_key_uint(struct cdp_tx *tx, const char *key, uint32_t val)
+static void rpc_tx_key_uint(struct rpc_tx *tx, const char *key, uint32_t val)
 {
-    cdp_tx_char(tx, '"');
-    cdp_tx_raw(tx, key);
-    cdp_tx_raw(tx, "\":");
-    cdp_tx_uint(tx, val);
+    rpc_tx_char(tx, '"');
+    rpc_tx_raw(tx, key);
+    rpc_tx_raw(tx, "\":");
+    rpc_tx_uint(tx, val);
 }
 
-static void cdp_tx_key_bool(struct cdp_tx *tx, const char *key, int val)
+static void rpc_tx_key_bool(struct rpc_tx *tx, const char *key, int val)
 {
-    cdp_tx_char(tx, '"');
-    cdp_tx_raw(tx, key);
-    cdp_tx_raw(tx, "\":");
-    cdp_tx_raw(tx, val ? "true" : "false");
+    rpc_tx_char(tx, '"');
+    rpc_tx_raw(tx, key);
+    rpc_tx_raw(tx, "\":");
+    rpc_tx_raw(tx, val ? "true" : "false");
 }
 
-static void cdp_response_begin(struct cdp_tx *tx, int32_t id)
+static void rpc_response_begin(struct rpc_tx *tx, int32_t id)
 {
-    cdp_tx_init(tx);
-    cdp_tx_raw(tx, "{\"id\":");
-    cdp_tx_int(tx, id);
-    cdp_tx_raw(tx, ",\"result\":{");
+    rpc_tx_init(tx);
+    rpc_tx_raw(tx, "{\"id\":");
+    rpc_tx_int(tx, id);
+    rpc_tx_raw(tx, ",\"result\":{");
 }
 
-static void cdp_response_end(struct cdp_tx *tx)
+static void rpc_response_end(struct rpc_tx *tx)
 {
-    cdp_tx_raw(tx, "}}");
+    rpc_tx_raw(tx, "}}");
 }
 
-static void cdp_error(struct cdp_tx *tx, int32_t id, int32_t code, const char *msg)
+static void rpc_error(struct rpc_tx *tx, int32_t id, int32_t code, const char *msg)
 {
-    cdp_tx_init(tx);
-    cdp_tx_raw(tx, "{\"id\":");
-    cdp_tx_int(tx, id);
-    cdp_tx_raw(tx, ",\"error\":{\"code\":");
-    cdp_tx_int(tx, code);
-    cdp_tx_raw(tx, ",\"message\":\"");
-    cdp_tx_raw(tx, msg);
-    cdp_tx_raw(tx, "\"}}");
+    rpc_tx_init(tx);
+    rpc_tx_raw(tx, "{\"id\":");
+    rpc_tx_int(tx, id);
+    rpc_tx_raw(tx, ",\"error\":{\"code\":");
+    rpc_tx_int(tx, code);
+    rpc_tx_raw(tx, ",\"message\":\"");
+    rpc_tx_raw(tx, msg);
+    rpc_tx_raw(tx, "\"}}");
 }
 
-static void cdp_event_begin(struct cdp_tx *tx, const char *method)
+static void rpc_event_begin(struct rpc_tx *tx, const char *method)
 {
-    cdp_tx_init(tx);
-    cdp_tx_raw(tx, "{\"method\":\"");
-    cdp_tx_raw(tx, method);
-    cdp_tx_raw(tx, "\",\"params\":{");
+    rpc_tx_init(tx);
+    rpc_tx_raw(tx, "{\"method\":\"");
+    rpc_tx_raw(tx, method);
+    rpc_tx_raw(tx, "\",\"params\":{");
 }
 
-static void cdp_event_end(struct cdp_tx *tx)
+static void rpc_event_end(struct rpc_tx *tx)
 {
-    cdp_tx_raw(tx, "}}");
+    rpc_tx_raw(tx, "}}");
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""Unit tests for CDP Kconfig integration."""
+"""Unit tests for RPC Kconfig integration."""
 import subprocess
 import sys
 from pathlib import Path
@@ -24,30 +24,30 @@ def kconf():
     return Kconfig(str(KCONFIG), warn=False)
 
 
-def test_cdp_kconfig_parses(kconf):
-    cdp = kconf.syms['CDP']
-    assert cdp.type == BOOL
+def test_rpc_kconfig_parses(kconf):
+    rpc = kconf.syms['RPC']
+    assert rpc.type == BOOL
 
 
-def test_cdp_depends_on_lwip(kconf):
-    """CDP needs the IP stack, whichever link carries it (WiFi or USB)."""
-    cdp = kconf.syms['CDP']
-    dep = expr_str(cdp.direct_dep)
-    assert 'LWIP' in dep, f'CDP must depend on LWIP, got: {dep}'
+def test_rpc_depends_on_lwip(kconf):
+    """RPC needs the IP stack, whichever link carries it (WiFi or USB)."""
+    rpc = kconf.syms['RPC']
+    dep = expr_str(rpc.direct_dep)
+    assert 'LWIP' in dep, f'RPC must depend on LWIP, got: {dep}'
     assert 'WIFI' not in dep.replace('WIFI_LWIP', ''), \
-        f'CDP must not depend on the WiFi radio, got: {dep}'
+        f'RPC must not depend on the WiFi radio, got: {dep}'
 
 
-def test_cdp_port_default(kconf):
-    port = kconf.syms['CDP_PORT']
+def test_rpc_port_default(kconf):
+    port = kconf.syms['RPC_PORT']
     assert port is not None
     kconf.syms['WIFI'].set_value(2)  # y
     kconf.syms['WIFI_LWIP'].set_value(2)
-    kconf.syms['CDP'].set_value(2)
+    kconf.syms['RPC'].set_value(2)
     assert str(port.str_value) == '9222'
 
 
-def test_dev_defconfig_includes_cdp():
+def test_dev_defconfig_includes_rpc():
     genconfig = ROOT / 'tools' / 'build' / 'genconfig.py'
     if not genconfig.exists():
         pytest.skip('tools/genconfig.py not found')
@@ -59,5 +59,5 @@ def test_dev_defconfig_includes_cdp():
         assert r.returncode == 0, r.stderr
         header = Path(tmpdir) / 'config.h'
         text = header.read_text()
-        assert '#define CONFIG_CDP 1' in text
-        assert '#define CONFIG_CDP_PORT 9222' in text
+        assert '#define CONFIG_RPC 1' in text
+        assert '#define CONFIG_RPC_PORT 9222' in text

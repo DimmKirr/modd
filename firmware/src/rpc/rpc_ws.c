@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* Minimal WebSocket server (RFC 6455) for CDP transport.
+/* Minimal WebSocket server (RFC 6455) for RPC transport.
  * Single connection, text frames only, no extensions. */
 
 #define WS_STATE_HTTP     0
@@ -49,7 +49,7 @@ static void sha1(const uint8_t *msg, uint32_t len, uint8_t out[20])
 {
     uint32_t h[5] = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0};
     uint8_t block[64];
-    uint32_t i, blocks, pos = 0;
+    uint32_t i, pos = 0;
 
     while (pos + 64 <= len) {
         sha1_block(h, msg + pos);
@@ -112,7 +112,7 @@ static uint32_t base64_encode(const uint8_t *in, uint32_t in_len, char *out)
     return j;
 }
 
-/* Base64 decode (for CDP memory write payloads) */
+/* Base64 decode (for RPC memory write payloads) */
 static int b64_val(char c)
 {
     if (c >= 'A' && c <= 'Z') return c - 'A';
@@ -205,7 +205,7 @@ static int ws_handle_upgrade(const uint8_t *data, uint32_t len)
         }
     }
 
-    tcp_write((const uint8_t *)resp, rlen);
+    rpc_tcp_send((const uint8_t *)resp, rlen);
     return 0;
 }
 
@@ -274,7 +274,7 @@ static int ws_send_text(const uint8_t *data, uint32_t len)
     uint32_t i;
     for (i = 0; i < hdr_len; i++) frame[i] = hdr[i];
     for (i = 0; i < len; i++) frame[hdr_len + i] = data[i];
-    return tcp_write(frame, hdr_len + len);
+    return rpc_tcp_send(frame, hdr_len + len);
 }
 
 static void ws_send_pong(const uint8_t *data, uint32_t len)
@@ -285,7 +285,7 @@ static void ws_send_pong(const uint8_t *data, uint32_t len)
     frame[1] = (uint8_t)len;
     uint32_t i;
     for (i = 0; i < len; i++) frame[2 + i] = data[i];
-    tcp_write(frame, 2 + len);
+    rpc_tcp_send(frame, 2 + len);
 }
 
 static void ws_init(void)
