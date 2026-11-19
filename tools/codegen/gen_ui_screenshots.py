@@ -46,7 +46,19 @@ PALETTE_COUNT = 10
 README_MARKER_START = '<!-- theme-screenshots:start -->'
 README_MARKER_END = '<!-- theme-screenshots:end -->'
 
-HERO_SHOTS = ['home', 'wx']
+GALLERY_MARKER_START = '<!-- theme-gallery:start -->'
+GALLERY_MARKER_END = '<!-- theme-gallery:end -->'
+
+HERO_SHOTS = ['home', 'files', 'disk', 'settings_net_wifi', 'wx', 'demo']
+HERO_ALT = {
+    'settings_net_wifi': 'wifi config',
+    'wx': 'weather',
+}
+PAGE_SHOTS = [
+    ('home', 'Home'), ('wx', 'Weather'), ('demo', 'Demo'),
+    ('files', 'Files'), ('disk', 'Disk'), ('log', 'Log'),
+    ('settings_net_wifi', 'WiFi'),
+]
 SETTINGS_SHOT_TABS = ['display', 'midi', 'hw', 'net']
 
 
@@ -55,20 +67,46 @@ def _fwsc_path(defconfig: str) -> Path:
 
 
 def _find_fm1_live() -> Path | None:
-    fm1_emu = Path(os.environ.get('FM1_EMU_DIR', ''))
-    if fm1_emu.is_dir():
-        p = fm1_emu / 'target' / 'release' / 'fm1-live'
-        if p.is_file():
-            return p
+    for env_key in ('FM1_EMU_ROOT', 'FM1_EMU_DIR'):
+        root = os.environ.get(env_key, '')
+        if root:
+            p = Path(root) / 'target' / 'release' / 'fm1-live'
+            if p.is_file():
+                return p
     for candidate in [
-        Path.home() / 'dev' / 'dimmkirr' / 'fm1-emu' / '.worktrees' / 'master' / 'target' / 'release' / 'fm1-live',
-        Path.home() / 'dev' / 'dimmkirr' / 'fm1-emu' / 'target' / 'release' / 'fm1-live',
-        Path('/Users/dmitry/dev/dimmkirr/fm1-emu/.worktrees/master/target/release/fm1-live'),
-        Path('/Users/dmitry/dev/dimmkirr/fm1-emu/target/release/fm1-live'),
+        Path('/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live'),
+        Path('/Users/dmitry/dev/modd-fm/fm1-emu/target/release/fm1-live'),
     ]:
         if candidate.is_file():
             return candidate
     return None
+
+
+def _build_firmware_defconfig(defconfig: str) -> Path:
+    """Build a specific defconfig and return the .fwsc path."""
+    fwsc = _fwsc_path(defconfig)
+    if fwsc.is_file():
+        return fwsc
+    env = {**os.environ}
+    tc = Path.home() / '.fm1-toolchain' / 'toolchain'
+    if 'JIELI_TOOLCHAIN' not in env and tc.is_dir():
+        env['JIELI_TOOLCHAIN'] = str(tc)
+    sdk = Path.home() / '.fm1-toolchain' / 'AC79_SDK'
+    if 'AC79_SDK' not in env and sdk.is_dir():
+        env['AC79_SDK'] = str(sdk)
+    print(f'  Building firmware (defconfig={defconfig})...')
+    r = subprocess.run(
+        [sys.executable, str(ROOT / 'tools' / 'build' / 'build.py'),
+         '--defconfig', defconfig],
+        capture_output=True, text=True, cwd=str(ROOT), timeout=300, env=env)
+    if r.returncode != 0:
+        print(f'  Build failed:\n{r.stderr}', file=sys.stderr)
+        raise SystemExit(1)
+    if not fwsc.is_file():
+        print(f'  Build succeeded but {fwsc} not found', file=sys.stderr)
+        raise SystemExit(1)
+    print(f'  Built {fwsc}')
+    return fwsc
 
 
 def _build_firmware(theme: str) -> Path:
@@ -102,20 +140,35 @@ def _build_firmware(theme: str) -> Path:
 # fm1-live backend (modd theme): headless --shot with USB ethernet
 # ---------------------------------------------------------------------------
 
+SCREENSHOT_DISK_IMG = Path(__file__).resolve().parent / 'screenshot_disk.img'
+
+
 def _shot(fm1_live: Path, fwsc: Path, keys: str, ms: int,
-          work_dir: Path, net: bool = True) -> Path:
+          work_dir: Path, net: bool = True, wifi: bool = False,
+          disk_image: Path | None = None) -> Path:
     """Run fm1-live --shot in a fresh subdirectory and return the PPM path."""
     env = {**os.environ, 'FM1_NO_PLAY': '1'}
     if keys:
         env['FM1_BENCH_KEYS'] = keys
-    if net:
+    if net or wifi:
         env['FM1_NO_JIT'] = '1'
         env['FM1_NO_LOOPSKIP'] = '1'
     run_dir = Path(tempfile.mkdtemp(dir=work_dir))
     (run_dir / 'work').mkdir()
     cmd = [str(fm1_live), '--fwsc', str(fwsc.resolve()), '--lcd-only', '--shot', str(ms)]
-    if net:
-        cmd += ['--usb', 'ethernet', '--net', 'internet']
+    usb_parts = []
+    if net and not wifi:
+        usb_parts.append('ethernet')
+    if disk_image:
+        usb_parts.append('disk')
+    if usb_parts:
+        cmd += ['--usb', ','.join(usb_parts)]
+    if wifi:
+        cmd += ['--wifi', 'oss']
+    if net or wifi:
+        cmd += ['--net', 'internet']
+    if disk_image:
+        cmd += ['--disk-image', str(disk_image.resolve())]
     r = subprocess.run(cmd, capture_output=True, text=True,
                        cwd=str(run_dir), timeout=600, env=env)
     ppm = run_dir / 'work' / 'lcd.ppm'
@@ -154,16 +207,33 @@ def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path) -> int:
         # --- SETTINGS: HOME hold -> settings, then cycle tabs ---
         # HOME hold at 500ms, release at 1200ms
         # Then e0 clicks for each tab
+        # NET tab uses network so it shows LINK/IP/GATEWAY/DNS values
         for tab_i, tab_name in enumerate(SETTINGS_TABS):
-            print(f'    settings {tab_name}...')
-            keys = _hold_keys('HOME', 500)
-            enc_clicks = ','.join(f'{1500 + i * 300}:e0:+1' for i in range(tab_i))
+            use_net = tab_name == 'NET'
+            boot_wait = 15000 if use_net else 0
+            print(f'    settings {tab_name}{"  (with network)" if use_net else ""}...')
+            keys = _hold_keys('HOME', 500 + boot_wait)
+            enc_clicks = ','.join(
+                f'{1500 + boot_wait + i * 300}:e0:+1' for i in range(tab_i))
             if enc_clicks:
                 keys += ',' + enc_clicks
-            shot_ms = 1500 + tab_i * 300 + 500
-            ppm = _shot(fm1_live, fwsc, keys, shot_ms, work, net=False)
+            shot_ms = 1500 + boot_wait + tab_i * 300 + 500
+            ppm = _shot(fm1_live, fwsc, keys, shot_ms, work, net=use_net)
             _ppm_to_png(ppm, out_dir / f'{idx:02d}_settings_{tab_name.lower()}.png')
             idx += 1
+
+        # --- SETTINGS NET over WiFi (oss driver, no USB ethernet) ---
+        print('    settings NET (WiFi)...')
+        net_tab_i = SETTINGS_TABS.index('NET')
+        keys = _hold_keys('HOME', 25000)
+        enc_clicks = ','.join(
+            f'{26500 + i * 300}:e0:+1' for i in range(net_tab_i))
+        if enc_clicks:
+            keys += ',' + enc_clicks
+        shot_ms = 26500 + net_tab_i * 300 + 500
+        ppm = _shot(fm1_live, fwsc, keys, shot_ms, work, wifi=True)
+        _ppm_to_png(ppm, out_dir / f'{idx:02d}_settings_net_wifi.png')
+        idx += 1
 
         # --- PALETTES: settings DISPLAY tab with each palette selected ---
         # OCT+ cycles the THEME value; screenshot the settings page to show
@@ -182,9 +252,10 @@ def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path) -> int:
 
         # --- WEATHER (needs network): wait for USB ethernet + weather fetch ---
         # FX hold -> VIEW_CONN page 1 (weather page)
-        print('    weather (waiting for network)...')
+        # 20s boot with network, then 10s for weather fetch to complete
+        print('    weather (waiting for network + fetch)...')
         keys = _hold_keys('FX', 20000)
-        ppm = _shot(fm1_live, fwsc, keys, 25000, work, net=True)
+        ppm = _shot(fm1_live, fwsc, keys, 30000, work, net=True)
         _ppm_to_png(ppm, out_dir / f'{idx:02d}_wx.png')
         idx += 1
 
@@ -196,16 +267,29 @@ def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path) -> int:
         idx += 1
 
         # --- FILES (SAVE hold -> VIEW_DEMO page 1 = FILES) ---
-        print('    files...')
-        keys = _hold_keys('SAVE', 500)
-        ppm = _shot(fm1_live, fwsc, keys, 2000, work, net=False)
+        # With a USB disk image so the browser shows actual .dock files.
+        # The emulator needs both disk and ethernet on the hub for the host
+        # controller to enumerate the disk.  modd_dev_network's USB_NET_AUTO
+        # steals the host, so we build the base modd defconfig (no auto-
+        # ethernet) for these two shots.
+        disk_img = SCREENSHOT_DISK_IMG if SCREENSHOT_DISK_IMG.is_file() else None
+        if disk_img:
+            print('    files (with USB disk, building modd defconfig)...')
+            disk_fwsc = _build_firmware_defconfig('modd')
+        else:
+            print('    files (no disk image, will show empty state)...')
+            disk_fwsc = fwsc
+        keys = _hold_keys('SAVE', 2000)
+        ppm = _shot(fm1_live, disk_fwsc, keys, 20000, work, net=True,
+                     disk_image=disk_img)
         _ppm_to_png(ppm, out_dir / f'{idx:02d}_files.png')
         idx += 1
 
         # --- DISK (SAVE hold -> VIEW_DEMO, e0+1 -> page 2 = DISK) ---
-        print('    disk...')
-        keys = _hold_keys('SAVE', 500) + ',1500:e0:+1'
-        ppm = _shot(fm1_live, fwsc, keys, 2500, work, net=False)
+        print('    disk (with USB disk)...' if disk_img else '    disk...')
+        keys = _hold_keys('SAVE', 2000) + ',3000:e0:+1'
+        ppm = _shot(fm1_live, disk_fwsc, keys, 20000, work, net=True,
+                     disk_image=disk_img)
         _ppm_to_png(ppm, out_dir / f'{idx:02d}_disk.png')
         idx += 1
 
@@ -246,6 +330,7 @@ def capture_modd(build: bool = True) -> Path:
 
     _copy_stable_names(out_dir)
     _inject_readme_screenshots(out_dir)
+    _inject_theme_gallery(out_dir)
     print(f'  {idx} screenshots saved to {out_dir}')
     return out_dir
 
@@ -255,7 +340,9 @@ def capture_modd(build: bool = True) -> Path:
 # ---------------------------------------------------------------------------
 
 def _default_emu_dir() -> Path:
-    return Path.home() / '.fm1-emulator' / 'web'
+    root = os.environ.get('FM1_EMU_ROOT',
+                          '/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master')
+    return Path(os.environ.get('FM1_WEB_DIR', Path(root) / '_site'))
 
 
 def capture_theme_playwright(theme: str, build: bool = True) -> Path:
@@ -353,6 +440,7 @@ def capture_theme_playwright(theme: str, build: bool = True) -> Path:
         server.shutdown()
 
     _copy_stable_names(out_dir)
+    _inject_theme_gallery(out_dir)
     print(f'  {idx} screenshots saved to {out_dir}')
     return out_dir
 
@@ -432,7 +520,8 @@ def _inject_readme_screenshots(out_dir: Path) -> None:
     for name in HERO_SHOTS:
         f = out_dir / f'{name}.png'
         if f.is_file():
-            lines.append(f'  <img src="{rel}/{name}.png" alt="modd {name}" width="240">')
+            alt = HERO_ALT.get(name, name)
+            lines.append(f'  <img src="{rel}/{name}.png" alt="modd {alt}" width="240">')
     lines.append('</p>')
     lines.append('')
 
@@ -465,6 +554,62 @@ def _inject_readme_screenshots(out_dir: Path) -> None:
     after = text[text.index(README_MARKER_END) + len(README_MARKER_END):]
     readme.write_text(before + block + after)
     print(f'  Injected screenshots into {readme}')
+
+
+def _inject_theme_gallery(out_dir: Path) -> None:
+    theme_md = out_dir.parent / 'THEME.md'
+    if not theme_md.is_file():
+        return
+    text = theme_md.read_text()
+    if GALLERY_MARKER_START not in text:
+        return
+
+    lines = [GALLERY_MARKER_START]
+
+    pages = [(f, label) for f, label in PAGE_SHOTS
+             if (out_dir / f'{f}.png').is_file()]
+    if pages:
+        lines.append('## Pages')
+        lines.append('')
+        lines.append('| ' + ' | '.join(label for _, label in pages) + ' |')
+        lines.append('|' + '|'.join(':----:' for _ in pages) + '|')
+        lines.append('| ' + ' | '.join(
+            f'![{label}](screenshots/{f}.png)' for f, label in pages) + ' |')
+
+    tabs = [t for t in SETTINGS_SHOT_TABS
+            if (out_dir / f'settings_{t}.png').is_file()]
+    if tabs:
+        lines.append('')
+        lines.append('## Settings')
+        lines.append('')
+        lines.append('| ' + ' | '.join(t.upper() for t in tabs) + ' |')
+        lines.append('|' + '|'.join(':----:' for _ in tabs) + '|')
+        lines.append('| ' + ' | '.join(
+            f'![settings {t}](screenshots/settings_{t}.png)' for t in tabs) + ' |')
+
+    palettes = sorted(out_dir.glob('palette_*.png'))
+    if palettes:
+        lines.append('')
+        lines.append('## Color Palettes')
+        lines.append('')
+        row_size = 5
+        for i in range(0, len(palettes), row_size):
+            chunk = palettes[i:i + row_size]
+            nums = [str(i + j) for j in range(len(chunk))]
+            lines.append('| ' + ' | '.join(nums) + ' |')
+            lines.append('|' + '|'.join(':--:' for _ in chunk) + '|')
+            lines.append('| ' + ' | '.join(
+                f'![palette {i+j}](screenshots/{c.name})' for j, c in enumerate(chunk)) + ' |')
+            if i + row_size < len(palettes):
+                lines.append('')
+
+    lines.append(GALLERY_MARKER_END)
+    block = '\n'.join(lines)
+
+    before = text[:text.index(GALLERY_MARKER_START)]
+    after = text[text.index(GALLERY_MARKER_END) + len(GALLERY_MARKER_END):]
+    theme_md.write_text(before + block + after)
+    print(f'  Injected gallery into {theme_md.name}')
 
 
 # ---------------------------------------------------------------------------

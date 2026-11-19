@@ -10,6 +10,68 @@ Produces `build/modd.fwsc`. Requires the JieLi toolchain (downloaded
 automatically on first run). `task build` delegates to `build:live`, which
 caches on source checksums and skips when nothing changed.
 
+## Environment
+
+The environment has three layers. Each owns one thing:
+
+| Layer | Owns | Files |
+|-------|------|-------|
+| Nix dev shell | System libraries: `qemu-x86_64`, libusb, FriBiDi, and on aarch64 the x86-64 glibc and libstdc++ the JieLi compiler runs against | `flake.nix`, `flake.lock` |
+| mise | Tool versions: Task, uv, Python, vendir | `.mise.toml` |
+| uv | Python dependencies in `.venv` | `pyproject.toml`, `uv.lock` |
+
+Running a task through all three always works:
+
+```sh
+nix develop -c mise exec -- task docs
+```
+
+With mise activated in your shell the `mise exec --` prefix is optional, and
+inside an interactive `nix develop` shell so is the first part.
+
+When each layer matters:
+
+- **mise**: the remote Taskfile includes need the pinned Task. An older `task`
+  earlier on `PATH` (the devcell container ships 3.45 in its Nix profile) stops
+  with `Remote taskfiles are not enabled` unless `TASK_X_REMOTE_TASKFILES=1` is
+  set.
+- **Nix dev shell, FriBiDi**: the font generators (`gen_aa_font.py`) need
+  Pillow with raqm, and Pillow's wheel loads `libfribidi.so.0` at runtime. If it
+  is missing, or is built for another architecture, Pillow silently reports
+  `raqm: False` and the generator fails with
+  `not supported without libraqm`. Fonts are rendered on the first build of a
+  defconfig (the headers land in `build/<defconfig>/gen/` and are reused
+  afterwards), by `task docs`, and by the upstream firmware builds. Check with:
+
+  ```sh
+  uv run python -c "from PIL import features; print(features.check('raqm'))"
+  ```
+
+- **Nix dev shell, x86-64 libraries**: on aarch64 the dev shell exports
+  `JIELI_X86_GLIBC` and `JIELI_X86_STDCPP`, which `tools/build/build.py` reads
+  before it falls back to `~/.fm1-toolchain/x86libs` or a search of the nix
+  store. A loader from one glibc with libraries from another fails with
+  `symbol lookup error ... __pointer_chk_guard`.
+
+Rebuilds with the generated headers in place, `task test:unit` and the API
+tests do not need the dev shell.
+
+## Before committing
+
+```sh
+nix develop -c mise exec -- task docs         # regenerate diagrams and theme screenshots
+nix develop -c mise exec -- task docs:check   # generated docs match their sources
+mise exec -- uv lock --check                  # uv.lock matches pyproject.toml
+mise exec -- task test:unit                   # Python unit tests
+```
+
+`task docs` takes 5 to 6 minutes on a 2-CPU container. About 80 s is two
+firmware builds (the compiler is an x86-64 binary under emulation), 80 s is the
+Felucca capture in the browser emulator, and 160 s is five modd shots that each
+boot fm1-live and wait for something real: the ethernet link, the WiFi join,
+the weather fetch, and the USB disk twice. The other fifteen modd shots take
+under 10 s together.
+
 ## Flashing firmware
 
 Two methods are available. Both require a built `.fwsc` package.
@@ -130,9 +192,10 @@ Available upstreams: `felucca`, `melodee`, `sloop`, `fmlab`, `skiff`,
 `fm1-dock`, `optimist`. Output stays in each upstream's own `build/`
 directory. The upstream sources under `firmware/upstream/` are never modified.
 
-The build requires Pillow with raqm support (for upstream font generation).
-This works out of the box in the Linux container. On macOS, build in the
-container first, then flash from the host:
+The build requires Pillow with raqm support (for upstream font generation),
+which in turn needs the FriBiDi library at runtime; the Nix dev shell provides
+it (see [Environment](#environment)). The task checks for raqm before it
+starts. On macOS, build in the container first, then flash from the host:
 
 ```sh
 # container:  task vendor:build:felucca

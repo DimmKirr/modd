@@ -36,6 +36,27 @@ task logs:debug                         # full debug dump: build facts, crash re
 
 `task build` delegates to `build:live`, which has source-change caching (skips when sources and `.env` are unchanged). Use `build:live` only when you need to reference the cacheable target directly (e.g. as a dependency).
 
+### Environment: flake, mise, uv
+
+Three layers, each owning one thing. Use all three when in doubt:
+
+```
+nix develop -c mise exec -- task docs
+```
+
+| Layer | Owns | Files |
+|-------|------|-------|
+| Nix dev shell | System libraries: `qemu-x86_64`, libusb, FriBiDi (Pillow needs it at runtime for raqm), and on aarch64 the x86-64 glibc/libstdc++ for the JieLi compiler, exported as `JIELI_X86_GLIBC` / `JIELI_X86_STDCPP` | `flake.nix`, `flake.lock` |
+| mise | Tool versions: Task, uv, Python, vendir | `.mise.toml` |
+| uv | Python dependencies in `.venv` | `pyproject.toml`, `uv.lock` |
+
+- **`mise exec --` selects the pinned Task.** If another `task` comes first on `PATH` (the devcell container ships Task 3.45 in its Nix profile), it refuses the remote Taskfile includes with `Remote taskfiles are not enabled` unless `TASK_X_REMOTE_TASKFILES=1` is set. The pinned Task needs no flag.
+- **`nix develop` is needed whenever fonts are rendered**: the first build of any defconfig (font headers are generated once per `build/<defconfig>/gen/`, then reused), `task docs`, `task docs:themes:ui:screenshots`, and the upstream firmware builds. Without FriBiDi, Pillow reports `raqm: False` and `gen_aa_font.py` fails with `not supported without libraqm`. Check: `uv run python -c "from PIL import features; print(features.check('raqm'))"`.
+- Rebuilds with the generated headers already in place, `task test:unit` and the API tests run without the dev shell.
+- Do not add the x86-64 glibc to the dev shell's `buildInputs`: it leaks x86 headers into the native `cc` and breaks the host-compiled C harnesses in `tests/` (`gnu/stubs-32.h` not found).
+
+Before committing: `task docs` (about 5-6 minutes: two firmware builds plus emulator captures for every theme page), `task docs:check`, `uv lock --check`, `task test:unit`. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#before-committing).
+
 ### .config and defconfigs
 
 `.config` is a symlink to `configs/modd_defconfig`, the main development profile. Do not replace it with a regular file. To build with a different defconfig from `configs/`, pass `--defconfig <name>` (without the `_defconfig` suffix):
@@ -66,7 +87,7 @@ See [docs/COMPONENTS.md](docs/COMPONENTS.md) for full component map with diagram
 4. **MIDI, UI, Storage, Boot**: each a module with upstream-specific component implementations selected via Kconfig radio choices.
 5. **USB**: device driver, USB Audio, host controller, mass storage.
 6. **BLE**: optional module (Optimist upstream) for Bluetooth Low Energy; depends on HAL, enables BLE MIDI transport.
-7. **Network** (`firmware/src/net/`, `CONFIG_LWIP`): the lwIP stack, HTTP client and LLM client, link-agnostic. Links add a `netif` on top: WiFi (`CONFIG_WIFI_LWIP`) today, USB ethernet / iPhone tethering (`CONFIG_USB_NET`) planned. `net_on_up()` is the "an interface got an address" hook; CDP and LLM depend on `LWIP`, not on a link.
+7. **Network** (`firmware/src/net/`, `CONFIG_LWIP`): the lwIP stack, HTTP client and LLM client, link-agnostic. Links add a `netif` on top: WiFi (`CONFIG_WIFI_LWIP`) today, USB ethernet / iPhone tethering (`CONFIG_USB_NET`) planned. `net_on_up()` is the "an interface got an address" hook; RPC and LLM depend on `LWIP`, not on a link.
 8. **WiFi**: STA driver, WPA, the WiFi `netif`, weather client.
 9. **Debug**: log buffer.
 
@@ -137,7 +158,7 @@ tools/
 
 ## Toolchain
 
-- **Compiler**: JieLi clang 4.0.1 for pi32v2 (proprietary target, x86-64 binary). The build/test environment must have **one of**: (1) x86-64 architecture (native), (2) `qemu-x86_64` (user-mode emulation), or (3) Rosetta/binfmt_misc (Apple-silicon VMs). Runner selection is automatic: native on x86-64 Linux; on other Linux, `task build` tests the ld.so runner with an actual compile and falls back to `qemu-x86_64` if it segfaults; otherwise Docker (macOS, or `JIELI_DOCKER=1`). The vendor build shim (`.scratch/tools/vendor-build/tc-shim.sh`) follows the same logic. The non-native Linux runners need x86-64 glibc/libstdc++: `~/.fm1-toolchain/x86libs` `JIELI_X86_GLIBC`/`JIELI_X86_STDCPP`, or the nix store.
+- **Compiler**: JieLi clang 4.0.1 for pi32v2 (proprietary target, x86-64 binary). The build/test environment must have **one of**: (1) x86-64 architecture (native), (2) `qemu-x86_64` (user-mode emulation), or (3) Rosetta/binfmt_misc (Apple-silicon VMs). Runner selection is automatic: native on x86-64 Linux; on other Linux, `task build` tests the ld.so runner with an actual compile and falls back to `qemu-x86_64` if it segfaults; otherwise Docker (macOS, or `JIELI_DOCKER=1`). The vendor build shim (`.scratch/tools/vendor-build/tc-shim.sh`) follows the same logic. The non-native Linux runners need x86-64 glibc/libstdc++, looked up in this order: `JIELI_X86_GLIBC`/`JIELI_X86_STDCPP` (the `flake.nix` dev shell exports both on aarch64), `~/.fm1-toolchain/x86libs`, then the first match in the nix store.
 - **Finding the toolchain**: `task build` sets `JIELI_TOOLCHAIN` and `AC79_SDK` automatically and downloads the toolchain if missing. In CI, `dimmkirr/setup-fm1-toolchain@v1` handles the same setup.
 - **Toolchain paths** (check in order):
   1. `$JIELI_TOOLCHAIN` / `$AC79_SDK` env vars (if set, used as-is)
@@ -258,6 +279,26 @@ permission (fork PR tokens are normally downgraded to read-only).
 `release.yml` handles `v[0-9]*` tags by calling the same CI workflow, then
 publishing the tested firmware, source, licenses, checksums, and screenshots
 as a prerelease. Failed verification never publishes a versioned release.
+
+### Screenshot generation
+
+`tools/codegen/gen_ui_screenshots.py` captures per-page screenshots for each UI theme using the fm1-live headless emulator (modd theme) or the WASM emulator via Playwright (other themes). Run via Taskfile:
+
+```
+task docs:themes:ui:screenshots          # all themes
+python tools/codegen/gen_ui_screenshots.py modd          # modd only
+python tools/codegen/gen_ui_screenshots.py modd --no-build   # skip firmware build
+```
+
+The modd theme uses fm1-live with `--usb ethernet --net internet` for network screenshots (Settings NET, Weather) and a 34MB FAT32 disk image (`tools/codegen/screenshot_disk.img`) for Files/Disk screenshots. The disk image contains prebuilt `.dock` modules from fm1-dock.
+
+Output and auto-injection:
+- Screenshots go to `docs/ui/themes/<theme>/screenshots/` as both numbered (`00_home.png`) and stable-named (`home.png`) files.
+- `THEME.md` gallery: the generator injects a full screenshot table between `<!-- theme-gallery:start/end -->` markers in `docs/ui/themes/<theme>/THEME.md`.
+- `README.md` hero section: the generator injects selected screenshots between `<!-- theme-screenshots:start/end -->` markers. Hero shots and their order are defined by `HERO_SHOTS` in the script.
+- Both injections happen automatically on every run.
+
+Environment: set `FM1_EMU_ROOT` (in `devcell.toml [env]` or shell) to the fm1-emu worktree root so the generator finds fm1-live.
 
 ## Conventions
 

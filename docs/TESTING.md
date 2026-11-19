@@ -37,6 +37,13 @@ With mise activated in your shell, `mise exec --` prefix is optional.
 On first use, Task asks you to trust the two remote setup-fm1 Taskfiles
 listed in `Taskfile.yml`. CI uses `task --yes` to accept them non-interactively.
 
+If `task` stops with `Remote taskfiles are not enabled`, an older Task is
+earlier on your `PATH` than the pinned one: run it as `mise exec -- task ...`.
+The unit tests need no system libraries beyond a C compiler. The first
+firmware build of a defconfig renders fonts, which needs the FriBiDi library
+from the Nix dev shell. See [DEVELOPMENT.md](DEVELOPMENT.md#environment) for
+what each of flake, mise and uv provides.
+
 Run one E2E test with:
 
 ```sh
@@ -346,6 +353,163 @@ FM1_E2E_WIFI=Home:fm1pass task test:e2e -- -k data_over_the_virtual_ap
 ```
 
 Without the variable the weather tests run as before, with no network.
+
+## RPC remote control
+
+The firmware includes a JSON-RPC server that accepts commands over WebSocket
+on port 9222, plus a REST API over plain HTTP. It runs inside the firmware's
+lwIP TCP/IP stack, enabled by `CONFIG_RPC=y` (the `modd_dev_rpc` defconfig
+has it on).
+
+### Architecture
+
+```
+ Playwright / pytest
+       |
+       |  (1) WASM emulator path:
+       |      Playwright drives the emulator web page.
+       |      bridge.py intercepts FM1.* calls and
+       |      translates them into emulator button/encoder actions.
+       |
+       |  (2) Firmware-direct path (native emulator, or real hardware):
+       |      A WebSocket client connects to ws://HOST:9222
+       |      and sends FM1.* JSON-RPC directly to the firmware's
+       |      RPC server running on lwIP.
+       |
+       v
+  FM-1 firmware (RPC server on port 9222)
+```
+
+Path (1) works today in E2E tests. Path (2) requires the firmware to have an
+IP address reachable from the host: on real hardware via WiFi, or in fm1-live
+via `--forward 9222:9222` (inbound TCP NAT).
+
+### Why not `page.goto("modd://home")`?
+
+Playwright's `page.goto()` navigates the browser to a URL. `modd://` is not a
+real browser protocol: the browser would show an error page. The firmware's RPC
+server is a WebSocket endpoint (it also serves REST endpoints at `/api/*` and
+`/modd/*`). Page navigation happens by sending a JSON-RPC message over an open
+WebSocket connection:
+
+```python
+import json, asyncio, websockets
+
+async with websockets.connect("ws://localhost:9222") as ws:
+    await ws.send(json.dumps({
+        "id": 1,
+        "method": "FM1.navigate",
+        "params": {"url": "modd://home"}
+    }))
+    resp = json.loads(await ws.recv())
+    # resp = {"id": 1, "result": {"page": "home", "index": 0}}
+```
+
+In the WASM emulator tests, `bridge.py` wraps this so the test code looks
+the same regardless of which path is used underneath.
+
+### RPC methods
+
+| Method | Params | Returns | What it does |
+|--------|--------|---------|-------------|
+| `FM1.getInfo` | — | firmware, version, lineage, uptime_ms, wifi_ip | Firmware identity |
+| `FM1.navigate` | `url` | page, index | Jump to a `modd://` URI (see below) |
+| `FM1.pressButton` | `id`, `hold_ms` | ok | Simulate a button press |
+| `FM1.turnEncoder` | `id`, `clicks` | ok | Simulate encoder rotation |
+| `FM1.sendMidi` | `data` (hex) | ok | Inject MIDI bytes |
+| `FM1.getEngineState` | — | engine, voices, ... | Current engine info |
+| `FM1.getAudioMetrics` | — | peak, clip, ... | Audio pipeline stats |
+| `FM1.getLog` | — | log_pos, entries[] | Debug log ring |
+| `FM1.memoryRead` | `address`, `length` | base64 data | Raw memory read |
+| `FM1.memoryWrite` | `address`, `data` (base64) | written | Raw memory write |
+
+### `modd://` URI scheme
+
+The `FM1.navigate` method accepts URIs with the `modd://` prefix. The firmware
+matches the page name case-insensitively against the registered UI pages.
+
+| URI | Page | Notes |
+|-----|------|-------|
+| `modd://home` | Home | Engine select, track select, knobs |
+| `modd://settings/display` | Settings | Display tab |
+| `modd://settings/midi` | Settings | MIDI tab |
+| `modd://settings/audio` | Settings | Audio tab |
+| `modd://settings/control` | Settings | Control tab |
+| `modd://settings/hw` | Settings | Hardware tab |
+| `modd://settings/net` | Settings | Network tab |
+| `modd://settings/system` | Settings | System tab |
+| `modd://weather` | Weather | Weather display |
+| `modd://demo` | Demo | Audio demo |
+| `modd://files` | Files | File browser |
+| `modd://disk` | Disk | USB disk browser |
+| `modd://log` | Log | Debug log |
+| `modd://colors/3` | Colors | Apply palette 3 (0-9) |
+
+The settings sub-path sets `mset.tab`; the colors sub-path calls
+`colors_apply()`. All other pages take no sub-path.
+
+### Running RPC tests
+
+The RPC/bridge tests are in `tests/rpc/`:
+
+```sh
+# WASM emulator path (bridge translates navigate calls to button presses):
+uv run python -m pytest tests/rpc/bridge_navigate_test.py -v
+
+# Firmware-direct path (requires fm1-live with --forward):
+# 1. Build firmware with RPC enabled:
+task build -- --defconfig modd_dev_rpc
+
+# 2. Run fm1-live with port forwarding:
+fm1-live --fwsc build/modd_dev_rpc/modd.fwsc \
+         --wifi oss --net internet \
+         --forward 9222:9222
+
+# 3. In another terminal, connect and navigate:
+python3 -c "
+import json, asyncio, websockets
+async def main():
+    async with websockets.connect('ws://localhost:9222') as ws:
+        await ws.send(json.dumps({
+            'id': 1,
+            'method': 'FM1.navigate',
+            'params': {'url': 'modd://home'}
+        }))
+        print(json.loads(await ws.recv()))
+asyncio.run(main())
+"
+```
+
+### RPC defconfig
+
+`configs/modd_dev_rpc_defconfig` enables the RPC server and auto-connecting
+USB ethernet (so the emulator's `--usb ethernet` link brings up lwIP without
+a menu visit):
+
+```
+CONFIG_RPC=y
+CONFIG_LWIP=y
+CONFIG_USB_NET=y
+CONFIG_USB_NET_AUTO=y
+CONFIG_WIFI_LWIP=y
+```
+
+### Inbound TCP NAT (fm1-emu)
+
+The fm1-emu emulator's NAT is outbound-only by default. To reach the
+firmware's RPC server from the host, fm1-live supports `--forward H:G`:
+
+```sh
+fm1-live --fwsc modd.fwsc --wifi oss --net internet --forward 9222:9222
+```
+
+This binds `127.0.0.1:9222` on the host and forwards accepted TCP connections
+to the guest's `10.0.2.15:9222` by injecting SYN packets into the virtual
+network. The guest sees connections from the gateway IP (`10.0.2.2`).
+
+Multiple forwards are supported: `--forward 9222:9222 --forward 8080:80`.
+Inbound TCP is native-only (fm1-live); the WASM browser build cannot bind TCP
+listeners.
 
 ## Toolchain and cross-compilation
 

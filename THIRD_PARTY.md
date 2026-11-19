@@ -3,7 +3,7 @@
 modd's firmware and project code are licensed under
 [GPL-3.0-only](LICENSE). The components below retain their own licenses.
 This inventory covers the current minimal build, not engines planned for future
-integration. Updated: 2026-11-07.
+integration. Updated: 2026-11-17.
 
 ## Included in firmware packages
 
@@ -65,6 +65,7 @@ source is complete. Vendored files are never patched: modd adapts them through
 | `firmware/upstream/melodee/` | [keremimo/melodee](https://github.com/keremimo/melodee) | v1.4.5 | GPL-3.0 | CZ, SID, PROPHET, FORMANT + 7 more engines; extended `dsp.c`; FPU-optimized audio core reference |
 | `firmware/upstream/sloop/` | [isod89/sloop-fm1](https://github.com/isod89/sloop-fm1) | v2.8 | GPL-3.0 | DRAWBAR, GRAIN, SAMPLE, SLICE engines; arranger/scene system reference |
 | `firmware/upstream/fmlab/` | [jsmith13/fm_lab](https://github.com/jsmith13/fm_lab) | v1.1.0 | GPL-3.0; `dx7_core.c` is Apache-2.0 AND GPL-3.0-only (Dexed/msfa, Google and Pascal Gauthier; integer port Sven Trogus) | Q23 24-bit audio pipeline; DX7 engine; 2x oversampling; FDN reverb; TPDF dithering |
+| `firmware/upstream/jiant/` | [juanjiant-bit/JIANT](https://github.com/juanjiant-bit/JIANT) | da8baa1 | GPL-3.0 | 6-track song mode, 10 engines, skins, web editor; comparison reference |
 | `firmware/upstream/optimist/` | [w0ts/optimist](https://github.com/w0ts/optimist) | a4104fc | GPL-3.0 | BLE stack (`firmware/src/ble/`): link layer, host, SMP, ATT/GATT, BLE MIDI |
 | `firmware/vendor/lwip/` | [lwip-tcpip/lwip](https://github.com/lwip-tcpip/lwip), mirror of [Savannah](https://git.savannah.nongnu.org/cgit/lwip.git) | STABLE-2_2_1_RELEASE (77dcd25) | BSD-3-Clause | IPv4, DHCP, DNS, TCP, UDP for the WiFi module; config in `firmware/src/wifi/lwipopts.h` |
 | `firmware/vendor/fatfs/` | [FatFs by ChaN](http://elm-chan.org/fsw/ff/), `ff15.zip` with pinned SHA-256 | R0.15 | [FatFs license](http://elm-chan.org/fsw/ff/doc/appnote.html#license) (1-clause BSD) | FAT32 for USB mass storage; config in `firmware/src/udisk/ffconf.h`, disk I/O in `firmware/src/udisk/diskio.[ch]`, `strchr` in `firmware/src/libc.c` |

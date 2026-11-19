@@ -9,14 +9,14 @@ flowchart TB
     AUDIO["<b>Audio</b><br/><small>Core · Effects · Engines · Scales · Sequencer</small>"]
     BLE["<b>BLE</b><br/><small>midi · central · hid · bond · diag · file_transfer</small>"]
     BOOT["<b>Boot</b><br/><small>Loader · OTA</small>"]
-    DEBUG["<b>Debug</b><br/><small>log · dap</small>"]
+    DEBUG["<b>Debug</b><br/><small>emu · log · log_buf · dap · framebuffer</small>"]
     HAL["<b>HAL</b><br/><small>sys · irq · gpio · time · lcd · input<br/>flash · uart · usb · timer · mc<br/>cache · clock · power · eq · led_pwm · ble_rf</small>"]
     MIDI["<b>MIDI</b><br/><small>UART Transport · Routing<br/>Editor · Console</small>"]
-    USB["<b>USB</b><br/><small>Device Driver · USB Audio · Host Controller · UDisk</small>"]
+    USB["<b>USB</b><br/><small>Device Driver · USB Audio · Host Controller · Network · UDisk</small>"]
     SCHED["<b>Scheduler</b><br/><small>stack_canary</small>"]
-    STORAGE["<b>Storage</b><br/><small>Flash · Settings</small>"]
-    UI["<b>UI</b><br/><small>Shell · Controls · Settings Menu</small>"]
-    WIFI["<b>WiFi</b><br/><small>STA · lwIP · WPA · autojoin · MIDI · nonfree<br/>CDP</small>"]
+    STORAGE["<b>Storage</b><br/><small>Flash · Settings · Dock modules</small>"]
+    UI["<b>UI</b><br/><small>Shell · Controls · page_demo · Settings Menu</small>"]
+    WIFI["<b>WiFi</b><br/><small>STA · lwIP · WPA · weather · weather_unit_f · llm<br/>default_on · autojoin · MIDI · nonfree</small>"]
 
     BOOT -.-> STORAGE
     BOOT -.-> USB
@@ -28,6 +28,8 @@ flowchart TB
     UI -.->|pages| WIFI
     UI -.->|pages| DEBUG
     WIFI -.->|mutex| BLE
+    STORAGE -.-> AUDIO
+    STORAGE -.-> USB
     UI -.-> USB
     UI -.-> BLE
     DEBUG --> USB
