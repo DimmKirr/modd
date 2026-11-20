@@ -1,0 +1,338 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+#
+# Prose for the REST API's OpenAPI document. Only what the C cannot say.
+#
+# The routes, parameters (names, ranges, names lists), reply fields, their types
+# and which builds have them are generated from firmware/src/rpc/api_ctl.c and
+# api_pages.c by tools/codegen/gen_openapi.py (`task build`: build/<defconfig>/
+# openapi.json, and GET /openapi.json). This file adds summaries, descriptions,
+# units and examples:
+#
+#   document:  merged into the root (info, servers, tags)
+#   paths:     /route: summary, description, tags, operationId, response (text),
+#              parameters: {name: text or {description, example}},
+#              fields: {field, a.b, list[].field: text or {description, ...}},
+#              schema: merged into the reply's schema
+#   pages:     NAME (api_page_json_table): {field: text or {...}}
+#
+# A key here that names a route, parameter, field or page the C no longer has
+# stops the build with its line and what to do (rename or delete it).
+# Rules for handlers: docs/TESTING.md, "Writing a REST handler".
+
+document:
+  info:
+    title: modd firmware REST API
+    summary: Inspect and drive an FM-1 running modd over HTTP.
+    description: |
+      Served by the firmware itself over lwIP (`CONFIG_RPC`), on any link that
+      has an address: USB ethernet or WiFi. In fm1-live, forward the port:
+      `fm1-live --fwsc build/modd_emu/modd.fwsc --usb ethernet --net internet --forward 9222:9222`.
+
+      This document is generated from the firmware's C code for the build that
+      serves it: routes and fields that build does not have are left out.
+
+      - **GET only.** Parameters are path segments, so curl and hurl work as-is.
+        Literal segments match case-insensitively.
+      - **One request per connection.** Every reply has `Connection: close`.
+        The firmware serves one connection at a time from its services task.
+      - **Timed actions run in firmware time.** A `tap/{ms}` or `hold/{ms}`
+        reply returns at once; the release happens in the firmware after
+        `ms` of its own clock.
+      - **No authentication.** Input, memory and audio routes are behind
+        their own Kconfig symbols, off by default, on in the test builds.
+      - **fm1-emu NAT limit.** fm1-live's NAT keeps 32 connections and holds
+        each for 30 s after it closes: about 28 requests in a burst, then 30 s
+        of timeouts. Space requests (tests/api_fixtures.py keeps 24 per 31 s).
+
+      Large replies (`/api/log`, `/api/screenshot`, `/api/audio/capture`,
+      `/api/mem`, `/api/pages`, this document) are streamed without a
+      Content-Length; read to the end of the connection. An unknown path under
+      `/api` or `/modd` is a 404; any other unknown path gets the
+      `/json/version` reply.
+    license:
+      name: GPL-3.0-only
+      identifier: GPL-3.0-only
+  servers:
+    - url: 'http://{host}:{port}'
+      variables:
+        host:
+          default: 127.0.0.1
+          description: The firmware's address, or 127.0.0.1 with fm1-live --forward.
+        port:
+          default: '9222'
+          description: CONFIG_RPC_PORT
+  tags:
+    - name: system
+    - name: pages
+    - name: input
+    - name: audio
+    - name: debug
+
+paths:
+  /api/info:
+    summary: Firmware name, version, uptime and IP address
+    tags: [system]
+    operationId: getInfo
+    fields:
+      version: CONFIG_FIRMWARE_VERSION of the build
+      uptime_ms: fm1_ms, the firmware clock
+      ip: IPv4 address as lwIP holds it (first octet in the low byte); 0 = none
+
+  /json/version:
+    summary: Discovery reply; also what any unknown path outside /api and /modd returns
+    tags: [system]
+    operationId: getVersion
+
+  /openapi.json:
+    summary: This document, for the routes this build has
+    tags: [system]
+    operationId: getOpenApi
+    response: OpenAPI 3.1 document
+    schema:
+      type: object
+
+  /api/pages:
+    summary: Every page of the UI theme, in navigation order
+    tags: [pages]
+    operationId: listPages
+    fields:
+      current: Index of the page on screen
+      pages[].name: 'Name for /modd/{page}, e.g. HOME, MENU, WX'
+
+  /api/page:
+    summary: The page on screen and its data, without navigating
+    tags: [pages]
+    operationId: getPage
+    fields:
+      modal: A modal (dialog, menu) is open over the page
+      data: The page's own state; only pages with a serializer (api_page_json_table) have it
+
+  /modd/{page}:
+    summary: Go to a page by name
+    description: |
+      Calls the page's leave and enter, as a key press would. A theme that
+      changes pages in its own task (LVGL) shows the page on its next frame;
+      `/api/page` reports it from then on.
+    tags: [pages]
+    operationId: gotoPage
+    parameters:
+      page: {description: A page name from /api/pages (case ignored), example: wx}
+    fields:
+      data: The page's own state; only pages with a serializer have it
+
+  /modd/{page}/{sub}:
+    summary: Go to a page and one of its sub-pages
+    description: 'Sub-pages: the MENU tabs of the modd theme (`menu/net`, `menu/midi`, ...).'
+    tags: [pages]
+    operationId: gotoSubPage
+    parameters:
+      page: {description: A page name from /api/pages (case ignored), example: menu}
+      sub: {description: 'A sub-page of that page, e.g. a MENU tab', example: net}
+
+  /api/log:
+    summary: The firmware log ring
+    tags: [debug]
+    operationId: getLog
+    response: |
+      The last lines of the log. `count` is the number of lines ever logged
+      (not the ring's fill),
+      so `count - len(entries)` is the absolute index of the first entry: use
+      it to find lines logged since an earlier read.
+    fields:
+      entries: {maxItems: 400}
+
+  /api/screenshot:
+    summary: The LCD as RGB565 (emulator builds)
+    tags: [debug]
+    operationId: getScreenshot
+    fields:
+      data: 240 x 240 pixels, RGB565 little-endian, row-major
+
+  /api/audio:
+    summary: Render timing, output level and master volume
+    tags: [audio]
+    operationId: getAudio
+    fields:
+      render_ticks_last: Timer ticks the last render block took
+      rms: RMS of the last 8192 output samples (int16 scale)
+      tap_pos: Samples written to the tap since boot
+      master_q12: 'Master volume after smoothing, 4096 = 1.0'
+
+  /api/engine:
+    summary: The selected track's engine
+    tags: [audio]
+    operationId: getEngine
+
+  /api/audio/capture:
+    summary: The last 8192 output samples (emulator builds)
+    description: Mono (L+R)/2 after the master volume, oldest first. The ring stops while it is read.
+    tags: [audio]
+    operationId: captureAudio
+    fields:
+      pos: Samples written since boot; the last sample is the newest
+      ms: Firmware clock when the ring was taken
+      notes: 'Note keys down when the ring was taken: bit n = MIDI note 53 + n'
+      data: The samples, int16 little-endian
+
+  /api/input:
+    summary: Input state; `idle` once every injected action has landed
+    tags: [input]
+    operationId: getInput
+    fields:
+      ms: Firmware clock
+      buttons: 'Buttons down after debounce: bit n = button n'
+      notes: 'Note keys down after debounce: bit n = MIDI note 53 + n'
+      inject_buttons: Buttons the API holds down
+      inject_notes: Note keys the API holds down
+      pending: Timed releases not yet due
+      enc_pending: Encoders with detents the UI has not taken
+      pot: Master pot override, -1 = the real ADC
+      idle: No pending releases or detents, and the debounced scan equals what the API holds
+
+  /api/input/button/{button}/tap:
+    summary: Press a button and release it after 80 ms
+    tags: [input]
+    operationId: tapButton
+    parameters: &button
+      button: Button name or index
+    fields: &inputok
+      value: 'tap/hold: ms; enc: clicks; key: the note mask; pot: the value (-1 released)'
+      ms: Firmware clock when the request was handled
+
+  /api/input/button/{button}/tap/{ms}:
+    summary: Press a button and release it after `ms` of firmware time
+    tags: [input]
+    operationId: tapButtonFor
+    parameters: &button_ms
+      button: Button name or index
+      ms: Milliseconds of firmware time until the release
+    fields: *inputok
+
+  /api/input/button/{button}/hold/{ms}:
+    summary: Long press; the same as tap/{ms}
+    description: The UI treats a press of 500 ms or more as a long press.
+    tags: [input]
+    operationId: holdButton
+    parameters: *button_ms
+    fields: *inputok
+
+  /api/input/button/{button}/down:
+    summary: Press and keep a button down (e.g. EDIT while turning a knob)
+    tags: [input]
+    operationId: buttonDown
+    parameters: *button
+    fields: *inputok
+
+  /api/input/button/{button}/up:
+    summary: Release a button
+    tags: [input]
+    operationId: buttonUp
+    parameters: *button
+    fields: *inputok
+
+  /api/input/enc/{encoder}/{clicks}:
+    summary: Turn an encoder by signed detents
+    tags: [input]
+    operationId: turnEncoder
+    parameters:
+      encoder: Encoder name or index
+      clicks: {description: 'Detents; negative turns left', example: -2}
+    fields: *inputok
+
+  /api/input/key/{notes}/tap:
+    summary: Press note keys and release them after 80 ms
+    tags: [input]
+    operationId: tapKeys
+    parameters: &notes
+      notes: {description: 'MIDI note numbers 53..79 (F3..G5), comma-separated for a chord; all land on the same scan frame', example: '60,64,67'}
+    fields: *inputok
+
+  /api/input/key/{notes}/tap/{ms}:
+    summary: Press note keys and release them after `ms` of firmware time
+    tags: [input]
+    operationId: tapKeysFor
+    parameters:
+      notes: {description: 'MIDI note numbers 53..79 (F3..G5), comma-separated for a chord', example: '60,64,67'}
+      ms: Milliseconds of firmware time until the release
+    fields: *inputok
+
+  /api/input/key/{notes}/down:
+    summary: Press note keys and keep them down
+    tags: [input]
+    operationId: keysDown
+    parameters: *notes
+    fields: *inputok
+
+  /api/input/key/{notes}/up:
+    summary: Release note keys
+    tags: [input]
+    operationId: keysUp
+    parameters: *notes
+    fields: *inputok
+
+  /api/input/pot/master/release:
+    summary: Give the master volume back to the pot
+    tags: [input]
+    operationId: releaseMasterPot
+    fields: *inputok
+
+  /api/input/pot/master/{value}:
+    summary: Hold the master volume pot at a value
+    tags: [input]
+    operationId: setMasterPot
+    parameters:
+      value: ADC value, 0 = silent
+    fields: *inputok
+
+  /api/track/{track}:
+    summary: A track's engine and preset
+    tags: [audio]
+    operationId: getTrack
+    parameters: &track
+      track: Track number, or `sel` for the selected one
+    fields: &trackfields
+      engines: Engine names in index order
+
+  /api/track/{track}/engine/{engine}:
+    summary: Switch a track's engine, as the panel does
+    tags: [audio]
+    operationId: setTrackEngine
+    parameters:
+      track: Track number, or `sel` for the selected one
+      engine: {description: Engine name (see `engines` in the track reply) or index, example: Analog}
+    fields: *trackfields
+
+  /api/mem/find/{hex}:
+    summary: First address of a byte string (firmware image, then RAM)
+    tags: [debug]
+    operationId: findMemory
+    parameters:
+      hex: {description: The bytes as pairs of hex digits, example: f02224357df7}
+    fields:
+      addr: 0 when not found
+      region: '`xip` (the firmware image), `ram`, or empty when not found'
+
+  /api/mem/{addr}/{length}:
+    summary: Read RAM or the mapped firmware image
+    tags: [debug]
+    operationId: readMemory
+    parameters:
+      addr: {description: 'Hex, 0x optional. RAM 0x01C00000..0x01C80000 or the image 0x02001000.._etext', example: 1c40000}
+      length: Bytes to read
+
+pages:
+  HOME:
+    tracks[].engine: Engine name
+    palette: Palette index (Settings > DISPLAY > THEME)
+    level: The selected track's sound (as on the HOME page)
+  MENU:
+    tab: The settings tab on screen; the NETWORK tab has the network fields, the others `items`
+    link: 'ETH, WIFI or empty'
+    ip: IPv4 address as lwIP holds it (first octet in the low byte); 0 = none
+    ip_str: {example: 10.0.2.15}
+  WX:
+    valid: The data fields below are present only when true
+    temp_c: Tenths of a degree (of °F with CONFIG_WEATHER_UNIT_F)
+    humidity: Percent
+    wind_kmh: Tenths of km/h (mph with CONFIG_WEATHER_UNIT_F)

@@ -210,6 +210,9 @@ static int rpc_streq_nocase(const char *a, const char *b)
     return a[i] == '\0' && b[i] == '\0';
 }
 
+/* api_pages.c (included after this file): the one page lookup, shared with GET /modd/<page> */
+static int api_page_goto(const char *page, const char *sub, uint32_t *idx);
+
 static void rpc_fm1_navigate(const char *js, int ntokens,
                              const struct rpc_tok *tokens,
                              int32_t id, struct rpc_tx *tx)
@@ -246,46 +249,19 @@ static void rpc_fm1_navigate(const char *js, int ntokens,
         sub[j] = '\0';
     }
 
-#ifdef CONFIG_UI_MODD
-    /* find page by name */
-    uint32_t i;
-    int found = 0;
-    for (i = 0; i < nav_npage; i++) {
-        if (rpc_streq_nocase(nav_pages[i]->name, page)) {
-            nav_set_page(i);
-            found = 1;
-            break;
+    {
+        uint32_t i;
+        int r = api_page_goto(page, sub, &i);
+        if (r < 0) {            /* API_GOTO_NO_PAGE -1, API_GOTO_NO_SUB -2 */
+            rpc_error(tx, id, -32602, r == -1 ? "Unknown page" : "Unknown sub-page");
+            return;
         }
+        rpc_response_begin(tx, id);
+        rpc_tx_key_str(tx, "page", nav_pages[i]->name);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_uint(tx, "index", i);
+        rpc_response_end(tx);
     }
-
-    if (!found) {
-        rpc_error(tx, id, -32602, "Unknown page");
-        return;
-    }
-
-    /* handle sub-navigation */
-    if (sub[0]) {
-        if (rpc_streq_nocase(page, "menu")) {
-            uint32_t t;
-            for (t = 0; t < SMTAB_COUNT; t++) {
-                if (rpc_streq_nocase(SMTAB_NAME[t], sub)) {
-                    mset.tab = (uint8_t)t;
-                    nav_dirty = 1;
-                    break;
-                }
-            }
-        }
-        (void)sub;
-    }
-
-    rpc_response_begin(tx, id);
-    rpc_tx_key_str(tx, "page", nav_pages[nav_cur]->name);
-    rpc_tx_char(tx, ',');
-    rpc_tx_key_uint(tx, "index", nav_cur);
-    rpc_response_end(tx);
-#else
-    rpc_error(tx, id, -32601, "UI not configured");
-#endif
 }
 
 static void rpc_fm1_get_log(int32_t id, struct rpc_tx *tx)

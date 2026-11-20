@@ -143,6 +143,9 @@ static int rpc_json_find(const char *js, const struct rpc_tok *tokens,
 
 /* --- JSON response builder --- */
 
+/* scratch buffers of the RPC server: in the pool, not in .bss (96 KiB RAM, full) or on a task stack */
+#define RPC_SCRATCH __attribute__((section(".pool")))
+
 #define RPC_TX_MAX 2048
 
 struct rpc_tx {

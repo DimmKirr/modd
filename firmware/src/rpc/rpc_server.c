@@ -249,198 +249,6 @@ static uint32_t rpc_http_parse_path(const uint8_t *data, uint32_t len,
     return j;
 }
 
-/* case-insensitive prefix match, returns pointer past prefix or NULL */
-static const char *rpc_path_match(const char *path, const char *prefix)
-{
-    uint32_t i;
-    for (i = 0; prefix[i]; i++) {
-        char a = path[i], b = prefix[i];
-        if (a >= 'A' && a <= 'Z') a += 32;
-        if (b >= 'A' && b <= 'Z') b += 32;
-        if (a != b) return 0;
-    }
-    return path + i;
-}
-
-/* --- REST API route handler --- */
-
-static int rpc_handle_rest(const char *path)
-{
-    struct rpc_tx *tx = &rpc_tx_static;
-    const char *rest;
-
-    /* GET /api/info */
-    if (rpc_path_match(path, "/api/info")) {
-        rpc_http_json_ok(tx);
-        rpc_tx_key_str(tx, "firmware", "modd");
-        rpc_tx_char(tx, ',');
-        rpc_tx_key_str(tx, "version", CONFIG_FIRMWARE_VERSION);
-        rpc_tx_char(tx, ',');
-        rpc_tx_key_uint(tx, "uptime_ms", fm1_ms);
-        rpc_tx_char(tx, ',');
-        rpc_tx_key_uint(tx, "ip", net_get_ip());
-        rpc_http_json_end(tx);
-        return 1;
-    }
-
-    /* GET /api/audio */
-    if (rpc_path_match(path, "/api/audio")) {
-        rpc_http_json_ok(tx);
-#ifdef CONFIG_AUDIO
-        rpc_tx_key_uint(tx, "render_ticks_last", fm1_audio_irq_elapsed_ticks);
-        rpc_tx_char(tx, ',');
-        rpc_tx_key_uint(tx, "sample_rate", 44100);
-        rpc_tx_char(tx, ',');
-        rpc_tx_key_uint(tx, "block_size", 128);
-        rpc_tx_char(tx, ',');
-        rpc_tx_key_int(tx, "voice_count", (int32_t)NVOICE);
-#else
-        rpc_tx_key_str(tx, "error", "audio not configured");
-#endif
-        rpc_http_json_end(tx);
-        return 1;
-    }
-
-    /* GET /api/engine */
-    if (rpc_path_match(path, "/api/engine")) {
-        rpc_http_json_ok(tx);
-#ifdef CONFIG_AUDIO
-        rpc_tx_key_int(tx, "engine_index", (int32_t)trk[song.sel].engine);
-        rpc_tx_char(tx, ',');
-        rpc_tx_key_int(tx, "voice_count", (int32_t)NVOICE);
-#else
-        rpc_tx_key_str(tx, "error", "audio not configured");
-#endif
-        rpc_http_json_end(tx);
-        return 1;
-    }
-
-    /* GET /api/log */
-    if (rpc_path_match(path, "/api/log")) {
-        rpc_http_json_ok(tx);
-#ifdef CONFIG_DEBUG_LOG_BUF
-        rpc_tx_key_uint(tx, "count", modd_log_count);
-        rpc_tx_char(tx, ',');
-        rpc_tx_char(tx, '"');
-        rpc_tx_raw(tx, "entries");
-        rpc_tx_raw(tx, "\":[");
-        {
-            uint32_t n = modd_log_count < MODD_LOG_LINES ? modd_log_count : MODD_LOG_LINES;
-            uint32_t start = modd_log_count > n ? modd_log_count - n : 0;
-            uint32_t i;
-            int first = 1;
-            for (i = start; i < modd_log_count; i++) {
-                if (!first) rpc_tx_char(tx, ',');
-                first = 0;
-                rpc_tx_char(tx, '"');
-                const char *line = modd_log_line(i);
-                if (line) rpc_tx_raw(tx, line);
-                rpc_tx_char(tx, '"');
-            }
-        }
-        rpc_tx_char(tx, ']');
-#else
-        rpc_tx_key_str(tx, "error", "debug log not configured");
-#endif
-        rpc_http_json_end(tx);
-        return 1;
-    }
-
-    /* GET /api/screenshot (emulator-only shadow framebuffer) */
-    if (rpc_path_match(path, "/api/screenshot")) {
-#ifdef CONFIG_DEBUG_FRAMEBUFFER
-        {
-            static const char hdr[] =
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: application/json\r\n"
-                "Access-Control-Allow-Origin: *\r\n"
-                "Connection: close\r\n\r\n";
-            if (rpc_tcp_send((const uint8_t *)hdr, sizeof hdr - 1) < 0) goto ss_done;
-            static const char pre[] = "{\"width\":240,\"height\":240,\"format\":\"rgb565\",\"data\":\"";
-            if (rpc_tcp_send((const uint8_t *)pre, sizeof pre - 1) < 0) goto ss_done;
-            const uint8_t *fb = (const uint8_t *)lcd_shadow;
-            uint32_t total = LCDFB_W * LCDFB_H * 2;
-            char b64[520];
-            uint32_t off = 0;
-            while (off < total) {
-                uint32_t chunk = total - off;
-                if (chunk > 384) chunk = 384;
-                uint32_t b64len = base64_encode(fb + off, chunk, b64);
-                if (rpc_tcp_send((const uint8_t *)b64, b64len) < 0) goto ss_done;
-                off += chunk;
-            }
-            rpc_tcp_send((const uint8_t *)"\"}", 2);
-        ss_done:
-            rpc_tcp_close();
-        }
-#else
-        rpc_http_error(400, "framebuffer not configured");
-#endif
-        return 1;
-    }
-
-    /* GET /modd/{page} or /modd/{page}/{sub} */
-    rest = rpc_path_match(path, "/modd/");
-    if (rest && rest[0]) {
-        char page[32], sub[32];
-        uint32_t i = 0, j = 0;
-        while (rest[i] && rest[i] != '/' && j < 31) page[j++] = rest[i++];
-        page[j] = '\0';
-        if (rest[i] == '/') i++;
-        j = 0;
-        while (rest[i] && j < 31) sub[j++] = rest[i++];
-        sub[j] = '\0';
-
-#ifdef CONFIG_UI_MODD
-        int found = 0;
-        for (i = 0; i < nav_npage; i++) {
-            if (rpc_streq_nocase(nav_pages[i]->name, page)) {
-                nav_set_page(i);
-                found = 1;
-                break;
-            }
-        }
-        if (!found) {
-            rpc_http_error(404, "Unknown page");
-            return 1;
-        }
-
-        if (sub[0] && rpc_streq_nocase(page, "menu")) {
-            uint32_t t;
-            for (t = 0; t < SMTAB_COUNT; t++) {
-                if (rpc_streq_nocase(SMTAB_NAME[t], sub)) {
-                    mset.tab = (uint8_t)t;
-                    nav_dirty = 1;
-                    break;
-                }
-            }
-        }
-
-        rpc_http_json_ok(tx);
-        rpc_tx_key_bool(tx, "ok", 1);
-        rpc_tx_char(tx, ',');
-        rpc_tx_key_str(tx, "page", nav_pages[nav_cur]->name);
-        rpc_tx_char(tx, ',');
-        rpc_tx_key_uint(tx, "index", nav_cur);
-        {
-            api_page_json_fn jfn = api_page_json_find(nav_pages[nav_cur]->name);
-            if (jfn) {
-                rpc_tx_char(tx, ',');
-                rpc_tx_raw(tx, "\"data\":{");
-                jfn(tx);
-                rpc_tx_char(tx, '}');
-            }
-        }
-        rpc_http_json_end(tx);
-#else
-        rpc_http_error(400, "UI not configured");
-#endif
-        return 1;
-    }
-
-    return 0;
-}
-
 /* Handle HTTP request: REST API, WebSocket upgrade, or /json/version */
 static int rpc_handle_http(const uint8_t *data, uint32_t len)
 {
@@ -471,28 +279,19 @@ static int rpc_handle_http(const uint8_t *data, uint32_t len)
         return -1;
     }
 
-    /* parse path and try REST routes */
+    /* every other request: a REST route (api_ctl.c), which also answers unknown paths */
     static char path[128];
     rpc_http_parse_path(data, len, path, sizeof(path));
-    if (rpc_handle_rest(path))
-        return 0;
-
-    /* fallback: /json/version discovery */
-    {
-        struct rpc_tx *tx = &rpc_tx_static;
-        rpc_http_json_ok(tx);
-        rpc_tx_key_str(tx, "Browser", "FM-1/modd");
-        rpc_tx_char(tx, ',');
-        rpc_tx_key_str(tx, "Protocol-Version", "1.0");
-        rpc_http_json_end(tx);
-        return 0;
-    }
+    api_ctl_route(path);
+    return 0;
 }
 
 /* Main poll: called from firmware main loop */
 static void rpc_poll(void)
 {
     if (!rpc_active) return;
+
+    api_ctl_tick();             /* timed releases of keys pressed through the API */
 
     /* read TCP data */
     static uint8_t tmp[512];

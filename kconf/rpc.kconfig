@@ -17,4 +17,46 @@ config RPC_PORT
     depends on RPC
     default 9222
 
+config RPC_INPUT
+    bool "REST routes for panel input and engine select (test builds)"
+    depends on RPC && INPUT && HAL_INPUT_MELODEE
+    default n
+    help
+      GET /api/input/... presses buttons and note keys, turns encoders and
+      holds the master pot; GET /api/track/<n|sel>/engine/<name> switches a
+      track's engine. Keys are ORed into the panel scan, so debounce, hold
+      times, edges and LEDs follow the same path as a finger on the panel.
+      The port has no authentication: anyone on the network can play the
+      instrument. For emulator and test builds.
+
+config RPC_MEM
+    bool "REST routes for memory read and search (test builds)"
+    depends on RPC
+    default n
+    help
+      GET /api/mem/<hex addr>/<len> reads RAM or the mapped firmware image;
+      GET /api/mem/find/<hex bytes> returns where a byte string is. The port
+      has no authentication. For emulator and test builds.
+
+config RPC_OPENAPI
+    bool "Serve the REST API's OpenAPI description at /openapi.json"
+    depends on RPC
+    default y
+    help
+      GET /openapi.json returns an OpenAPI 3.1 document of the REST routes
+      this build has. The build generates it from the routes in
+      firmware/src/rpc/api_ctl.c (and docs/api/openapi.overlay.yaml),
+      leaving out the routes and fields whose Kconfig symbols are off, and
+      also writes it to build/<defconfig>/openapi.json. Flash: about
+      12 KiB in a release build, 27 KiB with the test routes.
+
+config RPC_AUDIO_TAP
+    bool "Audio output capture for the REST API (emulator only)"
+    depends on RPC && AUDIO && EMU
+    default y if EMU
+    help
+      Keep the last 8192 output samples (186 ms, mono) in a 16 KiB ring.
+      GET /api/audio adds their RMS and peak; GET /api/audio/capture
+      returns them as base64 16-bit PCM.
+
 endmenu

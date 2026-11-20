@@ -41,8 +41,9 @@ def test_rpc_depends_on_lwip(kconf):
 def test_rpc_port_default(kconf):
     port = kconf.syms['RPC_PORT']
     assert port is not None
-    kconf.syms['WIFI'].set_value(2)  # y
-    kconf.syms['WIFI_LWIP'].set_value(2)
+    # RPC depends on the IP stack only: enable it directly, not through one link's options
+    # (WIFI gained a SYS_MENU dependency on 2026-11-20, which left RPC off here).
+    kconf.syms['LWIP'].set_value(2)  # y
     kconf.syms['RPC'].set_value(2)
     assert str(port.str_value) == '9222'
 
@@ -54,7 +55,7 @@ def test_dev_defconfig_includes_rpc():
     import tempfile
     with tempfile.TemporaryDirectory() as tmpdir:
         r = subprocess.run(
-            [sys.executable, str(genconfig), '--defconfig', 'modd_dev_network', '--outdir', tmpdir],
+            [sys.executable, str(genconfig), '--defconfig', 'modd_emu', '--outdir', tmpdir],
             capture_output=True, text=True, cwd=str(ROOT))
         assert r.returncode == 0, r.stderr
         header = Path(tmpdir) / 'config.h'
