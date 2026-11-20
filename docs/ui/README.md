@@ -14,6 +14,8 @@ Each shell (Felucca, Melodee, SLOOP) provides a theme that renders elements with
 
 For event flow and page card layouts, see [COMPONENTS.md](COMPONENTS.md#ui). Per-theme navigation maps and page controls are in each theme's [UI.md](themes/).
 
+The `lvgl` theme does not use the element system below: LVGL draws it from its own widgets. See [LVGL.md](LVGL.md).
+
 <!-- ui-hw-controls:start -->
 ## Physical controls
 
@@ -107,6 +109,7 @@ firmware/src/ui/
   themes/modd/           # modd's own theme on Melodee's renderer: HOME, Settings, Conn, Demo
   themes/felucca/        # port of Felucca's UI (full page set)
   themes/melodee/        # Melodee's renderer and LCD driver; its shell is still a stub
+  themes/lvgl/           # LVGL 9.6 widgets instead of the renderer: Home, Conn, Config, Debug (LVGL.md)
 ```
 
 The split:
@@ -473,3 +476,5 @@ On the EDIT screen, pressing OCT+ opens the [piano keyboard modal](#piano-keyboa
 modd's EDIT screen has an inline character editor (K1 moves cursor, K2 changes character value). The MODALS screen renders mock dialog overlays (no real modal system).
 
 The modd DEMO view also includes a FILES page (`CONFIG_UDISK`) before DEMO: a USB disk browser using the shared `udisk.c` FAT32 layer.
+
+The USB disk is mounted only while something needs it. FILES, DISK and the dock instrument list need it while they are open: opening one switches the USB port to host mode and mounts the disk, closing the last one unmounts it and returns the port to device mode, so USB-MIDI and SysEx work again. The DISK row in Settings > HW is the permission for this (stored, on by default): with it off the port never switches for a disk and both pages say so. Nothing mounts the disk at boot.

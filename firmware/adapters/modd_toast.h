@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Toast notification API.
- * Subsystem files call these; the modd theme defines them in toast.c.
- * When CONFIG_UI_MODD is off, the stubs compile to nothing. */
+ * Subsystem files call these; the modd theme defines them in toast.c, the LVGL theme in
+ * chrome.c. With neither theme, the stubs compile to nothing. */
 #ifndef MODD_TOAST_H
 #define MODD_TOAST_H
 
-#ifdef CONFIG_UI_MODD
+#if defined(CONFIG_UI_MODD) || defined(CONFIG_UI_LVGL)
 static void toast_status(const char *msg);
 static void toast_error(const char *msg);
 static void toast_clear(void);

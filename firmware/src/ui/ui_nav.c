@@ -50,6 +50,53 @@ static void nav_set_page(uint32_t idx)
         nav_pages[nav_cur]->enter();
 }
 
+/* The page whose .name is `name` (ASCII, case ignored), or nav_npage if none. */
+static uint32_t nav_find(const char *name)
+{
+    uint32_t i, k;
+    for (i = 0; i < nav_npage; i++) {
+        const char *a = nav_pages[i]->name;
+        for (k = 0; a[k] && name[k]; k++) {
+            char x = a[k], y = name[k];
+            if (x >= 'a' && x <= 'z') x = (char)(x - 32);
+            if (y >= 'a' && y <= 'z') y = (char)(y - 32);
+            if (x != y) break;
+        }
+        if (!a[k] && !name[k])
+            return i;
+    }
+    return nav_npage;
+}
+
+/* A page change asked for from outside the UI (the REST API, another task). Themes that
+ * must not be entered from another task (UI_NAV_DEFERRED: LVGL) take it in their draw
+ * through nav_take_request(); the others change page at once. */
+#ifdef UI_NAV_DEFERRED
+static volatile uint32_t nav_req = NAV_NO_PAGE;
+#endif
+
+static void nav_request(uint32_t idx)
+{
+    if (idx >= nav_npage)
+        return;
+#ifdef UI_NAV_DEFERRED
+    nav_req = idx;
+#else
+    nav_set_page(idx);
+#endif
+}
+
+#ifdef UI_NAV_DEFERRED
+static void nav_take_request(void)
+{
+    uint32_t r = nav_req;
+    if (r == NAV_NO_PAGE)
+        return;
+    nav_req = NAV_NO_PAGE;
+    nav_set_page(r);
+}
+#endif
+
 static uint32_t nav_find_in_view(uint8_t view, uint32_t from, int32_t dir)
 {
     uint32_t i, pos = from;

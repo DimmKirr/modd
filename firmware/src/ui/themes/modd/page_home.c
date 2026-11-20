@@ -11,56 +11,7 @@ static const char *const HOME_SCALE_NAMES[] = {
     "Mixol", "Lydian", "Phryg", "Locr", "Harm", "Melod"
 };
 
-/* ── home page data (MVC controller) ───────────────────────────── */
-
-typedef struct {
-    const char *engine_name[NTRK];
-    uint8_t     engine_id[NTRK];
-    uint8_t     preset[NTRK];
-    uint8_t     selected;
-    uint8_t     playing;
-    uint8_t     rec;
-    uint16_t    bpm;
-    uint8_t     palette;
-    const char *palette_name;
-    int16_t     oct;
-    uint8_t     root;
-    uint8_t     scale;
-    int16_t     level;
-    int16_t     atk;
-    int16_t     dec;
-    int16_t     sus;
-    int16_t     rel;
-} home_data_t;
-
-static void home_read(home_data_t *d)
-{
-    uint32_t k;
-    d->selected     = song.sel;
-    d->playing      = song.playing;
-    d->rec          = song.rec;
-    d->bpm          = song.bpm;
-    d->palette      = ux.pal;
-    d->palette_name = UI_PALETTES[ux.pal].name;
-    for (k = 0; k < NTRK; k++) {
-        uint8_t eng = trk[k].engine;
-        d->engine_id[k]   = eng;
-        d->engine_name[k] = (eng < NENGINES && ENGINES[eng]->name)
-                            ? ENGINES[eng]->name : "---";
-        d->preset[k]      = trk[k].preset;
-    }
-    {
-        const track_t *t = &trk[d->selected];
-        d->oct   = t->p[P_OCT];
-        d->root  = (uint8_t)(t->p[P_ROOT] % 12);
-        d->scale = (uint8_t)t->p[P_SCALE];
-        d->level = t->p[P_LEVEL];
-        d->atk   = t->p[P_ATK];
-        d->dec   = t->p[P_DEC];
-        d->sus   = t->p[P_SUS];
-        d->rel   = t->p[P_REL];
-    }
-}
+/* home_data_t, home_read(): ui/page_data.c (shared with the REST API) */
 
 static void home_draw(void)
 {

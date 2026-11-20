@@ -19,26 +19,7 @@ static struct {
 } mset;
 
 #ifdef CONFIG_SYS_MENU_NETWORK
-static const char *mset_link_name(void);
-
-/* ── NET tab data (MVC controller) ─────────────────────────────── */
-
-typedef struct {
-    uint32_t ip;
-    uint32_t gw;
-    uint32_t dns;
-    const char *link;
-    uint8_t  connected;
-} net_tab_data_t;
-
-static void net_tab_read(net_tab_data_t *d)
-{
-    d->link = mset_link_name();
-    d->ip   = net_get_ip();
-    d->gw   = net_get_gw();
-    d->dns  = net_get_dns();
-    d->connected = d->ip ? 1 : 0;
-}
+/* net_data_t, net_read(), net_link_name(): ui/page_data.c (shared with the REST API) */
 
 /* NET tab: redraw when anything it shows changes. The rows are LINK, IP,
  * GATEWAY and DNS, and they do not all change at the same moment: a link
@@ -48,7 +29,7 @@ static void mset_network_status(void)
     static uint32_t prev[4];
     static const char *prev_link;
     uint32_t cur[4];
-    const char *link = mset_link_name();
+    const char *link = net_link_name();
     uint32_t i, changed = (link != prev_link);
 
     cur[0] = (uint32_t)wifi_get_state();
@@ -200,24 +181,12 @@ static void mset_fmt_ip(char *buf, uint32_t ip)
     *p = 0;
 }
 
-static const char *mset_link_name(void)
-{
-#ifdef CONFIG_USB_NET
-    if (ecm_is_up()) return "ETH";
-    if (usbnet_is_up()) return "iPHONE";
-#endif
-#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
-    if (wifi_get_ip()) return "WIFI";
-#endif
-    return "-";
-}
-
 static void mset_draw_network(int32_t y0)
 {
     char buf[20];
     int32_t y = y0;
-    net_tab_data_t d;
-    net_tab_read(&d);
+    net_data_t d;
+    net_read(&d);
 
     ui_row(y, "LINK", d.link, d.connected ? T_THEME : T_DIM, 0);
     y += UI_ROW_H;

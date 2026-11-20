@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+import sys
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools' / 'codegen'))
 
 from fm1_controls import FM1Controls
 

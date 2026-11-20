@@ -12,8 +12,12 @@ Extended captures for the modd theme:
   - All color palettes (10 palettes, each shown on the HOME page)
   - Weather, Demo, Files, Disk, Log pages
 
+The lvgl theme has the modd theme's pages and controls, so it gets the same captures
+from the same key sequences (fm1-live), into docs/ui/themes/lvgl/screenshots/.
+
 Usage:
   python3 tools/codegen/gen_ui_screenshots.py modd
+  python3 tools/codegen/gen_ui_screenshots.py lvgl
   python3 tools/codegen/gen_ui_screenshots.py felucca
   python3 tools/codegen/gen_ui_screenshots.py --all
 """
@@ -27,14 +31,15 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / 'tests'))
 sys.path.insert(0, str(ROOT / 'tools' / 'codegen'))
+sys.path.insert(0, str(ROOT / 'tools' / 'build'))
 
+import fm1_paths
 from gen_ui_map import discover_themes
 
 THEME_DEFCONFIG = {
     'felucca': 'felucca',
-    'modd': 'modd_dev_network',
+    'lvgl': 'modd_emu',
 }
 
 EMU_WIFI_SSID = 'Home'
@@ -63,29 +68,31 @@ SETTINGS_SHOT_TABS = ['display', 'midi', 'hw', 'net']
 
 
 def _fwsc_path(defconfig: str) -> Path:
-    return ROOT / 'build' / defconfig / 'modd.fwsc'
+    return fm1_paths.fwsc_path(defconfig)
 
 
 def _find_fm1_live() -> Path | None:
-    for env_key in ('FM1_EMU_ROOT', 'FM1_EMU_DIR'):
-        root = os.environ.get(env_key, '')
-        if root:
-            p = Path(root) / 'target' / 'release' / 'fm1-live'
-            if p.is_file():
-                return p
-    for candidate in [
-        Path('/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live'),
-        Path('/Users/dmitry/dev/modd-fm/fm1-emu/target/release/fm1-live'),
-    ]:
+    candidates = [fm1_paths.FM1_LIVE]
+    if os.environ.get('FM1_EMU_DIR'):
+        candidates.append(Path(os.environ['FM1_EMU_DIR']) / 'target' / 'release' / 'fm1-live')
+    candidates.append(fm1_paths.EMU_ROOT.parents[1] / 'target' / 'release' / 'fm1-live')
+    for candidate in candidates:
         if candidate.is_file():
             return candidate
     return None
 
 
-def _build_firmware_defconfig(defconfig: str) -> Path:
-    """Build a specific defconfig and return the .fwsc path."""
+def _build_firmware_defconfig(defconfig: str, build: bool = True) -> Path:
+    """Build a specific defconfig and return the .fwsc path.
+
+    With build=False (--no-build) an existing package is used as it is; otherwise
+    it is rebuilt, so the shots never come from a firmware older than the sources.
+    """
     fwsc = _fwsc_path(defconfig)
-    if fwsc.is_file():
+    if not build:
+        if not fwsc.is_file():
+            print(f'Firmware not built ({fwsc}).', file=sys.stderr)
+            raise SystemExit(1)
         return fwsc
     env = {**os.environ}
     tc = Path.home() / '.fm1-toolchain' / 'toolchain'
@@ -191,8 +198,10 @@ def _hold_keys(button: str, start_ms: int, hold_ms: int = 700) -> str:
     return f'{start_ms}:{button},{start_ms + hold_ms}:{button}^'
 
 
-def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path) -> int:
-    """Capture all modd theme screenshots using fm1-live."""
+def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path,
+                       build: bool = True, disk_defconfig: str = 'modd') -> int:
+    """Capture all modd theme screenshots using fm1-live (the LVGL theme's too: same pages,
+    same controls). FILES and DISK use `disk_defconfig`'s firmware."""
     idx = 0
 
     with tempfile.TemporaryDirectory() as td:
@@ -267,15 +276,17 @@ def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path) -> int:
         idx += 1
 
         # --- FILES (SAVE hold -> VIEW_DEMO page 1 = FILES) ---
-        # With a USB disk image so the browser shows actual .dock files.
-        # The emulator needs both disk and ethernet on the hub for the host
-        # controller to enumerate the disk.  modd_dev_network's USB_NET_AUTO
-        # steals the host, so we build the base modd defconfig (no auto-
-        # ethernet) for these two shots.
+        # With a USB disk image so the browser shows actual .dock files. The
+        # firmware mounts the disk only while a page needs it (DISK setting on,
+        # the default): opening FILES is what switches the port to host mode,
+        # and the 20 s leave time for enumeration behind the hub and the mount.
+        # These two shots use the base modd defconfig: with modd_emu
+        # (USB_NET_AUTO) the same SAVE hold does not end on the FILES page in
+        # the emulator, which is not understood yet.
         disk_img = SCREENSHOT_DISK_IMG if SCREENSHOT_DISK_IMG.is_file() else None
         if disk_img:
-            print('    files (with USB disk, building modd defconfig)...')
-            disk_fwsc = _build_firmware_defconfig('modd')
+            print(f'    files (with USB disk, {disk_defconfig} defconfig)...')
+            disk_fwsc = _build_firmware_defconfig(disk_defconfig, build=build)
         else:
             print('    files (no disk image, will show empty state)...')
             disk_fwsc = fwsc
@@ -326,10 +337,45 @@ def capture_modd(build: bool = True) -> Path:
     for f in out_dir.glob('*.png'):
         f.unlink()
 
-    idx = _capture_modd_live(fm1_live, fwsc, out_dir)
+    idx = _capture_modd_live(fm1_live, fwsc, out_dir, build=build)
 
     _copy_stable_names(out_dir)
     _inject_readme_screenshots(out_dir)
+    _inject_theme_gallery(out_dir)
+    print(f'  {idx} screenshots saved to {out_dir}')
+    return out_dir
+
+
+# ---------------------------------------------------------------------------
+# fm1-live backend (lvgl theme): the modd theme's captures, LVGL-drawn
+# ---------------------------------------------------------------------------
+
+def capture_lvgl(build: bool = True) -> Path:
+    """Capture the LVGL theme's pages using fm1-live: the modd theme's sequence."""
+    fm1_live = _find_fm1_live()
+    if fm1_live is None:
+        print('fm1-live not found. Set FM1_EMU_DIR or build fm1-live from '
+              'fm1-emu master.', file=sys.stderr)
+        raise SystemExit(1)
+    print(f'  Using fm1-live: {fm1_live}')
+
+    defconfig = THEME_DEFCONFIG['lvgl']
+    if build:
+        fwsc = _build_firmware('lvgl')
+    else:
+        fwsc = _fwsc_path(defconfig)
+        if not fwsc.is_file():
+            print(f'Firmware not built ({fwsc}).', file=sys.stderr)
+            raise SystemExit(1)
+
+    out_dir = ROOT / 'docs' / 'ui' / 'themes' / 'lvgl' / 'screenshots'
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for f in out_dir.glob('*.png'):
+        f.unlink()
+
+    idx = _capture_modd_live(fm1_live, fwsc, out_dir, build=build, disk_defconfig=defconfig)
+
+    _copy_stable_names(out_dir)
     _inject_theme_gallery(out_dir)
     print(f'  {idx} screenshots saved to {out_dir}')
     return out_dir
@@ -340,9 +386,7 @@ def capture_modd(build: bool = True) -> Path:
 # ---------------------------------------------------------------------------
 
 def _default_emu_dir() -> Path:
-    root = os.environ.get('FM1_EMU_ROOT',
-                          '/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master')
-    return Path(os.environ.get('FM1_WEB_DIR', Path(root) / '_site'))
+    return Path(os.environ.get('FM1_WEB_DIR', fm1_paths.EMU_ROOT / '_site'))
 
 
 def capture_theme_playwright(theme: str, build: bool = True) -> Path:
@@ -633,7 +677,11 @@ def main() -> None:
     for theme in themes:
         print(f'[{theme}]')
         if theme == 'modd':
-            capture_modd(build=build)
+            # MODD LEGACY: no defconfig builds this theme (see configs/modd_emu_defconfig);
+            # its screenshots stay as last captured.
+            print('    skipped: MODD LEGACY theme, no defconfig builds it')
+        elif theme == 'lvgl':
+            capture_lvgl(build=build)
         else:
             capture_theme_playwright(theme, build=build)
 

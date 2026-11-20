@@ -68,13 +68,16 @@ static void mdisk_draw(void)
         uint32_t rh = (UI_PANEL_H - MDISK_HDR_H) / MDISK_NROWS_UNMOUNTED;
 
         const char *st = "Not mounted";
-        if (uhost.state == UHOST_ERROR) st = "Error";
+        if (!udisk_is_enabled()) st = "Off";
+        else if (uhost.state == UHOST_ERROR) st = "Error";
         else if (uhost.state == UHOST_ATTACHED) st = "Enumerating";
         else if (udisk_active) st = "Scanning";
         mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Status", st, T_MID);
         row++;
 
-        if (uhost.vid) {
+        if (!udisk_is_enabled()) {              /* the DISK setting is off: say where it is */
+            mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Turn on", "Settings HW", T_TEXT);
+        } else if (uhost.vid) {
             mdisk_fmt_hex16(buf, uhost.vid);
             mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "VID", buf, T_TEXT);
             row++;
@@ -137,7 +140,8 @@ static void mdisk_draw(void)
 
     {
         const char *mid = "---";
-        if (udisk_is_mounted()) mid = "FAT32";
+        if (!udisk_is_enabled()) mid = "OFF";
+        else if (udisk_is_mounted()) mid = "FAT32";
         else if (uhost.state == UHOST_ERROR) mid = "ERR";
         else if (uhost.state == UHOST_ATTACHED) mid = "WAIT";
         else if (udisk_active) mid = "SCAN";
@@ -156,15 +160,15 @@ static void mdisk_status(void)
     }
 }
 
-static void mdisk_enter(void)
+static void mdisk_enter(void)                   /* the page needs the disk while it is open */
 {
-    udisk_activate();
+    udisk_need();
     mdisk_was_mounted = udisk_is_mounted() ? 1 : 0;
 }
 
 static void mdisk_leave(void)
 {
-    udisk_deactivate();
+    udisk_release();
 }
 
 static const modd_page_t PAGE_DISK = {

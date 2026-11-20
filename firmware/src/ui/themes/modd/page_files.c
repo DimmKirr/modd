@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* modd FILES: USB disk file browser under VIEW_DEMO: the list widget (list.c) over the
  * directory source LIST_UDISK (udisk.c). ALGO scrolls, OCT+ enters a folder, OCT- goes up
- * (at the top: closes). */
+ * (at the top: closes). The disk is needed while the page is open: the list source takes the
+ * need in its open() and gives it back in close(). */
 
 #define MFILES_X_PAD   8
 #define MFILES_ROW_H   18
@@ -13,7 +14,12 @@ static ui_list_t mfiles_list;
 static void mfiles_draw(void)
 {
     mt_panel_begin();
-    if (!udisk_is_mounted()) {
+    if (!udisk_is_enabled()) {                  /* the DISK setting is off: nothing will mount it */
+        cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 - 10, TY_TX), TY_TX,
+                  "USB Disk Off", T_DIM, T_BG);
+        cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 + 10, TY_LB), TY_LB,
+                  "SETTINGS HW: DISK", T_MID, T_BG);
+    } else if (!udisk_is_mounted()) {
         cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 - 10, TY_TX), TY_TX,
                   "No USB Disk", T_DIM, T_BG);
         cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2 + 10, TY_LB), TY_LB,
@@ -29,7 +35,8 @@ static void mfiles_draw(void)
 
     {
         const char *mid = "---";
-        if (udisk_is_mounted()) mid = "FAT32";
+        if (!udisk_is_enabled()) mid = "OFF";
+        else if (udisk_is_mounted()) mid = "FAT32";
         else if (uhost.state == UHOST_ERROR) mid = "ERR";
         else if (uhost.state == UHOST_ATTACHED) mid = "WAIT";
         else if (udisk_active) mid = "SCAN";

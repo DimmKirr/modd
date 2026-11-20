@@ -80,9 +80,10 @@ typedef struct modd_controls {
     uint8_t     select_default;         /* CTL_SELECT_PAGE or CTL_SELECT_BPM */
 } modd_controls_t;
 
-/* The modd theme ships its own map (ui/themes/modd/controls.c); the tables below serve the
- * ported themes, chosen by the Control model Kconfig choice. */
-#ifndef CONFIG_UI_MODD
+/* The modd and LVGL themes ship their own maps (ui/themes/modd/controls.c,
+ * ui/themes/lvgl/controls.c); the tables below serve the ported themes, chosen by the
+ * Control model Kconfig choice. */
+#if !defined(CONFIG_UI_MODD) && !defined(CONFIG_UI_LVGL)
 
 /* --- Felucca control map --- */
 
@@ -232,6 +233,6 @@ static const theme_enc_roles_t modd_enc_roles = {
 
 #endif
 
-#endif /* !CONFIG_UI_MODD */
+#endif /* !CONFIG_UI_MODD && !CONFIG_UI_LVGL */
 
 #endif /* MODD_CONTROLS_H */

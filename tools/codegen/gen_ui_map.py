@@ -34,8 +34,11 @@ def load_defconfig(name: str, root: Path | None = None) -> set[str]:
     parsing the raw defconfig file.
     """
     root = root or ROOT
-    config_h = root / 'build' / name / 'gen' / 'config.h'
-    if config_h.is_file():
+    # the same Kconfig result whichever toolchain built it: build/<name>-open/ (the default,
+    # open toolchain) or build/<name>/ (JieLi)
+    config_h = next((p for p in (root / 'build' / d / 'gen' / 'config.h' for d in (name + '-open', name))
+                     if p.is_file()), None)
+    if config_h is not None:
         enabled: set[str] = set()
         for line in config_h.read_text().splitlines():
             if line.startswith('#define CONFIG_'):
@@ -871,7 +874,13 @@ def generate_mermaid(theme: str) -> str:
     return "\n".join(lines_final)
 
 
-def generate_full(theme: str) -> tuple[str, str]:
+# Themes whose controls are not written in the forms parse_page_controls() reads (knob
+# maps, fparams, numeric `id == N` tests): their UI.md describes the controls by hand,
+# and only the navigation diagram is generated and checked.
+DIAGRAM_ONLY_THEMES = {"lvgl"}
+
+
+def generate_full(theme: str) -> tuple[str, str | None]:
     """Return (mermaid_diagram, controls_table) for a theme."""
     theme_dir = ROOT / "firmware" / "src" / "ui" / "themes" / theme
     if not theme_dir.is_dir():
@@ -886,6 +895,8 @@ def generate_full(theme: str) -> tuple[str, str]:
             p["view"] = page_details[p["symbol"]].get("view", "")
 
     mermaid = generate_mermaid(theme)
+    if theme in DIAGRAM_ONLY_THEMES:
+        return mermaid, None
     table = generate_controls_table(page_controls, page_details, pages)
     return mermaid, table
 
@@ -1012,8 +1023,9 @@ def main() -> None:
         theme = args[0]
         mermaid, table = generate_full(theme)
         print(mermaid)
-        print()
-        print(table)
+        if table:
+            print()
+            print(table)
 
 
 if __name__ == "__main__":

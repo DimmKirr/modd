@@ -56,6 +56,9 @@ void fm1_alnk0_irq(void)
 #endif
             }
         }
+#ifdef CONFIG_RPC_AUDIO_TAP
+        audio_tap_block(o, HALF_FRAMES);
+#endif
         fm1_audio_ack_half();
     }
 }

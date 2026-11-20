@@ -18,6 +18,39 @@ and `ff.h` are upstream with minimal modifications for the freestanding
 - URL: http://elm-chan.org/fsw/ff/
 
 
+## LVGL - Light and Versatile Graphics Library
+
+LVGL v9.6.0 draws the LVGL UI theme (`CONFIG_UI_LVGL`) and is compiled
+into the firmware unmodified, configured by `firmware/src/ui/themes/lvgl/lv_conf.h`.
+Its manual and examples under `docs/lvgl/` are reference only and are not shipped.
+The full text is `LICENSES/MIT-LVGL.txt`.
+
+- Source: `firmware/vendor/lvgl/` (lvgl/lvgl v9.6.0, 80ca777e)
+- License: MIT
+- Copyright: Copyright (c) 2025 LVGL Kft
+- URL: https://github.com/lvgl/lvgl
+
+Third-party code inside LVGL that is linked into the firmware (the texts are in
+`LICENSES/`):
+
+- TLSF memory allocator (`src/stdlib/builtin/lv_tlsf.c`), BSD-3-Clause,
+  Copyright (c) 2006-2016, Matthew Conte: `LICENSES/BSD-3-Clause-TLSF.txt`
+- printf (`src/stdlib/builtin/lv_sprintf_builtin.c`), MIT,
+  Copyright (c) 2014 Marco Paland: `LICENSES/MIT-printf.txt`
+- cubic-bezier easing (`src/misc/lv_math.c`), MIT,
+  Copyright (c) 2014 Gaetan Renaudeau: `LICENSES/MIT-bezier-easing.txt`
+
+Fonts whose glyph data is linked into the firmware (`lv_font_montserrat_*.c`;
+no license statement in the vendored tree, taken from the fonts' own
+repositories, see THIRD_PARTY.md):
+
+- Montserrat Medium, SIL Open Font License 1.1, The Montserrat Project
+  Authors (https://github.com/JulietaUla/Montserrat): `LICENSES/OFL-1.1-Montserrat.txt`
+- Font Awesome 5 Free symbol glyphs, SIL Open Font License 1.1 for the font
+  files, Fonticons, Inc. (https://fontawesome.com/license/free):
+  `LICENSES/Font-Awesome-Free-5.txt`
+
+
 ## Ralink RT2x00 WiFi Driver
 
 The WiFi MAC layer and STA state machine architecture are informed by

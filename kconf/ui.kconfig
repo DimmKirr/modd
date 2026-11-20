@@ -15,7 +15,7 @@ config INPUT
 choice
     prompt "UI theme"
     default UI_FELUCCA if INPUT
-    default UI_MODD
+    default UI_LVGL
 
 config UI_FELUCCA
     bool "Felucca"
@@ -44,10 +44,26 @@ config UI_MODD
     bool "modd"
     select GEN_MELODEE_UI
     help
-      modd's own UI on Melodee's renderer: Rubik type, Melodee's palettes plus
-      the logo's MODD and MODD NIGHT. HOME, settings (HOME hold), weather (GLO
-      hold). Ships its own button map. Does not require INPUT: works in
-      emulator-only builds. Source: firmware/src/ui/themes/modd/.
+      MODD LEGACY: the original modd UI on Melodee's renderer (Rubik type, the
+      modd palettes). No defconfig builds it any more; modd and modd_emu use
+      the LVGL theme with the same pages and controls. To build it, see the
+      MODD LEGACY note at the top of configs/modd_emu_defconfig. Does not
+      require INPUT. Source: firmware/src/ui/themes/modd/.
+
+config UI_LVGL
+    bool "LVGL"
+    help
+      The main theme (modd and modd_emu). Pages built from LVGL 9.6 widgets
+      (firmware/vendor/lvgl, MIT) on LVGL's default theme, coloured by the
+      modd palettes (10, CLAY by default; the THEME colour follows the
+      selected track), drawn through two 240x24 buffers. The same pages and
+      controls as MODD LEGACY: HOME, Settings (HOME hold), weather and DEMO
+      (FX hold), the USB disk's files and info (SAVE hold, with UDISK), the
+      log (GLO hold), page hints (GLO tap). Uses none of the cv_* renderer
+      and generates no font headers. LVGL is
+      compiled as a library next to the unity build (tools/build/build.py).
+      Manual for the vendored version: docs/lvgl/. Source:
+      firmware/src/ui/themes/lvgl/.
 
 endchoice
 
@@ -55,7 +71,7 @@ endchoice
 choice
     prompt "Control model"
     default CONTROLS_FELUCCA
-    depends on !UI_MODD
+    depends on !UI_MODD && !UI_LVGL
 
 config CONTROLS_FELUCCA
     bool "Felucca"

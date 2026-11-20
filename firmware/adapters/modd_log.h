@@ -30,7 +30,8 @@ static void modd_log_hw(const char *s)
 static char     modd_log_buf[MODD_LOG_LINES][MODD_LOG_LINE_LEN];
 static uint32_t modd_log_ts[MODD_LOG_LINES];
 static uint32_t modd_log_head;
-static uint32_t modd_log_count;
+static uint32_t modd_log_count;       /* lines in the ring: stops at MODD_LOG_LINES */
+static uint32_t modd_log_total;       /* lines ever logged (the REST API's /api/log "count") */
 static uint32_t modd_log_scroll;
 static volatile uint32_t modd_log_ms;
 
@@ -44,6 +45,7 @@ static void modd_log_init(void)
     }
     modd_log_head = 0;
     modd_log_count = 0;
+    modd_log_total = 0;
     modd_log_scroll = 0;
     modd_log_ms = 0;
 }
@@ -92,6 +94,7 @@ static void modd_log(const char *msg)
         modd_log_head = (modd_log_head + 1) % MODD_LOG_LINES;
         if (modd_log_count < MODD_LOG_LINES)
             modd_log_count++;
+        modd_log_total++;
     }
 #endif
 #ifdef CONFIG_DEBUG_DAP

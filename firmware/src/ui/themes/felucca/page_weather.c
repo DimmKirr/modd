@@ -286,9 +286,15 @@ static void fwx_draw(void)
     ui_footer("WIFI", w->valid ? w->city : "---", "WEATHER");
 }
 
+static void fwx_leave(void)
+{
+    net_release();
+}
+
 static void fwx_enter(void)
 {
     fwx_frame = 0;
+    net_need();                         /* the page needs the network while it is open */
     if (!weather_get()->valid && !weather_fetching())
         weather_fetch_start();
 }
@@ -315,6 +321,7 @@ static const modd_page_t FPAGE_WEATHER = {
     .view   = VIEW_CONN,
     .flags  = PAGEF_SYSTEM,
     .enter  = fwx_enter,
+    .leave  = fwx_leave,
     .draw   = fwx_draw,
     .status = fwx_status,
     .button = fwx_button,

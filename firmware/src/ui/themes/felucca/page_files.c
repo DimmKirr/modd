@@ -50,7 +50,10 @@ static void ffiles_draw(void)
 
     /* path bar: 4 cards area used as a single banner */
     cv_begin(240, CARD_H, T_BG);
-    if (!udisk_is_mounted()) {
+    if (!udisk_is_enabled()) {                  /* the DISK setting is off: nothing will mount it */
+        cv_text_in(0, 10, 240, &AF_M, "USB Disk Off", T_DIM, T_BG);
+        cv_text_in(0, 28, 240, &AF_S, "SETTINGS HW: DISK", T_ACCENT, T_BG);
+    } else if (!udisk_is_mounted()) {
         cv_text_in(0, 10, 240, &AF_M, "No USB Disk", T_DIM, T_BG);
         {
             const char *st;
@@ -151,16 +154,16 @@ static int ffiles_button(uint32_t id, uint32_t down)
     return 0;
 }
 
-static void ffiles_enter(void)
+static void ffiles_enter(void)                  /* the page needs the disk while it is open */
 {
-    udisk_activate();
+    udisk_need();
     if (udisk_is_mounted())
         udisk_opendir(udisk_cwd);
 }
 
 static void ffiles_leave(void)
 {
-    udisk_deactivate();
+    udisk_release();
 }
 
 static const modd_page_t FPAGE_FILES = {

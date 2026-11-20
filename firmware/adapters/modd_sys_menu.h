@@ -84,21 +84,29 @@ static void    sm_midi_ch_set(uint8_t v)
 #endif
 
 #if (defined(CONFIG_SYS_MENU_HARDWARE) || defined(CONFIG_SYS_MENU_NETWORK)) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
+#ifdef CONFIG_WIFI
+static void wifi_set_enabled(uint8_t on);   /* wifi/wifi_need.c */
+#endif
 static uint8_t sm_wifi_on_get(void) { return sys_settings.wifi_on; }
 static void    sm_wifi_on_set(uint8_t v)
 {
     if (v > 1u) v = 1u;
     sys_settings.wifi_on = v;
     sys_settings_dirty = 1;
+#ifdef CONFIG_WIFI
+    wifi_set_enabled(v);        /* the radio follows the setting now, not at the next boot */
+#endif
 }
 #endif
 
 #ifdef CONFIG_USB_NET
-static uint8_t usbnet_wanted;
+static uint8_t usbnet_wanted;        /* effective: the setting allows it and a need is held (eth_need) */
 static uint8_t ecm_wanted;
+static uint8_t usbnet_allowed;       /* the setting (a permission) */
+static uint8_t ecm_allowed;
 static void    usbnet_set_wanted(uint8_t on);
 static void    ecm_set_wanted(uint8_t on);
-static uint8_t sm_usb_net_get(void) { return usbnet_wanted || ecm_wanted; }
+static uint8_t sm_usb_net_get(void) { return usbnet_allowed || ecm_allowed; }
 static void    sm_usb_net_set(uint8_t v)
 {
     uint8_t on = v > 0u;
@@ -131,9 +139,9 @@ static uint8_t sm_ble_name_get(void) { return 0; }
 static void    sm_ble_name_set(uint8_t v) { (void)v; }
 #endif
 
-/* --- LIGHTS setting (modd theme LED brightness) --- */
+/* --- LIGHTS setting (LED brightness: the modd and LVGL themes' leds.c) --- */
 
-#ifdef CONFIG_UI_MODD
+#if defined(CONFIG_UI_MODD) || defined(CONFIG_UI_LVGL)
 static const char *const SM_LIGHTS[] = {"OFF", "LOW", "MID", "HIGH", "FULL"};
 
 static uint8_t sm_lights_get(void) {
@@ -150,12 +158,17 @@ static void sm_lights_set(uint8_t v) {
 /* --- DEVICES tab items --- */
 
 #if defined(CONFIG_SYS_MENU_HARDWARE) && defined(CONFIG_UDISK)
-static uint8_t udisk_is_active(void);
-static void    udisk_activate(void);
-static void    udisk_deactivate(void);
-static uint8_t sm_udisk_get(void) { return udisk_is_active(); }
-static void    sm_udisk_set(uint8_t v) {
-    if (v > 0u) udisk_activate(); else udisk_deactivate();
+/* DISK: may the port go host for a USB disk at all. ON does not mount anything by itself: the
+ * disk comes up while a page or a copy needs it (udisk/udisk.c). OFF keeps the port a device. */
+static uint8_t udisk_is_enabled(void);
+static void    udisk_set_enabled(uint8_t on);
+static uint8_t sm_udisk_get(void) { return udisk_is_enabled(); }
+static void    sm_udisk_set(uint8_t v)
+{
+    uint8_t on = v > 0u;
+    udisk_set_enabled(on);
+    sys_settings.udisk_off = !on;
+    sys_settings_dirty = 1;
 }
 #endif
 
@@ -178,7 +191,7 @@ static void    sm_demo_set(uint8_t v) { sm_demo_val = v; }
 /* --- Item array (static, Kconfig-gated) --- */
 
 static const sys_menu_item_t SYS_MENU[] = {
-#ifdef CONFIG_UI_MODD
+#if defined(CONFIG_UI_MODD) || defined(CONFIG_UI_LVGL)
     { "LIGHTS",   SMTAB_DISPLAY, 5, SM_LIGHTS, sm_lights_get, sm_lights_set },
 #endif
 #ifdef CONFIG_SYS_MENU_USB_MODE

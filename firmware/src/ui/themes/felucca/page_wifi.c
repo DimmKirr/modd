@@ -237,8 +237,14 @@ static void fwifi_draw(void)
                   "WIFI");
 }
 
+static void fwifi_leave(void)
+{
+    net_release();
+}
+
 static void fwifi_enter(void)
 {
+    net_need();                         /* scanning and joining need the radio while the page is open */
     fwifi_sel = 0;
     fwifi_scroll = 0;
     fwifi_scanning = 0;
@@ -345,6 +351,7 @@ static const modd_page_t FPAGE_WIFI = {
     .view   = VIEW_CONN,
     .flags  = PAGEF_SYSTEM,
     .enter  = fwifi_enter,
+    .leave  = fwifi_leave,
     .draw   = fwifi_draw,
     .knob   = fwifi_knob,
     .button = fwifi_button,

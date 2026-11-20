@@ -277,12 +277,29 @@ static void fm1__key(uint32_t id, uint32_t closed)
     }
 }
 
+#ifdef FM1_INPUT_INJECT
+/* keys held closed from software (the REST API's input routes): ORed into the scan, so debounce,
+ * press / release edges, hold times and LEDs come from the same path as a finger on the key.
+ * Written from the main loop / services task as single 32-bit stores, read by the scan. */
+static volatile uint32_t fm1_inject_buttons;   /* bit i = button i (0..13) */
+static volatile uint32_t fm1_inject_notes;     /* bit n = note key n (0 = F3 .. 26 = G5) */
+static inline uint32_t fm1__injected(uint32_t id)
+{
+    return id >= 14u ? (fm1_inject_notes >> (id - 14u)) & 1u : (fm1_inject_buttons >> id) & 1u;
+}
+#endif
+
 static void fm1__keys(uint32_t p)                  /* the keys of column p, just read */
 {
     uint32_t r, raw = fm1_in.raw[p];
     for (r = 1; r < 5u; r++)
-        if (FM1_KEYMAP[r][p] >= 0)
-            fm1__key((uint32_t)FM1_KEYMAP[r][p], (raw >> r) & 1u);
+        if (FM1_KEYMAP[r][p] >= 0) {
+            uint32_t id = (uint32_t)FM1_KEYMAP[r][p], closed = (raw >> r) & 1u;
+#ifdef FM1_INPUT_INJECT
+            closed |= fm1__injected(id);
+#endif
+            fm1__key(id, closed);
+        }
 }
 
 static void fm1__frame(void);
@@ -417,6 +434,20 @@ static inline void fm1__unlock(uint32_t v)
     (void)v;
     __asm__ volatile("csync\n\tsti" ::: "memory");
 }
+
+#ifdef FM1_INPUT_INJECT
+/* detents turned from software: added where the decoder adds a finished click */
+static void fm1_enc_inject(uint32_t e, int32_t clicks)
+{
+    uint32_t k;
+    int32_t s;
+    if (e >= FM1_NENC) return;
+    k = fm1__lock();
+    s = fm1_in.enc_steps[e] + clicks;
+    fm1_in.enc_steps[e] = (int16_t)(s > 32767 ? 32767 : s < -32767 ? -32767 : s);
+    fm1__unlock(k);
+}
+#endif
 
 /* detent steps turned since the last call, + = clockwise */
 static int32_t fm1_enc_take(uint32_t e)

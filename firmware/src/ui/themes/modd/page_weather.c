@@ -8,18 +8,7 @@
 #include "ui/themes/felucca/weather_colors.h"
 #include "ui/themes/felucca/weather_art.h"
 
-/* ── weather page data (MVC controller) ────────────────────────── */
-
-typedef struct {
-    const struct weather_data *w;
-    uint8_t  fetching;
-} wx_page_data_t;
-
-static void wx_page_read(wx_page_data_t *d)
-{
-    d->w        = weather_get();
-    d->fetching = weather_fetching() ? 1 : 0;
-}
+/* wx_data_t, wx_read(): ui/page_data.c (shared with the REST API) */
 
 static uint32_t mwx_frame;
 
@@ -236,8 +225,8 @@ static void mwx_draw_weather(const struct weather_data *w)
 
 static void mwx_draw(void)
 {
-    wx_page_data_t d;
-    wx_page_read(&d);
+    wx_data_t d;
+    wx_read(&d);
 
     if (!d.w->valid) {
         ui_card(0, "TEMP", "---", "", T_DIM, -1, 0);
@@ -258,9 +247,15 @@ static void mwx_draw(void)
     ui_footer("", d.w->valid ? d.w->city : "---", "");
 }
 
+static void mwx_leave(void)
+{
+    net_release();
+}
+
 static void mwx_enter(void)
 {
     mwx_frame = 0;
+    net_need();                         /* the page needs the network while it is open */
     if (!weather_get()->valid && !weather_fetching())
         weather_fetch_start();
 }
@@ -287,6 +282,7 @@ static const modd_page_t PAGE_WEATHER = {
     .view   = VIEW_CONN,
     .flags  = PAGEF_SYSTEM,
     .enter  = mwx_enter,
+    .leave  = mwx_leave,
     .draw   = mwx_draw,
     .status = mwx_status,
     .button = mwx_button,
