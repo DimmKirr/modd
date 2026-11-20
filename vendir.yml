@@ -128,3 +128,42 @@ directories:
     - source/00history.txt
     - source/ff.c
     - source/ff.h
+
+- path: firmware/vendor/lvgl
+  contents:
+  - path: .
+    git:
+      # LVGL 9.6.0 (MIT), the widget library behind the LVGL theme (CONFIG_UI_LVGL).
+      # Project config: firmware/src/ui/themes/lvgl/lv_conf.h. Only the library
+      # is taken here; its documentation is vendored below into docs/lvgl.
+      url: https://github.com/lvgl/lvgl
+      ref: v9.6.0
+      depth: 1
+    includePaths:
+    - LICENCE.txt
+    - lvgl.h
+    - lvgl_private.h
+    - lv_version.h
+    - lv_conf_template.h
+    - src/**/*
+    - include/**/*
+
+# --- Reference documentation (read, never built or shipped) ---------------
+
+- path: docs/lvgl
+  contents:
+  - path: .
+    git:
+      # The LVGL 9.6.0 manual (docs/src/**/*.mdx) and the example sources its
+      # pages show, from the same tag as firmware/vendor/lvgl. Read these when
+      # writing LVGL code: the 8.x API differs and is not what modd builds.
+      url: https://github.com/lvgl/lvgl
+      ref: v9.6.0
+      depth: 1
+    includePaths:
+    - LICENCE.txt
+    - docs/**/*
+    - examples/**/*.c
+    - examples/**/*.h
+    excludePaths:
+    - examples/assets/**/*

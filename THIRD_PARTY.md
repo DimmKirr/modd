@@ -3,7 +3,7 @@
 modd's firmware and project code are licensed under
 [GPL-3.0-only](LICENSE). The components below retain their own licenses.
 This inventory covers the current minimal build, not engines planned for future
-integration. Updated: 2026-11-17.
+integration. Updated: 2026-11-20.
 
 ## Included in firmware packages
 
@@ -69,6 +69,41 @@ source is complete. Vendored files are never patched: modd adapts them through
 | `firmware/upstream/optimist/` | [w0ts/optimist](https://github.com/w0ts/optimist) | a4104fc | GPL-3.0 | BLE stack (`firmware/src/ble/`): link layer, host, SMP, ATT/GATT, BLE MIDI |
 | `firmware/vendor/lwip/` | [lwip-tcpip/lwip](https://github.com/lwip-tcpip/lwip), mirror of [Savannah](https://git.savannah.nongnu.org/cgit/lwip.git) | STABLE-2_2_1_RELEASE (77dcd25) | BSD-3-Clause | IPv4, DHCP, DNS, TCP, UDP for the WiFi module; config in `firmware/src/wifi/lwipopts.h` |
 | `firmware/vendor/fatfs/` | [FatFs by ChaN](http://elm-chan.org/fsw/ff/), `ff15.zip` with pinned SHA-256 | R0.15 | [FatFs license](http://elm-chan.org/fsw/ff/doc/appnote.html#license) (1-clause BSD) | FAT32 for USB mass storage; config in `firmware/src/udisk/ffconf.h`, disk I/O in `firmware/src/udisk/diskio.[ch]`, `strchr` in `firmware/src/libc.c` |
+| `firmware/vendor/lvgl/` | [lvgl/lvgl](https://github.com/lvgl/lvgl) | v9.6.0 (80ca777) | [MIT](LICENSES/MIT-LVGL.txt) (Copyright (c) 2025 LVGL Kft); bundled parts below | Widget library of the LVGL UI theme (`CONFIG_UI_LVGL`, defconfigs `modd` and `modd_emu`): compiled into `build/<defconfig>/lvgl/liblvgl.a` and linked into the firmware; config in `firmware/src/ui/themes/lvgl/lv_conf.h` |
+| `docs/lvgl/` | [lvgl/lvgl](https://github.com/lvgl/lvgl) | v9.6.0 (80ca777) | MIT (same `LICENCE.txt`, [MIT-LVGL.txt](LICENSES/MIT-LVGL.txt)) | Manual and example sources, reference only: never compiled, not part of the firmware package |
+
+The LVGL sources are compiled whole (`tools/build/build.py` builds every
+`firmware/vendor/lvgl/src/**/*.c` into `liblvgl.a`; `lv_conf.h` only gates the
+code), and the linker takes the members the firmware refers to. These parts of
+the vendored tree carry their own licenses and end up in the firmware
+(`build/modd/modd.map`, `build/modd_emu/modd.map`); each statement is quoted
+from the vendored file named here:
+
+| Component | License | Copyright | Statement in the vendored tree | Notice |
+|-----------|---------|-----------|--------------------------------|--------|
+| TLSF allocator (`LV_USE_STDLIB_MALLOC = LV_STDLIB_BUILTIN`; `lv_tlsf.c`) | BSD-3-Clause | Matthew Conte, 2006-2016 | `src/stdlib/builtin/lv_tlsf.h` header; `LICENSE_TLSF.txt` there only says "Released under the BSD license." | [BSD-3-Clause-TLSF.txt](LICENSES/BSD-3-Clause-TLSF.txt) |
+| printf (`LV_USE_STDLIB_SPRINTF = LV_STDLIB_BUILTIN`; `lv_sprintf_builtin.c`) | MIT | Marco Paland, 2014 | `src/stdlib/builtin/LICENSE_SPRINTF.txt` and the file header | [MIT-printf.txt](LICENSES/MIT-printf.txt) |
+| cubic-bezier easing (`lv_math.c`, used by animations) | MIT | Gaëtan Renaudeau, 2014 | comment in `src/misc/lv_math.c` | [MIT-bezier-easing.txt](LICENSES/MIT-bezier-easing.txt) |
+| Montserrat Medium glyphs (`lv_font_montserrat_10/14/20.c`) | OFL-1.1 | The Montserrat Project Authors | not in the vendored tree (the font files only name `Montserrat-Medium.ttf` in their `Opts:` header); upstream `OFL.txt` of [JulietaUla/Montserrat](https://github.com/JulietaUla/Montserrat), fetched 2026-11-20 | [OFL-1.1-Montserrat.txt](LICENSES/OFL-1.1-Montserrat.txt) |
+| Font Awesome 5 Free symbol glyphs (`LV_SYMBOL_*`, in the same font files) | OFL-1.1 (the font files; the license file also covers icons, CC BY 4.0, and code, MIT) | Fonticons, Inc. | not in the vendored tree (`Opts:` names `FontAwesome5-Solid+Brands+Regular.woff`); upstream `LICENSE.txt` of [FortAwesome/Font-Awesome](https://github.com/FortAwesome/Font-Awesome), branch `5.x`, fetched 2026-11-20 | [Font-Awesome-Free-5.txt](LICENSES/Font-Awesome-Free-5.txt); the OFL-1.1 text is in [OFL-1.1-Montserrat.txt](LICENSES/OFL-1.1-Montserrat.txt) |
+
+The vendored tree has no license statement for the Montserrat and Font Awesome
+glyph data embedded in the font files, and LVGL's `COPYRIGHTS.md` (not part of
+the vendored subset) does not list them either. The two rows above come from the
+fonts' own repositories. LVGL does not say which release of either font it
+converted, so the copyright line in `OFL-1.1-Montserrat.txt` is the one of
+Montserrat's current `OFL.txt`, not necessarily of the converted release. The
+glyph data stays under OFL-1.1 inside the GPL-3.0-only firmware (the OFL allows
+bundling and embedding with software under another license).
+
+Compiled into `liblvgl.a` but not linked into the firmware (no reference from
+modd or LVGL's enabled code): `src/libs/frogfs/src/decomp_raw.c` (MPL-2.0,
+file header; the license text is `src/libs/frogfs/LICENSE.txt`) has no
+`lv_conf.h` guard, and `src/misc/lv_lru.c` names C-LRU-Cache and MurmurHash2
+(Austin Appleby) as its sources without a license statement. Every other
+`src/libs/*` component (LodePNG, LZ4, QR code, ThorVG, TinyTTF, TJPGD, GIF,
+NanoVG, FT800-FT813, barcode, FreeType interface) is switched off in
+`lv_conf.h` and compiles to nothing.
 
 Felucca-Engines is vendored separately from Felucca because upstream Felucca
 references it as a git submodule (MIT-licensed engines kept apart from the

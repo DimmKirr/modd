@@ -21,8 +21,11 @@ REF = re.compile(r'(?:\.\./)*\b(upstream|vendor)/([A-Za-z0-9_.-]+)/')
 
 
 def test_manifest_covers_every_tree_the_build_reaches_into():
+    # Only trees under firmware/ can be referenced as upstream/<x> or vendor/<x>;
+    # other manifest entries (docs/lvgl, the manual) are not compiled.
     declared = {Path(p).relative_to('firmware').as_posix()
-                for p in vendor.vendored_paths()}
+                for p in vendor.vendored_paths()
+                if Path(p).parts[0] == 'firmware'}
     src = ROOT / 'firmware' / 'src'
     files = [*src.rglob('*.c'), *src.rglob('*.h'), ROOT / 'tools' / 'build' / 'build.py']
     used = {f'{kind}/{name}'

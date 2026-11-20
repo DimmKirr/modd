@@ -16,8 +16,9 @@ interpreter; uv creates `.venv` and installs dependencies from
 [pyproject.toml](../pyproject.toml) and [uv.lock](../uv.lock).
 No separate Python installation is needed.
 
-For browser tests, use an installed `chromium`, set `CHROMIUM_PATH`, or install
-Playwright's browser:
+The browser is needed only by `tools/codegen/gen_ui_screenshots.py`, which
+captures the Felucca theme's screenshots in the WASM emulator. Use an installed
+`chromium`, set `CHROMIUM_PATH`, or install Playwright's browser:
 
 ```sh
 mise exec -- uv run playwright install chromium
@@ -28,9 +29,9 @@ On Ubuntu, add `--with-deps` to install required system libraries too.
 ## Run tests
 
 ```sh
-task test           # both suites (unit + e2e)
+task test           # both suites (unit, then API)
 task test:unit      # Python unit tests only
-task test:e2e       # emulator + Playwright e2e tests (core suite)
+task test:api       # builds modd_emu, modd and felucca, runs the API tests in fm1-live
 ```
 
 With mise activated in your shell, `mise exec --` prefix is optional.
@@ -44,16 +45,16 @@ firmware build of a defconfig renders fonts, which needs the FriBiDi library
 from the Nix dev shell. See [DEVELOPMENT.md](DEVELOPMENT.md#environment) for
 what each of flake, mise and uv provides.
 
-Run one E2E test with:
+Run one API test with:
 
 ```sh
-task test:e2e -- -k test_firmware_boots
+task test:api -- -k test_firmware_boots
 ```
 
-Run a specific E2E file outside the Taskfile (useful for tests not in the core suite):
+Run a specific file outside the Taskfile (the firmware must be built; `task test:api` builds it):
 
 ```sh
-uv run python -m pytest tests/e2e_ui_controls_test.py -v
+uv run python -m pytest tests/boot/api_boot_test.py -v
 ```
 
 ## Test architecture
@@ -61,120 +62,228 @@ uv run python -m pytest tests/e2e_ui_controls_test.py -v
 ### Unit tests (`tests/test_*.py`)
 
 Host-only, no hardware or emulator. Cover configuration generation, package
-checksums/compression, defconfig validation, and control helper validation.
+checksums/compression, defconfig validation, the build pipeline (`tests/build/`)
+and tooling.
 
-### E2E tests (`tests/e2e_*_test.py`)
+### Layout and naming
 
-Browser-based tests using the fm1-emu WASM emulator and Playwright.
-Each test class inherits from `E2ETestCase` (in `tests/e2e_fixtures.py`), which:
+`tests/<area>/<subject>_test.py`, one area per firmware module (`audio`, `ble`, `boot`, `build`, `debug`, `dock`, `net`, `rpc`, `ui`, `usb`, `wifi`). The file name says how it runs:
 
-- Starts a local HTTP server serving the emulator
-- Launches headless Chromium via Playwright
-- Provides `controls(page)` for named encoders, buttons, and notes
-- Provides helpers: `push()`, `long_push()`, `send_enc()`, `screenshot()`
-- Saves screenshots and logs in `tests/results/<timestamp>-<module>/`
+| Name | How it runs |
+|---|---|
+| `api_<subject>_test.py` (also `*/api/`) | fm1-live over HTTP, real firmware behaviour |
+| `<subject>_test.py` + `<subject>_test.c` | the C is compiled on the host with `cc`; the `.py` runs it |
+| `<subject>_test.py` | host Python: a tool, a generator, Kconfig, or a fake device |
+| `wifi/wifi_source_guards_test.py` | source-level guards for bugs found on hardware (the emulator has no WiFi MAC) |
+| `bench/<subject>_bench.py` | not a test: scripted fm1-live runs that write frames |
+| `build_fixtures.py`, `api_fixtures.py` | shared helpers |
 
-A typical E2E test uploads the built `.fwsc` into the emulator, waits for boot,
-then interacts with the virtual panel and asserts LCD canvas state via pixel
-hash comparison.
+### Traces and timings (every test)
 
-## E2E test inventory
+`tests/conftest.py` and `tests/io_log.py` trace every pytest run, with no code in the tests:
 
-### Core suite (run by `task test:e2e`)
+| Output | What is in it |
+|---|---|
+| `tests/results/<RUN_STAMP>-<module>/debug.log` | Every event of the module's tests, timestamped (UTC, ms): each test's start, setup / call / teardown with outcome and seconds, end with its IO totals; every `subprocess.run` (command, exit code, seconds); each HTTP request of the API client (seconds, the wait for fm1-emu's connection budget); every line fm1-live prints; the tests' own events (`io_log.log()`). Tab-separated: `time_utc test kind seconds throttle_wait detail` |
+| a line per test of 0.5 s or more | `[start +seconds] N io S s, throttled W s  <test>` |
+| the end of the run, and `tests/results/<RUN_STAMP>-timings.tsv` | Every test of 0.5 s or more, slowest first, with its share of the run |
 
-| File | What it tests | Controls exercised |
-|------|--------------|-------------------|
-| `e2e_boot_test.py` | Firmware boots, LCD renders, panel messages reach emulator | All encoders (0-6), all 14 buttons, 3 notes, hold+encoder, master pot |
-| `e2e_components_test.py` | Build manifest matches defconfig, binary manifest | None (build verification) |
-| `e2e_usb_safety_test.py` | USB SysEx keys present/absent per defconfig | None (binary/manifest checks) |
-| `e2e_audio_test.py` | Oscillator output, analog acid sequence | Notes (C4-G4) |
-| `e2e_audio_engines_test.py` | Engine switching, audio output per engine, level normalization, master volume | SELECT encoder, HOME button, master pot, notes |
+One run has one `RUN_STAMP`: a module's screenshots, fm1-live logs and `debug.log` share its
+`<RUN_STAMP>-<module>/` folder (`io_log.results_dir()`; `ApiTestCase.results_dir()` uses it).
+A test that logs its own events calls `io_log.log(kind, detail, seconds, count=False)`;
+`count=True` (the default) adds it to the test's IO totals.
 
-### Extended suite (run individually or via pytest glob)
+## Direct-API tests (`tests/**/api_*_test.py`, `tests/ui/themes/lvgl/api/`)
 
-| File | What it tests | Controls exercised |
-|------|--------------|-------------------|
-| `e2e_ui_controls_test.py` | **All Felucca UI controls on all pages** (59 tests). Button-tap navigation, long-press, encoder CW/CCW on every param page, dead buttons, hold+encoder combos, full page sweep | All buttons, all encoders, notes, hold+encoder combos |
-| `e2e_page_nav_test.py` | Page-change latency via SELECT encoder | SELECT encoder CW/CCW |
-| `e2e_sys_menu_test.py` | SYS page opens, tab switching, value cycling, HOME return | HOME (long-press), ALGO encoder, SELECT encoder |
-| `e2e_debug_log_test.py` | DEBUG page renders boot log, scroll works | GLO button, SELECT encoder |
-| `e2e_stuck_notes_test.py` | Notes don't stick after engine switch or page change | SELECT encoder, notes |
-| `e2e_sched_test.py` | Scheduler stability: boot+UI, audio+nav, rapid page stress, extended run | FX, HOME, SEQ, ENV, LFO, SCL, EDIT buttons, SELECT/K1/K2 encoders, notes |
-| `e2e_ble_test.py` | BLE module integration | (varies) |
-| `e2e_views_test.py` | **All views with screenshots**: HOME, ENV-SEQ (buttons), MIXER/VOICE (GLO view), FILES (SAVE), SYS (long-HOME), WIFI (long-GLO), engine cycling, rapid switching | All buttons, SELECT, ALGO encoders |
-| `e2e_weather_test.py` | Weather page rendering, refresh, spinner | SELECT encoder, PLAY button |
+Python drives the firmware over HTTP; no browser. `ApiTestCase`
+(`tests/api_fixtures.py`) boots one fm1-live per test class with the
+`modd_emu` build (`--usb ethernet --net internet --forward <port>:9222`),
+waits for `/api/info`, and stops the process afterwards. Every step after that
+is a GET to the firmware's own REST API. The full reference is the OpenAPI 3.1
+document each build generates from its C code (see
+[Writing a REST handler](#writing-a-rest-handler)): `build/<defconfig>/openapi.json`,
+also served at `GET /openapi.json` (`CONFIG_RPC_OPENAPI`), with only the routes
+and fields that build has. A summary:
 
-### Coverage summary
+| Need | Route | Kconfig |
+|------|-------|---------|
+| page list, current page, jump | `/api/pages`, `/api/page`, `/modd/<page>[/<sub>]` | `RPC` |
+| buttons, encoders, note keys, master pot | `/api/input/button/<name>/tap\|hold/<ms>\|down\|up`, `/api/input/enc/<name>/<clicks>`, `/api/input/key/<midi>[,<midi>…]/down\|up\|tap/<ms>`, `/api/input/pot/master/<0..1023>\|release`, state in `/api/input` | `RPC_INPUT` |
+| track engine | `/api/track/<n\|sel>[/engine/<name>]` | `RPC_INPUT` |
+| audio level, last 8192 output samples | `/api/audio`, `/api/audio/capture` | `RPC_AUDIO_TAP` (EMU) |
+| memory read, byte search | `/api/mem/<hex addr>/<len>`, `/api/mem/find/<hex>` | `RPC_MEM` |
+| LCD, log | `/api/screenshot`, `/api/log` | `DEBUG_FRAMEBUFFER`, `DEBUG_LOG` |
+| this list, as OpenAPI 3.1 | `/openapi.json` | `RPC_OPENAPI` (default y) |
+
+
+Input is ORed into the panel scan (`fm1_input.h`), so debounce, press and
+release edges, hold times and LEDs follow the path a finger takes; timed
+releases (`tap`, `hold`) are done by the firmware in firmware time. A list of
+note keys is pressed in one store, so a chord lands on one scan frame.
+
+```
+task test:api                          # = task modd:test:modd_emu:api: build, then every API test
+RPC_HOST=10.0.2.15:9222 uv run python -m pytest tests/boot/api_boot_test.py   # a running target
+```
+
+| File | What it tests |
+|------|--------------|
+| `boot/api_boot_test.py` | Boot (API, IP, HOME, LCD, boot log); every button, encoder, note key and the pot reach the firmware |
+| `audio/api_audio_test.py` | The capture follows the output; Analog plays C4..G4 at pitch |
+| `audio/api_audio_engines_test.py` | Noise/Analog/FM6 sound, master volume, 12 dB balance, round trip, no bleed, LCD follows engine and track |
+| `usb/usb_otg_presence_safety_test.py` | Every defconfig enables USB; the UBOOT SysEx key (the `task flash` path) is in the modd, modd_emu and felucca binaries that `task test:api` builds first in parallel; melodee and sloop config-only. Live (fm1-live, about 3 s): production `modd` with a computer on the port enumerates as USB-MIDI, stays on the bus (the OTG port keeps device mode while a computer drives it), and reboots into the updater on the UBOOT key. Also runs in `test:unit` (a binary not built skips) |
+| `net/api_weather_test.py` | Weather from open-meteo, PLAY refresh, revisit |
+| `wifi/api_wifi_need_test.py` | The radio follows the WIFI setting and the network need: WIFI off then on with WiFi as the only link (the panel is pressed through `fm1-live --cdp`, because the API travels over WiFi), WiFi stepping aside while USB ethernet has an address, and a boot with WIFI saved as off (fm1-live restarted on the same `--flash` image; needs `xdotool`). Off means powered down: the log shows `wifi: deinit done`, on again a second `wifi: init done`, and the WiFi task stack keeps 512 bytes free. Each class boots fm1-live with its own flags; `task modd:test:modd_emu:api:wifi` runs the API tests with WiFi as the only link |
+| `ui/themes/lvgl/api/lvgl_api_test.py`, `lvgl_ui_walkthrough_test.py` | Pages, page data, every control, palettes, hints, DEMO, audio; OCR and colours on every page |
+
+**Connection budget.** Each request is one TCP connection (`Connection:
+close`), and fm1-emu's NAT holds at most 32 connections, each for 30 s after
+it closes (`MAX_TCP`, `TIME_WAIT_MS` in `crates/fm1-soc/src/nat/mod.rs`).
+`FirmwareApi` keeps to 24 per 31 s against fm1-live and reserves the
+connections of a timed sequence (press, wait, capture, release) before it
+starts. Waits are in firmware time, so a throttled emulator costs time, not
+correctness; a capture that still lands late is retried.
+
+**Offline states** are not tested: fm1-live forwards a port only with its NAT
+(`--net internet`), so a firmware under API test always has a network.
+
+## Writing a REST handler
+
+The routes live in one table, `API_ROUTES[]` at the end of
+`firmware/src/rpc/api_ctl.c`. `tools/codegen/gen_openapi.py` reads that file and
+`api_pages.c` on every `task build` (when `CONFIG_RPC` is on) and writes the
+OpenAPI document; prose comes from `docs/api/openapi.overlay.yaml`. Nothing
+else describes the API, so the document cannot drift from the code. The
+generator reads C with a small parser, not a compiler, and stops the build on
+anything it cannot place, with the file, the line, the reason and the fix.
+
+**A route.** One line in `API_ROUTES[]`, under the `#ifdef` of the symbols it
+needs (the `#ifdef` becomes `x-kconfig` in the document and decides which
+builds list it):
+
+```c
+#ifdef CONFIG_RPC_INPUT
+    { "/api/input/button/{button}/tap/{ms}",      api_btn_tap },
+#endif
+```
+
+`{name}` matches one path segment; literal segments match case-insensitively;
+the first match wins, so put `.../release` before `.../{value}`. An unknown
+path under `/api` or `/modd` is a 404.
+
+**Parameters.** The handler gets the `{params}` as `a[0]`, `a[1]`, ... (NULL past
+the route's last one) and checks each with an `api_arg_*()` call before using
+it. The call is where the document takes the parameter's schema from, so keep
+the name a string literal (the same as in the route) and the bounds literals or
+`#define`s:
+
+| Call | Schema | Bad value |
+|------|--------|-----------|
+| `api_arg_str(a[0], "page")` | string | — |
+| `api_arg_int(a[1], "ms", 10, 60000, &ms)` | integer 10..60000 | 400 |
+| `api_arg_int_or(a[0], "track", 0, NTRK - 1, "sel", song.sel, &k)` | integer, or the word | 404 |
+| `api_arg_enum(a[0], "button", API_BTN, 14u, &b)` | the names of the table, or their index | 404 |
+| `api_arg_hex32(a[0], "addr", &addr)` | hex string | 400 |
+| `api_arg_hexbytes(a[0], "hex", buf, API_NEEDLE_MAX, &n)` | pairs of hex digits | 400 |
+| `api_arg_notes(a[0], "notes", &mask)` | MIDI notes, comma-separated | 404 |
+
+A failed check has replied already: `if (!api_arg_int(...)) return;`.
+
+**The reply.** Write the JSON with the writers the generator knows; it replays
+them, through any helper the handler calls, and reads the result as JSON:
+
+- buffered: `rpc_http_json_ok(tx)`, `rpc_tx_key_str|int|uint|bool(tx, "key", value)`,
+  `rpc_tx_char(tx, ',')`, `rpc_tx_raw(tx, "\"list\":[")` (literals only),
+  `api_tx_jstr(tx, s)` for a string alone, `rpc_http_json_end(tx)`;
+- streamed (no size limit): `api_stream_begin()`, `api_stream_str("{\"count\":")`
+  (literals only), `api_stream_uint|int(v)`, `api_stream_jstr(s)`,
+  `api_stream_b64(p, n)` inside a string, `api_stream_end()`;
+- errors: `rpc_http_error(404, "...")` with a literal code (it becomes a response).
+
+What the generator makes of it: a key written by `rpc_tx_key_uint` is an integer
+≥ 0, `_int` an integer, `_bool` a boolean, a literal value a `const`. A key
+inside `#ifdef X` gets `x-kconfig: [X]`. A key every reply has is `required`; one
+inside an `if`, or after an early `return` that is not an error, is optional.
+A loop writes the items of an array. A page's data comes from its serializer in
+`api_page_json_table[]` (api_pages.c), one schema per page name.
+
+**Prose.** Summaries, descriptions, units and examples go in
+`docs/api/openapi.overlay.yaml`, keyed by route, parameter, field
+(`tracks[].engine`) or page name. A key there that the C no longer has stops the
+build too.
+
+**When the build stops.** Every problem is listed at once, each with what to do:
+
+| Message says | Do |
+|--------------|----|
+| `{x} ... never checks a[N]` | check the parameter with an `api_arg_*()` call (the message has the line) |
+| `writes text that is not a literal` | use `rpc_tx_key_*` for a keyed value, `api_tx_jstr` / `api_stream_jstr` for a string alone |
+| `the key of rpc_tx_key_*() is not a string literal` | write the key as a literal |
+| `which no route reaches` | call the function from its route's handler, add the route to `API_ROUTES[]`, or list it in `Config.ignore` |
+| `is not a Kconfig symbol` | say what the macro stands for in `Config.macros` (gen_openapi.py), or guard with the `CONFIG_*` symbol |
+| `is a function pointer` | name its `{"NAME", function}` table in `Config.dispatch` |
+| `is not a number or a #define of one` | make the bound a literal or a `#define` |
+| `rpc_path_match` | move the route into `API_ROUTES[]` |
+| `does not read as JSON` | open and close objects and arrays in the same function or helper |
+| `the overlay describes ...` | rename the overlay key to the new name, or delete it |
+
+`gen_openapi.py --check` runs the same reading without a build;
+`gen_openapi.py --full FILE` writes the document for every build with the
+`x-kconfig` markers kept. `tests/build/openapi_test.py` (in `task test:unit`)
+covers the reading and, for each kind of problem, that its fix works.
+
+## Coverage summary
 
 | Area | Covered by |
 |------|-----------|
-| Button → page navigation (all 9 nav buttons) | `e2e_ui_controls_test.py::TestButtonNavigation` |
-| Long-press HOME → SYS | `e2e_ui_controls_test.py::TestLongPressNavigation`, `e2e_sys_menu_test.py` |
-| SELECT encoder page nav (CW/CCW) | `e2e_ui_controls_test.py::TestSelectEncoder`, `e2e_page_nav_test.py` |
-| HOME: engine select, track select, K1-K3 | `e2e_ui_controls_test.py::TestHomePage` |
-| Param pages: K1-K3 on ENV/LFO/FX/SCL/EDIT/ARP | `e2e_ui_controls_test.py::Test{ENV,LFO,FX,SCL,EDIT,ARP}Page` |
-| VOICE, MIXER pages | `e2e_ui_controls_test.py::TestVOICEPage`, `TestMIXERPage` |
-| Dead buttons (OCT+/-, PLAY, REC, SAVE) | `e2e_ui_controls_test.py::TestDeadButtons` |
-| Hold+encoder combos | `e2e_ui_controls_test.py::TestHoldEncoderCombo` |
-| Full page sweep (all registered pages) | `e2e_ui_controls_test.py::TestFullPageSweep` |
-| Engine audio output | `e2e_audio_engines_test.py` |
-| Master volume | `e2e_audio_engines_test.py::TestMasterVolume` |
-| Cross-engine level balance | `e2e_audio_engines_test.py::TestAudioLevelNormalization` |
-| Engine select volume stability | `e2e_audio_engines_test.py::TestEngineSelectVolumeConsistency` |
-| Scheduler multi-task stability | `e2e_sched_test.py::SchedAcceptanceTest` (boot, audio+nav, stress, extended) |
-| All views with screenshots | `e2e_views_test.py::TestAllViews` (HOME, button pages, GLO/SAVE/SETTINGS/CONN views, engine cycling) |
+| Boot, panel input, pages | `boot/api_boot_test.py`, `ui/themes/lvgl/api/` |
+| Engine audio output | `api_audio_engines_test.py` |
+| Master volume | `api_audio_engines_test.py::TestMasterVolume` |
+| Cross-engine level balance | `api_audio_engines_test.py::TestAudioLevelNormalization` |
+| Engine select volume stability | `api_audio_engines_test.py::TestEngineSelectVolumeConsistency` |
 
 ## Audio testing
 
-E2E audio tests capture audio from the emulator's WebAudio output, save WAV
-files, and measure RMS levels. No hardware or speakers needed.
+Audio tests record the firmware's own output, not the host's: with
+`CONFIG_RPC_AUDIO_TAP` (emulator builds) the audio ISR keeps the last 8192
+samples it hands the DAC (mono, after the master volume) and
+`GET /api/audio/capture` returns them; `/api/audio` adds their RMS and peak.
+Notes are played on the note keys through `/api/input`, so they take the same
+path as the panel.
 
 ### Infrastructure
 
-The JS hook in `e2e_audio_engines_test.py` patches `AudioContext` at
-construction time to insert a `ScriptProcessor` recorder and an `AnalyserNode`
-between the emulator's output and `AudioContext.destination`. Three JS snippets
-drive it:
+`FirmwareApi` in `tests/api_fixtures.py`:
 
-| Snippet | What it does |
+| Helper | What it does |
 |---------|-------------|
-| `JS_HOOK_AUDIO_CONTEXT` | Inject before firmware boot. Patches `new AudioContext` to attach recorder + analyser |
-| `JS_START_RECORDING` | Begin capturing PCM chunks (call before playing notes) |
-| `JS_STOP_AND_EXPORT_WAV` | Stop recording, encode chunks as a 16-bit stereo WAV, return base64 |
-| `JS_READ_RMS` | Read live RMS + peak from the analyser (no recording needed) |
+| `record_chord(notes, hold_ms)` / `record_note(note)` | Press the keys in one request, wait `hold_ms` of firmware time, capture, release; checks the keys were still down at the capture and that it was not late |
+| `capture()` | The last 186 ms of output as `array('h')` |
+| `pot(v)` / `pot_release()` | Hold the master pot at 0..1023 / back to the ADC |
+| `set_engine(name)` | Switch the selected track's engine (`modd_engine_select`) |
 
-The `save_wav()` and `wav_rms()` helpers decode the base64 WAV and compute
-host-side RMS for assertions.
+`rms(samples)` and `tone_power(samples, hz)` (one DFT bin) do the analysis;
+`ApiTestCase.save_wav()` keeps each recording in the results directory.
 
 ### Writing an audio test
 
 ```python
-class TestMyAudio(E2ETestCase):
-    DEFCONFIG = 'felucca'
-
+class TestMyAudio(ApiTestCase):
     def test_something_sounds_right(self):
-        page = self.new_emu_page()
-        page.evaluate(JS_HOOK_AUDIO_CONTEXT)       # must be before boot
-        # ... boot firmware, wait for ready ...
-        ctrl = self.controls(page)
-        ctrl.set_master_volume(512)                 # set a known level
-        page.wait_for_timeout(500)                  # let IIR settle
-
-        page.evaluate(JS_START_RECORDING)
-        ctrl.play_note('c4', hold_ms=300)
-        page.wait_for_timeout(300)
-        wav = page.evaluate(JS_STOP_AND_EXPORT_WAV)
-
-        path = TEST_RESULTS / 'my-test.wav'
-        save_wav(wav['base64'], path)
-        rms = wav_rms(path)
-        self.assertGreater(rms, 0.001, 'No audio')
+        self.go_home()
+        self.api.set_engine('ANALOG')
+        self.api.pot(512)
+        self.api.wait_ms(400)                       # the main loop smooths the pot
+        s = self.api.record_note('C4')
+        self.save_wav('my-test.wav', s)
+        self.assertGreater(rms(s), 0.001, 'No audio')
+        self.assertGreater(tone_power(s, note_hz('C4')), 4 * tone_power(s, note_hz('D4')))
 ```
 
 ### Effective audio test patterns
 
 **Set master volume explicitly.** The emulator boots with pot=900 (~88%).
-Always call `ctrl.set_master_volume(value)` and wait 500ms for the firmware's
+Always call `api.pot(value)` and wait ~400 ms of firmware time for the firmware's
 IIR filter to settle. Use a low value (e.g. 307 = 30%) when testing for
 volume consistency bugs: problems that are masked at 88% become obvious at 30%.
 
@@ -193,10 +302,10 @@ silence (no notes) across the same steps. If silence RMS stays at zero, the
 master volume path is clean and the bug is in the engine/voice layer. This
 eliminates an entire module from the investigation in one test run.
 
-**Fresh page per engine for cross-engine comparison.** When comparing RMS
-levels between engines, boot a fresh emulator page for each engine. Shared
-pages accumulate state (filter coefficients, voice history) that skews
-measurements.
+**Capture inside the note.** A capture is the last 186 ms; take it while the
+keys are held (`record_chord` does). Decaying sounds (FM6's piano) lose level
+fast, so a capture that lands late measures the tail: `record_chord` rejects
+captures more than 250 ms late and retries.
 
 **RMS tolerance guidelines:**
 
@@ -210,37 +319,39 @@ measurements.
 
 | Test class | What it verifies |
 |-----------|-----------------|
-| `TestAudioLitmus` | JS audio capture works (440 Hz oscillator, no firmware) |
+| `AudioCaptureTest` (`api_audio_test.py`) | The capture follows the output: silent at rest, sound while held, silent after release |
+| `AnalogProducesAudioTest` | C4..G4 on Analog, each at its pitch |
 | `TestNoiseEngine` | Noise engine produces audio |
 | `TestAnalogEngine` | Analog engine produces audio |
 | `TestFM6Engine` | FM6 engine produces audio |
 | `TestMasterVolume` | Volume at pot 0/10/512/1023 scales monotonically |
 | `TestAudioLevelNormalization` | All engines audible, cross-engine levels within 12 dB, master volume scales output |
-| `TestEngineSelectVolumeConsistency` | Engine select round-trip (analog→noise→analog) preserves audio level at 30% volume |
+| `TestEngineSelectVolumeConsistency` | Engine round trip (analog→noise→analog) keeps the level at 30% volume; no sound after a switch with no key held |
+| `TestEngineSelectDisplay` | The LCD and HOME data follow an engine switch and SELECT |
 
 ### Known gaps
 
 - **OCT+/-, PLAY, REC, SAVE** have no firmware handler. Tests verify they don't
   crash but can't verify function.
-- **PRESET encoder (ENC 6)** is tested for message delivery (`e2e_boot_test`)
-  but has no page-level handler to verify.
+- **PRESET encoder (ENC 6)** is tested for delivery to the UI (`api_boot_test`:
+  its detents are taken) but has no page-level handler to verify.
 
 ## Panel controls in tests
 
-```python
-ctrl = self.controls(page)
-ctrl.rotate_encoder('presets', direction=1, steps=3)
-ctrl.press_button('home')
-ctrl.press_button('home', hold_ms=600)     # long-press
-with ctrl.hold_button('edit'):
-    ctrl.rotate_encoder('knob1', direction=-1, steps=2)
-ctrl.play_note('C#4', hold_ms=500)
-ctrl.set_master_volume(512)
+Tests press controls through the REST API (`FirmwareApi` in `tests/api_fixtures.py`
+wraps these routes):
+
+```
+GET /api/input/enc/knob1/3                 # encoder name, clicks (negative = CCW)
+GET /api/input/button/home/tap             # tap
+GET /api/input/button/home/hold/600        # long press
+GET /api/input/key/61,64/tap/500           # note keys, ms
+GET /api/input/pot/master/512              # master volume 0..1023
 ```
 
 ### Physical controls map
 
-| Encoder ID | Name | Test name | What it does |
+| Encoder ID | Name | API name | What it does |
 |-----------|------|-----------|-------------|
 | 0 | SELECT | `select` | Engine select (HOME), page nav (others), scroll (DEBUG/FILES/BLE) |
 | 1 | ALGO | `algorithm` | Track select (HOME), tab switch (SYS) |
@@ -253,7 +364,7 @@ ctrl.set_master_volume(512)
 
 ### Button map
 
-| ID | Name | Test name | Tap action | Hold action (500ms) |
+| ID | Name | API name | Tap action | Hold action (500ms) |
 |----|------|-----------|-----------|-------------------|
 | 0 | OCT- | `oct-` | — | — |
 | 1 | OCT+ | `oct+` | — | — |
@@ -273,56 +384,51 @@ ctrl.set_master_volume(512)
 \* Only when `CONFIG_DEBUG_LOG` is enabled, otherwise no action.
 \** Only when `CONFIG_SYS_MENU` is enabled, otherwise → ABOUT page.
 
-### Assertion patterns
-
-E2E tests detect UI changes by comparing pixel hashes of LCD canvas regions:
-
-```python
-# Full LCD region (native canvas coords: 1280x820, LCD at 370,42 size 480x480)
-LCD_REGION = (370, 42, 480, 480)
-
-# Hash a region before and after an action
-before = _lcd_region_hash(page, *LCD_REGION)
-ctrl.press_button('env', delay_ms=500)
-after = _lcd_region_hash(page, *LCD_REGION)
-self.assertNotEqual(before, after, 'LCD did not change')
-```
-
-For finer assertions, use sub-regions (cards row, footer) to detect which
-part of the screen changed. The `_canvas_hash()` function hashes the entire
-canvas including the panel frame.
-
 ## Screenshots and logs
 
 Each run writes under `tests/results/<UTC-timestamp>-<test-module>/`:
 
-- `screenshots/*.png`: panel canvas captures at named test points.
-- `*.log`: emulator status, firmware log, JS console output.
+- `*.png`: LCD screenshots the tests save (`/api/screenshot`).
+- `debug.log` and the fm1-live logs: see "Traces and timings" above.
 
-Results are gitignored. No `E2E_DEBUG` setting is required.
+Results are gitignored.
 
 ## CI results
 
-GitHub Actions runs unit tests and the core E2E suite on pull requests and
-pushes to `main`. Setup uses `mise install` and `uv sync --locked`. The
-`dimmkirr/setup-fm1-toolchain@v1` and `dimmkirr/setup-fm1-emulator@v1` actions
-install the SDK, compiler, and emulator.
+GitHub Actions (`.github/workflows/ci.yml`) has two jobs. Setup in both uses `mise install`
+and `uv sync --locked`; `dimmkirr/setup-fm1-toolchain@v1` installs the SDK and compiler.
 
-Each run that reaches E2E saves screenshots, logs, and JUnit XML in the
-`e2e-results` Actions artifact for 14 days, including when tests fail.
-`main` push/manual runs also attach captured PNGs to the rolling
-`ci-screenshot` prerelease and embed them in the job summary.
+The `test` job runs on pull requests, pushes to `main` and manual runs. It runs
+`task test:unit`, then builds the production firmware with `task build` (defconfig `modd`,
+JieLi compiler, so `build/modd/modd.fwsc`). It saves `tests/results/` in the `test-results`
+Actions artifact for 14 days, including when a step fails. Tests that need a build, the
+toolchain or fm1-live skip on the runner when those are missing.
+
+The `api` job runs `task test:api`. It is skipped unless the repository variable `FM1_EMU_REF`
+is set to a ref of `DimmKirr/fm1-emu` that contains the `fm1-live` port forward and the NAT
+fix; those commits are not pushed or released yet, and `setup-fm1-emulator` does not ship
+`fm1-live`. The job checks out that ref, builds `fm1-live` with `cargo build --release --locked
+-p fm1-live` (cargo cache), installs Xvfb and FriBiDi (the `felucca` build renders fonts with
+Pillow and libraqm), starts Xvfb on `:99`, and runs the suite with `FM1_LIVE` pointing at the
+binary. It is non-blocking (`continue-on-error`) and does not run for release tags. Its
+screenshots, logs and JSON are the `api-results` artifact for 14 days. `main` push/manual runs
+also attach the PNGs to the rolling `ci-screenshot` prerelease and embed them in the job
+summary.
 
 Pull requests never publish releases.
 
 ## Tagged releases
 
 Pushing a tag matching `v[0-9]*` starts `release.yml`. It calls the same CI
-build and test workflow, then publishes only if that workflow succeeds.
-The release uses the exact firmware tested by E2E; it does not rebuild it.
+workflow with `release_bundle` set (the `test` job only; the `api` job does not run for tags),
+then publishes only if that workflow succeeds. The release uses the exact firmware built and
+unit-tested there; it does not rebuild it.
 
-Release assets: `modd.fwsc`, `minimal.config`, tagged source archive,
-license notices, `SHA256SUMS`, and panel screenshots.
+Release assets: `modd.fwsc`, `modd.config` (`build/modd/gen/.config`, the resolved configuration
+of that build, written before WiFi and API-key values from the environment are applied, so it
+holds no secrets), tagged source archive, license notices and `SHA256SUMS`. Screenshots are
+added only when the results artifact contains any, which it does not for tags. `dev.yml`
+publishes the same assets to the rolling `dev` prerelease on every push to `main`.
 
 ## Emulator setup fallback
 
@@ -340,57 +446,38 @@ task emulator:build EMU_SOURCE=/path/to/fm1-emu
 An fm1-emu with the WiFi chip (`--oss-wifi`, from 0.4.x) carries the
 firmware's clean-room driver through scan, WPA2, DHCP, DNS and HTTP to a
 virtual AP, "Home" with the password "fm1pass", and with `--internet` to the
-real network behind it. In the browser build the page's `fetch()` is that
-network (`?oss-wifi=1&internet=1`): HTTP only, and from an https page only the
-hosts that have https (Open-Meteo does, ip-api.com's free API does not).
-
-`FM1_E2E_WIFI=SSID:PASSWORD` makes the weather e2e build the firmware with
-those credentials, boot with the two flags and check that the data card is
-drawn:
-
-```sh
-FM1_E2E_WIFI=Home:fm1pass task test:e2e -- -k data_over_the_virtual_ap
-```
-
-Without the variable the weather tests run as before, with no network.
+real network behind it. `task modd:test:modd_emu:api:wifi` runs the API tests
+with WiFi as the only link (`fm1-live --wifi oss --net internet`), including
+the weather test.
 
 ## RPC remote control
 
 The firmware includes a JSON-RPC server that accepts commands over WebSocket
 on port 9222, plus a REST API over plain HTTP. It runs inside the firmware's
-lwIP TCP/IP stack, enabled by `CONFIG_RPC=y` (the `modd_dev_rpc` defconfig
+lwIP TCP/IP stack, enabled by `CONFIG_RPC=y` (the `modd_emu` defconfig
 has it on).
 
 ### Architecture
 
 ```
- Playwright / pytest
+ client (pytest, a script, a WebSocket tool)
        |
-       |  (1) WASM emulator path:
-       |      Playwright drives the emulator web page.
-       |      bridge.py intercepts FM1.* calls and
-       |      translates them into emulator button/encoder actions.
-       |
-       |  (2) Firmware-direct path (native emulator, or real hardware):
-       |      A WebSocket client connects to ws://HOST:9222
-       |      and sends FM1.* JSON-RPC directly to the firmware's
-       |      RPC server running on lwIP.
+       |  fm1-live: --forward 9222:9222 (inbound TCP NAT)
+       |  real hardware: the WiFi IP address
        |
        v
-  FM-1 firmware (RPC server on port 9222)
+  FM-1 firmware (RPC server on port 9222, on lwIP)
 ```
 
-Path (1) works today in E2E tests. Path (2) requires the firmware to have an
-IP address reachable from the host: on real hardware via WiFi, or in fm1-live
-via `--forward 9222:9222` (inbound TCP NAT).
+The server needs an IP address reachable from the host: on real hardware via
+WiFi, in fm1-live via `--forward 9222:9222`. The WASM build cannot bind TCP
+listeners, so it does not serve this API.
 
-### Why not `page.goto("modd://home")`?
+### Page navigation over the WebSocket
 
-Playwright's `page.goto()` navigates the browser to a URL. `modd://` is not a
-real browser protocol: the browser would show an error page. The firmware's RPC
-server is a WebSocket endpoint (it also serves REST endpoints at `/api/*` and
-`/modd/*`). Page navigation happens by sending a JSON-RPC message over an open
-WebSocket connection:
+`modd://` is not a browser protocol. The firmware's RPC server is a WebSocket
+endpoint (it also serves REST endpoints at `/api/*` and `/modd/*`). Page
+navigation over WebSocket is a JSON-RPC message on an open connection:
 
 ```python
 import json, asyncio, websockets
@@ -404,9 +491,6 @@ async with websockets.connect("ws://localhost:9222") as ws:
     resp = json.loads(await ws.recv())
     # resp = {"id": 1, "result": {"page": "home", "index": 0}}
 ```
-
-In the WASM emulator tests, `bridge.py` wraps this so the test code looks
-the same regardless of which path is used underneath.
 
 ### RPC methods
 
@@ -448,20 +532,17 @@ matches the page name case-insensitively against the registered UI pages.
 The settings sub-path sets `mset.tab`; the colors sub-path calls
 `colors_apply()`. All other pages take no sub-path.
 
-### Running RPC tests
+### Running the RPC server by hand
 
-The RPC/bridge tests are in `tests/rpc/`:
+Build the firmware with RPC enabled, run fm1-live with port forwarding and
+connect to the WebSocket:
 
 ```sh
-# WASM emulator path (bridge translates navigate calls to button presses):
-uv run python -m pytest tests/rpc/bridge_navigate_test.py -v
-
-# Firmware-direct path (requires fm1-live with --forward):
 # 1. Build firmware with RPC enabled:
-task build -- --defconfig modd_dev_rpc
+task build -- --defconfig modd_emu
 
 # 2. Run fm1-live with port forwarding:
-fm1-live --fwsc build/modd_dev_rpc/modd.fwsc \
+fm1-live --fwsc build/modd_emu/modd.fwsc \
          --wifi oss --net internet \
          --forward 9222:9222
 
@@ -480,9 +561,13 @@ asyncio.run(main())
 "
 ```
 
+The automated tests use the REST routes instead (see
+Direct-API tests above);
+`tests/rpc/rpc_kconfig_test.py` only checks the RPC Kconfig symbols on the host.
+
 ### RPC defconfig
 
-`configs/modd_dev_rpc_defconfig` enables the RPC server and auto-connecting
+`configs/modd_emu_defconfig` enables the RPC server and auto-connecting
 USB ethernet (so the emulator's `--usb ethernet` link brings up lwIP without
 a menu visit):
 

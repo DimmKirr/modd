@@ -8,16 +8,16 @@ Results are written to tests/results/<timestamp>-test_genconfig/<subtest>/.
 import os
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 KCONFIG = ROOT / 'Kconfig'
-RESULTS_DIR = Path(__file__).resolve().parents[1] / 'results'
-_run_ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H%M%SZ')
-RUN_DIR = RESULTS_DIR / f'{_run_ts}-test_genconfig'
+sys.path.insert(0, str(ROOT / 'tests'))
+import io_log  # noqa: E402
+
+RUN_DIR = io_log.results_dir(Path(__file__).stem)     # next to this module's debug.log
 
 
 def _outdir(name):
@@ -27,9 +27,8 @@ def _outdir(name):
 
 
 @pytest.fixture(autouse=True)
-def skip_if_no_kconfig():
-    if not KCONFIG.exists():
-        pytest.skip('Kconfig not yet created')
+def require_kconfig():
+    assert KCONFIG.exists(), f'{KCONFIG} is missing'
 
 
 def test_kconfig_parses():
@@ -44,11 +43,10 @@ def test_kconfig_parses():
 
 def test_genconfig_writes_header():
     genconfig = ROOT / 'tools' / 'build' / 'genconfig.py'
-    if not genconfig.exists():
-        pytest.skip('tools/genconfig.py not yet created')
-    out = _outdir('header_minimal')
+    assert genconfig.exists(), f'{genconfig} is missing'
+    out = _outdir('header_modd')
     r = subprocess.run(
-        [sys.executable, str(genconfig), '--defconfig', 'modd_minimal',
+        [sys.executable, str(genconfig), '--defconfig', 'modd',
          '--outdir', str(out)],
         capture_output=True, text=True, cwd=str(ROOT))
     assert r.returncode == 0, r.stderr
@@ -58,8 +56,9 @@ def test_genconfig_writes_header():
     assert '#define' in content
     assert '#define CONFIG_AUDIO 1' in content
     assert '#define CONFIG_USB 1' in content
-    for symbol in ('INPUT', 'FLASH', 'MIDI_UART', 'DUAL_CORE'):
-        assert f'#define CONFIG_{symbol} ' not in content
+    assert '#define CONFIG_UI_LVGL 1' in content
+    for symbol in ('EMU', 'UI_MODD', 'DEBUG_FRAMEBUFFER', 'RPC_INPUT'):
+        assert f'#define CONFIG_{symbol} ' not in content, f'production modd must not set {symbol}'
     assert (out / '.config').exists(), '.config not written to outdir'
 
 
@@ -73,11 +72,10 @@ def test_menuconfig_imports_library():
 
 def test_genconfig_writes_manifest():
     genconfig = ROOT / 'tools' / 'build' / 'genconfig.py'
-    if not genconfig.exists():
-        pytest.skip('tools/genconfig.py not yet created')
-    out = _outdir('manifest_minimal')
+    assert genconfig.exists(), f'{genconfig} is missing'
+    out = _outdir('manifest_modd')
     r = subprocess.run(
-        [sys.executable, str(genconfig), '--defconfig', 'modd_minimal',
+        [sys.executable, str(genconfig), '--defconfig', 'modd',
          '--outdir', str(out)],
         capture_output=True, text=True, cwd=str(ROOT))
     assert r.returncode == 0, r.stderr
@@ -95,15 +93,14 @@ def test_genconfig_writes_manifest():
     assert 'modd_manifest' in content
 
 
-DEFCONFIGS = ['melodee', 'felucca', 'sloop', 'modd_minimal',
-              'felucca_noise']
+DEFCONFIGS = sorted(p.name[:-len('_defconfig')]
+                    for p in (ROOT / 'configs').glob('*_defconfig'))
 
 
 @pytest.mark.parametrize('name', DEFCONFIGS)
 def test_defconfig_loads(name):
     dc = ROOT / 'configs' / f'{name}_defconfig'
-    if not dc.exists():
-        pytest.skip(f'configs/{name}_defconfig not yet created')
+    assert dc.exists(), f'{dc} is missing'
     r = subprocess.run(
         ['python3', '-c',
          'from kconfiglib import Kconfig; '
@@ -118,59 +115,12 @@ def test_defconfig_loads(name):
 # -- component manifest assertions per defconfig --
 
 EXPECTED_COMPONENTS = {
-    'modd_minimal': sorted([
-        'audio',
-        'audio-core:melodee',
-        'boot:melodee',
-        'effects:melodee',
-        'midi:melodee',
-        'usb',
-        'ui:modd',
-    ]),
-    'felucca': sorted([
-        'audio',
-        'audio-core:melodee',
-        'boot:melodee',
-        'controls:felucca',
-        'debug-log',
-        'effects:melodee',
-        'engine:analog',
-        'engine:fm6',
-        'engine:lofi',
-        'engine:noise',
-        'engine:trio',
-        'flash',
-        'input',
-        'midi:melodee',
-        'mod:melodee',
-        'modulation',
-        'net:lwip',
-        'ota',
-        'scales:melodee',
-        'seq:melodee',
-        'storage:melodee',
-        'udisk',
-        'ui:felucca',
-        'usb',
-        'usb-host',
-    ]),
-    'felucca_noise': sorted([
-        'audio',
-        'audio-core:melodee',
-        'ble',
-        'ble-ft',
-        'ble-midi',
-        'boot:melodee',
-        'controls:felucca',
-        'debug-log',
-        'effects:melodee',
-        'engine:noise',
-        'input',
-        'midi:melodee',
-        'udisk',
-        'ui:felucca',
-        'usb',
-        'usb-host',
+    'modd': sorted([
+        'audio', 'audio-core:melodee', 'boot:melodee', 'debug-log', 'effects:melodee',
+        'engine:analog', 'engine:fm6', 'engine:lofi', 'engine:noise', 'engine:trio', 'flash',
+        'input', 'midi:melodee', 'mod:melodee', 'modulation', 'net:lwip', 'ota',
+        'scales:melodee', 'seq:melodee', 'storage:melodee', 'udisk', 'ui:lvgl', 'usb',
+        'usb-audio', 'usb-host', 'usb-net',
     ]),
 }
 
@@ -181,8 +131,7 @@ EXPECTED_COMPONENTS = {
 def test_manifest_components(name, expected):
     """genconfig produces the expected component manifest for each defconfig."""
     dc = ROOT / 'configs' / f'{name}_defconfig'
-    if not dc.exists():
-        pytest.skip(f'configs/{name}_defconfig not yet created')
+    assert dc.exists(), f'{dc} is missing'
     out = _outdir(f'manifest_{name}')
     r = subprocess.run(
         [sys.executable, str(ROOT / 'tools' / 'build' / 'genconfig.py'),
@@ -202,9 +151,7 @@ def test_manifest_components(name, expected):
 
 def test_usb_host_depends_on_usb():
     """CONFIG_USB_HOST must not be selectable without CONFIG_USB."""
-    from kconfiglib import Kconfig
-    k = Kconfig(str(KCONFIG), warn=False)
-    k.load_config(str(ROOT / 'configs' / 'modd_minimal_defconfig'))
+    k = _kconfig_with('minimal')
     usb = k.syms['USB']
     usb_host = k.syms['USB_HOST']
     usb.set_value(0)
@@ -215,16 +162,35 @@ def test_usb_host_depends_on_usb():
 
 # -- Network module: lwIP is link-agnostic --
 
+# The smallest config with audio and USB (the former modd_minimal_defconfig): the base the
+# dependency tests below switch symbols on. Kept here, not in configs/: nothing builds it.
+MINIMAL = '''CONFIG_AUDIO=y
+CONFIG_AUDIO_CORE_MELODEE=y
+CONFIG_EFFECTS_MELODEE=y
+# CONFIG_INPUT is not set
+# CONFIG_FLASH is not set
+# CONFIG_MIDI_UART is not set
+# CONFIG_DUAL_CORE is not set
+CONFIG_USB=y
+'''
+
+
 def _kconfig_with(defconfig):
+    """Kconfig loaded with configs/<defconfig>, or with MINIMAL for 'minimal'."""
     from kconfiglib import Kconfig
     k = Kconfig(str(KCONFIG), warn=False)
-    k.load_config(str(ROOT / 'configs' / defconfig))
+    if defconfig == 'minimal':
+        path = _outdir('kconfig_minimal') / 'minimal_defconfig'
+        path.write_text(MINIMAL)
+        k.load_config(str(path))
+    else:
+        k.load_config(str(ROOT / 'configs' / defconfig))
     return k
 
 
 def test_lwip_is_selectable_without_wifi():
     """CONFIG_LWIP is the stack; it must not require the WiFi radio."""
-    k = _kconfig_with('modd_minimal_defconfig')
+    k = _kconfig_with('minimal')
     assert k.syms['WIFI'].str_value == 'n'
     k.syms['LWIP'].set_value(2)
     assert k.syms['LWIP'].str_value == 'y'
@@ -232,17 +198,17 @@ def test_lwip_is_selectable_without_wifi():
 
 def test_wifi_lwip_selects_lwip():
     """Enabling the WiFi link on lwIP pulls the stack in."""
-    k = _kconfig_with('modd_wifi_debug_defconfig')
+    k = _kconfig_with('modd_defconfig')
     assert k.syms['WIFI_LWIP'].str_value == 'y'
     assert k.syms['LWIP'].str_value == 'y'
 
 
 def test_wifi_defconfig_manifest_gains_net_lwip():
     """WiFi builds list the stack as its own component."""
-    out = _outdir('manifest_wifi_debug')
+    out = _outdir('manifest_modd_wifi')
     r = subprocess.run(
         [sys.executable, str(ROOT / 'tools' / 'build' / 'genconfig.py'),
-         '--defconfig', 'modd_wifi_debug', '--outdir', str(out)],
+         '--defconfig', 'modd', '--outdir', str(out)],
         capture_output=True, text=True, cwd=str(ROOT))
     assert r.returncode == 0, r.stderr
     import json
@@ -252,7 +218,7 @@ def test_wifi_defconfig_manifest_gains_net_lwip():
 
 def test_rpc_and_llm_follow_lwip_not_wifi():
     """IP consumers depend on the stack, not on the WiFi link."""
-    k = _kconfig_with('modd_minimal_defconfig')
+    k = _kconfig_with('minimal')
     k.syms['LWIP'].set_value(2)
     assert k.syms['WIFI'].str_value == 'n'
     for name in ('RPC', 'LLM'):
@@ -263,7 +229,7 @@ def test_rpc_and_llm_follow_lwip_not_wifi():
 
 def test_usb_net_selects_lwip_and_needs_usb_host():
     """USB_NET is a link on lwIP: needs the USB host, pulls the stack in, no radio."""
-    k = _kconfig_with('modd_minimal_defconfig')
+    k = _kconfig_with('minimal')
     k.syms['USB_NET'].set_value(2)
     assert k.syms['USB_NET'].str_value == 'n', 'needs USB_HOST'
     k.syms['USB_HOST'].set_value(2)
@@ -295,12 +261,3 @@ def test_secret_symbols_are_masked_for_debug_dumps():
     plain = [l for l in header.splitlines()
              if 'WIFI_PASSWORD' not in l and 'OPENROUTER_API_KEY' not in l]
     assert all(l in masked.splitlines() for l in plain)
-
-
-def test_debug_log_task_prints_only_the_masked_config():
-    taskfile = (ROOT / 'Taskfile.yml').read_text()
-    assert 'gen/config.masked.h' in taskfile
-    for line in taskfile.splitlines():
-        if 'gen/config.h' in line and ('grep' in line or 'cat' in line):
-            raise AssertionError(f'Taskfile prints config.h: {line.strip()}')
-

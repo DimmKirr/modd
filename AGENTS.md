@@ -12,18 +12,20 @@ Kconfiglib-based configuration. All commands go through [Taskfile](https://taskf
 
 ```
 task build                              # build modd firmware (alias for build:live)
-task build -- --defconfig modd_wifi_debug    # build a specific defconfig from configs/
-task modd:build:modd_wifi_debug             # same, via per-defconfig task
-task modd:test:modd_dev_network             # build + e2e test a specific defconfig
+task build -- --defconfig modd_emu      # build a specific defconfig from configs/
+USE_OPEN_TOOLCHAIN=0 task build -- --defconfig modd_emu  # JieLi's compiler instead of the default open pi32v2 LLVM toolchain; output in build/modd_emu/
+task modd:build:modd_emu                # same, via per-defconfig task
+task modd:test:modd_emu:api             # build + API-test a specific defconfig
 task build:live                         # build with source-change caching (the real build target)
 task flash                              # build if sources or .env changed, then flash over USB-MIDI
+task build:size-check DEFCONFIG=modd       # memory report of the last build (printed after every link too)
 task config                             # interactive menuconfig
 task config:generate:defconfig -- melodee  # load a preset defconfig and generate config.h
 task config:generate:local                # .config -> build/modd/gen/config.h
 task dock:modules -- /path/to/disk      # copy fm1-dock's prebuilt .dock modules to a USB disk / SD card root
-task test                               # run all tests (unit + e2e)
+task test                               # run all tests (unit, then direct-API)
 task test:unit                          # Python unit tests only
-task test:e2e                           # emulator + Playwright e2e tests
+task test:api                           # build modd_emu, drive it over HTTP in fm1-live
 task vendor:build                       # (testing) build all upstream firmwares
 task vendor:build:felucca               # (testing) build clean upstream Felucca
 task vendor:flash:melodee               # (testing) flash pre-built upstream Melodee
@@ -34,7 +36,7 @@ task logs:debug                         # full debug dump: build facts, crash re
 
 **Important: never call `python tools/build.py` directly.** Always use `task build`. The Taskfile sets required env vars (`JIELI_TOOLCHAIN`, `AC79_SDK`), downloads the toolchain if missing, and ensures vendored dependencies are present. Without the Taskfile, `build.py` will fail with `JIELI_TOOLCHAIN not set`. No arguments builds the default modd defconfig; pass `-- --defconfig <name>` for others.
 
-`task build` delegates to `build:live`, which has source-change caching (skips when sources and `.env` are unchanged). Use `build:live` only when you need to reference the cacheable target directly (e.g. as a dependency).
+`task build` delegates to `build:live`, which has source-change caching (skips when sources and `.env` are unchanged). The cache is kept per defconfig: each `--defconfig <name>` has its own checksum, and `task modd:build:<name>` shares it. Use `build:live` only when you need to reference the cacheable target directly (e.g. as a dependency).
 
 ### Environment: flake, mise, uv
 
@@ -62,7 +64,7 @@ Before committing: `task docs` (about 5-6 minutes: two firmware builds plus emul
 `.config` is a symlink to `configs/modd_defconfig`, the main development profile. Do not replace it with a regular file. To build with a different defconfig from `configs/`, pass `--defconfig <name>` (without the `_defconfig` suffix):
 
 ```
-task build -- --defconfig modd_wifi_debug    # builds with configs/modd_wifi_debug_defconfig
+task build -- --defconfig modd_emu      # builds with configs/modd_emu_defconfig
 ```
 
 Generated files go to `build/<defconfig>/gen/config.h` (e.g. `build/modd/gen/config.h`).
@@ -117,7 +119,7 @@ Each firmware defines different parameter counts and IDs. modd defines a `P_*` s
 Kconfig                     # root Kconfig (sources kconf/*.kconfig)
 kconf/                      # per-module Kconfig menus (not kconfig/ due to macOS case-insensitive FS)
 configs/                    # saved defconfigs per upstream preset
-vendir.yml                  # pins for firmware/upstream/* and firmware/vendor/* (vendir.lock.yml = resolved SHAs)
+vendir.yml                  # pins for firmware/upstream/*, firmware/vendor/* and docs/lvgl (vendir.lock.yml = resolved SHAs)
 firmware/
   hal/                      # HAL headers (common + per-variant)
   src/                      # source tree (future: populated from reference firmwares)
@@ -133,6 +135,7 @@ tools/
     genconfig.py            # .config -> build/<defconfig>/gen/config.h
     menuconfig.py           # Kconfiglib TUI wrapper
     fm1pkg_make.py          # .fwsc package builder
+    mem_report.py           # memory report printed after every link (regions, audio arena, stacks, largest objects)
     lz4blk.py               # LZ4 block compression
     vendor.py               # vendir manifest helpers: present (build precondition), check (CI)
   device/                   # hardware interaction (USB-MIDI)
@@ -146,6 +149,7 @@ tools/
     gen_engine_tables.py    # engine preset tables
     gen_ui_weather.py       # weather colors and condition names
     gen_weather_art.py      # weather pixel-art sprites and sky gradients
+    gen_openapi.py          # firmware/src/rpc/*.c + docs/api/openapi.overlay.yaml -> build/<defconfig>/openapi.json
     logo_convert.py         # boot logo converter (ink-on-cream splash)
   debug/                    # offline analysis tools
     ram_top.py              # RAM usage from linker map
@@ -159,6 +163,7 @@ tools/
 ## Toolchain
 
 - **Compiler**: JieLi clang 4.0.1 for pi32v2 (proprietary target, x86-64 binary). The build/test environment must have **one of**: (1) x86-64 architecture (native), (2) `qemu-x86_64` (user-mode emulation), or (3) Rosetta/binfmt_misc (Apple-silicon VMs). Runner selection is automatic: native on x86-64 Linux; on other Linux, `task build` tests the ld.so runner with an actual compile and falls back to `qemu-x86_64` if it segfaults; otherwise Docker (macOS, or `JIELI_DOCKER=1`). The vendor build shim (`.scratch/tools/vendor-build/tc-shim.sh`) follows the same logic. The non-native Linux runners need x86-64 glibc/libstdc++, looked up in this order: `JIELI_X86_GLIBC`/`JIELI_X86_STDCPP` (the `flake.nix` dev shell exports both on aarch64), `~/.fm1-toolchain/x86libs`, then the first match in the nix store.
+- **Two toolchains**: `task build` uses the open pi32v2 LLVM toolchain by default (clang and `ld.lld`, `jvitkauskas/pi32v2-llvm`, release pinned by `OPEN_TOOLCHAIN_VERSION` in `Taskfile.yml`, native binaries, no runner) and writes to `build/<defconfig>-open/`. `USE_OPEN_TOOLCHAIN=0` selects JieLi clang 4.0.1 and `build/<defconfig>/`; CI and releases use it. Paths in this file written as `build/<defconfig>/` mean the directory of the toolchain in use. Flashing an open-toolchain image needs `OPEN_TOOLCHAIN_FLASH_OK=1`: the open build boots on a real FM-1 (2026-11-20), but that day's source faulted with both compilers and the hardware smoke checks are not done. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#toolchains-open-default-and-jieli).
 - **Finding the toolchain**: `task build` sets `JIELI_TOOLCHAIN` and `AC79_SDK` automatically and downloads the toolchain if missing. In CI, `dimmkirr/setup-fm1-toolchain@v1` handles the same setup.
 - **Toolchain paths** (check in order):
   1. `$JIELI_TOOLCHAIN` / `$AC79_SDK` env vars (if set, used as-is)
@@ -229,17 +234,28 @@ Upstream trees are fetched with vendir and are not committed: `vendir.yml` pins 
 - fm1-dock: `firmware/upstream/fm1-dock/`
 - Optimist (BLE): `firmware/upstream/optimist/`
 - lwIP: `firmware/vendor/lwip/`; FatFs: `firmware/vendor/fatfs/` (project config in `firmware/src/udisk/`)
+- LVGL v9.6.0: `firmware/vendor/lvgl/` (project config in `firmware/src/ui/themes/lvgl/lv_conf.h`); its manual and examples at the same pin: `docs/lvgl/` (see [LVGL](#lvgl))
 
 Research data: `.scratch/fw-test.json` (firmware catalog), `.scratch/kconfig-subsystems.json` (layer analysis), `.scratch/GLUE.md` (contract specs).
 
+## LVGL
+
+The `lvgl` theme (`CONFIG_UI_LVGL`, `firmware/src/ui/themes/lvgl/`, defconfigs `modd` and `modd_emu`; the main theme) is drawn by LVGL 9.6 widgets. **Before any LVGL work (a widget, a style, the theme, input, the display port, `lv_conf.h`), read the vendored manual.** Do not work from LVGL 8 knowledge or from tutorials on the web: names, signatures and behaviour differ.
+
+- Manual: `docs/lvgl/docs/src/**/*.mdx` (a widget: `widgets/<name>.mdx`; styles and themes: `common-widget-features/styles/`; encoder and groups: `main-modules/indev/`; subjects: `main-modules/data_binding/`). Examples: `docs/lvgl/examples/`.
+- Headers: `firmware/vendor/lvgl/include/lvgl/`. Where the manual and a header disagree, the header is what compiles.
+- Project guide: [docs/ui/LVGL.md](docs/ui/LVGL.md). Where to edit, the rules a theme has to follow on the FM-1 (one task, heap, stack, density, encoder input), how to preview and measure, community projects.
+- LVGL 9.6 has no XML engine (removed in 9.5.0; XML is LVGL Pro, commercial). Pages are C.
+- `docs/lvgl/` and `firmware/vendor/lvgl/` are fetched by vendir and never edited. Changing `lv_conf.h` recompiles the library (483 files, about 3 minutes).
+
 ## Testing
 
-Two test layers, all via Taskfile. See [docs/TESTING.md](docs/TESTING.md)
+Two test layers (host unit tests and direct-API tests), all via Taskfile. See [docs/TESTING.md](docs/TESTING.md)
 for mise setup, commands, and screenshot locations.
 
 ### Unit tests (host, no hardware)
 
-Python tests cover configuration, packaging, and emulator control helpers:
+Python tests cover configuration, packaging, the build pipeline and tooling:
 
 ```
 task test:unit                    # Python unit tests (genconfig, defconfigs, tooling)
@@ -248,41 +264,35 @@ task test:unit                    # Python unit tests (genconfig, defconfigs, to
 Test files live in `tests/`. Three upstream preset tests skip until their
 defconfigs are implemented.
 
-### E2E tests (emulator + Playwright)
-
-Browser-based tests using the fm1-emu WASM emulator and Playwright. No hardware needed:
+### Direct-API tests (fm1-live + HTTP)
 
 ```
-task test:e2e                     # downloads emulator, builds firmware, runs e2e suite
+task test:api                           # builds modd_emu, runs tests/**/api_*_test.py and tests/ui/themes/lvgl/api/
 ```
 
-E2E tests inherit from `E2ETestCase` (in `tests/e2e_fixtures.py`), which:
-- Starts a local HTTP server serving the emulator
-- Launches headless Chromium via Playwright
-- Provides `controls(page)` for named encoders, buttons, and notes
-- Provides helpers: `push(page, key)`, `long_push(page, key)`, `send_enc(page, enc, clicks)`, `screenshot(page, name, desc)`
-- Saves panel-only screenshots and logs in `tests/results/<timestamp>-<module>/`
-
-A typical E2E test uploads the built `.fwsc` into the emulator, waits for boot, then interacts with the virtual panel (buttons, encoders) and asserts LCD canvas state.
+`ApiTestCase` (`tests/api_fixtures.py`) boots fm1-live per test class with a port forward to the firmware's REST API and drives everything over HTTP GET: pages (`/modd/<page>`, `/api/page`), panel input ORed into the key scan (`/api/input/...`, `CONFIG_RPC_INPUT`), the audio output (`/api/audio/capture`, `CONFIG_RPC_AUDIO_TAP`), memory (`/api/mem/...`, `CONFIG_RPC_MEM`), LCD and log. Routes live in `API_ROUTES[]` (`firmware/src/rpc/api_ctl.c`); `task build` generates the OpenAPI 3.1 document from the C (`tools/codegen/gen_openapi.py`, prose from `docs/api/openapi.overlay.yaml`) into `build/<defconfig>/openapi.json`, served at `GET /openapi.json` (`CONFIG_RPC_OPENAPI`). The generator stops the build on a handler it cannot read and says what to change; rules in docs/TESTING.md, "Writing a REST handler". Boot, audio, engine, USB-safety and weather tests live here; `test:unit` skips them (except `tests/usb/usb_otg_presence_safety_test.py`, which runs under both). fm1-emu's NAT allows ~30 connections per 30 s, so the client spaces its requests (see docs/TESTING.md, "Direct-API tests").
 
 ### CI
 
-GitHub Actions (`.github/workflows/ci.yml`) installs the tools pinned in
-`.mise.toml` with `mise install`, syncs `uv.lock`, and runs both layers through
-Taskfile. CI uses `dimmkirr/setup-fm1-toolchain@v1` and
-`dimmkirr/setup-fm1-emulator@v1`; local Taskfile downloads remain the fallback.
-E2E results are retained as an Actions artifact. The test job also publishes
-captured screenshots to the `ci-screenshot` prerelease on `main` push/manual
-runs, including after E2E failures. It requests `contents: write`; publication
-is disabled for pull requests, but same-repository PR jobs can receive that
-permission (fork PR tokens are normally downgraded to read-only).
-`release.yml` handles `v[0-9]*` tags by calling the same CI workflow, then
-publishing the tested firmware, source, licenses, checksums, and screenshots
-as a prerelease. Failed verification never publishes a versioned release.
+GitHub Actions (`.github/workflows/ci.yml`) has two jobs. The `test` job installs the tools
+pinned in `.mise.toml` with `mise install`, syncs `uv.lock`, runs `task test:unit`, installs the
+SDK and compiler with `dimmkirr/setup-fm1-toolchain@v1`, and builds the production `modd`
+firmware with `task build` (JieLi compiler, `build/modd/modd.fwsc`). Its `tests/results/` is kept
+as the `test-results` artifact, and for releases it packages the release bundle from that build.
+The `api` job runs `task test:api` and is off unless the repository variable `FM1_EMU_REF` names
+a ref of `DimmKirr/fm1-emu` that has the `fm1-live` port forward and NAT fix (not pushed or
+released yet). When it is on, the job builds `fm1-live` from that ref with cargo, starts Xvfb on
+`:99` and runs the API suite. It never blocks the run (`continue-on-error`), does not run for
+release tags, keeps `tests/results/` as the `api-results` artifact, and on `main` push/manual
+runs publishes the screenshots to the `ci-screenshot` prerelease (it requests `contents: write`;
+the `test` job needs only `contents: read`). `release.yml` handles `v[0-9]*` tags by calling the
+same workflow, then publishing the tested firmware, `modd.config` (the resolved configuration of
+that build), source, licenses and checksums as a prerelease. Failed verification never publishes
+a versioned release.
 
 ### Screenshot generation
 
-`tools/codegen/gen_ui_screenshots.py` captures per-page screenshots for each UI theme using the fm1-live headless emulator (modd theme) or the WASM emulator via Playwright (other themes). Run via Taskfile:
+`tools/codegen/gen_ui_screenshots.py` captures per-page screenshots for each UI theme using the fm1-live headless emulator (modd and lvgl themes) or the WASM emulator via Playwright in Chromium (the Felucca theme). Run via Taskfile:
 
 ```
 task docs:themes:ui:screenshots          # all themes
@@ -345,7 +355,7 @@ To swap: change the Kconfig radio choice, rebuild. The adapter contract guarante
 1. Write a `.c` file that conforms to the relevant `modd_*.h` contract. For engines, implement `engine_t` (required: `note_on`, `render`; see [Working with Engines](#working-with-engines)).
 2. Add a `CONFIG_*` Kconfig symbol in the appropriate `kconf/*.kconfig` file.
 3. Add a `#include` guarded by that symbol in `modd.c` (or `engines.c` for engines).
-4. Build and test: `task build && task test:e2e`.
+4. Build and test: `task build && task test:api`.
 
 For the mock-first porting strategy (start with stub data, wire real components later), see [docs/PORTING.md](docs/PORTING.md).
 

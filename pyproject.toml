@@ -55,3 +55,5 @@ include = ["tools", "tools.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# the default list minus "build", so tests/build/ is collected
+norecursedirs = [".*", "dist", "CVS", "_darcs", "{arch}", "*.egg", "venv"]

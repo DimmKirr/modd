@@ -22,6 +22,7 @@ else the nix store.
 """
 import argparse
 import glob
+import hashlib
 import os
 import platform
 import re
@@ -30,16 +31,26 @@ import struct
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import check_colors
 import fm1pkg_make
 import lz4blk
+import mem_report
+from fm1_paths import open_toolchain
 
 ROOT = Path(__file__).resolve().parents[2]
 FW = ROOT / 'firmware'
 BUILD = ROOT / 'build'
 OUT = BUILD  # overridden per defconfig in main()
+
+# The default toolchain: the open pi32v2 LLVM (github.com/jvitkauskas/pi32v2-llvm releases).
+# Only USE_OPEN_TOOLCHAIN=0 selects JieLi's clang 4.0.1 (rule in fm1_paths.py).
+OPEN = open_toolchain()
+# Fallback when OPEN_TOOLCHAIN is unset (the Taskfile always sets it from OPEN_TOOLCHAIN_VERSION,
+# the pin; keep this tag equal to it).
+OPEN_DEFAULT = '~/.fm1-toolchain/open/pi32v2-23.1.5-5'
 GEN = Path(os.environ['MODD_GEN_DIR']) if 'MODD_GEN_DIR' in os.environ else BUILD / 'modd' / 'gen'
 
 DOCKER_IMAGE = os.environ.get('JIELI_DOCKER_IMAGE', 'debian:bookworm-slim')
@@ -50,6 +61,59 @@ CFLAGS = [
     '-ffunction-sections', '-fdata-sections',
     '-fno-builtin', '-Wall', '-Wno-unused-function',
 ]
+
+
+def open_toolchain_path():
+    root = Path(os.environ.get('OPEN_TOOLCHAIN') or OPEN_DEFAULT).expanduser()
+    if not (root / 'bin' / 'clang').exists():
+        raise SystemExit(
+            f'open toolchain not found: {root}/bin/clang is missing.\n'
+            'Run "task toolchain:open:download" (or set OPEN_TOOLCHAIN to its root).')
+    return root
+
+
+# JieLi clang 4 accepts what the fork's clang 23 reports as errors; downgrade them again.
+_OPEN_DOWNGRADED = ['implicit-function-declaration', 'implicit-int', 'int-conversion',
+                    'incompatible-function-pointer-types', 'incompatible-pointer-types',
+                    'return-mismatch', 'incompatible-pointer-types-discards-qualifiers']
+_OPEN_TOOLS = {   # JieLi-relative tool name used by this file -> open toolchain binary
+    'pi32v2/bin/ld': 'ld.lld', 'pi32v2/bin/ar': 'llvm-ar',
+    'common/bin/objcopy': 'llvm-objcopy', 'common/bin/objdump': 'llvm-objdump',
+}
+
+
+def _open_cc_args(args):
+    """Translate JieLi clang options to the open clang's (as tools/dropin/jlwrap.py does)."""
+    out = []
+    for a in args:
+        if a == '-mfprev1':
+            out += ['-Xclang', '-target-feature', '-Xclang', '+fprev1']
+        elif a == '-fallow-pointer-null':
+            out.append('-fno-delete-null-pointer-checks')
+        else:
+            out.append(a)
+    pre = ['-Wno-unknown-warning-option', *(f'-Wno-error={w}' for w in _OPEN_DOWNGRADED)]
+    if any(a.endswith('.c') for a in out) and not any(a.startswith('-std') for a in out):
+        pre.insert(0, '-std=gnu11')   # clang 4 compiled C as gnu11
+    return pre + out
+
+
+def _open_run(tool, args, capture=False):
+    root = open_toolchain_path()
+    if tool == 'cc':
+        exe, argv = 'clang', ['--target=pi32v2', *_open_cc_args(args)]
+    else:
+        exe, argv = _OPEN_TOOLS[tool], list(args)
+        if tool == 'pi32v2/bin/ld':
+            if any('--plugin' in a for a in argv):
+                raise SystemExit('the vendor-library link (WIFI_NONFREE) is not supported '
+                                 'with the open toolchain yet')
+            argv += [str(root / 'lib' / 'clang' / '23' / 'lib' / 'pi32v2' / 'libclang_rt.builtins.a')]
+    cmd = [str(root / 'bin' / exe), *argv]
+    if capture:
+        return subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=str(ROOT)).stdout
+    subprocess.run(cmd, check=True, cwd=str(ROOT))
+    return None
 
 
 def toolchain_path():
@@ -255,6 +319,9 @@ def _can_exec_x86(glibc, tc_path=None):
                 pass
 
 
+DOCKER_RETRIES = 2
+
+
 class _DockerRunner:
     def __init__(self, tc_path):
         self.tc = tc_path
@@ -272,8 +339,20 @@ class _DockerRunner:
             DOCKER_IMAGE,
             f'/opt/jieli/{tool_path}', *mapped,
         ]
-        return subprocess.run(cmd, check=True, cwd=str(ROOT),
-                              stdout=subprocess.PIPE if capture else None, text=True).stdout
+        # x86-64 clang under Docker Desktop's amd64 emulation on Apple silicon segfaults now and
+        # then on input that compiles fine natively (2026-11-20: an LVGL file that preprocesses
+        # to nothing). The driver then exits 254 (frontend crash) or the process dies on SIGSEGV
+        # (139); run it again, up to DOCKER_RETRIES times, before failing the build.
+        for attempt in range(DOCKER_RETRIES + 1):
+            r = subprocess.run(cmd, cwd=str(ROOT),
+                               stdout=subprocess.PIPE if capture else None, text=True)
+            if r.returncode not in (254, 139) or attempt == DOCKER_RETRIES:
+                break
+            print(f'build: {tool_path} crashed under emulation (exit {r.returncode}), retrying...',
+                  file=sys.stderr)
+        if r.returncode:
+            raise subprocess.CalledProcessError(r.returncode, cmd, r.stdout)
+        return r.stdout
 
     def label(self):
         return ' (docker)'
@@ -312,6 +391,8 @@ _runner = None
 
 def tc(tool, *args, capture=False):
     global _runner
+    if OPEN:
+        return _open_run(tool, [str(a) for a in args], capture=capture)
     if _runner is None:
         _runner = _pick_runner(toolchain_path())
 
@@ -490,6 +571,80 @@ def extract_section(elf, section):
     return blob
 
 
+LVGL = FW / 'vendor' / 'lvgl'
+LVGL_CONF = FW / 'src' / 'ui' / 'themes' / 'lvgl'   # lv_conf.h, project-owned
+
+
+def lvgl_flags():
+    """What every translation unit that includes LVGL needs: where lv_conf.h is and LVGL's
+    public headers (`#include <lvgl/lvgl.h>`, the layout LVGL's manual recommends)."""
+    return ['-DLV_CONF_INCLUDE_SIMPLE', f'-I{LVGL_CONF}', f'-I{LVGL / "include"}']
+
+
+def lvgl_cache_key(cflags, conf_bytes, version_bytes, root, toolchain_root):
+    """Key of the kept LVGL objects. The repo and the toolchain are replaced by placeholders so
+    that building one tree from two hosts (macOS and a Linux container mount it at different
+    paths) does not invalidate the objects."""
+    flags = '\0'.join(cflags)
+    # Longer root first: the toolchain may live under the repo root.
+    for real, name in sorted([(str(r), n) for r, n in ((root, '<root>'), (toolchain_root, '<toolchain>'))
+                              if r], key=lambda p: -len(p[0])):
+        flags = flags.replace(real, name)
+    return hashlib.sha256(flags.encode() + conf_bytes + version_bytes).hexdigest()
+
+
+def build_lvgl():
+    """Compile firmware/vendor/lvgl/src into OUT/lvgl/liblvgl.a and return the archive.
+
+    LVGL cannot join the unity build: its files are written to be compiled one by one and
+    reuse static names. Objects are kept between builds; a change of flags, of lv_conf.h or
+    of the vendored version rebuilds them all. The linker takes only the members modd.o
+    refers to, and --gc-sections drops the unused functions inside them."""
+    if not (LVGL / 'src').is_dir():
+        raise SystemExit(f"{LVGL.relative_to(ROOT)} not found. Run 'task vendor:ensure'.")
+    out = OUT / 'lvgl'
+    out.mkdir(parents=True, exist_ok=True)
+    cflags = ['-mcpu=r3', '-mfprev1', '-ffp-contract=off', '-Os',
+              '-ffunction-sections', '-fdata-sections', '-fno-builtin',
+              '-w',                      # vendored code: its warnings are upstream's
+              *([] if OPEN else ['-isystem', str(toolchain_path() / 'pi32v2' / 'include')]),  # libc headers only
+              *lvgl_flags()]
+    version = (LVGL / 'lv_version.h').read_bytes()
+    key = lvgl_cache_key(cflags, (LVGL_CONF / 'lv_conf.h').read_bytes(), version, ROOT,
+                         None if OPEN else toolchain_path())
+    stamp = out / 'flags.sha256'
+    fresh = stamp.exists() and stamp.read_text() == key
+    if not fresh:
+        for stale in out.glob('*.o'):
+            stale.unlink()
+        # Stamp now, not after the last file: an object exists only once it compiled with these
+        # flags, so a build that fails part way keeps its objects and the next run goes on from there.
+        stamp.write_text(key)
+    srcs = sorted((LVGL / 'src').rglob('*.c'))
+    todo = []
+    objs = []
+    for src in srcs:
+        obj = out / ('_'.join(src.relative_to(LVGL / 'src').with_suffix('').parts) + '.o')
+        objs.append(obj)
+        if not obj.exists() or obj.stat().st_mtime < src.stat().st_mtime:
+            todo.append((src, obj))
+    lib = out / 'liblvgl.a'
+    if todo:
+        jobs = int(os.environ.get('MODD_JOBS', min(4, os.cpu_count() or 2)))
+        print(f'build: lvgl: compiling {len(todo)} of {len(srcs)} files ({jobs} jobs)...')
+
+        def compile_one(pair):
+            tc('cc', *cflags, '-c', pair[0], '-o', pair[1])
+
+        with ThreadPoolExecutor(jobs) as pool:
+            list(pool.map(compile_one, todo))
+    if todo or not lib.exists():
+        lib.unlink(missing_ok=True)
+        tc('pi32v2/bin/ar', 'rcs', lib, *objs)
+    print(f'build: lvgl: {lib.relative_to(ROOT)} ({len(objs)} objects)')
+    return lib
+
+
 def linker_script(enabled):
     """The memory map for a set of CONFIG_* names: app_wifi_nonfree.ld carries the
     nonfree WiFi stack's larger RAM; app_dock.ld keeps fm1-dock's module
@@ -533,6 +688,15 @@ def build(dry_run=False):
         else:
             print(f'gen_melodee_ui: headers exist, skipping (delete {GEN}/melodee/ to regenerate)')
         flags.insert(0, f'-I{GEN / "melodee"}')   # before GEN: its ui_fonts.h must win
+    if 'UI_LVGL' in enabled:
+        # the LVGL theme uses the modd theme's palettes (Settings > DISPLAY > THEME), not its
+        # fonts: only the palette list, which needs no Pillow
+        pal = GEN / 'lvgl' / 'ui_palettes.h'
+        if not pal.exists():
+            pal.parent.mkdir(parents=True, exist_ok=True)
+            subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'gen_modd_palettes.py'),
+                            str(pal)], check=True, cwd=str(ROOT))
+        flags.insert(0, f'-I{GEN / "lvgl"}')
     if 'ENGINES' in enabled:
         gen_engine_tables()
     if 'WIFI' in enabled and not (GEN / 'ble_rf_tables.h').exists():
@@ -561,10 +725,22 @@ def build(dry_run=False):
 
     if 'DUAL_CORE' in enabled:
         flags.append('-DMODD_DUAL_CORE=1')
+    if 'UI_LVGL' in enabled:
+        flags += lvgl_flags()
 
     version = _firmware_version()
     flags.append(f'-DCONFIG_FIRMWARE_VERSION="{version}"')
     print(f'build: version {version}')
+
+    if 'RPC' in enabled:
+        # The REST API's OpenAPI document for this build: build/<dc>/openapi.json, and the
+        # same bytes as gen/openapi_json.h for GET /openapi.json (CONFIG_RPC_OPENAPI).
+        OUT.mkdir(parents=True, exist_ok=True)
+        subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'gen_openapi.py'),
+                        '--config', str(config_h), '--version', version,
+                        '--json', str(OUT / 'openapi.json'),
+                        '--header', str(GEN / 'openapi_json.h')],
+                       check=True, cwd=str(ROOT))
 
     if 'WIFI_NONFREE' in enabled:
         fm1b_shim = ROOT / '.scratch' / 'examples' / 'fm1-base' / 'ble' / 'shim'
@@ -595,6 +771,8 @@ def build(dry_run=False):
         for name, path in asm_srcs:
             print(f'  [asm] {path.relative_to(ROOT)}')
         print(f'  [cc]  {c_src.relative_to(ROOT)}')
+        if 'UI_LVGL' in enabled:
+            print(f'  [lib] {LVGL.relative_to(ROOT)}/src/**/*.c -> liblvgl.a')
         print(f'Flags: {" ".join(flags)}')
         print(f'Then build firmware/stub, firmware/loader and package {OUT.relative_to(ROOT)}/modd.fwsc')
         return
@@ -607,9 +785,12 @@ def build(dry_run=False):
                         str(logo_src), str(logo_hdr)],
                        check=True, cwd=str(ROOT))
 
-    runner = _pick_runner(toolchain_path())
     OUT.mkdir(parents=True, exist_ok=True)
-    print(f'build: compiling{runner.label()}...')
+    if OPEN:
+        print(f'build: compiling with the open toolchain {open_toolchain_path()}...')
+    else:
+        runner = _pick_runner(toolchain_path())
+        print(f'build: compiling{runner.label()}...')
 
     asm_gen_inc = [f'-I{GEN}']
     if str(GEN) != str(OUT / 'gen'):
@@ -623,6 +804,8 @@ def build(dry_run=False):
 
     objs = [str(OUT / (Path(name).stem + '.o')) for name, _ in asm_srcs]
     objs.append(str(OUT / 'modd.o'))
+    if 'UI_LVGL' in enabled:
+        objs.append(str(build_lvgl()))   # after modd.o: the linker takes what it refers to
 
     if 'USB_HOST' in enabled:
         sdk = Path(os.environ.get('AC79_SDK', Path.home() / '.fm1-toolchain' / 'AC79_SDK'))
@@ -640,6 +823,9 @@ def build(dry_run=False):
     vendor_libs = []
 
     if 'WIFI_NONFREE' in enabled:
+        if OPEN:
+            raise SystemExit('CONFIG_WIFI_NONFREE is not supported with the open toolchain yet '
+                             '(set USE_OPEN_TOOLCHAIN=0 for JieLi).')
         if not os.environ.get('ALLOW_NONFREE'):
             raise SystemExit(
                 'CONFIG_WIFI_NONFREE requires ALLOW_NONFREE=1.\n'
@@ -747,6 +933,17 @@ def build(dry_run=False):
     body += b'\xff' * (-len(body) % 4)
     (OUT / 'body.bin').write_bytes(body)
     package(version)
+    # Regions, budgets, stacks and the largest objects (tools/build/mem_report.py). The linker
+    # script's regions and ASSERTs fail the link; a report error never fails a build, but too
+    # little free RAM does (mem_report.RAM_MIN_FREE).
+    try:
+        print(mem_report.report(OUT))
+        errors = mem_report.analyse_build(OUT)['errors']
+    except Exception as e:  # noqa: BLE001
+        print(f'mem_report: skipped ({e})')
+        errors = []
+    if errors:
+        raise SystemExit('build failed: ' + '; '.join(errors))
 
 
 def main():
@@ -758,7 +955,7 @@ def main():
 
     global OUT, GEN
     dc = args.defconfig or 'modd'
-    OUT = BUILD / dc
+    OUT = BUILD / (dc + '-open' if OPEN else dc)
     if 'MODD_GEN_DIR' not in os.environ:
         GEN = OUT / 'gen'
 

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Packaging format checks without a target compiler or SDK download."""
+import importlib.util
 import struct
 import sys
 from pathlib import Path
@@ -9,9 +10,14 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools' / 'build'))
-import build
 import fm1pkg_make
 import lz4blk
+
+# tests/build/ is a package, so `import build` finds it, not tools/build/build.py.
+_spec = importlib.util.spec_from_file_location('modd_build_py', ROOT / 'tools' / 'build' / 'build.py')
+build = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = build
+_spec.loader.exec_module(build)
 
 
 def test_driver_plan_splits_clang_subcommands():
@@ -94,17 +100,17 @@ def test_runner_order_rosetta_then_qemu_then_docker(monkeypatch):
     monkeypatch.setattr(build, '_find_x86_libs', lambda tc: ('/x86', '/x86'))
     monkeypatch.setattr(build.shutil, 'which', lambda n: '/usr/bin/qemu-x86_64')
 
-    monkeypatch.setattr(build, '_can_exec_x86', lambda glibc: True)
+    monkeypatch.setattr(build, '_can_exec_x86', lambda glibc, tc_path=None: True)
     assert isinstance(build._pick_runner(Path('/tc')), build._RosettaRunner)
 
-    monkeypatch.setattr(build, '_can_exec_x86', lambda glibc: False)
+    monkeypatch.setattr(build, '_can_exec_x86', lambda glibc, tc_path=None: False)
     assert isinstance(build._pick_runner(Path('/tc')), build._QemuRunner)
 
     monkeypatch.setattr(build.shutil, 'which', lambda n: None)
     assert isinstance(build._pick_runner(Path('/tc')), build._DockerRunner)
 
     monkeypatch.setattr(build, '_find_x86_libs', lambda tc: ('', ''))
-    monkeypatch.setattr(build, '_can_exec_x86', lambda glibc: True)
+    monkeypatch.setattr(build, '_can_exec_x86', lambda glibc, tc_path=None: True)
     assert isinstance(build._pick_runner(Path('/tc')), build._DockerRunner), 'no x86 libs: nothing to run the loader with'
 
 
@@ -219,3 +225,23 @@ def test_linker_script_follows_the_memory_map():
     assert build.linker_script({'AUDIO', 'UDISK'}) == 'app.ld'
     assert build.linker_script({'DOCK', 'AUDIO'}) == 'app_dock.ld'
     assert build.linker_script({'WIFI_NONFREE'}) == 'app_wifi_nonfree.ld'
+
+
+def _lvgl_flags(root, tc):
+    return ['-Os', '-isystem', f'{tc}/pi32v2/include', f'-I{root}/firmware/vendor/lvgl/include']
+
+
+def test_lvgl_cache_key_ignores_repo_and_toolchain_location():
+    a = build.lvgl_cache_key(_lvgl_flags('/Users/d/modd', '/Users/d/.tc'), b'conf', b'ver',
+                             Path('/Users/d/modd'), Path('/Users/d/.tc'))
+    b = build.lvgl_cache_key(_lvgl_flags('/MODD/Users/d/modd', '/home/d/.tc'), b'conf', b'ver',
+                             Path('/MODD/Users/d/modd'), Path('/home/d/.tc'))
+    assert a == b
+
+
+def test_lvgl_cache_key_still_tracks_flags_conf_and_version():
+    root, tc = Path('/r'), Path('/t')
+    base = build.lvgl_cache_key(_lvgl_flags(root, tc), b'conf', b'ver', root, tc)
+    assert base != build.lvgl_cache_key(_lvgl_flags(root, tc) + ['-DX'], b'conf', b'ver', root, tc)
+    assert base != build.lvgl_cache_key(_lvgl_flags(root, tc), b'conf2', b'ver', root, tc)
+    assert base != build.lvgl_cache_key(_lvgl_flags(root, tc), b'conf', b'ver2', root, tc)

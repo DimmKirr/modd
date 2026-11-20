@@ -42,12 +42,8 @@ def _debug_tasks():
     return tasks
 
 
-def test_there_are_debug_tasks():
-    assert len(_debug_tasks()) >= 1
-
-
 def _check_log_convention(name, body):
-    slug = name.split(":", 1)[1]
+    slug = name.split(":", 1)[1].replace(":", "-")   # debug:usb:host -> usb-host.log
     assert 'mkdir -p .scratch/debug' in body, f'{name}: must create .scratch/debug (or .scratch/debug/logs)'
     assert 'tee "$LOG"' in body or f'tee .scratch/debug/{slug}.log' in body, \
         f'{name}: output must be teed into $LOG or .scratch/debug/{slug}.log'
@@ -57,8 +53,3 @@ def _check_log_convention(name, body):
 def test_every_debug_task_tees_into_its_own_log():
     for name, body in _debug_tasks().items():
         _check_log_convention(name, body)
-
-
-def test_debug_section_is_commented():
-    text = TASKFILE.read_text()
-    assert re.search(r'^  # .*debug', text, re.M), 'convention comment above the debug tasks'

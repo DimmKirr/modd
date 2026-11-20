@@ -44,3 +44,25 @@ def test_table_lists_top_n_with_total():
     assert '8192' in lines[0] + lines[1] + lines[2]
     assert 'sched_stacks' in lines[1] and 'wifi_tx_buf' in lines[2]
     assert len(lines) == 3
+
+
+LLD_MAP = """     VMA      LMA     Size Align Out     In      Symbol
+ 2001000  2001000     1000     4 .text
+ 1c08040  2041040    17fa4    32 .bss
+ 1c08040  1c08040      658     4         /x/build/modd-open/modd.o:(.bss.wifi_tx_buf)
+ 1c08040  1c08040      658     1                 wifi_tx_buf
+ 1c08698  1c08698        4     4         /x/build/modd-open/modd.o:(.bss.small)
+ 1c0869c  1c0869c        0     4         /x/build/modd-open/modd.o:(.bss.zero)
+ 1c0869c  1c0869c     2000     4         /x/build/modd-open/modd.o:(.bss.sched_stacks)
+ 1c1ffe4  206d3b4      100     4 .data
+ 1c1ffe4  206d3b4       80     4         /x/build/modd-open/usb_sdk.o:(.data.table)
+ 1c20000  1c20000    140a8     4 .pool
+ 1c20000  1c20000     1000     4         /x/build/modd-open/modd.o:(.pool)
+"""
+
+
+def test_parse_reads_an_lld_map_like_a_gnu_one():
+    rows = ram_top.parse(LLD_MAP)
+    assert [r.name for r in rows] == ['.bss.sched_stacks', '.bss.wifi_tx_buf', '.data.table', '.bss.small']
+    assert rows[0].size == 0x2000 and rows[0].section == 'bss' and rows[0].obj == 'modd.o'
+    assert rows[2].obj == 'usb_sdk.o'

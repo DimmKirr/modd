@@ -21,8 +21,27 @@ includes:
     optional: true
     dir: '{{.ROOT_DIR}}'
 
+env:
+  # The default reaches every command: build.py, the test fixtures and the screenshot generator
+  # read USE_OPEN_TOOLCHAIN themselves (1 = open toolchain). A value set in the shell wins.
+  USE_OPEN_TOOLCHAIN: '{{.USE_OPEN}}'
+
 vars:
-  BUILD_DIR: build/modd
+  # Builds use the open pi32v2 LLVM toolchain (https://github.com/jvitkauskas/pi32v2-llvm) by
+  # default and write to build/<defconfig>-open/. USE_OPEN_TOOLCHAIN=0 selects JieLi's compiler,
+  # which writes to build/<defconfig>/. Unset means 1; build:live refuses any other value.
+  # TC_SUFFIX is appended to every build/<defconfig> path below.
+  # OPEN_TOOLCHAIN_FLASH_OK=0 in the environment also selects JieLi ("do not flash an open-toolchain
+  # image"): builds (or reuses) build/<defconfig>/ and flashes that. configs/Taskfile.yml repeats
+  # this expression and, being included, its copy is the one in effect: change both. Written after
+  # the task name the value never reaches these vars; flash re-runs itself with the environment set.
+  USE_OPEN: '{{if or (eq (env "USE_OPEN_TOOLCHAIN") "0") (eq (env "OPEN_TOOLCHAIN_FLASH_OK") "0")}}0{{else}}1{{end}}'
+  TC_SUFFIX: '{{if eq .USE_OPEN "1"}}-open{{end}}'
+  # The one place the open toolchain release is pinned (release tag; the version is the tag minus "pi32v2-").
+  OPEN_TOOLCHAIN_VERSION: pi32v2-23.1.5-5
+  # Install root (contains bin/clang); the OPEN_TOOLCHAIN environment variable overrides it.
+  OPEN_TOOLCHAIN_DIR: '{{env "OPEN_TOOLCHAIN" | default (printf "%s/.fm1-toolchain/open/%s" .HOME .OPEN_TOOLCHAIN_VERSION)}}'
+  BUILD_DIR: 'build/modd{{.TC_SUFFIX}}'
   FM1_EMU_ROOT: '{{env "FM1_EMU_ROOT" | default "/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master"}}'
   FM1_EMU_BIN: '{{.FM1_EMU_ROOT}}/target/release'
   FM1_WEB_DIR: '{{env "FM1_WEB_DIR" | default (printf "%s/_site" .FM1_EMU_ROOT)}}'
@@ -35,11 +54,22 @@ tasks:
         vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
 
   build:live:
-    desc: Generate config.h and compile firmware (skipped when sources and .env are unchanged; --force to rebuild)
-    deps: [fm1-platform:download:sdk, fm1-platform:download:toolchain, vendor:ensure]
+    desc: Generate config.h and compile firmware (skipped when sources and .env are unchanged since this defconfig was last built)
+    # One checksum per defconfig: the label names the fingerprint file under .task/checksum/, and
+    # generates points at that defconfig's package. Without them, building one defconfig made
+    # every other one "up to date" while its build/<defconfig>/modd.fwsc was still old.
+    label: 'build:live:{{.DEFCONFIG}}{{.TC_SUFFIX}}'
+    # The JieLi SDK stays a dependency in both modes: build.py takes one object out of its cpu.a.
+    deps: [fm1-platform:download:sdk, fm1-platform:download:toolchain, vendor:ensure, toolchain:open:ensure]
+    vars:
+      # The defconfig this run builds: the name after --defconfig in the arguments
+      # ("--defconfig name" or "--defconfig=name"), modd when there is none (.config).
+      DEFCONFIG: '{{regexReplaceAll "^--defconfig[= ]+" (regexFind "--defconfig[= ]+[A-Za-z0-9_.-]+" .CLI_ARGS) "" | default "modd"}}'
+      # TC_SUFFIX (global var) keeps the open toolchain's checksum and package apart from JieLi's.
     env:
       JIELI_TOOLCHAIN: '{{env "JIELI_TOOLCHAIN" | default (printf "%s/.fm1-toolchain/toolchain" .HOME)}}'
       AC79_SDK: '{{env "AC79_SDK" | default (printf "%s/.fm1-toolchain/AC79_SDK" .HOME)}}'
+      OPEN_TOOLCHAIN: '{{.OPEN_TOOLCHAIN_DIR}}'
       ALLOW_NONFREE: '{{env "ALLOW_NONFREE" | default ""}}'
     sources:
       - firmware/**/*
@@ -47,6 +77,8 @@ tasks:
       - tools/build/genconfig.py
       - tools/codegen/logo_convert.py
       - tools/codegen/gen_engine_tables.py
+      - tools/codegen/gen_openapi.py
+      - docs/api/openapi.overlay.yaml
       - kconf/**/*
       - configs/**/*
       - assets/**/*
@@ -54,10 +86,87 @@ tasks:
       - .config
       - .env
     generates:
-      - '{{.BUILD_DIR}}/modd.fwsc'
+      - 'build/{{.DEFCONFIG}}{{.TC_SUFFIX}}/modd.fwsc'
     method: checksum
+    preconditions:
+      # The Taskfile's paths and build.py must agree on the toolchain; only 0 and 1 mean something.
+      - sh: 'case "$USE_OPEN_TOOLCHAIN" in 0|1) ;; *) exit 1;; esac'
+        msg: "USE_OPEN_TOOLCHAIN must be 1 (open toolchain, the default), 0 (JieLi) or unset."
+      # A value given after the task name (task build USE_OPEN_TOOLCHAIN=0) reaches the templates but
+      # not the environment build.py reads: refuse it instead of building with the other toolchain.
+      - sh: 'test "{{.USE_OPEN_TOOLCHAIN | default .USE_OPEN}}" = "$USE_OPEN_TOOLCHAIN"'
+        msg: "Set USE_OPEN_TOOLCHAIN in the environment (USE_OPEN_TOOLCHAIN=0 task build), not after the task name."
     cmds:
       - uv run --quiet python tools/build/build.py {{.CLI_ARGS}}
+
+  toolchain:open:ensure:
+    desc: Internal. Installs the open toolchain unless USE_OPEN_TOOLCHAIN=0 (JieLi) was asked for
+    internal: true
+    silent: true
+    status:
+      # Passes (task skipped) for a JieLi build (USE_OPEN_TOOLCHAIN=0).
+      - test "$USE_OPEN_TOOLCHAIN" != 1
+    cmds:
+      - task: toolchain:open:download
+
+  toolchain:open:download:
+    desc: "Download the open pi32v2 LLVM toolchain (pinned release) into ~/.fm1-toolchain/open/<tag> (the default compiler; builds install it when missing)"
+    vars:
+      VER: '{{trimPrefix "pi32v2-" .OPEN_TOOLCHAIN_VERSION}}'
+    env:
+      OTC_TAG: '{{.OPEN_TOOLCHAIN_VERSION}}'
+      OTC_VER: '{{trimPrefix "pi32v2-" .OPEN_TOOLCHAIN_VERSION}}'
+      OTC_DEST: '{{.OPEN_TOOLCHAIN_DIR}}'
+    status:
+      - test -x '{{.OPEN_TOOLCHAIN_DIR}}/bin/clang'
+      - grep -q 'pi32v2-llvm-{{.VER}}-' '{{.OPEN_TOOLCHAIN_DIR}}/VERSION'
+    cmds:
+      # Python, not tar -xJ: the container has no xz binary, and tarfile verifies/extracts everywhere.
+      - |
+        uv run --quiet python -I - <<'PY'
+        import hashlib, os, platform, shutil, sys, tarfile, tempfile, urllib.request
+        from pathlib import Path
+        tag, ver, dest = os.environ['OTC_TAG'], os.environ['OTC_VER'], Path(os.environ['OTC_DEST'])
+        osn = {'Linux': 'linux', 'Darwin': 'macos'}.get(platform.system())
+        arch = {'x86_64': 'x64', 'amd64': 'x64', 'aarch64': 'arm64', 'arm64': 'arm64'}.get(platform.machine().lower())
+        if not osn or not arch:
+            sys.exit(f'no open toolchain build for {platform.system()} {platform.machine()}')
+        name = f'pi32v2-llvm-{ver}-{osn}-{arch}'
+        base = f'https://github.com/jvitkauskas/pi32v2-llvm/releases/download/{tag}'
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = Path(tempfile.mkdtemp(prefix='otc-', dir=dest.parent))
+        try:
+            def get(url, to):
+                with urllib.request.urlopen(url) as r, open(to, 'wb') as f:
+                    shutil.copyfileobj(r, f)
+            print(f'downloading {name}.tar.xz')
+            get(f'{base}/{name}.tar.xz', tmp / 'a.tar.xz')
+            get(f'{base}/SHA256SUMS', tmp / 'SHA256SUMS')
+            want = next((l.split()[0] for l in (tmp / 'SHA256SUMS').read_text().splitlines()
+                         if l.split()[-1:] == [f'{name}.tar.xz'] or l.split()[-1:] == [f'*{name}.tar.xz']), None)
+            if not want:
+                sys.exit(f'{name}.tar.xz not listed in SHA256SUMS')
+            h = hashlib.sha256()
+            with open(tmp / 'a.tar.xz', 'rb') as f:
+                for chunk in iter(lambda: f.read(1 << 20), b''):
+                    h.update(chunk)
+            if h.hexdigest() != want:
+                sys.exit(f'SHA256 mismatch for {name}.tar.xz: {h.hexdigest()} != {want}')
+            ex = tmp / 'x'
+            ex.mkdir()
+            with tarfile.open(tmp / 'a.tar.xz') as t:
+                t.extractall(ex, filter='data')
+            top = ex / name
+            if not (top / 'bin' / 'clang').exists():
+                sys.exit(f'{name}/bin/clang missing in the archive')
+            if dest.exists():
+                shutil.rmtree(dest)
+            top.rename(dest)
+            print(f'installed {dest}')
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        PY
+      - '{{.OPEN_TOOLCHAIN_DIR}}/bin/clang --version | head -1'
 
   build:dry-run:
     desc: Show what would be compiled without building
@@ -65,46 +174,23 @@ tasks:
       - uv run --quiet python tools/build/build.py --dry-run
 
   test:
-    desc: Run all tests (unit + e2e)
+    desc: Run all tests (unit, then the direct-API tests in fm1-live)
     cmds:
       - task: test:unit
-      - task: test:e2e
+      - task: test:api
 
   test:unit:
     desc: Run Python unit tests (genconfig, defconfigs, tooling)
     deps: [vendor:ensure]
     cmds:
-      - uv run --quiet python -m pytest tests/ -v --ignore-glob="**/e2e_*"
+      # --tier unit leaves out the API tier (is_api_test in tests/conftest.py): it runs under test:api
+      - uv run --quiet python -m pytest tests/ -v --tier unit {{.CLI_ARGS}}
 
-  test:e2e:
-    desc: Run E2E tests via fm1-emu emulator + Playwright
-    deps:
-      - task: build
-        vars:
-          CLI_ARGS: ''
-    preconditions:
-      - sh: test -f '{{.FM1_WEB_DIR}}/fm1_web.wasm'
-        msg: 'fm1_web.wasm not found in {{.FM1_WEB_DIR}}. Build the emulator or set FM1_WEB_DIR / FM1_EMU_ROOT.'
-    env:
-      FM1_WEB_DIR: '{{.FM1_WEB_DIR}}'
-      PLAYWRIGHT_BROWSERS_PATH: '{{env "PLAYWRIGHT_BROWSERS_PATH" | default (printf "%s/.cache/ms-playwright" .HOME)}}'
+  test:api:
+    desc: Run the direct-API tests (Python drives the firmware over HTTP in fm1-live; modd_emu build)
     cmds:
-      - uv run --quiet python -m pytest tests/boot/e2e_boot_test.py tests/boot/e2e_components_test.py tests/usb/e2e_usb_safety_test.py tests/audio/e2e_audio_test.py tests/audio/e2e_audio_engines_test.py tests/ble/e2e_ble_test.py tests/net/e2e_weather_test.py -v {{.CLI_ARGS}}
-
-  test:e2e:walkthrough:
-    desc: Walk every UI page in the modd theme and screenshot each one
-    deps:
-      - task: build
-        vars:
-          CLI_ARGS: ''
-    preconditions:
-      - sh: test -f '{{.FM1_WEB_DIR}}/fm1_web.wasm'
-        msg: 'fm1_web.wasm not found in {{.FM1_WEB_DIR}}. Build the emulator or set FM1_WEB_DIR / FM1_EMU_ROOT.'
-    env:
-      FM1_WEB_DIR: '{{.FM1_WEB_DIR}}'
-      PLAYWRIGHT_BROWSERS_PATH: '{{env "PLAYWRIGHT_BROWSERS_PATH" | default (printf "%s/.cache/ms-playwright" .HOME)}}'
-    cmds:
-      - uv run --quiet python -m pytest tests/ui/themes/modd/e2e_ui_walkthrough_test.py -v {{.CLI_ARGS}}
+      - task: modd:test:modd_emu:api
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
 
   emulator:build:
     desc: Build WASM from a local fm1-emu checkout (requires the Rust WASM target)
@@ -118,7 +204,12 @@ tasks:
   flash:
     desc: "Build if needed, then flash firmware to FM-1 (default: USB-MIDI SysEx)"
     cmds:
+      # "task flash OPEN_TOOLCHAIN_FLASH_OK=0": the value after the task name cannot switch the
+      # global toolchain vars, so run again with it in the environment (JieLi build and image).
+      - cmd: 'USE_OPEN_TOOLCHAIN=0 OPEN_TOOLCHAIN_FLASH_OK=0 "{{.TASK_EXE}}" flash{{if .FIRMWARE}} FIRMWARE={{.FIRMWARE}}{{end}}{{if .AUTO_APPROVE}} AUTO_APPROVE={{.AUTO_APPROVE}}{{end}}{{if .CLI_ARGS}} -- {{.CLI_ARGS}}{{end}}'
+        if: '{{if and (eq (.OPEN_TOOLCHAIN_FLASH_OK | default "") "0") (eq .USE_OPEN "1")}}true{{else}}false{{end}}'
       - task: flash:midi
+        if: '{{if and (eq (.OPEN_TOOLCHAIN_FLASH_OK | default "") "0") (eq .USE_OPEN "1")}}false{{else}}true{{end}}'
         vars:
           CLI_ARGS: '{{.CLI_ARGS}}'
           FIRMWARE: '{{.FIRMWARE | default ""}}'
@@ -138,53 +229,25 @@ tasks:
       - sh: test -f {{.FIRMWARE}}
         msg: "{{.FIRMWARE}} not found."
     cmds:
+      - cmd: '{{if .TC_SUFFIX}}echo "note: flashing an image built with the open pi32v2 toolchain."{{else}}:{{end}}'
+        silent: true
       - cmd: |
           test -f {{.BUILD_DIR}}/modd.version && echo "version: $(cat {{.BUILD_DIR}}/modd.version)" || true
       - task: build:size-check
+        vars: { CLI_ARGS: '' }   # flash's -- args are fm1_install.py's
       - uv run --quiet --group flash python tools/device/fm1_install.py {{.FIRMWARE}} --force {{if eq .AUTO_APPROVE "true"}}--yes {{end}}{{.CLI_ARGS}}
 
   build:size-check:
-    desc: Show RAM and flash usage from linker map
+    desc: "Show memory use from the last build: regions, budgets, stacks, largest objects (DEFCONFIG=name, -- -n N)"
     silent: true
+    vars:
+      DIR: '{{if .DEFCONFIG}}build/{{.DEFCONFIG}}{{.TC_SUFFIX}}{{else}}{{.BUILD_DIR}}{{end}}'
     preconditions:
-      - sh: test -f {{.BUILD_DIR}}/modd.map
-        msg: "{{.BUILD_DIR}}/modd.map not found. Run 'task build' first."
+      - sh: test -f {{.DIR}}/modd.map
+        msg: "{{.DIR}}/modd.map not found. Run 'task build' first."
     cmds:
-      - cmd: |
-          MAP={{.BUILD_DIR}}/modd.map
-          ELF={{.BUILD_DIR}}/modd.elf
-          FWSC={{.BUILD_DIR}}/modd.fwsc
-          # flash (XIP): body size vs 0x8C000 (573440)
-          TEXT_SZ=$(stat -f%z {{.BUILD_DIR}}/text.bin 2>/dev/null || stat -c%s {{.BUILD_DIR}}/text.bin 2>/dev/null)
-          FLASH_MAX=573440
-          FLASH_PCT=$((TEXT_SZ * 100 / FLASH_MAX))
-          # RAM (.data+.bss): 96K = 98304
-          BSS_END=$(grep '_bss_end' "$MAP" | head -1 | awk '{print $1}')
-          RAM_BASE=0x01C08000
-          RAM_MAX=98304
-          RAM_USED=$(( BSS_END - RAM_BASE ))
-          RAM_PCT=$((RAM_USED * 100 / RAM_MAX))
-          # POOL (.pool+stacks+audio): 0x54000 = 344064
-          POOL_END=$(grep '_pool_end' "$MAP" | head -1 | awk '{print $1}')
-          POOL_BASE=0x01C20000
-          POOL_MAX=344064
-          POOL_USED=$(( POOL_END - POOL_BASE ))
-          POOL_PCT=$((POOL_USED * 100 / POOL_MAX))
-          # NOINIT: 0x3D30 = 15664
-          NOINIT_END=$(grep '_noinit_end' "$MAP" | head -1 | awk '{print $1}')
-          NOINIT_BASE=0x01C7C020
-          NOINIT_MAX=15664
-          NOINIT_USED=$(( NOINIT_END - NOINIT_BASE ))
-          NOINIT_PCT=$((NOINIT_USED * 100 / NOINIT_MAX))
-          # fwsc package
-          FWSC_SZ=$(stat -f%z "$FWSC" 2>/dev/null || stat -c%s "$FWSC" 2>/dev/null)
-          printf "flash:  %6d / %6d (%2d%%)  XIP text\n" "$TEXT_SZ" "$FLASH_MAX" "$FLASH_PCT"
-          printf "ram:    %6d / %6d (%2d%%)  .data+.bss\n" "$RAM_USED" "$RAM_MAX" "$RAM_PCT"
-          printf "pool:   %6d / %6d (%2d%%)  .pool+audio+stacks\n" "$POOL_USED" "$POOL_MAX" "$POOL_PCT"
-          printf "noinit: %6d / %6d (%2d%%)  debug ring+crash\n" "$NOINIT_USED" "$NOINIT_MAX" "$NOINIT_PCT"
-          printf "fwsc:   %6d bytes (lz4 package)\n" "$FWSC_SZ"
-      # What fills the 96 KB RAM region, largest first (tools/debug/ram_top.py); `task build:size-top -- -n 40` for more
-      - uv run --quiet python tools/debug/ram_top.py {{.BUILD_DIR}}/modd.map -n 12
+      # tools/build/mem_report.py, the report build.py prints after every link
+      - uv run --quiet python tools/build/mem_report.py {{.DIR}} {{.CLI_ARGS}}
 
   build:size-top:
     desc: Rank the .data/.bss consumers from the linker map (default top 20; -- -n N)
@@ -204,6 +267,8 @@ tasks:
       - sh: test -f {{.FIRMWARE}}
         msg: "{{.FIRMWARE}} not found. Run 'task build' first."
     cmds:
+      - cmd: '{{if .TC_SUFFIX}}echo "note: flashing an image built with the open pi32v2 toolchain."{{else}}:{{end}}'
+        silent: true
       - cmd: |
           test -f {{.BUILD_DIR}}/modd.version && echo "version: $(cat {{.BUILD_DIR}}/modd.version)" || true
       - uv sync --quiet --group uboot
@@ -212,7 +277,11 @@ tasks:
   debug:flash:
     desc: Debug flash issues - list MIDI devices and retry update loader detection
     cmds:
+      - mkdir -p .scratch/debug/logs
       - cmd: |
+          LOG=".scratch/debug/logs/$(date -u +%Y-%m-%dT%H%M%SZ)-flash.log"
+          {
+          echo "# debug:flash $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           echo "=== MIDI devices ==="
           uv run --quiet --group flash python -c "
           import rtmidi
@@ -239,6 +308,7 @@ tasks:
           echo "If 'Felucca Update' appeared, run: task flash"
           echo "If only 'FM-1' appeared, the device is in normal mode."
           echo "If nothing appeared, check USB cable."
+          } 2>&1 | tee "$LOG"
 
   recover:download-stock-firmware:
     desc: Download official M-VAVE FM-1 stock firmware V15 (.fwsc)

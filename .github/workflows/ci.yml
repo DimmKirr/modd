@@ -16,29 +16,35 @@ on:
         default: ''
     outputs:
       firmware_artifact_id:
-        description: Artifact containing the tested firmware release files
+        description: Artifact containing the release files built from the tested production firmware (empty unless release_bundle is set)
         value: ${{ jobs.test.outputs.firmware_artifact_id }}
       results_artifact_id:
-        description: Artifact containing E2E screenshots, logs, and JUnit results
+        description: Artifact containing the unit-test results and logs (tests/results/) of the test job
         value: ${{ jobs.test.outputs.results_artifact_id }}
 
 permissions:
   contents: read
 
+env:
+  # CI and releases stay on JieLi's compiler until an open-toolchain build is verified on a
+  # real FM-1 (the Taskfile default is the open toolchain).
+  USE_OPEN_TOOLCHAIN: '0'
+
 jobs:
   test:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # Cold runner: vendir fetch, SDK and toolchain download, then the first build compiles the
+    # whole LVGL library (483 files) on the runner's four cores. 45 minutes is a guess with room
+    # for the downloads; tighten it after the first green run.
+    timeout-minutes: 45
     permissions:
-      contents: write
+      contents: read
     concurrency:
       group: ci-test-${{ github.ref }}
       cancel-in-progress: false
     outputs:
       results_artifact_id: ${{ steps.results.outputs.artifact-id }}
       firmware_artifact_id: ${{ steps.firmware.outputs.artifact-id }}
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
@@ -55,45 +61,29 @@ jobs:
         run: mise exec -- task --yes vendor:ensure
 
       - name: Run unit tests
-        # Fresh runners must accept the two remote Taskfiles explicitly.
+        # Fresh runners must accept the two remote Taskfiles explicitly. Tests that need a
+        # build, the toolchain or fm1-live skip when those are missing.
         run: mise exec -- task --yes test:unit
 
       - name: Install FM-1 SDK and compiler
         id: toolchain
         uses: dimmkirr/setup-fm1-toolchain@v1
 
-      - name: Install FM-1 emulator
-        id: emulator
-        uses: dimmkirr/setup-fm1-emulator@v1
-        with:
-          version: v0.2.0
-          # Use the Playwright version locked in uv.lock, not a second pip install.
-          install-playwright: 'false'
-
-      - name: Check native emulator
-        run: fm1-emu --help || test $? -eq 2
-
-      - name: Install Chromium
-        run: mise exec -- uv run playwright install --with-deps chromium
-
-      - name: Load minimal configuration
-        run: mise exec -- task --yes config:generate:defconfig -- minimal
-
-      - name: Build firmware and run E2E tests
-        id: e2e
+      - name: Build the production firmware (modd defconfig)
         env:
           JIELI_TOOLCHAIN: ${{ steps.toolchain.outputs.toolchain-path }}
           AC79_SDK: ${{ steps.toolchain.outputs.sdk-path }}
-          FM1_WEB_DIR: ${{ steps.emulator.outputs.web-path }}
           FIRMWARE_VERSION: ${{ inputs.firmware_version }}
-        run: mise exec -- task --yes test:e2e -- --junitxml=tests/results/e2e.xml
+        # Name the defconfig: a bare `task build` reads .config, a gitignored symlink that a
+        # fresh checkout does not have, and then builds Kconfig defaults, which do not compile.
+        run: mise exec -- task --yes build -- --defconfig modd
 
-      - name: Save E2E screenshots and logs
+      - name: Save test results and logs
         id: results
-        if: ${{ always() && steps.e2e.outcome != 'skipped' }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-results
+          name: test-results
           path: tests/results/
           if-no-files-found: warn
           retention-days: 14
@@ -103,10 +93,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s build/modd.fwsc
+          test -s build/modd/modd.fwsc
+          # The resolved configuration of that build. genconfig.py writes it before it applies
+          # WIFI_SSID, WIFI_PASSWORD, WIFI_MAC_OVERRIDE and OPENROUTER_API_KEY from the
+          # environment, so it holds no secrets; the check below makes sure of it.
+          test -s build/modd/gen/.config
+          if grep -qE '^CONFIG_(WIFI_SSID|WIFI_PASSWORD|OPENROUTER_API_KEY)=".+"$' build/modd/gen/.config; then
+            echo '::error::build/modd/gen/.config holds a secret; refusing to ship it.'
+            exit 1
+          fi
           mkdir -p build/release
-          cp build/modd.fwsc build/release/
-          cp .config build/release/minimal.config
+          cp build/modd/modd.fwsc build/release/
+          cp build/modd/gen/.config build/release/modd.config
           # Corresponding source: the tracked files plus the upstream trees vendir fetched
           # (firmware/upstream and firmware/vendor are not committed). Melodee's Casio and
           # Sequential factory preset .syx assets are "no licence granted" (its LICENSING.md)
@@ -115,7 +113,7 @@ jobs:
             | tar --null -T - --transform 's,^,modd/,' -czf build/release/modd-source.tar.gz
           tar -czf build/release/modd-licenses.tar.gz LICENSE LICENSES THIRD_PARTY.md firmware/NOTICES
           cd build/release
-          sha256sum modd.fwsc minimal.config modd-source.tar.gz \
+          sha256sum modd.fwsc modd.config modd-source.tar.gz \
             modd-licenses.tar.gz > SHA256SUMS
           sha256sum -c SHA256SUMS
 
@@ -129,25 +127,117 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  api:
+    # The direct-API tests (task test:api) need an fm1-live with the port forward and the NAT
+    # fix. That lives only in DimmKirr/fm1-emu master, not pushed or released yet. The job stays
+    # off until the repository variable FM1_EMU_REF names a pushed commit or tag with them.
+    # It never blocks the run, and it does not run for release tags.
+    if: ${{ vars.FM1_EMU_REF != '' && !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-24.04
+    # Three firmware builds (modd_emu, modd, felucca, each with its own LVGL or font work),
+    # a from-source cargo build of fm1-live, then the API suites.
+    timeout-minutes: 75
+    continue-on-error: true
+    permissions:
+      contents: write
+    concurrency:
+      group: ci-api-${{ github.ref }}
+      cancel-in-progress: false
+    env:
+      DISPLAY: ':99'
+      FM1_LIVE: ${{ github.workspace }}/fm1-emu/target/release/fm1-live
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out fm1-emu at FM1_EMU_REF
+        uses: actions/checkout@v4
+        with:
+          repository: DimmKirr/fm1-emu
+          ref: ${{ vars.FM1_EMU_REF }}
+          path: fm1-emu
+          submodules: true
+
+      - name: Install system packages
+        # fm1-live window, audio and MIDI headers (as in fm1-emu's release workflow), Xvfb for
+        # its display, and FriBiDi: the felucca build renders fonts with Pillow and libraqm.
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libasound2-dev libx11-dev libxkbcommon-dev libxcursor-dev \
+            libxrandr-dev libxi-dev pkg-config xvfb libfribidi0
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            fm1-emu/target
+          key: fm1-live-${{ runner.os }}-${{ vars.FM1_EMU_REF }}-${{ hashFiles('fm1-emu/Cargo.lock') }}
+          restore-keys: fm1-live-${{ runner.os }}-
+
+      - name: Build fm1-live
+        working-directory: fm1-emu
+        run: |
+          command -v cargo || { curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal; echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"; export PATH="$HOME/.cargo/bin:$PATH"; }
+          cargo build --release --locked -p fm1-live
+          target/release/fm1-live --version
+
+      - name: Install project tools
+        uses: jdx/mise-action@v4
+        with:
+          install: true
+
+      - name: Install Python dependencies
+        run: mise exec -- uv sync --locked
+
+      - name: Fetch vendored upstream trees pinned in vendir.lock.yml
+        run: mise exec -- task --yes vendor:ensure
+
+      - name: Install FM-1 SDK and compiler
+        id: toolchain
+        uses: dimmkirr/setup-fm1-toolchain@v1
+
+      - name: Start Xvfb
+        run: |
+          Xvfb :99 -screen 0 1280x1024x24 >/tmp/xvfb.log 2>&1 &
+          sleep 2
+
+      - name: Build firmware and run the API tests
+        id: api
+        env:
+          JIELI_TOOLCHAIN: ${{ steps.toolchain.outputs.toolchain-path }}
+          AC79_SDK: ${{ steps.toolchain.outputs.sdk-path }}
+        run: mise exec -- task --yes test:api
+
+      - name: Save API test results, screenshots and logs
+        if: ${{ always() && steps.api.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-results
+          path: tests/results/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Publish CI screenshots and summary
         if: >-
           always() && !cancelled() &&
           (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
           github.ref == 'refs/heads/main' &&
-          (steps.e2e.outcome == 'success' || steps.e2e.outcome == 'failure')
+          (steps.api.outcome == 'success' || steps.api.outcome == 'failure')
         env:
           GH_TOKEN: ${{ github.token }}
-          TEST_RESULT: ${{ steps.e2e.outcome }}
+          TEST_RESULT: ${{ steps.api.outcome }}
         shell: bash
         run: |
           set -euo pipefail
           if [[ ! -d tests/results ]]; then
-            echo 'No E2E results were captured.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No API test results were captured.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          mapfile -d '' screenshots < <(find tests/results -type f -path '*/screenshots/*/*.png' -print0 | sort -z)
+          # The API tests write tests/results/<stamp>-<module>/screenshots/<NN_name>.png
+          mapfile -d '' screenshots < <(find tests/results -type f -path '*/screenshots/*.png' -print0 | sort -z)
           if (( ${#screenshots[@]} == 0 )); then
-            echo 'No E2E screenshots were captured; see the e2e-results artifact.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No API screenshots were captured; see the api-results artifact.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -157,8 +247,8 @@ jobs:
           {
             echo '# CI screenshots'
             echo
-            echo "Latest main run: [$GITHUB_RUN_ID]($run_url). E2E outcome: **$TEST_RESULT**."
-            echo "Commit: $GITHUB_SHA. Logs and JUnit results are in the run's e2e-results artifact."
+            echo "Latest main run: [$GITHUB_RUN_ID]($run_url). API test outcome: **$TEST_RESULT**."
+            echo "Commit: $GITHUB_SHA. Logs and JSON results are in the run's api-results artifact."
             echo
           } > "$notes"
 

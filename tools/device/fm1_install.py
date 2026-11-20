@@ -33,6 +33,7 @@ import queue
 import re
 import sys
 import time
+from pathlib import Path
 
 from fm1_midi import FM1_PORT_RE, pack7, unpack7
 
@@ -458,6 +459,18 @@ def ask_tty(prompt):
         return False
 
 
+def emulator_build(package):
+    """True when PACKAGE was built with CONFIG_EMU: build/<defconfig>/gen/config.h next to it
+    says so. Such a firmware is linked for the emulator's memory map (a 464 KiB pool; the
+    FM-1 has 336 KiB) and does not run on the device. Packages without that file (upstream
+    builds, a copied .fwsc) are not judged."""
+    h = Path(package).resolve().parent / "gen" / "config.h"
+    try:
+        return "#define CONFIG_EMU 1" in h.read_text()
+    except OSError:
+        return False
+
+
 def main(argv=None, backend=None, out=sys.stdout, ask=ask_tty):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("package", nargs="?", help="modd package (.fwsc)")
@@ -468,6 +481,11 @@ def main(argv=None, backend=None, out=sys.stdout, ask=ask_tty):
     a = ap.parse_args(argv)
     if bool(a.info) == bool(a.package):
         ap.error("give a PACKAGE.fwsc or --info")
+    if a.package and emulator_build(a.package):
+        print(f"error: {a.package} is an emulator build (CONFIG_EMU): it is linked for the "
+              "emulator's memory and does not run on the FM-1. Flash modd instead "
+              "(task flash, or task modd:flash:modd).", file=sys.stderr)
+        return EXIT.get("usage", 2)
     try:
         if backend is None:
             try:

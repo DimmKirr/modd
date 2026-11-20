@@ -36,7 +36,9 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: Download E2E results
+      - name: Download test results
+        if: ${{ needs.build.outputs.results_artifact_id != '' }}
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           artifact-ids: ${{ needs.build.outputs.results_artifact_id }}
@@ -66,7 +68,13 @@ jobs:
           run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           notes="$RUNNER_TEMP/dev-notes.md"
 
-          mapfile -d '' screenshots < <(find results -type f -path '*/screenshots/*/*.png' -print0 | sort -z)
+          # Screenshots come from the API job (ci.yml), published separately as the
+          # ci-screenshot release; the results downloaded here are the unit-test logs, so
+          # this list is normally empty.
+          screenshots=()
+          if [[ -d results ]]; then
+            mapfile -d '' screenshots < <(find results -type f -path '*/screenshots/*.png' -print0 | sort -z)
+          fi
 
           {
             echo "# modd $version"
@@ -76,7 +84,7 @@ jobs:
             echo
           } > "$notes"
 
-          assets=(dist/modd.fwsc dist/minimal.config
+          assets=(dist/modd.fwsc dist/modd.config
                   dist/modd-source.tar.gz dist/modd-licenses.tar.gz
                   dist/SHA256SUMS)
 

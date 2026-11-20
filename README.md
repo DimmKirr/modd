@@ -13,7 +13,7 @@
 
 A modular firmware framework for the M-VAVE FM-1 synthesizer. Bring features
 from any FM-1 firmware into one configurable source tree: WiFi, USB tethering,
-a file browser, 100+ e2e tests, and a theming system. Two themes ship today
+a file browser, direct-API tests, and a theming system. Two themes ship today
 (modd, Felucca) and nine community firmwares are vendored for
 reference and reuse.
 
@@ -42,13 +42,12 @@ contracts, never hardware registers.
 
 ### Emulator-first development
 
-Build and test firmware in the browser. The WASM emulator runs the real binary
-with a virtual panel (14 buttons, 7 encoders, 1 pot). 100+ Playwright e2e tests
-across 11 categories verify LCD state, button behavior, and network flows. CI
-publishes screenshots on every push.
+Build and test firmware without hardware. The native fm1-live emulator runs the
+real binary, and the tests drive it over its HTTP API: pages, panel input, audio
+capture, LCD screenshots and network flows. CI publishes screenshots on every push.
 
 ```sh
-task test:e2e    # build, boot in emulator, run tests, capture screenshots
+task test:api    # build, boot in fm1-live, run the API tests
 ```
 
 ### Connectivity
@@ -70,7 +69,7 @@ permissive-licensed code (see the
 
 Implement three render hooks (`render_header`, `render_footer`, `render_card`),
 map buttons to views with a declarative controls struct, add pages with toast
-notifications and scrolling lists. Auto-generated docs with e2e screenshots
+notifications and scrolling lists. Auto-generated docs with emulator screenshots
 verify your theme in CI. Two themes ship: modd (native with widget library)
 and Felucca (ported from hugelton's firmware). Melodee provides the graphics
 primitives (renderer, fonts, palettes) that the modd theme builds on.
@@ -114,7 +113,7 @@ primitives (renderer, fonts, palettes) that the modd theme builds on.
 </details>
 <!-- theme-screenshots:end -->
 
-Screenshots are captured automatically during e2e tests. CI publishes the
+Screenshots are captured automatically by the docs tasks. CI publishes the
 latest set on every push. See the [full screenshot gallery](docs/ui/themes/modd/THEME.md).
 
 <sup>1</sup> iPhone tethering is still being tested.
@@ -128,7 +127,7 @@ git clone https://github.com/dimmkirr/modd && cd modd
 mise trust && mise install
 mise exec -- uv sync --locked
 mise exec -- task build
-mise exec -- task test:e2e          # see your firmware in the emulator
+mise exec -- task test:api          # see your firmware run in the emulator
 ```
 
 The build downloads the JieLi toolchain and SDK when needed and writes
@@ -156,9 +155,9 @@ Two layers, both via Taskfile:
 | Layer | Command | What it covers |
 |-------|---------|----------------|
 | Unit | `task test:unit` | Config generation, packaging, tooling |
-| E2E | `task test:e2e` | Emulator boot, UI interaction, LCD assertions, screenshots |
+| API | `task test:api` | Emulator boot, pages, input, audio, USB safety, network, LCD assertions, screenshots |
 
-100+ e2e and 400+ unit tests across 11 categories: audio, BLE, boot, build,
+Direct-API and 400+ unit tests across 11 categories: audio, BLE, boot, build,
 RPC, debug, dock, network, UI, USB, and WiFi. See
 [docs/TESTING.md](docs/TESTING.md).
 

@@ -296,14 +296,12 @@ ISR (fires every 128 samples @ 44.1kHz):
 
 #### E2E verification
 
-`tests/e2e_audio_engines_test.py` verifies both engines from a **single `felucca_mock` firmware** (both `CONFIG_ENGINE_ANALOG` and `CONFIG_ENGINE_NOISE` enabled):
+`tests/audio/api_audio_engines_test.py` verifies the engines on the `modd_emu` firmware over its REST API: it switches the selected track's engine (`/api/track/sel/engine/<name>`), plays C4, E4, G4 on the note keys (`/api/input/key/...`) and records the firmware's own output (`/api/audio/capture`, `CONFIG_RPC_AUDIO_TAP`).
 
-- **TestAnalogEngine**: boots, plays C4-G4 on the default engine (ANALOG at index 0), records WAV
-- **TestNoiseEngine**: boots the same firmware, switches to NOISE via `ctrl.rotate_encoder('select', direction=1, steps=1)`, plays C4-G4, records WAV
+- **TestAnalogEngine**, **TestFM6Engine**: audio on each note, at its pitch (the bin at the note's frequency at least 4x the bin two semitones up)
+- **TestNoiseEngine**: audio on each note (no pitch check)
 
-Both tests capture audio via in-browser ScriptProcessorNode. Silence baseline RMS is 0.0. Playing RMS differs between engines (ANALOG ~0.029, NOISE ~0.084), confirming distinct synthesis.
-
-WAV files and screenshots are saved to `tests/results/<timestamp>-e2e_audio_engines_test/`.
+Silence before the notes is RMS 0. WAV files and screenshots are saved to `tests/results/<timestamp>-api_audio_engines_test/`.
 
 #### Emulator encoder timing
 

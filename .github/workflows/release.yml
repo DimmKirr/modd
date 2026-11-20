@@ -36,7 +36,10 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: Download E2E screenshots and logs
+      - name: Download test results
+        # Unit-test logs only: the API job (screenshots) does not run for release tags.
+        if: ${{ needs.verify.outputs.results_artifact_id != '' }}
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           artifact-ids: ${{ needs.verify.outputs.results_artifact_id }}
@@ -49,7 +52,7 @@ jobs:
           set -euo pipefail
           cd dist
           test -s modd.fwsc
-          test -s minimal.config
+          test -s modd.config
           test -s modd-source.tar.gz
           test -s modd-licenses.tar.gz
           sha256sum -c SHA256SUMS
@@ -63,27 +66,29 @@ jobs:
           tag="$GITHUB_REF_NAME"
           run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           notes="$RUNNER_TEMP/release-notes.md"
-          mapfile -d '' screenshots < <(find results -type f -path '*/screenshots/*.png' -print0 | sort -z)
-          if (( ${#screenshots[@]} == 0 )); then
-            echo '::error::The E2E run did not produce release screenshots.'
-            exit 1
+          # Screenshots come from the API tests, which do not run for release tags: optional.
+          screenshots=()
+          if [[ -d results ]]; then
+            mapfile -d '' screenshots < <(find results -type f -path '*/screenshots/*.png' -print0 | sort -z)
           fi
 
           {
             echo "# modd $tag"
             echo
-            echo "Minimal LCD boot firmware built from commit $GITHUB_SHA."
-            echo "Unit and emulator tests passed: [workflow run]($run_url)."
+            echo "Production modd firmware (defconfig modd, LVGL theme) built from commit $GITHUB_SHA."
+            echo "Unit tests passed and the firmware built: [workflow run]($run_url)."
             echo
-            echo 'This build has no audio or panel-input functionality and has not been verified on hardware.'
-            echo 'Assets include the tested .fwsc, resolved minimal configuration, corresponding source, license notices, and SHA-256 checksums.'
-            echo 'E2E logs and JUnit results remain available in the run artifacts for 14 days.'
-            echo
-            echo '## Emulator screenshots'
-            echo
+            echo 'This build has not been verified on hardware.'
+            echo 'Assets include the tested .fwsc, the resolved modd configuration (modd.config), corresponding source, license notices, and SHA-256 checksums.'
+            echo 'Test logs remain available in the run artifacts for 14 days.'
+            if (( ${#screenshots[@]} > 0 )); then
+              echo
+              echo '## Emulator screenshots'
+              echo
+            fi
           } > "$notes"
 
-          assets=(dist/modd.fwsc dist/minimal.config dist/modd-source.tar.gz
+          assets=(dist/modd.fwsc dist/modd.config dist/modd-source.tar.gz
                   dist/modd-licenses.tar.gz dist/SHA256SUMS)
           for screenshot in "${screenshots[@]}"; do
             asset_name="$(basename "$screenshot")"

@@ -5,8 +5,8 @@
 
     uv run python tools/ram_top.py [build/modd.map] [-n 20]
 
-`task flash:size-check` (run by `task flash`) prints the top entries so the 96 KB region is
-never a surprise. Input sections named `.L_MergedGlobals.N` are clang's merged small globals of
+`task build:size-top` prints it; the build's memory report (tools/build/mem_report.py, printed
+after every link and by `task build:size-check`) lists the largest objects of every region. Input sections named `.L_MergedGlobals.N` are clang's merged small globals of
 one translation unit; they have no single owner.
 """
 import re
@@ -22,9 +22,34 @@ _SIZE_LINE = re.compile(r'^\s+0x([0-9a-f]+)\s+0x([0-9a-f]+)\s+(\S+)')
 _ONE_LINE = re.compile(r'^ (\.\S+)\s+0x([0-9a-f]+)\s+0x([0-9a-f]+)\s+(\S+)')
 
 
+_LLD_HEADER = re.compile(r'^\s*VMA\s+LMA\s+Size\s+Align\s+Out\s+In\s+Symbol\s*$')
+_LLD_OUT = re.compile(r'^\s*[0-9a-f]+\s+[0-9a-f]+\s+[0-9a-f]+\s+\d+ \.(\w[\w.]*)\s*$')
+_LLD_IN = re.compile(r'^\s*[0-9a-f]+\s+[0-9a-f]+\s+([0-9a-f]+)\s+\d+ {5,}(.+?):\((\S+)\)\s*$')
+
+
+def is_lld(text):
+    """True for an lld map (the open toolchain), by its column header."""
+    return any(_LLD_HEADER.match(l) for l in text.splitlines()[:3])
+
+
+def _parse_lld(lines):
+    sec, rows = None, []
+    for line in lines:
+        m = _LLD_OUT.match(line)
+        if m:
+            sec = m.group(1)
+            continue
+        m = _LLD_IN.match(line)
+        if m and sec in ('bss', 'data'):
+            rows.append(Row(sec, m.group(3), int(m.group(1), 16), Path(m.group(2)).name))
+    return sorted((r for r in rows if r.size > 0), key=lambda r: -r.size)
+
+
 def parse(text):
     """Input sections of the .data and .bss output sections, largest first, zero-size dropped."""
     lines = text.splitlines()
+    if is_lld(text):
+        return _parse_lld(lines)
     sec = None
     rows = []
     i = 0

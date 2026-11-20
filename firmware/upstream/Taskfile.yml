@@ -20,7 +20,7 @@ includes:
 
 tasks:
   ensure:
-    desc: "Fetch firmware/upstream/* and firmware/vendor/* at the commits in vendir.lock.yml when missing (the trees are not committed)"
+    desc: "Fetch firmware/upstream/*, firmware/vendor/* and docs/lvgl at the commits in vendir.lock.yml when missing (the trees are not committed)"
     status:
       - uv run --quiet python tools/build/vendor.py present
     cmds:

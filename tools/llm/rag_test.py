@@ -6,6 +6,9 @@ vs generating from scratch.
 
 Usage:
     python tools/llm/test_rag.py
+
+The output (tests/results/<timestamp>-rag-ab/) is checked by hand with:
+    uv run python -m pytest tools/llm/rag_results_check.py
 """
 
 from __future__ import annotations

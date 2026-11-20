@@ -58,6 +58,10 @@ extern uint32_t _audio_start[], _audio_end[], _audio_load[];
 #include "fm1_adc.h"
 #endif
 
+#ifdef CONFIG_RPC_INPUT
+#define FM1_INPUT_INJECT 1      /* fm1_input.h: keys and encoders can be driven from the REST API */
+#endif
+
 #ifdef CONFIG_INPUT
 #if defined(CONFIG_HAL_INPUT_MELODEE)
 #include "fm1_input.h"
@@ -114,8 +118,25 @@ extern uint32_t _audio_start[], _audio_end[], _audio_load[];
 /* --- libc (freestanding: memset, memcpy, memmove, strlen) --- */
 #include "libc.c"
 
+#ifdef CONFIG_AUDIO
+/* the master volume pot (0..1023); the REST API can hold it at a value (api_ctl.c) */
+#ifdef CONFIG_RPC_INPUT
+static volatile int32_t master_pot_override = -1;   /* >= 0: this value instead of the ADC */
+#endif
+static int32_t master_pot_read(void)
+{
+#ifdef CONFIG_RPC_INPUT
+    if (master_pot_override >= 0)
+        return master_pot_override;
+#endif
+    return fm1_adc_read(FM1_ADC_MASTER);
+}
+#endif
+
 /* --- shadow framebuffer (emulator-only, 112 KB) --- */
 #include "debug/debug_framebuffer.c"
+/* --- audio output tap for the REST API (emulator-only, 16 KB) --- */
+#include "debug/audio_tap.c"
 
 /* --- LCD driver (ST7789 240x240) --- */
 #if defined(CONFIG_UI_FELUCCA)
@@ -291,11 +312,36 @@ static void boot_text_1x(uint32_t y, const char *s, uint16_t fg, uint16_t bg)
 
 /* --- fault handler (required by fm1_irq.h) --- */
 
+#define FAULT_STR2(x) #x
+#define FAULT_STR(x) FAULT_STR2(x)
+
+static void fault_hex(uint32_t y, const char *tag, uint32_t v)
+{
+    char b[16];
+    uint32_t k = 0, i;
+    while (*tag)
+        b[k++] = *tag++;
+    for (i = 0; i < 8u; i++) {
+        uint32_t d = (v >> (28u - 4u * i)) & 15u;
+        b[k++] = (char)(d < 10u ? '0' + d : 'A' + d - 10u);
+    }
+    b[k] = 0;
+    boot_text_1x(y, b, 0xFFFF, 0xF800);
+}
+
 static void fm1_fault(const fm1_crash_t *c)
 {
-    (void)c;
     lcd_fill(0, 0, 240, 240, 0xF800);
     boot_text(60, 100, "FAULT", 0xFFFF, 0xF800);
+    /* What a photo of the screen needs to find the fault in modd.map: this loop never
+     * resets, and the crash record in .noinit is lost when the power is cycled. */
+    fault_hex(130, "PC ", c->pc);
+    fault_hex(142, "RA ", c->rets);
+    fault_hex(154, "SP ", c->sp);
+    fault_hex(166, "VEC", c->vec);
+    fault_hex(178, "MS ", c->uptime_ms);
+    boot_text_1x(196, CONFIG_FIRMWARE_VERSION, 0xFFFF, 0xF800);
+    boot_text_1x(208, "clang " FAULT_STR(__clang_major__), 0xFFFF, 0xF800);
     lcd_sync();
     for (;;)
         fm1_wdt_feed();
@@ -314,7 +360,12 @@ static void fm1_fault(const fm1_crash_t *c)
 #include "manifest.h"
 /* Force linker to retain manifest string. The asm constraint prevents
    dead-code elimination even when modd_log is a no-op. */
+#if defined(__clang_major__) && __clang_major__ >= 10
+/* open pi32v2 LLVM: its backend cannot select a "m" operand for an array */
+#define MODD_MANIFEST_ANCHOR() asm volatile("" :: "r"(modd_manifest))
+#else
 #define MODD_MANIFEST_ANCHOR() asm volatile("" :: "m"(modd_manifest))
+#endif
 
 /* --- adapters (stub APIs for modules not yet integrated) ---
  *
@@ -373,8 +424,19 @@ static void fm1_fault(const fm1_crash_t *c)
 #include "modd_editor.h"
 #include "modd_console.h"
 
-#ifdef CONFIG_UI_MODD
+#if defined(CONFIG_UI_MODD) || defined(CONFIG_UI_LVGL)
 static uint8_t modd_lights = 3; /* LIGHTS_HIGH default; SYS_MENU overrides from flash */
+#endif
+
+/* Themes that provide the shell_* entry points the main loop calls (shell_init, shell_boot,
+ * shell_register_pages, shell_draw, shell_key, shell_button, shell_knob) and ui_leds. */
+#if defined(CONFIG_UI_MODD) || defined(CONFIG_UI_LVGL)
+#define UI_SHELL 1
+#endif
+/* LVGL may be called from the UI task only: a page change asked for by another task
+ * (the REST API) waits for the theme's next draw (ui_nav.c nav_request). */
+#ifdef CONFIG_UI_LVGL
+#define UI_NAV_DEFERRED 1
 #endif
 
 #ifdef CONFIG_SYS_MENU
@@ -740,6 +802,7 @@ static void modd_ble_sync(void) {}
 #ifdef CONFIG_LWIP
 #include "net/lwip_core.c"
 #endif /* CONFIG_LWIP */
+#include "net/net_need.c"      /* net_need() -> wifi_need() / eth_need() by link policy */
 #include "net/net.c"
 #include "net/http.c"
 #include "wifi/wifi_weather.c"   /* weather client on http.c; link-agnostic */
@@ -796,6 +859,7 @@ static uint8_t wifi_sta_bssid[6];
 #ifdef CONFIG_SCHED
 static void wifi_cmd_poll(void);
 #endif
+#include "wifi/wifi_need.c"      /* wifi_need(): the radio runs on setting + need */
 #include "wifi/wifi_api.c"
 #include "wifi/wifi_cmd.c"
 #include "wifi/wifi_debug.c"
@@ -896,6 +960,9 @@ static int32_t master_iir;
 static uint8_t hints_visible;                   /* GLO tap badge overlay (theme.c draws, shell.c toggles) */
 #include "ui/ui_nav.c"
 #include "ui/ui_elements.c"
+#ifdef UI_SHELL
+#include "ui/page_data.c"             /* what pages show, for the theme and the REST API */
+#endif
 
 #if defined(CONFIG_UI_FELUCCA)
 #include "ui/themes/felucca/ui.c"
@@ -903,6 +970,8 @@ static uint8_t hints_visible;                   /* GLO tap badge overlay (theme.
 #include "ui/themes/melodee/shell.c"
 #elif defined(CONFIG_UI_MODD)
 #include "ui/themes/modd/ui.c"
+#elif defined(CONFIG_UI_LVGL)
+#include "ui/themes/lvgl/ui.c"
 #else
 #error "no UI theme selected: UI_MELODEE and UI_SLOOP are not implemented yet (kconf/ui.kconfig)"
 #endif
@@ -915,6 +984,7 @@ static uint8_t hints_visible;                   /* GLO tap badge overlay (theme.
 #include "rpc/rpc_ws.c"
 #include "rpc/rpc_fm1.c"
 #include "rpc/api_pages.c"
+#include "rpc/api_ctl.c"
 #include "rpc/rpc_server.c"
 #endif /* CONFIG_RPC */
 
@@ -962,7 +1032,7 @@ static void ui_input(void)
             if (np & (1u << i)) {
 #if defined(CONFIG_UI_FELUCCA)
                 fsh_key(53u + i, 127);
-#elif defined(CONFIG_UI_MODD)
+#elif defined(UI_SHELL)
                 shell_key(53u + i, 127);
 #elif defined(CONFIG_AUDIO)
                 trk_note_on(&trk[song.sel], 53u + i, 127);
@@ -979,7 +1049,7 @@ static void ui_input(void)
             if (released & (1u << i)) {
 #if defined(CONFIG_UI_FELUCCA)
                 fsh_key(53u + i, 0);
-#elif defined(CONFIG_UI_MODD)
+#elif defined(UI_SHELL)
                 shell_key(53u + i, 0);
 #elif defined(CONFIG_AUDIO)
                 trk_note_off(&trk[song.sel], 53u + i);
@@ -996,14 +1066,14 @@ static void ui_input(void)
                 if (bp & (1u << i)) {
 #if defined(CONFIG_UI_FELUCCA)
                     fsh_button(i, 1);
-#elif defined(CONFIG_UI_MODD)
+#elif defined(UI_SHELL)
                     shell_button(i, 1);
 #endif
                 }
                 if (br & (1u << i)) {
 #if defined(CONFIG_UI_FELUCCA)
                     fsh_button(i, 0);
-#elif defined(CONFIG_UI_MODD)
+#elif defined(UI_SHELL)
                     shell_button(i, 0);
 #endif
                 }
@@ -1017,7 +1087,7 @@ static void ui_input(void)
             if (s) {
 #if defined(CONFIG_UI_FELUCCA)
                 fsh_knob(e, s);
-#elif defined(CONFIG_UI_MODD)
+#elif defined(UI_SHELL)
                 shell_knob(e, s);
 #endif
             }
@@ -1103,7 +1173,12 @@ static void services_task(void)
 #ifdef CONFIG_DEBUG
     modd_log("sched: services_task start");
 #endif
+    static uint32_t sched_stats_next;
     for (;;) {
+        if (fm1_ms > sched_stats_next) {
+            sched_log_stats();
+            sched_stats_next = fm1_ms + 60000u;
+        }
 #ifdef CONFIG_EDITOR
         editor_poll();
 #endif
@@ -1170,7 +1245,7 @@ static void ui_task(void)
 #endif
 #ifdef CONFIG_AUDIO
         {
-            int32_t a = fm1_adc_read(FM1_ADC_MASTER);
+            int32_t a = master_pot_read();
             master_iir += (a - master_iir) >> 3;
             song.master_q12 = (uint32_t)((master_iir * master_iir) >> 8);
         }
@@ -1191,7 +1266,7 @@ static void ui_task(void)
 #endif
 #if defined(CONFIG_UI_FELUCCA)
         fsh_draw();
-#elif defined(CONFIG_UI_MODD)
+#elif defined(UI_SHELL)
         shell_draw();           /* marks 10-17 inside */
         sched_mark(30);         /* LEDs */
         ui_leds();
@@ -1219,6 +1294,16 @@ static void fm1_main(void)
     modd_debug_init();
     modd_log_init();
     modd_log("modd boot");
+    if (fm1_crash.magic == FM1_CRASH_MAGIC) {
+        modd_log("PREV CRASH:");
+        modd_log_int("  pc=", (int32_t)fm1_crash.pc);
+        modd_log_int("  rets=", (int32_t)fm1_crash.rets);
+        modd_log_int("  sp=", (int32_t)fm1_crash.sp);
+        modd_log_int("  vec=", (int32_t)fm1_crash.vec);
+        modd_log_int("  ms=", (int32_t)fm1_crash.uptime_ms);
+        modd_log_int("  count=", (int32_t)fm1_crash.count);
+        modd_log_int("  early=", (int32_t)fm1_crash.early);
+    }
     modd_log(modd_manifest);
     MODD_MANIFEST_ANCHOR();
     modd_log("lcd: init OK");
@@ -1367,6 +1452,9 @@ static void fm1_main(void)
 
 #ifdef CONFIG_UDISK
     udisk_init();
+#ifdef CONFIG_SYS_MENU
+    udisk_set_enabled(!sys_settings.udisk_off);   /* the stored DISK setting; without a menu: on */
+#endif
     modd_log("udisk: init");
 #endif
 
@@ -1400,7 +1488,7 @@ static void fm1_main(void)
     fsh_init();
     fsh_splash_render();
     modd_log("boot: splash visible");
-#elif defined(CONFIG_UI_MODD)
+#elif defined(UI_SHELL)
     shell_init();
 #endif
 
@@ -1409,9 +1497,20 @@ static void fm1_main(void)
     modd_log("input: scan OK");
 #endif
 
+    weather_init();         /* link-agnostic clients: reset at boot, not with the (lazy) WiFi init */
+    llm_init();
+#ifdef CONFIG_LLM_PROXY_HOST
+    llm_set_proxy(CONFIG_LLM_PROXY_HOST);
+#endif
 #ifdef CONFIG_WIFI
+    net_init();             /* lwIP up on the main stack, before the scheduler (the ordering proven on hardware) */
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
+    net_boot_needs();       /* experimental: RPC and auto-join hold a network need from boot */
+    wifi_boot_init();       /* boot: radio up here, main stack, interrupts off */
+#else
     if (sys_settings.wifi_on)
-        wifi_init();
+        wifi_init();        /* stable baseline: radio up once if the setting is on */
+#endif
 #endif
 #ifdef CONFIG_WIFI_NONFREE
     modd_log("nf: wifi init");
@@ -1456,7 +1555,7 @@ static void fm1_main(void)
     fsh_register_pages();
     modd_log_int("ui: felucca, pages=", (int32_t)nav_npage);
     fsh_boot();
-#elif defined(CONFIG_UI_MODD)
+#elif defined(UI_SHELL)
     shell_register_pages();
     shell_boot();
 #endif
@@ -1464,11 +1563,19 @@ static void fm1_main(void)
 #ifdef CONFIG_SCHED
     sched_init();
 #if defined(CONFIG_WIFI)
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
+    {   /* always: the task idles until wifi_active; wifi_poll() runs wifi_init() / wifi_deinit() here */
+        static uint32_t wifi_stack[1536] __attribute__((section(".pool")));
+        sched_create(wifi_task, wifi_stack, sizeof wifi_stack);
+        modd_log("sched: wifi task created");
+    }
+#else
     if (sys_settings.wifi_on) {
         static uint32_t wifi_stack[1024] __attribute__((section(".pool")));
         sched_create(wifi_task, wifi_stack, sizeof wifi_stack);
         modd_log("sched: wifi task created");
     }
+#endif
 #endif
 #endif
 
@@ -1507,7 +1614,14 @@ static void fm1_main(void)
 #endif
     }
     {
+#ifdef CONFIG_UI_LVGL
+        /* LVGL lays out and draws through nested calls: its manual asks for more than
+           2 kB of stack and recommends 8 kB. Measured over every page with a list open:
+           7,180 bytes (the DEBUG page shows the figure). */
+        static uint32_t ui_stack[3072] __attribute__((section(".pool")));
+#else
         static uint32_t ui_stack[640] __attribute__((section(".pool")));
+#endif
         sched_create(ui_task, ui_stack, sizeof ui_stack);
 #ifdef CONFIG_DEBUG
         modd_log("sched: ui task created");
@@ -1567,7 +1681,7 @@ static void fm1_main(void)
 #endif
 #ifdef CONFIG_AUDIO
         {
-            int32_t a = fm1_adc_read(FM1_ADC_MASTER);
+            int32_t a = master_pot_read();
             master_iir += (a - master_iir) >> 3;
             song.master_q12 = (uint32_t)((master_iir * master_iir) >> 8);
         }
@@ -1626,7 +1740,7 @@ static void fm1_main(void)
         ecm_poll();
 #if defined(CONFIG_UI_FELUCCA)
         fsh_draw();
-#elif defined(CONFIG_UI_MODD)
+#elif defined(UI_SHELL)
         shell_draw();
         ui_leds();
 #endif

@@ -15,7 +15,7 @@ flowchart TB
     USB["<b>USB</b><br/><small>Device Driver · USB Audio · Host Controller · Network · UDisk</small>"]
     SCHED["<b>Scheduler</b><br/><small>stack_canary</small>"]
     STORAGE["<b>Storage</b><br/><small>Flash · Settings · Dock modules</small>"]
-    UI["<b>UI</b><br/><small>Shell · Controls · page_demo · Settings Menu</small>"]
+    UI["<b>UI</b><br/><small>Shell · Controls · page_demo · RPC · Settings Menu</small>"]
     WIFI["<b>WiFi</b><br/><small>STA · lwIP · WPA · weather · weather_unit_f · llm<br/>default_on · autojoin · MIDI · nonfree</small>"]
 
     BOOT -.-> STORAGE
@@ -30,6 +30,7 @@ flowchart TB
     WIFI -.->|mutex| BLE
     STORAGE -.-> AUDIO
     STORAGE -.-> USB
+    UI -.-> HAL
     UI -.-> USB
     UI -.-> BLE
     DEBUG --> USB
@@ -43,7 +44,6 @@ flowchart TB
     USB --> HAL
     SCHED --> HAL
     STORAGE --> HAL
-    UI --> HAL
     WIFI --> HAL
 ```
 <!-- module-diagram:end -->
@@ -579,11 +579,9 @@ graph LR
 
 | Preset | Audio | USB | Engines | UI | Extras | Buildable |
 |--------|-------|-----|---------|-----|--------|-----------|
-| `minimal` | Melodee core + FX | yes | none | modd (no input) | -- | yes |
-| `modd` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | modd | WiFi + weather, OTA, storage, modulation, settings menu, USB disk, scheduler, debug log | yes |
-| `modd_ui` | none | yes | none | modd | -- | yes |
+| `modd` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | LVGL (MODD LEGACY: `CONFIG_UI_MODD=y`) | WiFi on at boot, USB network, OTA, storage, modulation, settings menu, USB disk, REST API, scheduler, debug log | yes (production) |
+| `modd_emu` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | LVGL | `modd` + emulator hooks, framebuffer, RPC input/audio/mem, weather (fixed location) | emulator only (API tests) |
 | `felucca` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | Felucca | WiFi + weather, OTA, storage, modulation, settings menu, USB disk, debug log | yes (24 components) |
-| `felucca_noise` | Melodee core + FX | yes | Analog, Noise | Felucca | debug log, settings menu | yes |
 | `melodee` | Melodee | yes | all Melodee | Felucca (Melodee shell not ported) | -- | not yet |
 | `sloop` | SLOOP | yes | Felucca set | Felucca (no SLOOP theme) | -- | not yet |
 
