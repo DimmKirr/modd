@@ -275,15 +275,25 @@ static int usbnet_is_up(void);
 static int ecm_is_up(void);
 #endif
 
-#if defined(CONFIG_USB_NET) && defined(CONFIG_USB_NET_ECM)
-static int dock_net_busy(void) { return usbnet_is_up() || ecm_is_up(); }
-#elif defined(CONFIG_USB_NET)
-#define dock_net_busy() usbnet_is_up()
-#elif defined(CONFIG_USB_NET_ECM)
-#define dock_net_busy() ecm_is_up()
-#else
-#define dock_net_busy() 0
+#ifdef CONFIG_WIFI
+static uint8_t wifi_inited;                     /* wifi_need.c: the radio is up; its lwIP netif uses the .pool_net overlay */
 #endif
+
+/* A network link and a running module are exclusive: lwIP's memory is the module's RAM. */
+static int dock_net_busy(void)
+{
+    int busy = 0;
+#ifdef CONFIG_USB_NET
+    busy |= usbnet_is_up();
+#endif
+#ifdef CONFIG_USB_NET_ECM
+    busy |= ecm_is_up();
+#endif
+#ifdef CONFIG_WIFI
+    busy |= wifi_inited;
+#endif
+    return busy;
+}
 
 static uint32_t dock_start(uint32_t i)
 {

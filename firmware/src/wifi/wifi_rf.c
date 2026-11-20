@@ -916,6 +916,13 @@ static void wifi_rf_dc_set(void)
 
 /* ---- main RF init entry point ---- */
 
+/* SoC clock selects as found before wifi_rf_init() touched them (SYS_CLK1 bit 12, SYS_CLK2 bits 8
+ * and 10: group 1 and wifi_sdio_init() change them), for wifi_rf_deinit() to put back. */
+static uint32_t wifi_rf_clk1_saved;
+static uint32_t wifi_rf_clk2_saved;
+#define WIFI_RF_CLK1_BITS (1u << 12)
+#define WIFI_RF_CLK2_BITS ((1u << 8) | (1u << 10))
+
 static void wifi_rf_init(void)
 {
     uint32_t i;
@@ -923,6 +930,12 @@ static void wifi_rf_init(void)
 
     for (i = 0; i < sizeof(wifi_rf_stat); i++)
         ((uint8_t *)&wifi_rf_stat)[i] = 0;
+    /* a second init must run like the first: the trim state and the bank scan start empty */
+    for (i = 0; i < sizeof(wifi_cal); i++)
+        ((uint8_t *)&wifi_cal)[i] = 0;
+    wifi_rf_bank_scanned = 0;
+    wifi_rf_clk1_saved = FM1_RF_REG(0x10008u);
+    wifi_rf_clk2_saved = FM1_RF_REG(0x10010u);
 
     wifi_rf_vm_read();
 
@@ -975,6 +988,22 @@ static void wifi_rf_init(void)
 
     wifi_rf_stat.ran = 1;
     modd_log("wifi: rf init done");
+}
+
+/* Radio off. RF front end: mode 5, "RF off (every enable 0)" [SPECSHEET §10.1.1]; it also clears the
+ * enables the auto-control step set. The SoC clock selects go back to what wifi_rf_init() found
+ * (inferred: reverse of init, not verified on hardware). The RF die is shared with BLE and the
+ * PLL, the VCO and the WiFi clock-gate bank (0x14040-0x1405C) are left as they are: the spec sheet
+ * has no power-down value for them. */
+static void wifi_rf_deinit(void)
+{
+    if (!wifi_rf_stat.ran)
+        return;
+    wifi_cal_rf_mode(5);
+    FM1_RF_REG(0x10010u) = (FM1_RF_REG(0x10010u) & ~WIFI_RF_CLK2_BITS) | (wifi_rf_clk2_saved & WIFI_RF_CLK2_BITS);
+    FM1_RF_REG(0x10008u) = (FM1_RF_REG(0x10008u) & ~WIFI_RF_CLK1_BITS) | (wifi_rf_clk1_saved & WIFI_RF_CLK1_BITS);
+    wifi_rf_stat.ran = 0;
+    modd_log("wifi: rf deinit");
 }
 
 /* The tail of the RF bring-up that must be the LAST thing done to the RF

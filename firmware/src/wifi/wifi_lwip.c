@@ -26,6 +26,7 @@
 
 static struct netif wifi_netif;
 static uint8_t wifi_lwip_up;
+static uint8_t wifi_netif_added;     /* netif_add() runs once: a second wifi_init() keeps the netif */
 
 /* MAC address: shared with wifi_mac.c via wifi_sta.our_mac.
  * This pointer is set by wifi_lwip_set_mac() before lwIP netif init. */
@@ -124,12 +125,20 @@ static void wifi_lwip_init(void)
     ip4_addr_t z;
     ip4_addr_set_zero(&z);
 
-    net_init();
-    netif_add(&wifi_netif, &z, &z, &z, 0,
-              wifi_lwip_netif_init, ethernet_input);
-    netif_set_status_callback(&wifi_netif, wifi_lwip_status_cb);
+    net_init();                          /* idempotent (net_inited): lwip_init() runs once */
+    if (!wifi_netif_added) {
+        netif_add(&wifi_netif, &z, &z, &z, 0,
+                  wifi_lwip_netif_init, ethernet_input);
+        netif_set_status_callback(&wifi_netif, wifi_lwip_status_cb);
+        wifi_netif_added = 1;
+        modd_log("wifi: netif added");
+    } else {
+        uint32_t i;                      /* same netif, re-add would corrupt lwIP's list */
+        for (i = 0; i < WIFI_LWIP_HWADDR_LEN; i++)
+            wifi_netif.hwaddr[i] = wifi_lwip_mac ? wifi_lwip_mac[i] : 0;
+        modd_log("wifi: netif kept");
+    }
     wifi_lwip_up = 0;
-    modd_log("wifi: netif added");
 }
 
 static void wifi_lwip_start_dhcp(void)
@@ -143,12 +152,26 @@ static void wifi_lwip_start_dhcp(void)
 
 static void wifi_lwip_stop_dhcp(void)
 {
+    if (!wifi_netif_added)               /* the radio never came up: no netif to stop */
+        return;
     modd_log("wifi: dhcp stop");
     wifi_lwip_up = 0;
     dhcp_stop(&wifi_netif);
     netif_set_link_down(&wifi_netif);
     netif_set_down(&wifi_netif);
     net_on_down(&wifi_netif);
+}
+
+/* Radio off: no input, DHCP stopped (dhcp_stop releases the address), link and netif down. The
+ * netif stays in lwIP's list. All three calls are no-ops when the join already stopped DHCP. */
+static void wifi_lwip_deinit(void)
+{
+    if (!wifi_netif_added)
+        return;
+    wifi_lwip_up = 0;
+    dhcp_stop(&wifi_netif);
+    netif_set_link_down(&wifi_netif);
+    netif_set_down(&wifi_netif);
 }
 
 static uint32_t wifi_lwip_get_ip(void)
@@ -175,6 +198,7 @@ static void wifi_lwip_init(void) {}
 static void wifi_lwip_input(const uint8_t *data, uint32_t len) { (void)data; (void)len; }
 static void wifi_lwip_start_dhcp(void) {}
 static void wifi_lwip_stop_dhcp(void) {}
+static void wifi_lwip_deinit(void) {}
 static uint32_t wifi_lwip_get_ip(void) { return 0; }
 static uint32_t wifi_lwip_get_gw(void) { return 0; }
 static uint32_t wifi_lwip_get_dns(void) { return 0; }

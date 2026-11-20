@@ -6,7 +6,7 @@ menu "WiFi"
 config WIFI
     bool "WiFi (802.11 b/g/n STA)"
     default n
-    depends on !BLE
+    depends on !BLE && SYS_MENU
     help
       GPL-3.0 WiFi STA driver for the AC791N WL82 radio.
       Mutually exclusive with BLE in this version.
@@ -64,6 +64,13 @@ config WEATHER_UNIT_F
     help
       Display temperature in Fahrenheit. Open-Meteo returns the value
       in the requested unit, so no firmware-side conversion is needed.
+
+config WEATHER_HOST
+    string "Weather API host"
+    depends on WEATHER
+    default "api.open-meteo.com"
+    help
+      The Open-Meteo host the forecast is asked from.
 
 config LLM
     bool "LLM inference (via local proxy)"
@@ -193,5 +200,15 @@ config WIFI_T19_TEST
       probe requests alternating CCK 1M and OFDM 6M to the strongest AP,
       logging TX_STA_CNT0/1 after each. Determines if the AP can decode
       our transmissions.
+
+config WIFI_IN_SHARED_POOL
+    bool "Place WiFi task stack in .pool (shared audio arena)"
+    depends on WIFI && SCHED
+    default n
+    help
+      When enabled, the WiFi task stack is allocated in the .pool section
+      (the audio arena backing store shared with other task stacks). When
+      disabled (default), the WiFi stack lives in .bss — the stable baseline
+      before the on-demand power-down work.
 
 endmenu

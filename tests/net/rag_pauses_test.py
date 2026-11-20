@@ -6,12 +6,13 @@ Tests validate:
 1. Reference ABCs contain rests at phrase boundaries
 2. RAG prompt allows breathing rests
 3. Distinct songs use distinct references
-4. Generated output has rests, correct tempo, rhythm variety
+4. Reference rhythm variety, quantize detection
+
+Checks on generated LLM output live in tools/llm/rag_results_check.py.
 """
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -21,9 +22,6 @@ TOOLS_LLM = Path(__file__).resolve().parents[2] / "tools" / "llm"
 sys.path.insert(0, str(TOOLS_LLM))
 
 from melody_generator import parse_abc  # noqa: E402
-
-RESULTS_DIR = Path(__file__).resolve().parents[2] / "tests" / "results"
-
 
 def _load_refs():
     from rag_test import (
@@ -37,12 +35,6 @@ def _load_refs():
         "axel_f": REF_AXEL_F,
         "bttf": REF_BTTF,
     }
-
-
-def _latest_rag_dir() -> Path | None:
-    """Find the most recent rag-ab results directory."""
-    candidates = sorted(RESULTS_DIR.glob("*-rag-ab"), reverse=True)
-    return candidates[0] if candidates else None
 
 
 # -- Test 1: reference ABCs must contain rests --
@@ -166,90 +158,6 @@ class TestDistinctReferences:
         from rag_test import CASES
         assert "bttf" in CASES, "BTTF case not found in CASES dict."
         assert CASES["bttf"]["bpm_expect"] == 120
-
-
-# -- Test 4: generated RAG results must contain rests --
-
-
-class TestGeneratedRAGHasRests:
-    """Validate that actual LLM-generated RAG outputs contain rest events."""
-
-    @pytest.fixture(params=["mannelig", "scooter", "zevendagen", "pain", "axelf", "bttf"])
-    def case_name(self, request):
-        return request.param
-
-    @pytest.fixture(params=["rag-glm53", "rag-gemini", "rag-deepseek"])
-    def model_tag(self, request):
-        return request.param
-
-    def test_rag_abc_has_z_tokens(self, case_name, model_tag):
-        rag_dir = _latest_rag_dir()
-        if rag_dir is None:
-            pytest.skip("No rag-ab results directory found")
-        abc_path = rag_dir / case_name / f"{model_tag}.abc"
-        if not abc_path.exists():
-            pytest.skip(f"Not found: {abc_path}")
-
-        abc = abc_path.read_text()
-        body = abc.split("K:")[1] if "K:" in abc else abc
-        assert "z" in body, (
-            f"{case_name}/{model_tag}: ABC has no 'z' rest tokens. "
-            f"Melody plays continuously with no breathing room."
-        )
-
-    def test_rag_json_has_rest_events(self, case_name, model_tag):
-        rag_dir = _latest_rag_dir()
-        if rag_dir is None:
-            pytest.skip("No rag-ab results directory found")
-        json_path = rag_dir / case_name / f"{model_tag}.json"
-        if not json_path.exists():
-            pytest.skip(f"Not found: {json_path}")
-
-        data = json.loads(json_path.read_text())
-        events = data.get("events", [])
-        rests = [e for e in events if e["pitch"] == 0]
-        assert len(rests) >= 1, (
-            f"{case_name}/{model_tag}: {len(rests)} rests in output. "
-            f"Need >= 1 for breathing room."
-        )
-
-
-# -- Test 5: tempo matches expected BPM --
-
-
-class TestGeneratedRAGTempo:
-    """RAG output must use the target BPM, not the reference's original tempo."""
-
-    EXPECTED_BPM = {
-        "scooter": 150,
-        "mannelig": 132,
-        "zevendagen": 120,
-        "pain": 140,
-        "axelf": 118,
-        "bttf": 120,
-    }
-
-    @pytest.fixture(params=["mannelig", "scooter", "zevendagen", "pain", "axelf", "bttf"])
-    def case_name(self, request):
-        return request.param
-
-    @pytest.fixture(params=["rag-glm53", "rag-gemini", "rag-deepseek"])
-    def model_tag(self, request):
-        return request.param
-
-    def test_bpm_matches_target(self, case_name, model_tag):
-        rag_dir = _latest_rag_dir()
-        if rag_dir is None:
-            pytest.skip("No rag-ab results directory found")
-        json_path = rag_dir / case_name / f"{model_tag}.json"
-        if not json_path.exists():
-            pytest.skip(f"Not found: {json_path}")
-
-        data = json.loads(json_path.read_text())
-        expected = self.EXPECTED_BPM[case_name]
-        assert data["bpm"] == expected, (
-            f"{case_name}/{model_tag}: bpm={data['bpm']}, expected {expected}"
-        )
 
 
 # -- Test 6: rhythm quality --

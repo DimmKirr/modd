@@ -2,14 +2,14 @@
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Host-compiled test of the dock adapter's pure part (modd_dock.h).
 
-Compiles tests/dock_test.c with the host ``cc`` and runs it: header checks,
+Compiles tests/dock/dock_test.c with the host ``cc`` and runs it: header checks,
 CRC and relocation of a synthetic .dock image, no toolchain or hardware.
 """
-import subprocess
-import tempfile
 from pathlib import Path
 
 import pytest
+
+from c_harness import run_c_harness
 
 ROOT = Path(__file__).resolve().parents[2]
 ADAPTERS = ROOT / 'firmware' / 'adapters'
@@ -18,19 +18,7 @@ MODULES = ROOT / 'firmware' / 'upstream' / 'fm1-dock' / 'docs' / 'modules'
 
 
 def _run(args):
-    with tempfile.NamedTemporaryFile(suffix='', delete=False) as tmp:
-        exe = tmp.name
-    cmd = ['cc', '-std=c99', '-Wall', '-Wextra', '-Werror', '-Wno-unused-function',
-           '-O2', '-I', str(ADAPTERS), '-o', exe, str(SOURCE)]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-    if result.returncode != 0:
-        Path(exe).unlink(missing_ok=True)
-        pytest.fail(f'compilation failed:\n{result.stderr}')
-    result = subprocess.run([exe, *args], capture_output=True, text=True, timeout=60)
-    Path(exe).unlink(missing_ok=True)
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert 'all passed' in result.stdout
-    return result.stdout
+    return run_c_harness(SOURCE, includes=[ADAPTERS], args=args).stdout
 
 
 def test_dock_header_crc_relocation():

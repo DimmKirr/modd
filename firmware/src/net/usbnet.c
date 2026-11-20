@@ -263,19 +263,21 @@ static void usbnet_init(void)
 {
     usbnet_up = 0;
 #ifdef CONFIG_USB_NET_AUTO
-    usbnet_wanted = 1;
+    usbnet_allowed = 1;
 #else
-    usbnet_wanted = sys_settings.usb_net_on;
+    usbnet_allowed = sys_settings.usb_net_on;
 #endif
+    usbnet_wanted = (usbnet_allowed && eth_needs) ? 1 : 0;
 }
 
-static void usbnet_set_wanted(uint8_t on)
+static void usbnet_set_wanted(uint8_t on)       /* the USB NET setting */
 {
 #ifdef CONFIG_USB_NET_AUTO
     if (!on) return;
 #endif
-    usbnet_wanted = on;
-    modd_log(on ? "usbnet: wanted" : "usbnet: off");
+    usbnet_allowed = on;
+    usbnet_wanted = (on && eth_needs) ? 1 : 0;
+    modd_log(on ? "usbnet: allowed" : "usbnet: off");
 }
 
 #else /* !CONFIG_USB_NET */

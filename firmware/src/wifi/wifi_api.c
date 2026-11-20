@@ -17,6 +17,15 @@
 /* stored credentials for the connect sequence */
 static const char *wifi_cfg_ssid;
 static const char *wifi_cfg_pass;
+/* next automatic scan (autoscan / autojoin): the first one 2 s after the task starts, and wifi_init()
+ * sets it to "now", so a scan starts at once after the radio comes back */
+static uint32_t wifi_scan_next_ms = 2000u;
+static uint8_t wifi_join_need;      /* a join by hand took a net_need(); leaving the network gives it back */
+
+static void wifi_disconnect(void);
+#ifdef CONFIG_DOCK
+static uint8_t wifi_dock_logged;    /* "a module is running" is logged once per wait, not per poll */
+#endif
 
 static void wifi_init(void)
 {
@@ -54,17 +63,9 @@ static void wifi_init(void)
     wifi_lwip_set_mac(wifi_sta.our_mac);
     wifi_lwip_init();
 
-    /* weather: reset state machine */
-    weather_init();
-
-    /* LLM: reset state machine, configure proxy host */
-    llm_init();
-#ifdef CONFIG_LLM_PROXY_HOST
-    llm_set_proxy(CONFIG_LLM_PROXY_HOST);
-#endif
-
     wifi_cfg_ssid = 0;
     wifi_cfg_pass = 0;
+    wifi_scan_next_ms = wifi_sta_now_ms();
 
     /* diagnostic: confirm WiFi subsystem state after init */
     modd_log_int("wifi: init mac_sys=", (int32_t)WIFI_MAC_SYS_CTRL);
@@ -74,6 +75,39 @@ static void wifi_init(void)
     modd_log_int("wifi: init mac1=", (int32_t)WIFI_MAC_ADDR_DW1);
     modd_log_int("wifi: init sta_st=", (int32_t)wifi_sta.state);
     modd_log("wifi: init done");
+}
+
+/* Tear the radio down: the reverse of wifi_init(). Runs from wifi_poll() (the fixed context), after
+ * wifi_disconnect() has left the network (the deauth needs the radio). Order: interrupts first, so
+ * no ISR runs against a half-torn-down chip; then software state; then MAC, DMA, RF in the reverse
+ * order of wifi_init(). The netif stays added to lwIP (wifi_lwip_init() does not add it twice).
+ * Steps that the spec sheet does not describe are marked in the callee. */
+static void wifi_deinit(void)
+{
+    modd_log("wifi: deinit start");
+
+    wifi_sdio_quiesce();            /* ISR source off, driver refuses RX/TX/sweeps */
+    wifi_rtos_deinit();             /* deferred work and timers cancelled */
+    wifi_lwip_deinit();             /* DHCP stopped, netif down (kept added) */
+#ifdef CONFIG_WIFI_WPA
+    wifi_wpa_reset();               /* key material wiped */
+#endif
+    wifi_sta_deinit();              /* station state back to WIFI_STATE_OFF, scan results gone */
+    wifi_mac_deinit();              /* MAC RX/TX off, BSS table cleared */
+    wifi_sdio_deinit();             /* DMA stopped, WDMA clock gate off */
+    wifi_rf_deinit();               /* RF front end off, clock selects back */
+
+    wifi_cfg_ssid = 0;
+    wifi_cfg_pass = 0;
+    modd_log("wifi: deinit done");
+}
+
+/* wifi_need.c calls this when wifi_active changes. It does not touch the hardware: bring-up and
+ * tear-down run in wifi_poll(), one fixed context (the WiFi task, or the main loop without the
+ * scheduler), whichever task took the need or toggled the setting. */
+static void wifi_power(uint8_t on)
+{
+    (void)on;                       /* wifi_need_update() has logged the change */
 }
 
 static int wifi_scan(void (*cb)(const char *ssid, int rssi, int channel))
@@ -104,6 +138,12 @@ static int wifi_connect(const char *ssid, const char *password)
 
     wifi_cfg_ssid = ssid;
     wifi_cfg_pass = password;
+    /* a network joined by hand stays joined after its page closes: it holds a
+     * need until wifi_disconnect() (auto-join has the boot need, net_need.c) */
+    if (!wifi_join_need) {
+        wifi_join_need = 1;
+        net_need();
+    }
 
 #ifdef CONFIG_WIFI_WPA
     if (password) {
@@ -115,6 +155,11 @@ static int wifi_connect(const char *ssid, const char *password)
                       (const uint8_t *)ssid, slen,
                       wifi_sta.our_mac,
                       wifi_sta.results[idx].bssid);
+        /* the PMK derivation yields to other tasks: the radio may have gone down meanwhile */
+        if (!wifi_inited || wifi_sta.state == WIFI_STATE_OFF) {
+            wifi_disconnect();
+            return -1;
+        }
     }
 #endif
 
@@ -124,10 +169,16 @@ static int wifi_connect(const char *ssid, const char *password)
 static void wifi_disconnect(void)
 {
     modd_log("wifi: disconnect");
-    wifi_lwip_stop_dhcp();
-    wifi_sta_do_disconnect();
+    if (wifi_inited) {              /* radio down: nothing to leave, and no register may be touched */
+        wifi_lwip_stop_dhcp();
+        wifi_sta_do_disconnect();
+    }
     wifi_cfg_ssid = 0;
     wifi_cfg_pass = 0;
+    if (wifi_join_need) {
+        wifi_join_need = 0;
+        net_release();
+    }
 }
 
 static wifi_state_t wifi_get_state(void)
@@ -183,11 +234,10 @@ static void wifi_on_rx(const uint8_t *data, uint32_t len)
  * diagnostics for task debug:dump / debug:follow. */
 static void wifi_autoscan_poll(void)
 {
-    static uint32_t next_ms = 2000u;
     uint32_t now = wifi_sta_now_ms();
-    if (wifi_sta.state != WIFI_STATE_IDLE || (int32_t)(now - next_ms) < 0)
+    if (wifi_sta.state != WIFI_STATE_IDLE || (int32_t)(now - wifi_scan_next_ms) < 0)
         return;
-    next_ms = now + 15000u;
+    wifi_scan_next_ms = now + 15000u;
     modd_log("wifi: autoscan");
     wifi_scan(0);
 }
@@ -201,18 +251,15 @@ static void wifi_autoscan_poll(void)
  * does the scanning. */
 static void wifi_autojoin_poll(void)
 {
-    static uint32_t next_ms = 2000u;
     uint32_t now = wifi_sta_now_ms();
     if (wifi_sta.state != WIFI_STATE_IDLE || CONFIG_WIFI_SSID[0] == '\0')
         return;
-#ifdef CONFIG_SYS_MENU_NETWORK
     /* checked before the timer, so switching WiFi on scans straight away */
-    if (!sys_settings.wifi_on)
+    if (!wifi_active)
         return;
-#endif
-    if ((int32_t)(now - next_ms) < 0)
+    if ((int32_t)(now - wifi_scan_next_ms) < 0)
         return;
-    next_ms = now + 15000u;
+    wifi_scan_next_ms = now + 15000u;
     modd_log("wifi: scan to join");
     wifi_scan(0);
 }
@@ -296,6 +343,71 @@ static void wifi_wlctl0_probe_poll(void)
 }
 #endif
 
+/* Boot only: the bring-up branch of wifi_poll(), once, called from fm1_main() right after
+ * net_boot_needs(), on the main stack before the scheduler and before interrupts, timer 5 and audio
+ * are on (the ordering proven on hardware). Later activations (setting switched on, first need taken
+ * later, re-init after a deinit) come up in wifi_poll(). No CONFIG_DOCK check: a module cannot be
+ * running at boot. It does not poll. */
+static void wifi_boot_init(void)
+{
+    if (wifi_active && !wifi_inited) {
+        wifi_init();
+        wifi_inited = 1;
+    }
+}
+
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
+/* Experimental: on-demand power cycling via wifi_need.c (wifi_active / wifi_inited state machine).
+ * The deinit/reinit hardware cycle causes crash_pc=0x10804 — kept here for future fix. */
+static void wifi_poll(void)
+{
+    if (!wifi_active && !wifi_inited) {
+#ifdef CONFIG_DOCK
+        wifi_dock_logged = 0;
+#endif
+        return;
+    }
+    if (wifi_active && !wifi_inited) {
+#ifdef CONFIG_DOCK
+        if (dock_active) {
+            if (!wifi_dock_logged) {
+                wifi_dock_logged = 1;
+                modd_log("wifi: a module is running, not starting");
+            }
+            return;
+        }
+        wifi_dock_logged = 0;
+#endif
+        wifi_init();
+        wifi_inited = 1;
+        return;
+    }
+    if (!wifi_active) {
+        if (wifi_sta.state > WIFI_STATE_IDLE) {
+            uint8_t joining = wifi_sta.state >= WIFI_STATE_AUTH;
+            wifi_disconnect();
+            if (joining)
+                toast_status("WiFi off");
+        }
+        return;
+    }
+    wifi_defer_poll();
+    wifi_timer_poll();
+    wifi_sdio_poll_irq();
+    wifi_sta_poll();
+#ifdef CONFIG_WIFI_DEBUG_WLCTL0_PROBE
+    wifi_wlctl0_probe_poll();
+    wifi_wl0_retry_poll();
+#endif
+#ifdef CONFIG_WIFI_DEBUG_AUTOSCAN
+    wifi_autoscan_poll();
+#elif defined(CONFIG_WIFI_AUTOJOIN) && defined(CONFIG_WIFI_SSID)
+    wifi_autojoin_poll();
+#endif
+}
+#else
+/* Stable baseline: WiFi initialised once at boot, no runtime power cycling. The setting
+ * toggle only disconnects/reconnects the AP; the radio stays on. */
 static void wifi_poll(void)
 {
     wifi_defer_poll();
@@ -303,9 +415,6 @@ static void wifi_poll(void)
     wifi_sdio_poll_irq();
     wifi_sta_poll();
 #ifdef CONFIG_SYS_MENU_NETWORK
-    /* Settings > HW > WIFI switched off while joining or joined: leave the
-     * network now, not at the next boot. The radio stays initialised, so
-     * switching it back on joins again. */
     if (!sys_settings.wifi_on && wifi_sta.state >= WIFI_STATE_AUTH) {
         wifi_disconnect();
         toast_status("WiFi off");
@@ -321,6 +430,7 @@ static void wifi_poll(void)
     wifi_autojoin_poll();
 #endif
 }
+#endif
 
 #ifdef CONFIG_SCHED
 static void wifi_task(void)

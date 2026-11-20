@@ -32,6 +32,7 @@ struct llm_data {
 static struct llm_data llm_dat;
 static uint8_t  llm_state;
 static uint32_t llm_start_ms;
+static uint8_t llm_has_need;      /* a net_need() is held while a request is in flight */
 
 static char llm_proxy_host[48];
 static char llm_prompt_buf[192];
@@ -135,6 +136,7 @@ static int llm_generate(const char *prompt)
         llm_prompt_buf[i] = 0;
     }
 
+    if (!llm_has_need) { net_need(); llm_has_need = 1; }   /* held until the request ends */
     llm_state = LLM_FETCH;
     llm_start_ms = fm1_ms;
     llm_dat.error = 0;
@@ -143,6 +145,10 @@ static int llm_generate(const char *prompt)
 
 static void llm_poll(void)
 {
+    if (llm_has_need && llm_state != LLM_FETCH && llm_state != LLM_WAIT) {
+        llm_has_need = 0;
+        net_release();
+    }
     switch (llm_state) {
 
     case LLM_FETCH: {

@@ -31,7 +31,11 @@ struct wifi_buf {
     uint8_t  cloned;
 };
 
-static struct wifi_buf wifi_buf_pool[WIFI_BUF_POOL_COUNT];
+/* .pool, not .bss (zeroed at boot with .pool, modd.c, so every buffer starts free). Nothing
+ * calls wifi_buf_alloc() yet: the data path uses its own frame buffers (wifi_data.c). While
+ * that holds, nothing here may touch the pool, so the compiler drops it; the first caller
+ * brings back 25.4K of POOL (the audio arena shrinks by as much). */
+static struct wifi_buf wifi_buf_pool[WIFI_BUF_POOL_COUNT] __attribute__((section(".pool")));
 
 static struct wifi_buf *wifi_buf_alloc(uint32_t size, uint32_t flags)
 {
@@ -305,12 +309,21 @@ static void wifi_timer_poll(void)
 static void wifi_rtos_init(void)
 {
     uint32_t i;
-    for (i = 0; i < WIFI_BUF_POOL_COUNT; i++)
-        wifi_buf_pool[i].allocated = 0;
     wifi_defer_count = 0;
     wifi_carrier_state = 0;
     wifi_queue_active = 0;
     wifi_heap_ptr = 0;
+    for (i = 0; i < WIFI_DEFER_MAX; i++) {
+        wifi_defers[i].pending = 0;
+        wifi_defers[i].active = 0;
+    }
     for (i = 0; i < WIFI_TIMER_MAX; i++)
         wifi_timers[i].active = 0;
+}
+
+/* Radio off: cancel everything queued, so nothing runs against a powered-down chip and a later
+ * wifi_init() starts from the boot state. The same reset as wifi_rtos_init(). */
+static void wifi_rtos_deinit(void)
+{
+    wifi_rtos_init();
 }

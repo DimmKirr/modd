@@ -152,10 +152,19 @@ static void otg_poll(uint32_t now_ms)
         if (usb.config && usb.frame_same < OTG_FRAME_IDLE_THRESHOLD)
             should_switch = 0;
 #if defined(CONFIG_UDISK) || defined(CONFIG_USB_NET)
-        if (OTG_HOST_WANTED())
-            should_switch = 1;
-        else if (should_switch)
-            should_switch = 0;
+        /* A computer drives the port when it configured the device and its frames advance:
+         * then only an open USB disk (the user asked for it) takes the port. The network link
+         * is a standing wish (USB_NET_AUTO keeps it on): it waits until no computer drives the
+         * port, or `task flash` would find no FM-1 (tests/usb/usb_otg_presence_safety_test.py). */
+        {
+            int driven = usb.config && usb.frame_same < OTG_FRAME_IDLE_THRESHOLD;
+            if (udisk_active)
+                should_switch = 1;
+            else if (OTG_HOST_WANTED() && !driven)
+                should_switch = 1;
+            else
+                should_switch = 0;
+        }
 #endif
 
 otg_check_switch:

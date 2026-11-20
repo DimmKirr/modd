@@ -374,7 +374,7 @@ static void weather_poll(void)
 #endif
         path[pi] = 0;
 
-        if (http_get("api.open-meteo.com", path, weather_wx_cb, 0) == 0) {
+        if (http_get(CONFIG_WEATHER_HOST, path, weather_wx_cb, 0) == 0) {
             weather_state = WEATHER_WEATHER_WAIT;
         } else {
             weather_state = WEATHER_IDLE;

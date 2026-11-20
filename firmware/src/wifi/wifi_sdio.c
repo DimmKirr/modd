@@ -872,6 +872,41 @@ static void wifi_sdio_init(void)
     modd_log("wifi: sdio init done");
 }
 
+/* ---- tear-down (called from wifi_deinit(), wifi_api.c) ---- */
+
+/* First step of the tear-down: nothing may raise or serve a WiFi interrupt afterwards, and the
+ * driver stops touching the MAC. Interrupts are off while the sources are masked, so an ISR cannot
+ * run between two of the writes. */
+static void wifi_sdio_quiesce(void)
+{
+    wifi_sdio_state.initialized = 0;        /* wifi_sdio_poll_irq(), wifi_sdio_tx() and the DAP sweep refuse */
+    wifi_sdio_state.dma_active = 0;
+    wifi_sdio_claim();
+    /* SoC WiFi interrupt unmask WF_CON4 b0 cleared: the masking the vendor handler and the clock
+     * init use [SPECSHEET §4.2 0x14050, §7.11.9] */
+    WIFI_SOC_IRQ_EN &= ~1u;
+    /* MAC receive-notify source off: "0 again at shutdown" [SPECSHEET §4.2 MAC+0x328] */
+    WIFI_MAC_IRQ_EN = 0u;
+    /* inferred: reverse of init: the CPU-side enable of interrupt 52 that fm1_irq_attach() set */
+    fm1_irq_mask(FM1_IRQ_WIFI);
+    wifi_irq_pending = 0;
+    wifi_sdio_release();
+}
+
+/* After the MAC is off: stop the WDMA engine and gate its clock. Nothing of this is in the spec
+ * sheet; it only reverses wdma_init(). */
+static void wifi_sdio_deinit(void)
+{
+    uint32_t i;
+    /* inferred: reverse of init, not verified on hardware (wdma_init wrote WDMA_CTL = 0x10E37) */
+    WDMA_CTL = 0u;
+    /* inferred: reverse of init, not verified on hardware (wdma_init set bit 24 of 0x1404C) */
+    WDMA_CLK_GATE &= ~(1u << 24);
+    for (i = 0; i < sizeof(wifi_sdio_state); i++)
+        ((uint8_t *)&wifi_sdio_state)[i] = 0;
+    modd_log("wifi: sdio deinit");
+}
+
 /* ---- TX ---- */
 
 #ifdef CONFIG_WIFI_T19_TEST

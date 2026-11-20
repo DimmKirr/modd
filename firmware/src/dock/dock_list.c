@@ -77,8 +77,11 @@ static const char *dock_list_act2(uint32_t i)   /* OCT+ held on an installed mod
 static const char *dock_list_status(void)
 {
 #ifdef CONFIG_DOCK_DISK
-    if (!udisk_is_mounted())
+    if (!udisk_is_mounted()) {
+        if (!udisk_is_enabled() && dock_disk_n == 0)
+            return "DISK OFF: SETTINGS HW";
         return dock_disk_n ? "DISK OUT: LIST KEPT" : "INSERT USB DISK";
+    }
     if (dock_disk_n == 0)
         return "NO .DOCK ON DISK";
 #endif
@@ -88,7 +91,7 @@ static const char *dock_list_status(void)
 static void dock_list_open(void)
 {
 #ifdef CONFIG_DOCK_DISK
-    udisk_activate();
+    udisk_need();                               /* the list on screen needs the disk */
     dock_list_was_mounted = udisk_is_mounted() ? 1 : 0;
     if (dock_list_was_mounted)
         dock_disk_scan();
@@ -98,7 +101,7 @@ static void dock_list_open(void)
 static void dock_list_close(void)
 {
 #ifdef CONFIG_DOCK_DISK
-    udisk_deactivate();                         /* (dock_disk[] stays: the cache) */
+    udisk_release();                            /* (dock_disk[] stays: the cache) */
 #endif
 }
 

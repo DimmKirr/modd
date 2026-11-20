@@ -667,6 +667,11 @@ static void wifi_mac_init(void)
                 got_mac = 1;
             }
         }
+        /* a second init (radio back on) keeps the address the first one chose: the AP and the DHCP
+         * server know this station by it */
+        if (!got_mac && (wifi_mac_addr[0] | wifi_mac_addr[1] | wifi_mac_addr[2] |
+                         wifi_mac_addr[3] | wifi_mac_addr[4] | wifi_mac_addr[5]) != 0)
+            got_mac = 1;
         if (!got_mac) {
             /* locally-administered dev MAC: 02:FE:FM:10:xx:xx
              * Last two bytes from P33 reset source for per-unit variation */
@@ -725,6 +730,18 @@ static void wifi_mac_init(void)
 
 /* Write AP MAC to WCID slot 1 and clear its attribute to no-cipher.
  * Required before auth so EAPOL (data) frames are accepted. [SPECSHEET §15 T20] */
+/* Radio off: MAC RX and TX disabled (MAC_SYS_CTRL cleared: the same write that ends the MAC reset,
+ * SPECSHEET §7.4 step 6, "clear bits 0-3 (reset + TX_EN + RX_EN)"), scan table emptied so the
+ * pages stop listing access points. */
+static void wifi_mac_deinit(void)
+{
+    uint32_t i;
+    WIFI_MAC_SYS_CTRL = 0;
+    wifi_bss_count = 0;
+    for (i = 0; i < WIFI_MAX_BSS; i++)
+        wifi_bss_table[i].in_use = 0;
+}
+
 static void wifi_mac_set_wcid1(const uint8_t *mac)
 {
     uint32_t dw0 = (uint32_t)mac[0]

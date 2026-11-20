@@ -40,6 +40,16 @@ static uint8_t net_link_prio(struct netif *nif)
     return 0;
 }
 
+#ifdef CONFIG_USB_NET
+static uint8_t net_ethernet_up(void)
+{
+    struct netif *nif;
+    NETIF_FOREACH(nif)
+        if (netif_is_link_up(nif) && nif->ip_addr.addr && net_link_prio(nif) == 3) return 1;
+    return 0;
+}
+#endif
+
 static void net_elect_default(void)
 {
     struct netif *best = 0;
@@ -68,6 +78,7 @@ static void net_on_up(struct netif *nif)
             modd_log_ip("net: dns ", ip_2_ip4(d)->addr);
     }
     net_elect_default();
+    net_need_update();                  /* ethernet up: WiFi is not needed */
 #ifdef CONFIG_WEATHER
     weather_fetch_start();
 #endif
@@ -80,6 +91,7 @@ static void net_on_down(struct netif *nif)
 {
     (void)nif;
     net_elect_default();
+    net_need_update();                  /* ethernet gone: WiFi is needed again */
     /* No link left with an address: the DNS servers came with the lease
      * that just ended, and lwIP keeps them until a new lease overwrites
      * them. Clear them, so nothing shows or uses a resolver that is gone. */

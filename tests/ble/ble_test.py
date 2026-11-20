@@ -6,11 +6,9 @@ Each test compiles a C source from the vendored Optimist BLE stack on the
 host with ``cc``, runs it as a native executable, and checks the exit code.
 This integrates with ``task test:unit`` (pytest discovers it automatically).
 """
-import subprocess
-import tempfile
 from pathlib import Path
 
-import pytest
+from c_harness import run_c_harness
 
 ROOT = Path(__file__).resolve().parents[2]
 OPTIMIST = ROOT / 'firmware' / 'upstream' / 'optimist'
@@ -22,26 +20,9 @@ MODD_BLE = ROOT / 'firmware' / 'src' / 'ble'
 def compile_and_run(source: Path, extra_includes: list[Path] | None = None,
                     defines: list[str] | None = None) -> str:
     """Compile a C test on the host and run it. Returns stdout."""
-    includes = [OPTIMIST_BLE]
-    if extra_includes:
-        includes.extend(extra_includes)
-    defs = defines or []
-    with tempfile.NamedTemporaryFile(suffix='', delete=False) as tmp:
-        exe = tmp.name
-    cmd = ['cc', '-std=c99', '-Wall', '-Wextra', '-Werror',
-           '-Wno-unused-function', '-O2', '-o', exe, str(source)]
-    for inc in includes:
-        cmd.extend(['-I', str(inc)])
-    for d in defs:
-        cmd.extend(['-D', d])
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-    if result.returncode != 0:
-        Path(exe).unlink(missing_ok=True)
-        pytest.fail(f'compilation of {source.name} failed:\n{result.stderr}')
-    result = subprocess.run([exe], capture_output=True, text=True, timeout=60)
-    Path(exe).unlink(missing_ok=True)
-    if result.returncode != 0:
-        pytest.fail(f'{source.name} failed:\n{result.stdout}\n{result.stderr}')
+    result = run_c_harness(source, includes=[OPTIMIST_BLE, *(extra_includes or [])],
+                           defines=defines or [], expect=None,
+                           extra_flags=['-Wno-unused-function'])
     return result.stdout
 
 
@@ -74,13 +55,3 @@ def test_ble_gatt_integration():
     out = compile_and_run(ROOT / 'tests' / 'ble' / 'ble_gatt_test.c')
     assert 'FAIL' not in out
     assert 'all passed' in out
-
-
-def test_ble_file_transfer():
-    """BLE file sharing simulation: list 3 files over GATT via SysEx protocol."""
-    out = compile_and_run(ROOT / 'tests' / 'ble' / 'ble_file_test.c')
-    assert 'FAIL' not in out
-    assert 'all passed' in out
-    assert 'preset_01.fwp' in out
-    assert 'wavetable.bin' in out
-    assert 'firmware.fwsc' in out

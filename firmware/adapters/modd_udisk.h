@@ -29,8 +29,9 @@ static uint32_t udisk_scroll;
 static uint8_t  udisk_active;                /* never set: the disk cannot hold host mode */
 static void     udisk_init(void)  { udisk_mounted = 0; udisk_nentry = 0; udisk_cursor = 0; udisk_scroll = 0; udisk_cwd[0] = '/'; udisk_cwd[1] = 0; }
 static void     udisk_poll(void)  { (void)0; }
-static void     udisk_activate(void)   { (void)0; }
-static void     udisk_deactivate(void) { (void)0; }
+static int      udisk_need(void)       { return 0; }
+static void     udisk_release(void)    { (void)0; }
+static uint8_t  udisk_is_enabled(void) { return 0; }
 static int      udisk_opendir(const char *path) { (void)path; return -1; }
 static int      udisk_chdir(const char *name) { (void)name; return -1; }
 static int      udisk_go_up(void) { return -1; }

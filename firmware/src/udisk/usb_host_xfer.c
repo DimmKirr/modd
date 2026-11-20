@@ -7,6 +7,12 @@
 /* USB host transfer engine: register-level SIE EP0 control + bulk IN/OUT. */
 
 #define USB_XFER_TIMEOUT  500   /* ms, matches reference */
+/* A bulk packet's CSR is polled every USB_XFER_POLL_US. A full-speed 64-byte packet is on the
+ * wire in about 50 us; polling in 1 ms steps cost a whole millisecond per packet, which held
+ * USB ethernet and the USB disk to 64 bytes per ms (about 45 KB/s measured). fm1_delay_ms()
+ * busy-waits too, so the finer step blocks no longer; the timeout stays USB_XFER_TIMEOUT. */
+#define USB_XFER_POLL_US  10u
+#define USB_XFER_POLLS    (USB_XFER_TIMEOUT * (1000u / USB_XFER_POLL_US))
 #define USB_BULK_FS       0x20u /* bulk protocol (speed=00: use detected) */
 
 /* Poll CSR0 until want_set bits are set and want_clr bits are clear.
@@ -157,7 +163,7 @@ static int usb_bulk_out(uint8_t host_ep, uint8_t *dma, uint32_t max_packet,
         usb_host_sie_wr(SIE_TXCSR1, 0x01u);
         ok = 0;
         uint32_t errs = 0;
-        for (i = 0; i < USB_XFER_TIMEOUT; i++) {
+        for (i = 0; i < USB_XFER_POLLS; i++) {
             uint32_t csr = usb_host_sie_rd(SIE_TXCSR1);
             if (csr & 0x20u) {
                 usb_host_log_hex8("usb: txstall csr=", csr);
@@ -165,7 +171,7 @@ static int usb_bulk_out(uint8_t host_ep, uint8_t *dma, uint32_t max_packet,
             }
             if (csr & 0x04u) { errs++; usb_host_sie_wr(SIE_TXCSR1, 0x01u); continue; }
             if (!(csr & 0x01u)) { ok = 1; break; }
-            fm1_delay_ms(1);
+            fm1_delay_us(USB_XFER_POLL_US);
         }
         if (!ok) {
             usb_host_log_hex8("usb: txtmo csr=",
@@ -191,7 +197,7 @@ static int usb_bulk_in(uint8_t host_ep, uint8_t *dma, uint32_t max_packet,
         usb_host_sie_wr(SIE_RXTYPE, (uint32_t)(USB_BULK_FS | target_ep));
         usb_host_sie_wr(SIE_RXCSR1, 0x20u);
         ok = 0;
-        for (uint32_t t = 0; t < USB_XFER_TIMEOUT; t++) {
+        for (uint32_t t = 0; t < USB_XFER_POLLS; t++) {
             uint32_t csr = usb_host_sie_rd(SIE_RXCSR1);
             if (csr & 0x40u) {
                 usb_host_log_hex8("usb: rxstall csr=", csr);
@@ -202,7 +208,7 @@ static int usb_bulk_in(uint8_t host_ep, uint8_t *dma, uint32_t max_packet,
                 continue;
             }
             if (csr & 0x01u) { ok = 1; break; }
-            fm1_delay_ms(1);
+            fm1_delay_us(USB_XFER_POLL_US);
         }
         if (!ok) {
             usb_host_log_hex8("usb: rxtmo csr=",

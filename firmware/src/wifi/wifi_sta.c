@@ -12,6 +12,7 @@ static void wifi_wpa_init(const uint8_t *pass, uint32_t pass_len,
                           const uint8_t our_mac[6], const uint8_t ap_mac[6]);
 static void wifi_on_connected(void);
 static void wifi_sta_wpa_complete(void);
+static uint8_t wifi_is_active(void);            /* wifi_need.c: setting on and a need held */
 
 /* ---- scan result storage ---- */
 
@@ -689,6 +690,16 @@ static void wifi_sta_init(const uint8_t *mac)
 #endif
 }
 
+/* Radio off: station state back to the boot state (WIFI_STATE_OFF = 0), so wifi_scan() refuses and
+ * the pages show "off"; scan results, targets, timing and the pending WPA completion are dropped. */
+static void wifi_sta_deinit(void)
+{
+    wifi_sta_mset((uint8_t *)&wifi_sta, 0, sizeof wifi_sta);
+    wifi_sta_wpa_pending = 0;
+    wifi_sta_mset(wifi_sta_bssid, 0, sizeof wifi_sta_bssid);
+    modd_log("wifi: sta deinit");
+}
+
 static int wifi_sta_start_scan(void (*cb)(const char *ssid, int rssi, int channel))
 {
     if (wifi_sta.state != WIFI_STATE_IDLE) return -1;
@@ -888,11 +899,7 @@ static void wifi_sta_poll(void)
                 wifi_sta_t19_test();
 #endif
 #if defined(CONFIG_WIFI_AUTOJOIN) && defined(CONFIG_WIFI_SSID)
-                if (CONFIG_WIFI_SSID[0] != '\0'
-#ifdef CONFIG_SYS_MENU_NETWORK
-                    && sys_settings.wifi_on
-#endif
-                   ) {
+                if (CONFIG_WIFI_SSID[0] != '\0' && wifi_is_active()) {
                     modd_log("wifi: autojoin");
                     wifi_sta_set_state(WIFI_STATE_IDLE);
                     wifi_sta_start_connect(CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD);

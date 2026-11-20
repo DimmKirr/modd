@@ -35,6 +35,16 @@ def test_wifi_mutually_exclusive_with_ble(kconf):
     assert 'BLE' in dep_str, f'WIFI must depend on !BLE, got: {dep_str}'
 
 
+def test_wifi_requires_sys_menu(kconf):
+    """wifi_need.c / wifi_sta.c read sys_settings.wifi_on, which exists only with SYS_MENU."""
+    w = kconf.syms['WIFI']
+    assert 'SYS_MENU' in expr_str(w.direct_dep)
+    kconf.syms['INPUT'].set_value('y')
+    kconf.syms['SYS_MENU'].set_value('n')
+    assert w.set_value('y') is False or w.tri_value == 0, 'WIFI must not be y without SYS_MENU'
+    assert w.str_value == 'n'
+
+
 def test_wifi_sub_options_depend_on_wifi(kconf):
     for name in ['WIFI_LWIP', 'WIFI_WPA', 'WIFI_MIDI']:
         s = kconf.syms[name]

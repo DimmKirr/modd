@@ -104,6 +104,7 @@ def lib():
         c_char_p,
         c_char_p,
         c_int,
+        c_char_p,  # reasoning_effort (NULL = "none")
     ]
 
     # llm_parse_response
@@ -129,6 +130,7 @@ def lib():
         c_char_p,
         c_char_p,
         c_int,
+        c_char_p,  # reasoning_effort (NULL = "none")
         POINTER(LlmResult),
     ]
 
@@ -246,7 +248,7 @@ class TestBuildRequest:
     def test_basic_request(self, lib):
         buf = create_string_buffer(4096)
         n = lib.llm_build_request(
-            buf, 4096, b"gpt-4o-mini", b"You are helpful.", b"Hello", 100
+            buf, 4096, b"gpt-4o-mini", b"You are helpful.", b"Hello", 100, None
         )
         assert n > 0
         req = json.loads(buf.value)
@@ -259,7 +261,7 @@ class TestBuildRequest:
 
     def test_no_system_prompt(self, lib):
         buf = create_string_buffer(4096)
-        n = lib.llm_build_request(buf, 4096, b"gpt-4o-mini", None, b"Hi", 50)
+        n = lib.llm_build_request(buf, 4096, b"gpt-4o-mini", None, b"Hi", 50, None)
         assert n > 0
         req = json.loads(buf.value)
         assert len(req["messages"]) == 1
@@ -267,7 +269,7 @@ class TestBuildRequest:
 
     def test_empty_system_prompt(self, lib):
         buf = create_string_buffer(4096)
-        n = lib.llm_build_request(buf, 4096, b"gpt-4o-mini", b"", b"Hi", 50)
+        n = lib.llm_build_request(buf, 4096, b"gpt-4o-mini", b"", b"Hi", 50, None)
         assert n > 0
         req = json.loads(buf.value)
         assert len(req["messages"]) == 1
@@ -275,7 +277,7 @@ class TestBuildRequest:
     def test_json_escaping(self, lib):
         buf = create_string_buffer(4096)
         n = lib.llm_build_request(
-            buf, 4096, b"m", b"sys", b'quote "here" and\\back', 10
+            buf, 4096, b"m", b"sys", b'quote "here" and\\back', 10, None
         )
         assert n > 0
         req = json.loads(buf.value)
@@ -283,14 +285,14 @@ class TestBuildRequest:
 
     def test_newlines_escaped(self, lib):
         buf = create_string_buffer(4096)
-        n = lib.llm_build_request(buf, 4096, b"m", b"sys", b"line1\nline2", 10)
+        n = lib.llm_build_request(buf, 4096, b"m", b"sys", b"line1\nline2", 10, None)
         assert n > 0
         req = json.loads(buf.value)
         assert req["messages"][1]["content"] == "line1\nline2"
 
     def test_buffer_too_small(self, lib):
         buf = create_string_buffer(10)
-        n = lib.llm_build_request(buf, 10, b"model", b"sys", b"prompt", 100)
+        n = lib.llm_build_request(buf, 10, b"model", b"sys", b"prompt", 100, None)
         assert n == 0
 
 
@@ -399,6 +401,7 @@ class TestGenerate:
             b"You generate jazz chords.",
             b"Give me a ii-V-I-IV in Eb major",
             128,
+            None,
             byref(result),
         )
         assert rc == 0
@@ -417,6 +420,7 @@ class TestGenerate:
             b"sys",
             b"what scale fits Am?",
             64,
+            None,
             byref(result),
         )
         assert MockOpenRouterHandler.last_user_message == "what scale fits Am?"
@@ -432,6 +436,7 @@ class TestGenerate:
             b"sys",
             b"prompt",
             64,
+            None,
             byref(result),
         )
         assert rc == -1

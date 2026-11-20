@@ -150,8 +150,10 @@ static void ecm_set_carrier(uint8_t on)
             dhcp_network_changed_link_up(&ecm_netif);
         else
             netif_set_link_up(&ecm_netif);
-        if (ecm_netif.ip_addr.addr)
+        if (ecm_netif.ip_addr.addr) {
             net_elect_default();
+            net_need_update();          /* the lease is still valid: ethernet is up again */
+        }
     } else {
         netif_set_link_down(&ecm_netif);
         net_on_down(&ecm_netif);
@@ -483,10 +485,11 @@ static void ecm_init(void)
 {
     ecm_up = 0;
 #ifdef CONFIG_USB_NET_AUTO
-    ecm_wanted = 1;
+    ecm_allowed = 1;
 #else
-    ecm_wanted = sys_settings.usb_net_on;
+    ecm_allowed = sys_settings.usb_net_on;
 #endif
+    ecm_wanted = (ecm_allowed && eth_needs) ? 1 : 0;
 }
 
 static void ecm_set_wanted(uint8_t on)
@@ -494,8 +497,9 @@ static void ecm_set_wanted(uint8_t on)
 #ifdef CONFIG_USB_NET_AUTO
     if (!on) return;
 #endif
-    ecm_wanted = on;
-    modd_log(on ? "ecm: wanted" : "ecm: off");
+    ecm_allowed = on;
+    ecm_wanted = (on && eth_needs) ? 1 : 0;
+    modd_log(on ? "ecm: allowed" : "ecm: off");
 }
 
 #else /* !CONFIG_USB_NET_ECM */

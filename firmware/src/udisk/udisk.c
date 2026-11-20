@@ -4,9 +4,26 @@
  * listing for the file browser page. */
 
 static FATFS udisk_fs;
+/* When the disk is used: the DISK setting allows it (udisk_enabled, a lock: off = the port never
+ * goes host for a disk) and somebody needs it right now (udisk_needs: a page while it is open, a
+ * copy while it runs). Both together are udisk_active, which holds the port in host mode
+ * (modd_otg.h), lets the hub and enumeration code set the drive up, and lets udisk_poll() mount.
+ * With no need left the port goes back to device mode, so USB-MIDI and SysEx work again.
+ * A need only ever comes from something the user opened or started: nothing takes one at boot. */
+static uint8_t udisk_enabled = 1;
+static uint8_t udisk_needs;
 static uint8_t udisk_active;
 static uint8_t udisk_is_active(void) { return udisk_active; }
+static uint8_t udisk_is_enabled(void) { return udisk_enabled; }
 static void udisk_fmt_size(char *buf, uint32_t bytes);
+
+static void udisk_update(void)
+{
+    uint8_t on = (udisk_enabled && udisk_needs) ? 1 : 0;
+    if (on == udisk_active) return;
+    udisk_active = on;                          /* (the unmount is udisk_poll's, in the USB task) */
+    modd_log(on ? "udisk: activate" : "udisk: deactivate");
+}
 
 static void udisk_init(void)
 {
@@ -14,29 +31,32 @@ static void udisk_init(void)
     udisk_nentry = 0;
     udisk_cursor = 0;
     udisk_scroll = 0;
+    udisk_needs = 0;
     udisk_active = 0;
     udisk_cwd[0] = '/';
     udisk_cwd[1] = 0;
 }
 
-static void udisk_activate(void)
+/* Take / give back a need. Returns 0 when the DISK setting is off: the need is still counted, so
+ * every udisk_need() pairs with one udisk_release(), and the disk comes up if the setting is
+ * turned on meanwhile. */
+static int udisk_need(void)
 {
-    if (udisk_active) return;
-    udisk_active = 1;
-    modd_log("udisk: activate");
+    if (udisk_needs < 255u) udisk_needs++;
+    udisk_update();
+    return udisk_enabled;
 }
 
-static void udisk_deactivate(void)
+static void udisk_release(void)
 {
-    if (!udisk_active) return;
-    if (udisk_mounted) {
-        f_mount(0, "", 0);
-        udisk_mounted = 0;
-        udisk_nentry = 0;
-        modd_log("udisk: unmounted");
-    }
-    udisk_active = 0;
-    modd_log("udisk: deactivate");
+    if (udisk_needs) udisk_needs--;
+    udisk_update();
+}
+
+static void udisk_set_enabled(uint8_t on)       /* the DISK setting (modd_sys_menu.h, and at boot) */
+{
+    udisk_enabled = on ? 1 : 0;
+    udisk_update();
 }
 
 static int udisk_opendir(const char *path);
@@ -58,7 +78,15 @@ static void udisk_try_mount(void)
 
 static void udisk_poll(void)
 {
-    if (!udisk_active) return;
+    if (!udisk_active) {
+        if (udisk_mounted) {                    /* the last need went, or the setting was turned off */
+            f_mount(0, "", 0);
+            udisk_mounted = 0;
+            udisk_nentry = 0;
+            modd_log("udisk: unmounted");
+        }
+        return;
+    }
     if (!udisk_mounted && uhost.state == UHOST_MSC_READY)
         udisk_try_mount();
     if (udisk_mounted && uhost.state == UHOST_DISCONNECTED) {
@@ -188,17 +216,22 @@ static int udisk_list_enter(uint32_t i)
 }
 
 static int udisk_list_up(void) { return udisk_go_up(); }
-static const char *udisk_list_status(void) { return udisk_mounted ? 0 : "No USB Disk"; }
+static const char *udisk_list_status(void)
+{
+    if (udisk_mounted) return 0;
+    return udisk_enabled ? "No USB Disk" : "USB Disk Off";
+}
 static const char *udisk_list_title(void) { return udisk_cwd; }
 
-static void udisk_list_open(void)
+static void udisk_list_open(void)                /* the list on screen needs the disk */
 {
+    udisk_need();
     udisk_list_was_mounted = udisk_mounted;
     if (udisk_mounted)
         udisk_opendir(udisk_cwd);
 }
 
-static void udisk_list_close(void) { }
+static void udisk_list_close(void) { udisk_release(); }
 
 static int udisk_list_poll(void)
 {
