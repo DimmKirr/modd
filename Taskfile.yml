@@ -57,14 +57,24 @@ tasks:
     # One checksum per defconfig: the label names the fingerprint file under .task/checksum/, and
     # generates points at that defconfig's package. Without them, building one defconfig made
     # every other one "up to date" while its build/<defconfig>/modd.fwsc was still old.
-    label: 'build:live:{{.DEFCONFIG}}{{.TC_SUFFIX}}'
+    label: 'build:live:{{.DEFCONFIG}}{{._TC}}'
     # The JieLi SDK stays a dependency in both modes: build.py takes one object out of its cpu.a.
-    deps: [fm1-platform:download:sdk, fm1-platform:download:toolchain, vendor:ensure, toolchain:open:ensure]
+    deps:
+      - fm1-platform:download:sdk
+      - fm1-platform:download:toolchain
+      - vendor:ensure
+      - task: toolchain:open:ensure
+        vars: { OPEN: '{{.OPEN}}' }
     vars:
       # The defconfig this run builds: the name after --defconfig in the arguments
       # ("--defconfig name" or "--defconfig=name"), modd when there is none (.config).
       DEFCONFIG: '{{regexReplaceAll "^--defconfig[= ]+" (regexFind "--defconfig[= ]+[A-Za-z0-9_.-]+" .CLI_ARGS) "" | default "modd"}}'
-      # TC_SUFFIX (global var) keeps the open toolchain's checksum and package apart from JieLi's.
+      # The toolchain of this build: OPEN (1 or 0) when the calling task passes it (the emulator
+      # tasks in configs/Taskfile.yml pass 1), otherwise the shell's USE_OPEN_TOOLCHAIN. A calling
+      # task's env block does not reach this task, so the choice has to arrive as a variable.
+      # _TC keeps the open toolchain's checksum and package apart from JieLi's.
+      _OPEN: '{{.OPEN | default .USE_OPEN}}'
+      _TC: '{{if eq ._OPEN "1"}}-open{{end}}'
     env:
       JIELI_TOOLCHAIN: '{{env "JIELI_TOOLCHAIN" | default (printf "%s/.fm1-toolchain/toolchain" .HOME)}}'
       AC79_SDK: '{{env "AC79_SDK" | default (printf "%s/.fm1-toolchain/AC79_SDK" .HOME)}}'
@@ -85,7 +95,7 @@ tasks:
       - .config
       - .env
     generates:
-      - 'build/{{.DEFCONFIG}}{{.TC_SUFFIX}}/modd.fwsc'
+      - 'build/{{.DEFCONFIG}}{{._TC}}/modd.fwsc'
     method: checksum
     preconditions:
       # The Taskfile's paths and build.py must agree on the toolchain; only 0 and 1 mean something.
@@ -96,15 +106,15 @@ tasks:
       - sh: 'test "{{.USE_OPEN_TOOLCHAIN | default .USE_OPEN}}" = "$USE_OPEN_TOOLCHAIN"'
         msg: "Set USE_OPEN_TOOLCHAIN in the environment (USE_OPEN_TOOLCHAIN=0 task build), not after the task name."
     cmds:
-      - uv run --quiet python tools/build/build.py {{.CLI_ARGS}}
+      - USE_OPEN_TOOLCHAIN={{._OPEN}} uv run --quiet python tools/build/build.py {{.CLI_ARGS}}
 
   toolchain:open:ensure:
-    desc: Internal. Installs the open toolchain unless USE_OPEN_TOOLCHAIN=0 (JieLi) was asked for
+    desc: Internal. Installs the open toolchain unless the build is a JieLi one
     internal: true
     silent: true
     status:
-      # Passes (task skipped) for a JieLi build (USE_OPEN_TOOLCHAIN=0).
-      - test "$USE_OPEN_TOOLCHAIN" != 1
+      # Passes (task skipped) for a JieLi build: OPEN from build:live, else the shell's choice.
+      - test "{{.OPEN | default .USE_OPEN}}" != 1
     cmds:
       - task: toolchain:open:download
 

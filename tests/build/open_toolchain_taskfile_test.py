@@ -42,8 +42,30 @@ def test_download_task_pins_a_version():
 
 def test_build_live_installs_open_toolchain_only_through_the_guarded_task():
     ensure = TASKFILE.split('  toolchain:open:ensure:')[1].split('\n  toolchain:open:download:')[0]
-    assert 'test "$USE_OPEN_TOOLCHAIN" != 1' in ensure
-    assert 'toolchain:open:ensure' in TASKFILE.split('  build:live:')[1].split('deps:')[1].split('\n')[0]
+    assert 'test "{{.OPEN | default .USE_OPEN}}" != 1' in ensure
+    deps = TASKFILE.split('  build:live:')[1].split('\n    deps:')[1].split('\n    vars:')[0]
+    assert "- task: toolchain:open:ensure\n        vars: { OPEN: '{{.OPEN}}' }" in deps
+    assert 'toolchain:open:download' not in deps
+
+
+def test_build_live_builds_with_the_toolchain_its_caller_names():
+    """An emulator task asks for the open toolchain with OPEN (its env block does not reach
+    build:live): the checksum label, the package path and build.py's environment must all
+    follow that one value, or `task test:api` tests a package it did not build."""
+    live = TASKFILE.split('  build:live:')[1].split('\n  toolchain:open:ensure:')[0]
+    assert "_OPEN: '{{.OPEN | default .USE_OPEN}}'" in live
+    assert """_TC: '{{if eq ._OPEN "1"}}-open{{end}}'""" in live
+    assert "label: 'build:live:{{.DEFCONFIG}}{{._TC}}'" in live
+    assert "- 'build/{{.DEFCONFIG}}{{._TC}}/modd.fwsc'" in live
+    assert '- USE_OPEN_TOOLCHAIN={{._OPEN}} uv run --quiet python tools/build/build.py {{.CLI_ARGS}}' in live
+    build = CONFIGS.split('  _build:')[1].split('  _flash:')[0]
+    assert "OPEN: '{{.OPEN}}'" in build
+    test_api = CONFIGS.split('  _test:api:')[1].split('  build:modd:')[0]
+    assert "vars: { DEFCONFIG: '{{.DEFCONFIG}}', OPEN: '{{.OPEN}}' }" in test_api
+    emu_open = """OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'"""
+    for task in ('  build:modd_emu:', '  test:modd_emu:api:', '  test:modd_emu:api:wifi:'):
+        body = CONFIGS.split(task)[1].split('\n\n')[0]
+        assert emu_open in body, f'{task.strip()} does not pass OPEN'
 
 
 @pytest.mark.parametrize('text', [TASKFILE, CONFIGS], ids=['root', 'configs'])
