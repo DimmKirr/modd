@@ -20,6 +20,11 @@ done" when the radio comes up, "wifi: deinit start" / "wifi: deinit done" when i
 Each class needs its own emulator flags and sets them itself; when FM1_API_EMU_FLAGS
 names flags without them, that class is skipped.
 
+wifi_need.c's need tracking is compiled only with CONFIG_WIFI_IN_SHARED_POOL; without it the
+radio comes up at boot when the setting is on and stays up (no "wifi: activate" /
+"wifi: deactivate"). TestWifiOffOn and TestWifiEthernet test the need tracking and are skipped
+on a firmware built without that symbol (modd_emu has it off).
+
 Run: build/modd_emu/modd.fwsc (task modd:build:modd_emu) then
     pytest tests/wifi/api_wifi_need_test.py -v
 """
@@ -43,6 +48,15 @@ def _env_flags():
     return os.environ.get('FM1_API_EMU_FLAGS', '').split()
 
 
+def _built_with(symbol):
+    """Whether the firmware under test has CONFIG_<symbol>: read from the gen/config.h beside its
+    package. None when there is no such file (a firmware not built here)."""
+    cfg = api_fwsc().parent / 'gen' / 'config.h'
+    if not cfg.is_file():
+        return None
+    return re.search(rf'^#define CONFIG_{symbol}\b', cfg.read_text(), re.M) is not None
+
+
 def _has(flags, *wanted):
     return all(w in flags for w in wanted)
 
@@ -51,12 +65,16 @@ class WifiNeedCase(ApiTestCase):
     CDP = True
     NEEDS = ()          # flags the class needs when FM1_API_EMU_FLAGS replaces EMU_FLAGS
     FORBIDS = ()
+    NEEDS_CONFIG = None # a Kconfig symbol the firmware must be built with
 
     @classmethod
     def setUpClass(cls):
         flags = _env_flags()
         if os.environ.get('RPC_HOST'):
             raise unittest.SkipTest('needs its own fm1-live with --cdp, not RPC_HOST')
+        if cls.NEEDS_CONFIG and _built_with(cls.NEEDS_CONFIG) is False:
+            raise unittest.SkipTest(f'needs a firmware built with CONFIG_{cls.NEEDS_CONFIG} '
+                                    f'({api_fwsc()} is not)')
         if flags and (not _has(flags, *cls.NEEDS) or any(f in flags for f in cls.FORBIDS)):
             raise unittest.SkipTest(f'needs fm1-live flags {" ".join(cls.EMU_FLAGS)}; '
                                     f'FM1_API_EMU_FLAGS is "{" ".join(flags)}"')
@@ -138,6 +156,7 @@ class TestWifiOffOn(WifiNeedCase):
     EMU_FLAGS = ('--wifi', 'oss', '--net', 'internet')
     NEEDS = ('--wifi', 'oss')
     FORBIDS = ('ethernet',)
+    NEEDS_CONFIG = 'WIFI_IN_SHARED_POOL'
 
     @classmethod
     def setUpClass(cls):
@@ -250,6 +269,7 @@ class TestWifiEthernet(WifiNeedCase):
 
     EMU_FLAGS = ('--usb', 'ethernet', '--wifi', 'oss', '--net', 'internet')
     NEEDS = ('ethernet', '--wifi', 'oss')
+    NEEDS_CONFIG = 'WIFI_IN_SHARED_POOL'
 
     @classmethod
     def setUpClass(cls):
