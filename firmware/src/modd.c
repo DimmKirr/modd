@@ -332,16 +332,16 @@ static void fault_hex(uint32_t y, const char *tag, uint32_t v)
 static void fm1_fault(const fm1_crash_t *c)
 {
     lcd_fill(0, 0, 240, 240, 0xF800);
-    boot_text(60, 100, "FAULT", 0xFFFF, 0xF800);
-    /* What a photo of the screen needs to find the fault in modd.map: this loop never
-     * resets, and the crash record in .noinit is lost when the power is cycled. */
-    fault_hex(130, "PC ", c->pc);
-    fault_hex(142, "RA ", c->rets);
-    fault_hex(154, "SP ", c->sp);
-    fault_hex(166, "VEC", c->vec);
-    fault_hex(178, "MS ", c->uptime_ms);
-    boot_text_1x(196, CONFIG_FIRMWARE_VERSION, 0xFFFF, 0xF800);
-    boot_text_1x(208, "clang " FAULT_STR(__clang_major__), 0xFFFF, 0xF800);
+    boot_text(60, 86, "FAULT", 0xFFFF, 0xF800);
+    fault_hex(116, "PC ", c->pc);
+    fault_hex(128, "RA ", c->rets);
+    fault_hex(140, "SP ", c->sp);
+    fault_hex(152, "VEC", c->vec);
+    fault_hex(164, "DBG", c->dbg);
+    fault_hex(176, "EMU", c->emu);
+    fault_hex(188, "MS ", c->uptime_ms);
+    boot_text_1x(204, CONFIG_FIRMWARE_VERSION, 0xFFFF, 0xF800);
+    boot_text_1x(216, "clang " FAULT_STR(__clang_major__), 0xFFFF, 0xF800);
     lcd_sync();
     for (;;)
         fm1_wdt_feed();
@@ -997,6 +997,19 @@ void fm1_timer5_irq(void)
 {
     uint32_t t0 = fm1_ticks();
     *(volatile uint32_t *)0x10900u |= 0x4000u;  /* fm1_timer5_ack */
+    /* Stack canary: check first word of each guard band every tick (10 kHz).
+     * A clobbered canary means the stack overflowed into the guard band.
+     * Log once and spin — the fault screen shows the canary message. */
+    if (*(volatile uint32_t *)(uintptr_t)_guard0 != 0xDEAD0001u) {
+        modd_log("CANARY: user stack overflow at _guard0");
+        modd_log_int("  guard0[0]=", (int32_t)*(volatile uint32_t *)(uintptr_t)_guard0);
+        for (;;) ;
+    }
+    if (*(volatile uint32_t *)(uintptr_t)_guard1 != 0xDEAD0002u) {
+        modd_log("CANARY: system stack overflow at _guard1");
+        modd_log_int("  guard1[0]=", (int32_t)*(volatile uint32_t *)(uintptr_t)_guard1);
+        for (;;) ;
+    }
 #ifdef CONFIG_INPUT
     fm1_input_tick();
 #endif
@@ -1294,16 +1307,6 @@ static void fm1_main(void)
     modd_debug_init();
     modd_log_init();
     modd_log("modd boot");
-    if (fm1_crash.magic == FM1_CRASH_MAGIC) {
-        modd_log("PREV CRASH:");
-        modd_log_int("  pc=", (int32_t)fm1_crash.pc);
-        modd_log_int("  rets=", (int32_t)fm1_crash.rets);
-        modd_log_int("  sp=", (int32_t)fm1_crash.sp);
-        modd_log_int("  vec=", (int32_t)fm1_crash.vec);
-        modd_log_int("  ms=", (int32_t)fm1_crash.uptime_ms);
-        modd_log_int("  count=", (int32_t)fm1_crash.count);
-        modd_log_int("  early=", (int32_t)fm1_crash.early);
-    }
     modd_log(modd_manifest);
     MODD_MANIFEST_ANCHOR();
     modd_log("lcd: init OK");
@@ -1509,7 +1512,7 @@ static void fm1_main(void)
     wifi_boot_init();       /* boot: radio up here, main stack, interrupts off */
 #else
     if (sys_settings.wifi_on)
-        wifi_init();        /* stable baseline: radio up once if the setting is on */
+        wifi_init();
 #endif
 #endif
 #ifdef CONFIG_WIFI_NONFREE
@@ -1550,6 +1553,10 @@ static void fm1_main(void)
         *(volatile uint32_t *)0x10900u = 0x4019u;   /* T5 CON: enable */
     }
     modd_log("timer5: 10kHz ms clock");
+#ifdef CONFIG_HAL_GUARD_MELODEE
+    fm1_guard_lock_top();
+    modd_log("guard: hw guards armed");
+#endif
 
 #if defined(CONFIG_UI_FELUCCA)
     fsh_register_pages();
@@ -1571,7 +1578,7 @@ static void fm1_main(void)
     }
 #else
     if (sys_settings.wifi_on) {
-        static uint32_t wifi_stack[1024] __attribute__((section(".pool")));
+        static uint32_t wifi_stack[1536] __attribute__((section(".pool")));
         sched_create(wifi_task, wifi_stack, sizeof wifi_stack);
         modd_log("sched: wifi task created");
     }
@@ -1778,5 +1785,14 @@ void fm1_cstart(void)
         *d = *s;
     for (s = _audio_load, d = _audio_start; d < _audio_end; s++, d++)
         *d = *s;
+    /* Paint stack guard bands with a canary pattern so the timer5 ISR can detect overflow.
+     * _guard0 is 256 bytes below the user stack; _guard1 is 256 bytes below the system stack. */
+    for (d = (uint32_t *)(uintptr_t)_guard0; d < (uint32_t *)(uintptr_t)_ustack_lo; d++)
+        *d = 0xDEAD0001u;
+    for (d = (uint32_t *)(uintptr_t)_guard1; d < (uint32_t *)(uintptr_t)_sstack_lo; d++)
+        *d = 0xDEAD0002u;
+#ifdef CONFIG_HAL_GUARD_MELODEE
+    fm1_guard_enable(FM1_GUARD_WRITE | FM1_GUARD_PC);
+#endif
     fm1_main();
 }
