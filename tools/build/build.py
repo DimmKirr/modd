@@ -45,8 +45,8 @@ FW = ROOT / 'firmware'
 BUILD = ROOT / 'build'
 OUT = BUILD  # overridden per defconfig in main()
 
-# The default toolchain: the open pi32v2 LLVM (github.com/jvitkauskas/pi32v2-llvm releases).
-# Only USE_OPEN_TOOLCHAIN=0 selects JieLi's clang 4.0.1 (rule in fm1_paths.py).
+# JieLi clang 4.0.1 is the default. USE_OPEN_TOOLCHAIN=1 selects the open pi32v2 LLVM
+# (github.com/jvitkauskas/pi32v2-llvm releases); the Taskfiles set it for emulator defconfigs.
 OPEN = open_toolchain()
 # Fallback when OPEN_TOOLCHAIN is unset (the Taskfile always sets it from OPEN_TOOLCHAIN_VERSION,
 # the pin; keep this tag equal to it).

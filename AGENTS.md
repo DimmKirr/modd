@@ -11,10 +11,10 @@ modd is a modular firmware framework for the M-VAVE FM-1 synthesizer (JieLi AC79
 Kconfiglib-based configuration. All commands go through [Taskfile](https://taskfile.dev), which wraps the JieLi toolchain env vars (`JIELI_TOOLCHAIN`, `AC79_SDK`) automatically:
 
 ```
-task build                              # build modd firmware (alias for build:live)
+task build                              # build modd firmware with JieLi (default for hardware)
 task build -- --defconfig modd_emu      # build a specific defconfig from configs/
-USE_OPEN_TOOLCHAIN=0 task build -- --defconfig modd_emu  # JieLi's compiler instead of the default open pi32v2 LLVM toolchain; output in build/modd_emu/
-task modd:build:modd_emu                # same, via per-defconfig task
+task modd:build:modd_emu                # same, via per-defconfig task (emulator defconfigs default to the open toolchain)
+USE_OPEN_TOOLCHAIN=1 task build         # force the open pi32v2 LLVM toolchain; output in build/modd-open/
 task modd:test:modd_emu:api             # build + API-test a specific defconfig
 task build:live                         # build with source-change caching (the real build target)
 task flash                              # build if sources or .env changed, then flash over USB-MIDI
@@ -163,7 +163,7 @@ tools/
 ## Toolchain
 
 - **Compiler**: JieLi clang 4.0.1 for pi32v2 (proprietary target, x86-64 binary). The build/test environment must have **one of**: (1) x86-64 architecture (native), (2) `qemu-x86_64` (user-mode emulation), or (3) Rosetta/binfmt_misc (Apple-silicon VMs). Runner selection is automatic: native on x86-64 Linux; on other Linux, `task build` tests the ld.so runner with an actual compile and falls back to `qemu-x86_64` if it segfaults; otherwise Docker (macOS, or `JIELI_DOCKER=1`). The vendor build shim (`.scratch/tools/vendor-build/tc-shim.sh`) follows the same logic. The non-native Linux runners need x86-64 glibc/libstdc++, looked up in this order: `JIELI_X86_GLIBC`/`JIELI_X86_STDCPP` (the `flake.nix` dev shell exports both on aarch64), `~/.fm1-toolchain/x86libs`, then the first match in the nix store.
-- **Two toolchains**: `task build` uses the open pi32v2 LLVM toolchain by default (clang and `ld.lld`, `jvitkauskas/pi32v2-llvm`, release pinned by `OPEN_TOOLCHAIN_VERSION` in `Taskfile.yml`, native binaries, no runner) and writes to `build/<defconfig>-open/`. `USE_OPEN_TOOLCHAIN=0` selects JieLi clang 4.0.1 and `build/<defconfig>/`; CI and releases use it. Paths in this file written as `build/<defconfig>/` mean the directory of the toolchain in use. Flashing an open-toolchain image needs `OPEN_TOOLCHAIN_FLASH_OK=1`: the open build boots on a real FM-1 (2026-11-20), but that day's source faulted with both compilers and the hardware smoke checks are not done. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#toolchains-open-default-and-jieli).
+- **Two toolchains**: Hardware defconfigs (modd, felucca) default to JieLi clang 4.0.1 (x86-64 binary, `build/<defconfig>/`). Emulator defconfigs (modd_emu) default to the open pi32v2 LLVM toolchain (`jvitkauskas/pi32v2-llvm`, clang + `ld.lld`, native binaries, `build/<defconfig>-open/`; release pinned by `OPEN_TOOLCHAIN_VERSION` in `Taskfile.yml`). `USE_OPEN_TOOLCHAIN=1` or `=0` in the shell overrides either default. CI and releases use JieLi. Paths in this file written as `build/<defconfig>/` mean the directory of the toolchain in use. Flashing an open-toolchain image needs `OPEN_TOOLCHAIN_FLASH_OK=1`: the open build boots on a real FM-1 (2026-11-20) but hardware smoke checks are not done. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#toolchains-open-default-and-jieli).
 - **Finding the toolchain**: `task build` sets `JIELI_TOOLCHAIN` and `AC79_SDK` automatically and downloads the toolchain if missing. In CI, `dimmkirr/setup-fm1-toolchain@v1` handles the same setup.
 - **Toolchain paths** (check in order):
   1. `$JIELI_TOOLCHAIN` / `$AC79_SDK` env vars (if set, used as-is)

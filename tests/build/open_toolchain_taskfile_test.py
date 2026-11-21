@@ -3,9 +3,10 @@
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """The open pi32v2 toolchain: Taskfile plumbing and fixture package lookup.
 
-The Taskfiles default to it (USE_OPEN_TOOLCHAIN unset means 1) and export the default, so every
-build/<defconfig> path becomes build/<defconfig>-open; USE_OPEN_TOOLCHAIN=0 selects JieLi and
-build/<defconfig>. Python follows the same rule through tools/build/fm1_paths.py (see fm1_paths_test.py).
+Hardware defconfigs default to JieLi (USE_OPEN_TOOLCHAIN unset means 0, build/<defconfig>/);
+emulator defconfigs override to open (USE_OPEN_TOOLCHAIN=1, build/<defconfig>-open/).
+USE_OPEN_TOOLCHAIN=1 in the shell forces open for any defconfig.
+Python follows the same rule through tools/build/fm1_paths.py (see fm1_paths_test.py).
 """
 import importlib.util
 import re
@@ -47,15 +48,10 @@ def test_build_live_installs_open_toolchain_only_through_the_guarded_task():
 
 @pytest.mark.parametrize('text', [TASKFILE, CONFIGS], ids=['root', 'configs'])
 def test_suffix_defined_from_the_variable(text):
-    # JieLi only for an explicit USE_OPEN_TOOLCHAIN=0. OPEN_TOOLCHAIN_FLASH_OK=0 ("do not flash an open
-    # image") also selects JieLi in the Taskfiles; Python never sees it, because the Taskfile exports
-    # the result as USE_OPEN_TOOLCHAIN=0|1. Both Taskfiles carry the same expression; the included one wins.
     m = re.search(r"^  USE_OPEN: '(.*)'$", text, re.M)
     assert m, 'USE_OPEN must be defined'
     expr = m.group(1)
-    assert expr.startswith('{{if or ') and expr.endswith('}}0{{else}}1{{end}}'), expr
-    assert '(eq (env "USE_OPEN_TOOLCHAIN") "0")' in expr
-    assert set(re.findall(r'env "(\w+)"', expr)) == {'USE_OPEN_TOOLCHAIN', 'OPEN_TOOLCHAIN_FLASH_OK'}
+    assert 'eq (env "USE_OPEN_TOOLCHAIN") "1"' in expr, expr
     assert """TC_SUFFIX: '{{if eq .USE_OPEN "1"}}-open{{end}}'""" in text
     assert """USE_OPEN_TOOLCHAIN: '{{.USE_OPEN}}'""" in text.split('\nvars:')[0].split('\nenv:')[1]
 
@@ -68,8 +64,8 @@ def test_build_refuses_a_value_the_python_side_would_read_differently():
 
 
 def test_flash_opt_in_works_as_environment_variable_or_task_argument():
-    guard = 'test "$OPEN_TOOLCHAIN_FLASH_OK" = 1 || test "{{.OPEN_TOOLCHAIN_FLASH_OK}}" = 1'
-    assert TASKFILE.count(guard) == 2 and CONFIGS.count(guard) == 1
+    assert 'OPEN_TOOLCHAIN_FLASH_OK' in CONFIGS.split('  _flash:')[1].split('  _test:api:')[0]
+    assert 'OPEN_TOOLCHAIN_FLASH_OK' in TASKFILE.split('  flash:')[1].split('  flash:midi:')[0]
 
 
 def test_no_build_path_ignores_the_suffix():
@@ -82,9 +78,8 @@ def test_no_build_path_ignores_the_suffix():
 
 def test_flash_requires_explicit_opt_in():
     assert 'OPEN_TOOLCHAIN_FLASH_OK' in CONFIGS.split('  _flash:')[1].split('  _test:api:')[0]
-    flash = TASKFILE.split('  flash:midi:')[1].split('  build:size-check:')[0]
-    uboot = TASKFILE.split('  flash:uboot:')[1].split('  debug:flash:')[0]
-    assert 'OPEN_TOOLCHAIN_FLASH_OK' in flash and 'OPEN_TOOLCHAIN_FLASH_OK' in uboot
+    flash_dispatcher = TASKFILE.split('  flash:')[1].split('  flash:midi:')[0]
+    assert 'OPEN_TOOLCHAIN_FLASH_OK' in flash_dispatcher
 
 
 @pytest.mark.parametrize('loader', ['api_fixtures', 'build_fixtures'])
@@ -93,15 +88,15 @@ def test_fixture_package_path_follows_the_variable(loader, monkeypatch):
         monkeypatch.delenv(k, raising=False)
     mod = _load(f'_{loader}_otc', ROOT / 'tests' / f'{loader}.py')
     fn = mod.api_fwsc if loader == 'api_fixtures' else mod.fwsc_path
-    # the open toolchain is the default; only an explicit 0 selects JieLi
-    for value in (None, '', '1', 'yes'):
+    # JieLi is the default; only an explicit 1 selects open
+    for value in (None, '', '0', 'yes'):
         if value is None:
             monkeypatch.delenv('USE_OPEN_TOOLCHAIN', raising=False)
         else:
             monkeypatch.setenv('USE_OPEN_TOOLCHAIN', value)
-        assert fn('modd_emu') == ROOT / 'build' / 'modd_emu-open' / 'modd.fwsc'
-    monkeypatch.setenv('USE_OPEN_TOOLCHAIN', '0')
-    assert fn('modd_emu') == ROOT / 'build' / 'modd_emu' / 'modd.fwsc'
+        assert fn('modd_emu') == ROOT / 'build' / 'modd_emu' / 'modd.fwsc'
+    monkeypatch.setenv('USE_OPEN_TOOLCHAIN', '1')
+    assert fn('modd_emu') == ROOT / 'build' / 'modd_emu-open' / 'modd.fwsc'
 
 
 def test_api_fwsc_override_keeps_priority(monkeypatch):

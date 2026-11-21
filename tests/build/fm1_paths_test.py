@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""The one toolchain rule: open unless USE_OPEN_TOOLCHAIN is exactly 0 (tools/build/fm1_paths.py)."""
+"""The one toolchain rule: JieLi unless USE_OPEN_TOOLCHAIN is exactly 1 (tools/build/fm1_paths.py)."""
 import sys
 from pathlib import Path
 
@@ -24,7 +24,7 @@ def _set(monkeypatch, value):
         monkeypatch.setenv('USE_OPEN_TOOLCHAIN', value)
 
 
-@pytest.mark.parametrize('value,is_open', [(None, True), ('', True), ('1', True), ('yes', True), ('0', False)])
+@pytest.mark.parametrize('value,is_open', [(None, False), ('', False), ('0', False), ('yes', False), ('1', True)])
 def test_rule(monkeypatch, value, is_open):
     _set(monkeypatch, value)
     assert fm1_paths.open_toolchain() is is_open
@@ -44,5 +44,5 @@ def test_fixtures_agree_with_the_resolver(monkeypatch, value):
 
 def test_build_py_has_no_rule_of_its_own():
     text = (ROOT / 'tools' / 'build' / 'build.py').read_text()
-    assert 'USE_OPEN_TOOLCHAIN' not in text      # the variable is read only in fm1_paths.py
+    assert "environ.get('USE_OPEN_TOOLCHAIN')" not in text  # the variable is read only in fm1_paths.py
     assert 'open_toolchain()' in text

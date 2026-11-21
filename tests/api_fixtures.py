@@ -61,7 +61,7 @@ DEFAULT_DEFCONFIG = 'modd_emu'
 _run_timestamp = io_log.RUN_STAMP          # one per session: every results folder and debug.log share it
 
 def api_fwsc(defconfig=None):
-    """The firmware package for the API tests: fm1_paths.fwsc_path (build/<defconfig>-open/, build/<defconfig>/ with USE_OPEN_TOOLCHAIN=0), or MODD_API_FWSC
+    """The firmware package for the API tests: fm1_paths.fwsc_path (build/<defconfig>/ by default, build/<defconfig>-open/ with USE_OPEN_TOOLCHAIN=1), or MODD_API_FWSC
     for the defconfig the task built (MODD_API_DEFCONFIG, default modd_emu). A test class
     that names another defconfig (e.g. modd) always gets its own build."""
     main = os.environ.get('MODD_API_DEFCONFIG', DEFAULT_DEFCONFIG)

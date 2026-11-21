@@ -3,9 +3,8 @@
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Where things live on this machine: the fm1-emu checkout, fm1-live, and a defconfig's build output.
 
-One definition for the tools and the tests. The open pi32v2 toolchain is the default: only
-USE_OPEN_TOOLCHAIN=0 selects JieLi. The Taskfiles also select JieLi when OPEN_TOOLCHAIN_FLASH_OK is 0,
-but they export the result as USE_OPEN_TOOLCHAIN=0 or 1, so Python reads that one variable."""
+One definition for the tools and the tests. JieLi is the default: only USE_OPEN_TOOLCHAIN=1 selects
+the open toolchain. The Taskfiles set USE_OPEN_TOOLCHAIN=1 for emulator defconfigs automatically."""
 import os
 from pathlib import Path
 
@@ -15,9 +14,9 @@ FM1_LIVE = Path(os.environ.get('FM1_LIVE', EMU_ROOT / 'target' / 'release' / 'fm
 
 
 def open_toolchain():
-    """True unless USE_OPEN_TOOLCHAIN is exactly '0' (JieLi): unset, empty, '1' or anything else is open
-    (build/<defconfig>-open/). Read at call time."""
-    return os.environ.get('USE_OPEN_TOOLCHAIN') != '0'
+    """True only when USE_OPEN_TOOLCHAIN is exactly '1': unset or any other value selects JieLi
+    (build/<defconfig>/). The Taskfiles set it to '1' for emulator defconfigs."""
+    return os.environ.get('USE_OPEN_TOOLCHAIN') == '1'
 
 
 def build_dir(defconfig):

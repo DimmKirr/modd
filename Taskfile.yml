@@ -27,15 +27,14 @@ env:
   USE_OPEN_TOOLCHAIN: '{{.USE_OPEN}}'
 
 vars:
-  # Builds use the open pi32v2 LLVM toolchain (https://github.com/jvitkauskas/pi32v2-llvm) by
-  # default and write to build/<defconfig>-open/. USE_OPEN_TOOLCHAIN=0 selects JieLi's compiler,
-  # which writes to build/<defconfig>/. Unset means 1; build:live refuses any other value.
+  # Hardware builds use JieLi clang 4.0.1 by default and write to build/<defconfig>/.
+  # USE_OPEN_TOOLCHAIN=1 selects the open pi32v2 LLVM toolchain and build/<defconfig>-open/.
+  # Emulator tasks (modd_emu) override this to open in configs/Taskfile.yml.
+  # A shell env var always wins: USE_OPEN_TOOLCHAIN=1 task build  forces open.
   # TC_SUFFIX is appended to every build/<defconfig> path below.
-  # OPEN_TOOLCHAIN_FLASH_OK=0 in the environment also selects JieLi ("do not flash an open-toolchain
-  # image"): builds (or reuses) build/<defconfig>/ and flashes that. configs/Taskfile.yml repeats
-  # this expression and, being included, its copy is the one in effect: change both. Written after
-  # the task name the value never reaches these vars; flash re-runs itself with the environment set.
-  USE_OPEN: '{{if or (eq (env "USE_OPEN_TOOLCHAIN") "0") (eq (env "OPEN_TOOLCHAIN_FLASH_OK") "0")}}0{{else}}1{{end}}'
+  # configs/Taskfile.yml repeats this expression and, being included, its copy is the one in
+  # effect for per-defconfig tasks: change both.
+  USE_OPEN: '{{if eq (env "USE_OPEN_TOOLCHAIN") "1"}}1{{else}}0{{end}}'
   TC_SUFFIX: '{{if eq .USE_OPEN "1"}}-open{{end}}'
   # The one place the open toolchain release is pinned (release tag; the version is the tag minus "pi32v2-").
   OPEN_TOOLCHAIN_VERSION: pi32v2-23.1.5-5

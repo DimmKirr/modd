@@ -12,14 +12,14 @@
 version: '3'
 
 env:
-  # Same default as the root Taskfile: unset means the open toolchain.
+  # Same default as the root Taskfile: JieLi unless USE_OPEN_TOOLCHAIN=1.
+  # Emulator tasks override this to open via dotenv or env block.
   USE_OPEN_TOOLCHAIN: '{{.USE_OPEN}}'
 
 vars:
-  # The open toolchain is the default and its builds live in build/<defconfig>-open/;
-  # USE_OPEN_TOOLCHAIN=0 selects JieLi and build/<defconfig>/ (same rule as the root Taskfile;
-  # the root build:live does the build and keeps the checksum label).
-  USE_OPEN: '{{if or (eq (env "USE_OPEN_TOOLCHAIN") "0") (eq (env "OPEN_TOOLCHAIN_FLASH_OK") "0")}}0{{else}}1{{end}}'
+  # Hardware builds use JieLi by default; USE_OPEN_TOOLCHAIN=1 selects the open
+  # toolchain and build/<defconfig>-open/. Emulator tasks override to open below.
+  USE_OPEN: '{{if eq (env "USE_OPEN_TOOLCHAIN") "1"}}1{{else}}0{{end}}'
   TC_SUFFIX: '{{if eq .USE_OPEN "1"}}-open{{end}}'
   FM1_EMU_ROOT: '{{env "FM1_EMU_ROOT" | default "/Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master"}}'
   FM1_LIVE: '{{env "FM1_LIVE" | default (printf "%s/target/release/fm1-live" .FM1_EMU_ROOT)}}'
@@ -43,7 +43,7 @@ tasks:
       FWSC: 'build/{{.DEFCONFIG}}{{.TC_SUFFIX}}/modd.fwsc'
     preconditions:
       - sh: 'test "$USE_OPEN_TOOLCHAIN" != 1 || test "$OPEN_TOOLCHAIN_FLASH_OK" = 1 || test "{{.OPEN_TOOLCHAIN_FLASH_OK}}" = 1'
-        msg: "This image is built with the open pi32v2 toolchain (the default), which is not verified on hardware. To flash it on purpose set OPEN_TOOLCHAIN_FLASH_OK=1 (in the environment or after the task name). For a JieLi-built image run the same task with USE_OPEN_TOOLCHAIN=0."
+        msg: "This image is built with the open pi32v2 toolchain, which is not verified on hardware. To flash it on purpose set OPEN_TOOLCHAIN_FLASH_OK=1. To build with JieLi (the default) omit USE_OPEN_TOOLCHAIN or set it to 0."
       - sh: test -f '{{.FWSC}}'
         msg: '{{.FWSC}} not found. Build it first: task modd:build:{{.DEFCONFIG}}'
     cmds:
@@ -56,7 +56,8 @@ tasks:
     desc: "Build firmware, run the direct-API tests: Python drives the firmware over HTTP in fm1-live"
     vars:
       DEFCONFIG: '{{.DEFCONFIG}}'
-      FWSC: 'build/{{.DEFCONFIG}}{{.TC_SUFFIX}}/modd.fwsc'
+      _SUFFIX: '{{.TC_SUFFIX_OVERRIDE | default .TC_SUFFIX}}'
+      FWSC: 'build/{{.DEFCONFIG}}{{._SUFFIX}}/modd.fwsc'
       # Each test class boots its own fm1-live with a port forward (tests/api_fixtures.py), waits
       # for /api/info and stops it afterwards: no emulator process is left behind.
       TESTS: '{{.TESTS | default "tests/ui/themes/lvgl/api/"}}'
@@ -90,20 +91,31 @@ tasks:
         vars: { DEFCONFIG: modd, CLI_ARGS: '{{.CLI_ARGS}}' }
 
   # --- modd_emu ---------------------------------------------------------
+  # Emulator defconfigs default to the open toolchain (USE_OPEN_TOOLCHAIN=1).
+  # Override with USE_OPEN_TOOLCHAIN=0 to build with JieLi.
   build:modd_emu:
-    desc: "Build modd_emu defconfig (-> build/modd_emu/modd.fwsc)"
+    desc: "Build modd_emu defconfig (-> build/modd_emu-open/modd.fwsc)"
+    dotenv: ['.env.emu']
+    env:
+      USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
     cmds:
       - task: _build
         vars: { DEFCONFIG: modd_emu }
 
   test:modd_emu:api:
     desc: "Build modd_emu + run every API-tier test in fm1-live, then the USB safety test (test:usb_safety)"
+    dotenv: ['.env.emu']
+    env:
+      USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
+    vars:
+      _EMU_SUFFIX: '{{if eq (env "USE_OPEN_TOOLCHAIN" | default "1") "1"}}-open{{end}}'
     # Step 1 needs only the modd_emu build (_test:api builds it). Step 2 builds modd and felucca,
     # so it runs after the tests: a concurrent build stalls the emulator on the 2-CPU quota.
     cmds:
       - task: _test:api
         vars:
           DEFCONFIG: modd_emu
+          TC_SUFFIX_OVERRIDE: '{{._EMU_SUFFIX}}'
           # the API tier is chosen by is_api_test in tests/conftest.py, not by a list
           TESTS: 'tests/ --tier api'
           CLI_ARGS: '{{.CLI_ARGS}}'
@@ -112,8 +124,9 @@ tasks:
 
   test:usb_safety:
     desc: "Build modd_emu, modd and felucca, then run the USB safety test (scans their binaries for the UBOOT SysEx key)"
-    # Only this test reads the modd and felucca outputs. The three builds run in parallel, each
-    # through build:live, cached per defconfig.
+    # Builds all three with the caller's toolchain (the USB safety scan doesn't
+    # care which compiler produced the binary). The FWSC path uses TC_SUFFIX so
+    # it matches whichever build ran.
     deps:
       - task: _build
         vars: { DEFCONFIG: modd_emu }
@@ -124,8 +137,10 @@ tasks:
     preconditions:
       - sh: test -f '{{.FM1_LIVE}}'
         msg: 'fm1-live not found at {{.FM1_LIVE}}. Build fm1-emu or set FM1_LIVE.'
+    vars:
+      _SUFFIX: '{{if eq (env "USE_OPEN_TOOLCHAIN" | default "0") "1"}}-open{{end}}'
     env:
-      MODD_API_FWSC: '{{.ROOT_DIR}}/build/modd_emu{{.TC_SUFFIX}}/modd.fwsc'
+      MODD_API_FWSC: '{{.ROOT_DIR}}/build/modd_emu{{._SUFFIX}}/modd.fwsc'
       MODD_API_DEFCONFIG: modd_emu
       FM1_LIVE: '{{.FM1_LIVE}}'
       FM1_API_EMU_FLAGS: ''
@@ -135,10 +150,16 @@ tasks:
 
   test:modd_emu:api:wifi:
     desc: "Build modd_emu + run the API tests with WiFi as the only link (fm1-live --wifi oss): pages, weather, WIFI off then on"
+    dotenv: ['.env.emu']
+    env:
+      USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
+    vars:
+      _EMU_SUFFIX: '{{if eq (env "USE_OPEN_TOOLCHAIN" | default "1") "1"}}-open{{end}}'
     cmds:
       - task: _test:api
         vars:
           DEFCONFIG: modd_emu
+          TC_SUFFIX_OVERRIDE: '{{._EMU_SUFFIX}}'
           EMU_FLAGS: '--wifi oss --net internet'
           # api_wifi_need_test.py: TestWifiOffOn runs, TestWifiEthernet skips (it needs --usb ethernet)
           TESTS: >-

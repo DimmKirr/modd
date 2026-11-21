@@ -11,22 +11,26 @@ automatically on first run). `task build` delegates to `build:live`, which
 caches on source checksums, one per defconfig, and skips when nothing changed
 since that defconfig was last built.
 
-### Toolchains: open (default) and JieLi
+### Toolchains: JieLi (hardware default) and open (emulator default)
 
-`task build` compiles with the open pi32v2 LLVM toolchain
-(`jvitkauskas/pi32v2-llvm`, clang and `ld.lld`) and writes to
-`build/<defconfig>-open/`. `USE_OPEN_TOOLCHAIN=0` selects JieLi's clang 4.0.1,
-which writes to `build/<defconfig>/`:
+The build has two compilers. **Hardware defconfigs** (modd, felucca) default to
+JieLi clang 4.0.1 and write to `build/<defconfig>/`. **Emulator defconfigs**
+(modd_emu) default to the open pi32v2 LLVM toolchain
+(`jvitkauskas/pi32v2-llvm`, clang and `ld.lld`) and write to
+`build/<defconfig>-open/`. `USE_OPEN_TOOLCHAIN=1` or `=0` in the shell
+overrides either default:
 
 ```sh
-task build -- --defconfig modd_emu                        # open toolchain, build/modd_emu-open/
-USE_OPEN_TOOLCHAIN=0 task build -- --defconfig modd_emu   # JieLi, build/modd_emu/
+task build                                                # JieLi (hardware default), build/modd/
+task modd:build:modd_emu                                  # open (emulator default), build/modd_emu-open/
+USE_OPEN_TOOLCHAIN=1 task build                           # force open for hardware, build/modd-open/
+USE_OPEN_TOOLCHAIN=0 task modd:build:modd_emu             # force JieLi for emulator, build/modd_emu/
 ```
 
 The variable applies to every task that builds or reads a build (`task flash`,
 `task test:api`, `task modd:build:<name>`, `task docs`). Each toolchain has its
 own output directory and build cache, so the two do not overwrite each other.
-Only `0`, `1` and unset are accepted. The default lives in the Taskfiles:
+Only `0`, `1` and unset are accepted. The defaults live in the Taskfiles:
 `build.py` and the test fixtures, run without Task, still read the variable as
 "1 means open" and use JieLi when it is unset.
 
@@ -38,14 +42,15 @@ qemu, Rosetta, Docker or x86-64 glibc is needed. The JieLi SDK (`AC79_SDK`) is
 still required, and the build still downloads the JieLi toolchain as a dependency.
 
 - Flashing an open-toolchain image is refused unless `OPEN_TOOLCHAIN_FLASH_OK=1`
-  is set: the open build boots on a real FM-1, but the hardware smoke checks are not done. `USE_OPEN_TOOLCHAIN=0 task flash`
-  builds and flashes the JieLi image as before.
+  is set: the open build boots on a real FM-1 but the hardware smoke checks are
+  not done. `task flash` uses JieLi by default, so this gate only fires when
+  `USE_OPEN_TOOLCHAIN=1` is set explicitly.
 - `CONFIG_WIFI_NONFREE` is not supported with the open toolchain. Build it with
-  `USE_OPEN_TOOLCHAIN=0`.
+  JieLi (the default for hardware defconfigs).
 - The memory report reads the lld map and applies the same free-RAM check. The
   region sizes come from the linker script, because an lld map does not list them.
-- CI and releases set `USE_OPEN_TOOLCHAIN=0` (`.github/workflows/ci.yml`) and
-  ship JieLi-built firmware.
+- CI and releases use JieLi (`.github/workflows/ci.yml`) and ship JieLi-built
+  firmware.
 
 Status on 2026-11-20: a `modd_emu` open build boots in fm1-live and passes the
 API test suite (67 tests). The `modd` open build `dev-20261120T091957Z` was flashed

@@ -542,7 +542,7 @@ connect to the WebSocket:
 task build -- --defconfig modd_emu
 
 # 2. Run fm1-live with port forwarding:
-fm1-live --fwsc build/modd_emu/modd.fwsc \
+fm1-live --fwsc build/modd_emu-open/modd.fwsc \
          --wifi oss --net internet \
          --forward 9222:9222
 
