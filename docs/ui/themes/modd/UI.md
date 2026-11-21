@@ -1,13 +1,10 @@
 # modd UI Navigation
 
-Auto-generated from `firmware/src/ui/themes/modd/pages.c` and `firmware/adapters/modd_controls.h`.
-
-Regenerate: `task docs:themes:ui:diagram`
+The diagram is generated from `firmware/src/ui/themes/modd/pages.c` and
+`firmware/src/ui/themes/modd/controls.c`. Regenerate: `task docs:themes:ui:diagram`
 
 - **Solid arrows** (`-->`) = button tap navigation
 - **Dashed arrows** (`-.->`) = button hold navigation
-- **Dotted bi-arrows** (`<-..->`) = encoder cycling within a view
-- **⚙ labels** = Kconfig guards (page compiled only when enabled)
 
 <!-- ui-nav-diagram:start -->
 ```mermaid
@@ -53,42 +50,32 @@ flowchart TD
 ```
 <!-- ui-nav-diagram:end -->
 
-<!-- ui-controls-table:start -->
-## Global controls
+## Controls
 
-Always active, handled by the shell or keyboard overlay:
+Written by hand: this theme hands its input to LVGL, so there are no knob maps for the
+generator to read. The code is `shell.c` (`shell_knob`, `shell_button`) and `port.c`
+(`lvt_enc_read`).
+
+LVGL sees one input device, an encoder. SELECT turns it and OCT+ is its push button.
+The widgets of the page on screen form the focus group.
 
 | Control | Action |
 |---------|--------|
-| Presets (enc) | Cycle presets |
-| Master (pot) | Master volume |
-| OCT+ / OCT- | Octave shift |
-| PLAY | Play/stop (page-specific on WIFI, WEATHER, BLE) |
-| REC | Record toggle |
-| Select (enc) | Cycle pages within current view (when no page claims it) |
+| Select (enc) | Move the focus to the next or previous widget. In an open list: move the choice |
+| OCT+ | The encoder's push: flip the focused switch, open the focused list, take the choice |
+| OCT- | Back: close an open list and keep the old value |
+| HOME | Home (hold: Config) |
+| FX (hold) | Connectivity |
+| GLO (hold) | Debug; hold again to return to the page before |
 
-## Controls per page
+A page may take a control before LVGL does:
 
-| Page | Select | Algo | Knob 1 | Knob 2 | Knob 3 | Knob 4 | Buttons |
-|------|--------|------|--------|--------|--------|--------|---------|
-| Files |  |  |  |  |  |  | OCTDN |
-| modd |  |  |  |  |  |  |  |
-| Settings |  |  |  |  |  |  | OCTUP, OCTDN |
-| Weather |  |  |  |  |  |  | PLAY |
-| DEMO |  |  |  |  |  |  |  |
-| Disk |  |  |  |  |  |  |  |
-| Log |  |  |  |  |  |  |  |
-<!-- ui-controls-table:end -->
+| Page | Select |
+|------|--------|
+| Home | Pick the track (T1..T4) |
+| Connectivity | Focus |
+| Config | Focus |
+| Debug | Scroll the log back and forth |
 
-## DEMO screens
-
-SELECT cycles 6 screens, K1-K4 adjust values per screen.
-
-| Screen | Cards | Panel area | K1 | K2 |
-|--------|-------|------------|----|----|
-| CARDS | FRA, SCR, K1, NOTE | Theme color swatches | Counter (0-99) | -- |
-| LIST | ITEMS, SEL | Scrollable 16-item list | List selection + auto-scroll | -- |
-| GRAPH | BARS, FRAME, ANIM, STYLE | Animated bar chart | Counter (0-99) | -- |
-| TEXT | FONT S/M/L, DEMO | Font samples, alignment, rounded rects | Counter (0-99) | -- |
-| EDIT | EDIT, LEN, CUR, MAX | Inline text editor with blinking cursor | Move cursor | Change character |
-| MODALS | MODALS, SEL, -, STYLE | Mock dialog overlays (YES/NO, OK, Text Input) | Select modal type | -- |
+The other encoders, PLAY and REC are not used by this theme. Its LEDs (`leds.c`): the
+button of the page on screen, PLAY while playing, REC while armed, held note keys.

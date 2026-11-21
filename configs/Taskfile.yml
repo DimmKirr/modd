@@ -13,7 +13,7 @@ version: '3'
 
 env:
   # Same default as the root Taskfile: JieLi unless USE_OPEN_TOOLCHAIN=1.
-  # Emulator tasks override this to open via dotenv or env block.
+  # Emulator tasks ask for the open toolchain by passing OPEN to the root build:live.
   USE_OPEN_TOOLCHAIN: '{{.USE_OPEN}}'
 
 vars:
@@ -30,11 +30,13 @@ tasks:
     # The root build:live does the work, so `task modd:build:<name>` and
     # `task build -- --defconfig <name>` share one checksum per defconfig and
     # rebuild when the sources changed, not only when the package is missing.
+    # OPEN (1 or 0, optional) is the toolchain for this build; without it the shell's
+    # USE_OPEN_TOOLCHAIN decides.
     vars:
       DEFCONFIG: '{{.DEFCONFIG}}'
     cmds:
       - task: :build:live
-        vars: { CLI_ARGS: '--defconfig {{.DEFCONFIG}}' }
+        vars: { CLI_ARGS: '--defconfig {{.DEFCONFIG}}', OPEN: '{{.OPEN}}' }
 
   _flash:
     internal: true
@@ -60,10 +62,11 @@ tasks:
       FWSC: 'build/{{.DEFCONFIG}}{{._SUFFIX}}/modd.fwsc'
       # Each test class boots its own fm1-live with a port forward (tests/api_fixtures.py), waits
       # for /api/info and stops it afterwards: no emulator process is left behind.
-      TESTS: '{{.TESTS | default "tests/ui/themes/lvgl/api/"}}'
+      TESTS: '{{.TESTS | default "tests/ui/themes/modd/api/"}}'
+    # OPEN and TC_SUFFIX_OVERRIDE come as a pair: the package built is the package tested.
     deps:
       - task: _build
-        vars: { DEFCONFIG: '{{.DEFCONFIG}}' }
+        vars: { DEFCONFIG: '{{.DEFCONFIG}}', OPEN: '{{.OPEN}}' }
     preconditions:
       - sh: test -f '{{.FM1_LIVE}}'
         msg: 'fm1-live not found at {{.FM1_LIVE}}. Build fm1-emu or set FM1_LIVE.'
@@ -100,7 +103,7 @@ tasks:
       USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
     cmds:
       - task: _build
-        vars: { DEFCONFIG: modd_emu }
+        vars: { DEFCONFIG: modd_emu, OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}' }
 
   test:modd_emu:api:
     desc: "Build modd_emu + run every API-tier test in fm1-live, then the USB safety test (test:usb_safety)"
@@ -115,6 +118,7 @@ tasks:
       - task: _test:api
         vars:
           DEFCONFIG: modd_emu
+          OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
           TC_SUFFIX_OVERRIDE: '{{._EMU_SUFFIX}}'
           # the API tier is chosen by is_api_test in tests/conftest.py, not by a list
           TESTS: 'tests/ --tier api'
@@ -159,11 +163,12 @@ tasks:
       - task: _test:api
         vars:
           DEFCONFIG: modd_emu
+          OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
           TC_SUFFIX_OVERRIDE: '{{._EMU_SUFFIX}}'
           EMU_FLAGS: '--wifi oss --net internet'
           # api_wifi_need_test.py: TestWifiOffOn runs, TestWifiEthernet skips (it needs --usb ethernet)
           TESTS: >-
-            tests/ui/themes/lvgl/api/
+            tests/ui/themes/modd/api/
             tests/net/api_weather_test.py
             tests/wifi/api_wifi_need_test.py
           CLI_ARGS: '{{.CLI_ARGS}}'

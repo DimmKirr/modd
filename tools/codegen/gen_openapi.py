@@ -52,7 +52,7 @@ class Config:
     """What the C does not say by itself. Each entry is named in an error's fix."""
     # Non-Kconfig macros in #if lines, in Kconfig terms.
     macros: dict = field(default_factory=lambda: {
-        'UI_SHELL': 'UI_MODD || UI_LVGL',      # modd.c: themes with shell_* entry points
+        'UI_SHELL': 'UI_THEME_MODD',            # modd.c: themes with shell_* entry points
         'WEATHER_COLORS_H': 'LWIP',            # a theme's page_weather.c (built with LWIP) includes it
     })
     # Calls through a function pointer: the table of {"NAME", function} it comes from.

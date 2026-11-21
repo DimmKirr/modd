@@ -1,9 +1,9 @@
 # LVGL on the FM-1
 
-How to edit the `lvgl` theme, what a theme has to get right on this hardware, and where
+How to edit the modd theme (drawn with LVGL 9.6), what a theme has to get right on this hardware, and where
 to look for examples. The theme itself is described in
-[themes/lvgl/THEME.md](themes/lvgl/THEME.md); its navigation and controls in
-[themes/lvgl/UI.md](themes/lvgl/UI.md).
+[themes/modd/THEME.md](themes/modd/THEME.md); its navigation and controls in
+[themes/modd/UI.md](themes/modd/UI.md).
 
 ## Read the 9.6 manual first
 
@@ -41,7 +41,7 @@ With the LVGL that modd vendors, a page is C code calling the widget API.
 
 ## Where things are
 
-Everything is under `firmware/src/ui/themes/lvgl/`.
+Everything is under `firmware/src/ui/themes/modd/`.
 
 | To change | Edit |
 |-----------|------|
@@ -61,7 +61,7 @@ Everything is under `firmware/src/ui/themes/lvgl/`.
 | How SELECT, OCT+ and OCT- act | `shell.c` and `port.c` (`lvt_enc_read`) |
 | LEDs | `leds.c` |
 | Strip height, draw buffers, the LCD hook | `port.c` |
-| The UI task's stack | `firmware/src/modd.c`, `ui_stack` under `CONFIG_UI_LVGL` |
+| The UI task's stack | `firmware/src/modd.c`, `ui_stack` under `CONFIG_UI_THEME_MODD` |
 | What the firmware build contains | `configs/modd_defconfig` |
 
 A setting needs no theme change: `settings.c` builds a switch or a drop-down list for
@@ -78,7 +78,7 @@ Nothing on screen is an image file.
 |---------|----------|------------------------|
 | A widget's behaviour and drawing (switch, drop-down, arc, bar, LED, label) | `firmware/vendor/lvgl/src/widgets/<name>/`, compiled in when `LV_USE_<NAME>` is 1 in `lv_conf.h` | Not edited: the code draws it from rectangles, arcs and text at run time |
 | A widget's look (colours, corners, paddings, focus outline) | The active LVGL theme, `firmware/vendor/lvgl/src/themes/default/lv_theme_default.c` | The arguments of `lv_theme_default_init()` in `shell.c`, `LVT_DPI` in `port.c`, and styles added on top (`chrome.c`, or `lv_obj_set_style_*` where the widget is created) |
-| Where a widget is, and how big | The page that creates it | `settings.c` (switches, lists), `page_home.c` (cards, arcs, bar), `page_conn.c` (LED), `chrome.c` (header, footer) |
+| Where a widget is, and how big | The page that creates it | `page_settings.c` (switches, rows), `page_home.c` (cards, level bar), `list.c` (lists), `chrome.c` (header, footer, cards) |
 | An icon (home, WiFi, gear, play, stop, list) | A glyph of the built-in font: `LV_SYMBOL_*` in `firmware/vendor/lvgl/include/lvgl/font/lv_symbol_def.h` (63 symbols), bitmaps in `firmware/vendor/lvgl/src/font/lv_font_montserrat_<size>.c` | The string it is part of, e.g. `LV_SYMBOL_HOME " HOME"` in `page_home.c` |
 
 An icon is text, so it takes the label's font size and colour. For an icon that is not
@@ -110,7 +110,7 @@ was built.
   `nav_request()` (`firmware/src/ui/ui_nav.c`) stores it under `UI_NAV_DEFERRED`, and
   `shell_draw()` builds the page with `nav_take_request()`.
 - **Read the firmware through the shared page data.** `firmware/src/ui/page_data.c`
-  (`home_read()`, `net_read()`, `wx_read()`, `sys_menu_is_conn()`) is what the modd theme
+  (`home_read()`, `net_read()`, `wx_read()`, `sys_menu_is_conn()`) is what the theme
   draws and what the REST API serializes (`firmware/src/rpc/api_pages.c`). `model.c`
   copies it into subjects, so the screen and `/api/page` show the same values. A new
   page's data goes there, with its serializer, under the page's `.name`.
@@ -209,9 +209,9 @@ task build -- --defconfig modd          # or: task modd:build:modd
 
 | Preview | Command or place |
 |---------|------------------|
-| Screenshots | `docs/ui/themes/lvgl/screenshots/`; regenerate with `uv run python tools/codegen/gen_ui_screenshots.py lvgl` |
+| Screenshots | `docs/ui/themes/modd/screenshots/`; regenerate with `uv run python tools/codegen/gen_ui_screenshots.py modd` |
 | Native emulator | `$FM1_EMU_ROOT/target/release/fm1-live --fwsc build/modd/modd.fwsc --wifi oss --net internet` |
-| API tests, with LCD screenshots | `task test:api` (build `modd_emu`; tests in `tests/ui/themes/lvgl/api/`; pictures in `tests/results/<time>-lvgl_api_test/screenshots/lcd/`) |
+| API tests, with LCD screenshots | `task test:api` (build `modd_emu`; tests in `tests/ui/themes/modd/api/`; pictures in `tests/results/<time>-modd_api_test/screenshots/lcd/`) |
 | Browser emulator | serve `$FM1_EMU_ROOT/_site/` and load `build/modd/modd.fwsc` (not yet tried with this theme) |
 | Hardware-like timing | add `FM1_STRICT=1`: timed SPI, faults on misaligned access |
 
@@ -224,7 +224,7 @@ There is no stand-alone HTML preview of the theme. The emulators run the real fi
 which is the preview.
 
 Size comes from the linker map, `build/modd/modd.map`; the figures measured so far
-are in [THEME.md](themes/lvgl/THEME.md#measured-cost).
+are in [THEME.md](themes/modd/THEME.md#measured-cost).
 
 ## Tools and projects to learn from
 

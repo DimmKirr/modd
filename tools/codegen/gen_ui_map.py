@@ -877,7 +877,7 @@ def generate_mermaid(theme: str) -> str:
 # Themes whose controls are not written in the forms parse_page_controls() reads (knob
 # maps, fparams, numeric `id == N` tests): their UI.md describes the controls by hand,
 # and only the navigation diagram is generated and checked.
-DIAGRAM_ONLY_THEMES = {"lvgl"}
+DIAGRAM_ONLY_THEMES = {"modd"}
 
 
 def generate_full(theme: str) -> tuple[str, str | None]:

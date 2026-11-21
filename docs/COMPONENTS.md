@@ -16,7 +16,7 @@ flowchart TB
     SCHED["<b>Scheduler</b><br/><small>stack_canary</small>"]
     STORAGE["<b>Storage</b><br/><small>Flash · Settings · Dock modules</small>"]
     UI["<b>UI</b><br/><small>Shell · Controls · page_demo · RPC · Settings Menu</small>"]
-    WIFI["<b>WiFi</b><br/><small>STA · lwIP · WPA · weather · weather_unit_f · llm<br/>default_on · autojoin · MIDI · nonfree</small>"]
+    WIFI["<b>WiFi</b><br/><small>STA · lwIP · WPA · weather · weather_unit_f · llm<br/>default_on · autojoin · MIDI · nonfree · in_shared_pool</small>"]
 
     BOOT -.-> STORAGE
     BOOT -.-> USB
@@ -36,6 +36,7 @@ flowchart TB
     DEBUG --> USB
     MIDI --> USB
     WIFI --> DEBUG
+    WIFI --> SCHED
     AUDIO --> HAL
     BLE --> HAL
     BOOT --> HAL
@@ -342,7 +343,7 @@ For the cross-theme framework (view/page/element model, navigation rules, theme 
 - **Felucca**: page-based shell with encoder/button dispatch
 - **SLOOP**
 - **Melodee**: Rubik font, track colors, 8 palettes, partial updates
-- **Native** (modd): modd's own UI on Melodee's renderer; Rubik type, Melodee's palettes plus the logo's MODD and MODD NIGHT; HOME, Settings menu + Colors + Connectivity on HOME hold, Weather on GLO hold, Files (CONFIG_UDISK) + 6-screen Demo on FX hold; ships its own button map matching Felucca's layout
+- **modd** (the default): drawn with LVGL 9.6 widgets on Melodee's LCD driver; the modd palettes; HOME, Settings (MENU) on HOME hold, Weather on FX hold, Demo on FX hold again, Files and Disk (`CONFIG_UDISK`) on SAVE hold, Log on GLO hold; its own button map in `controls.c` ([modd theme](ui/themes/modd/THEME.md))
 
 ### Event flow
 
@@ -579,8 +580,8 @@ graph LR
 
 | Preset | Audio | USB | Engines | UI | Extras | Buildable |
 |--------|-------|-----|---------|-----|--------|-----------|
-| `modd` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | LVGL (MODD LEGACY: `CONFIG_UI_MODD=y`) | WiFi on at boot, USB network, OTA, storage, modulation, settings menu, USB disk, REST API, scheduler, debug log | yes (production) |
-| `modd_emu` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | LVGL | `modd` + emulator hooks, framebuffer, RPC input/audio/mem, weather (fixed location) | emulator only (API tests) |
+| `modd` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | modd | WiFi on at boot, USB network, OTA, storage, modulation, settings menu, USB disk, REST API, scheduler, debug log | yes (production) |
+| `modd_emu` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | modd | `modd` + emulator hooks, framebuffer, RPC input/audio/mem, weather (fixed location) | emulator only (API tests) |
 | `felucca` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | Felucca | WiFi + weather, OTA, storage, modulation, settings menu, USB disk, debug log | yes (24 components) |
 | `melodee` | Melodee | yes | all Melodee | Felucca (Melodee shell not ported) | -- | not yet |
 | `sloop` | SLOOP | yes | Felucca set | Felucca (no SLOOP theme) | -- | not yet |

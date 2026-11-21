@@ -9,8 +9,8 @@
  * That is the hook LVGL's manual names for a driver without a transfer-done interrupt
  * (docs/lvgl/docs/src/main-modules/display/setup.mdx, "Flush-Wait Callback").
  *
- * Input: none of LVGL's. The panel's knobs and buttons go to the pages as in the modd
- * theme (shell.c): a page changes what its widgets show, LVGL draws it. */
+ * Input: none of LVGL's. The panel's knobs and buttons go to the pages through
+ * shell.c: a page changes what its widgets show, LVGL draws it. */
 
 #define LVT_W 240
 #define LVT_H 240

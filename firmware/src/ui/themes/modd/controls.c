@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* modd theme control map: same layout as Felucca (direct page nav on tap,
- * SELECT cycles pages within a view, 500 ms hold threshold). */
+/* modd theme control map.
+ *
+ *   HOME tap    HOME                 HOME hold   Settings (MENU)
+ *   FX hold     WX, again DEMO       SAVE hold   FILES, again DISK
+ *   GLO tap     hints (shell.c)      GLO hold    LOG and back (shell.c)
+ *   SELECT      on a page that does not take it: the next page of the view (CTL_SELECT_PAGE)
+ *
+ * The other taps name views no page of either theme is in yet (FX, SCL, ENV, ...): they do
+ * nothing until one is. Every entry is written out: 0 is VIEW_HOME, not "none". */
 
 static const modd_controls_t modd_controls = {
     .btn_tap = {

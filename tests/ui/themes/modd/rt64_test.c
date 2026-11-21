@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* Host test of the LVGL theme's 64-bit division helpers
- * (firmware/src/ui/themes/lvgl/rt64.c) against the host's own `/` and `%`.
+/* Host test of the 64-bit division helpers LVGL needs
+ * (firmware/src/ui/themes/modd/rt64.c) against the host's own `/` and `%`.
  * The helpers are renamed: the host's compiler runtime may have these names too. */
 #include <stdint.h>
 #include <stdio.h>
@@ -11,7 +11,7 @@
 #define __umoddi3    t_umoddi3
 #define __divdi3     t_divdi3
 #define __moddi3     t_moddi3
-#include "ui/themes/lvgl/rt64.c"
+#include "ui/themes/modd/rt64.c"
 
 static int fails;
 

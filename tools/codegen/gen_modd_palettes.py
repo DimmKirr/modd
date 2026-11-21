@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 # Origin: keremimo/melodee tools/gen_ui_palettes.py @ v1.4.5 (398ada1e), used as a library
 #         https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/tools/gen_ui_palettes.py
-"""The modd theme's palettes: Melodee's set plus two from the modd logo, through Melodee's generator.
+"""modd's palettes, used by the modd theme: Melodee's set plus two from the modd logo, through Melodee's generator.
 
   gen_modd_palettes.py OUT.h [--report]
 

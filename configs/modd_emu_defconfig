@@ -5,11 +5,6 @@
 # page with a fixed location (New York, api.open-meteo.com). The direct-API tests run on it
 # in fm1-live (task test:api = task modd:test:modd_emu:api). Keep in step with modd_defconfig.
 #
-# MODD LEGACY theme (the original modd theme, firmware/src/ui/themes/modd/): no defconfig
-# builds it. To build it, replace `CONFIG_UI_LVGL=y` below with `CONFIG_UI_MODD=y` and
-# delete the `# CONFIG_UI_MODD is not set` line. Its own fonts and palettes are generated
-# automatically (CONFIG_GEN_MELODEE_UI is selected by CONFIG_UI_MODD).
-#
 CONFIG_EMU=y (expanded POOL
 # linker script), CONFIG_DEBUG_FRAMEBUFFER=y, and USB ethernet auto-connect
 # so the emulator's --usb ethernet link brings up lwIP without a menu visit.
@@ -165,9 +160,8 @@ CONFIG_USB_AUDIO_HOST=y
 # UI
 #
 CONFIG_INPUT=y
-# CONFIG_UI_FELUCCA is not set
-# CONFIG_UI_MODD is not set
-CONFIG_UI_LVGL=y
+# CONFIG_UI_THEME_FELUCCA is not set
+CONFIG_UI_THEME_MODD=y
 CONFIG_SPLASH_LOGO=y
 # CONFIG_SPLASH_NONE is not set
 # end of UI

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* modd theme: page registration by view. */
+/* modd theme: its pages, registered by view, each under its Kconfig gate. */
 
 #ifndef CONFIG_HOME_PAGE_FILES
 #include "ui/themes/modd/page_home.c"
@@ -52,9 +52,9 @@ static void shell_register_pages(void)
     nav_register(&PAGE_DISK);
 #endif
 
-    /* VIEW_GLO: debug log (GLO tap toggle) */
+    /* VIEW_GLO (GLO hold): the log */
 #ifdef CONFIG_DEBUG_LOG_BUF
-    nav_dbg_idx = nav_npage;
+    lvt_dbg_idx = nav_npage;
     nav_register(&PAGE_DEBUG);
 #endif
 }

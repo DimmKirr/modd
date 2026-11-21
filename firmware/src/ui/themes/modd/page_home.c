@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* modd HOME: 4-track strip (cards) + transport/detail panel. */
+/* HOME: the four tracks and the selected one, as LVGL widgets from home_read() (ui/page_data.c).
+ *
+ *   cards     T1..T4: engine and preset; the selected track's in its colour, gauge full
+ *   transport play / stop / record and the tempo
+ *   track     "T2 ANALOG" in the track's colour; preset, key, scale and octave under it
+ *   level     a bar in the track's colour
+ *   envelope  attack, decay, sustain, release as a line
+ *   version   the firmware's
+ *
+ * SELECT picks the track (stops at T1 and T4); the note keys play it (with audio). */
 
 static const char *const HOME_NOTE_NAMES[] = {
     "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
@@ -11,177 +20,138 @@ static const char *const HOME_SCALE_NAMES[] = {
     "Mixol", "Lydian", "Phryg", "Locr", "Harm", "Melod"
 };
 
-/* home_data_t, home_read(): ui/page_data.c (shared with the REST API) */
+#define HOME_ENV_W 224
+#define HOME_ENV_H 24
 
-static void home_draw(void)
+static struct {
+    lv_obj_t *play, *rec, *bpm, *track, *detail, *level, *env;
+    lv_point_precise_t pts[5];
+    uint32_t env_sig;
+} lvt_home;
+
+static void lvt_home_show(void)
 {
     home_data_t d;
-    uint32_t k;
+    char b[40];
+    uint32_t k, s;
     home_read(&d);
+    s = d.selected < NTRK ? d.selected : 0;
 
-    /* cards: one per track */
     for (k = 0; k < NTRK; k++) {
         char lbl[4], pstr[4];
-        lbl[0] = 'T'; lbl[1] = (char)('1' + k); lbl[2] = 0;
-        pstr[0] = 'P';
-        if (d.preset[k] >= 10)
-            pstr[1] = (char)('0' + d.preset[k] / 10);
-        else
-            pstr[1] = '0';
-        pstr[2] = (char)('0' + d.preset[k] % 10);
-        pstr[3] = 0;
-
-        ui_card(k, lbl, d.engine_name[k], pstr,
-                (k == d.selected) ? T_TRK(k) : T_MID,
-                (k == d.selected) ? 1000 : -1, 0);
+        lv_snprintf(lbl, sizeof lbl, "T%u", (unsigned)(k + 1u));
+        lv_snprintf(pstr, sizeof pstr, "P%02u", (unsigned)(d.preset[k] % 100u));
+        lvt_card_set(k, lbl, d.engine_name[k], pstr,
+                     k == s ? lvt_pal.trk_c[k] : lvt_pal.mid, k == s ? 1000 : -1);
     }
 
-    mt_panel_begin();
+    /* transport: a dot while recording, else play / stop; THEME while playing */
+    lv_obj_set_hidden(lvt_home.rec, !d.rec);
+    lv_obj_set_hidden(lvt_home.play, d.rec);
+    lvt_text(lvt_home.play, d.playing ? LV_SYMBOL_PLAY : LV_SYMBOL_STOP);
+    lvt_text_color(lvt_home.play, d.playing ? lvt_pal.theme : lvt_pal.dim);
+    lvt_bg_color(lvt_home.rec, lvt_pal.rec, 0);
+    lv_snprintf(b, sizeof b, "%u", (unsigned)d.bpm);
+    lvt_text(lvt_home.bpm, b);
+    lvt_text_color(lvt_home.bpm, d.playing ? lvt_pal.theme : lvt_pal.dim);
 
-    /* transport: play/stop/rec glyph + BPM */
-    {
-        int32_t tx = 8, ty = 6;
-        uint16_t tc = d.playing ? T_THEME : T_DIM;
+    lv_snprintf(b, sizeof b, "T%u %s", (unsigned)(s + 1u), d.engine_name[s]);
+    lvt_text(lvt_home.track, b);
+    lv_snprintf(b, sizeof b, "P%02u  %s %s  O%s%d", (unsigned)(d.preset[s] % 100u),
+                HOME_NOTE_NAMES[d.root % 12u], d.scale < 12u ? HOME_SCALE_NAMES[d.scale] : "?",
+                d.oct > 0 ? "+" : d.oct < 0 ? "-" : "", d.oct < 0 ? -d.oct : d.oct);
+    lvt_text(lvt_home.detail, b);
 
-        if (d.rec) {
-            cv_circle(tx + 4, ty + 5, 4, T_REC, T_BG);
-        } else if (d.playing) {
-            int32_t i;
-            for (i = 0; i < 8; i++)
-                cv_rect(tx + i, ty + 1 + i / 2, 1, 8 - i, tc);
-        } else {
-            cv_rect(tx, ty, 8, 8, tc);
-        }
+    lv_bar_set_value(lvt_home.level, d.level > 100 ? 100 : d.level < 0 ? 0 : d.level, LV_ANIM_OFF);
+    lvt_bg_color(lvt_home.level, lvt_pal.theme, LV_PART_INDICATOR);
+    lvt_bg_color(lvt_home.level, lvt_pal.line, 0);
 
-        {
-            char bpm[12];
-            uint32_t b = d.bpm, bi = 0;
-            if (b >= 100) bpm[bi++] = (char)('0' + b / 100);
-            if (b >= 10)  bpm[bi++] = (char)('0' + (b / 10) % 10);
-            bpm[bi++] = (char)('0' + b % 10);
-            bpm[bi] = 0;
-            cv_text_fit(tx + 14, ty_y(ty + 4, TY_TX), TY_TX, bpm, tc, T_BG, 50);
-            cv_text_fit(tx + 60, ty_y(ty + 4, TY_LB), TY_LB, "BPM", T_DIM, T_BG, 40);
-        }
+    /* the envelope: A, D, a quarter of sustain, R */
+    k = (uint32_t)d.atk | (uint32_t)d.dec << 8 | (uint32_t)d.sus << 16 | (uint32_t)d.rel << 24;
+    if (k != lvt_home.env_sig) {
+        int32_t bw = HOME_ENV_W, bh = HOME_ENV_H;
+        int32_t aw = d.atk * bw / 400, dw = d.dec * bw / 400, sw = bw / 4;
+        int32_t sh = bh * d.sus / 100, rw = d.rel * bw / 400;
+        if (aw < 4) aw = 4;
+        if (dw < 4) dw = 4;
+        if (rw < 4) rw = 4;
+        if (aw + dw + sw + rw > bw) aw = dw = sw = rw = bw / 4;
+        lvt_home.env_sig = k;
+        lvt_home.pts[0].x = 0;                 lvt_home.pts[0].y = bh;
+        lvt_home.pts[1].x = aw;                lvt_home.pts[1].y = 0;
+        lvt_home.pts[2].x = aw + dw;           lvt_home.pts[2].y = bh - sh;
+        lvt_home.pts[3].x = aw + dw + sw;      lvt_home.pts[3].y = bh - sh;
+        lvt_home.pts[4].x = aw + dw + sw + rw; lvt_home.pts[4].y = bh;
+        lv_line_set_points(lvt_home.env, lvt_home.pts, 5);
     }
-
-    /* separator */
-    cv_rect(8, 22, UI_W - 16, 1, T_LINE);
-
-    /* selected track detail */
-    {
-        int32_t dy = 28;
-
-        /* track label + engine name */
-        {
-            char hdr[16];
-            hdr[0] = 'T'; hdr[1] = (char)('1' + d.selected); hdr[2] = ' ';
-            {
-                const char *en = d.engine_name[d.selected];
-                uint32_t i = 0, j = 3;
-                while (en[i] && j < 14) hdr[j++] = en[i++];
-                hdr[j] = 0;
-            }
-            cv_text_fit(8, ty_y(dy + 6, TY_TX), TY_TX, hdr, T_TRK(d.selected), T_BG, UI_W - 16);
-        }
-
-        /* detail: P03  C Minor  O+1 */
-        {
-            char detail[32];
-            uint32_t di = 0;
-            const char *sname;
-            const char *rname;
-
-            detail[di++] = 'P';
-            if (d.preset[d.selected] >= 10)
-                detail[di++] = (char)('0' + d.preset[d.selected] / 10);
-            else
-                detail[di++] = '0';
-            detail[di++] = (char)('0' + d.preset[d.selected] % 10);
-            detail[di++] = ' '; detail[di++] = ' ';
-
-            rname = HOME_NOTE_NAMES[d.root];
-            while (*rname) detail[di++] = *rname++;
-            detail[di++] = ' ';
-
-            if (d.scale < 12)
-                sname = HOME_SCALE_NAMES[d.scale];
-            else
-                sname = "?";
-            while (*sname) detail[di++] = *sname++;
-            detail[di++] = ' '; detail[di++] = ' ';
-
-            detail[di++] = 'O';
-            if (d.oct < 0) {
-                detail[di++] = '-';
-                detail[di++] = (char)('0' + (-d.oct) % 10);
-            } else if (d.oct > 0) {
-                detail[di++] = '+';
-                detail[di++] = (char)('0' + d.oct % 10);
-            } else {
-                detail[di++] = '0';
-            }
-            detail[di] = 0;
-
-            cv_text_fit(8, ty_y(dy + 22, TY_LB), TY_LB, detail, T_MID, T_BG, UI_W - 16);
-        }
-
-        /* level bar */
-        {
-            int32_t bw = UI_W - 16;
-            int32_t lvl = d.level;
-            if (lvl > 100) lvl = 100;
-            cv_rect(8, dy + 36, bw, 3, T_LINE);
-            if (lvl > 0)
-                cv_rect(8, dy + 36, bw * lvl / 100, 3, T_TRK(d.selected));
-        }
-
-        /* ADSR mini display */
-        {
-            int32_t bx = 8, by = dy + 46, bh = 24, bw = UI_W - 16;
-            int32_t aw = d.atk * bw / 400;
-            int32_t dw = d.dec * bw / 400;
-            int32_t sw = bw / 4;
-            int32_t sh = bh * d.sus / 100;
-            int32_t rw = d.rel * bw / 400;
-            int32_t x0, x1, x2, x3;
-            if (aw < 4) aw = 4;
-            if (dw < 4) dw = 4;
-            if (rw < 4) rw = 4;
-            if (aw + dw + sw + rw > bw) { aw = bw / 4; dw = bw / 4; sw = bw / 4; rw = bw / 4; }
-            x0 = bx;
-            x1 = bx + aw;
-            x2 = x1 + dw;
-            x3 = x2 + sw;
-            cv_line(x0, by + bh, x1, by, T_DIM);
-            cv_line(x1, by, x2, by + bh - sh, T_DIM);
-            cv_line(x2, by + bh - sh, x3, by + bh - sh, T_DIM);
-            cv_line(x3, by + bh - sh, x3 + rw, by + bh, T_DIM);
-        }
-    }
-
-    /* version at the very bottom */
-    cv_text_fit(8, ty_y(UI_PANEL_H - 8, TY_LB), TY_LB, CONFIG_FIRMWARE_VERSION, T_DIM, T_BG, UI_W - 16);
-
-    mt_panel_end();
-    ui_footer("", "modd", "");
 }
 
-static int home_knob(uint32_t id, int32_t clicks)
+static void lvt_home_enter(void)
+{
+    lv_obj_t *body = lvt_page_begin(), *panel, *row, *l;
+
+    lvt_cards(body);
+    panel = lvt_panel(body);
+
+    row = lvt_box(panel, LV_FLEX_FLOW_ROW);
+    lv_obj_set_style_pad_column(row, 6, 0);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER);
+    lvt_home.play = lv_label_create(row);
+    lv_label_set_text_static(lvt_home.play, "");
+    lvt_home.rec = lv_obj_create(row);
+    lv_obj_remove_style_all(lvt_home.rec);
+    lv_obj_set_size(lvt_home.rec, 10, 10);
+    lv_obj_set_style_radius(lvt_home.rec, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(lvt_home.rec, LV_OPA_COVER, 0);
+    lvt_home.bpm = lv_label_create(row);
+    lv_obj_set_style_text_font(lvt_home.bpm, &lv_font_montserrat_20, 0);
+    lv_label_set_text_static(lvt_home.bpm, "");
+    lvt_caption(row, "BPM");
+    lvt_rule(panel);
+
+    lvt_home.track = lv_label_create(panel);
+    lv_obj_add_style(lvt_home.track, &lvt_st_theme, 0);
+    lv_label_set_text_static(lvt_home.track, "");
+    lvt_home.detail = lv_label_create(panel);
+    lv_obj_add_style(lvt_home.detail, &lvt_st_small, 0);
+    lv_obj_add_style(lvt_home.detail, &lvt_st_mid, 0);
+    lv_label_set_text_static(lvt_home.detail, "");
+
+    lvt_home.level = lv_bar_create(panel);
+    lv_obj_set_size(lvt_home.level, lv_pct(100), 3);
+    lv_obj_set_style_radius(lvt_home.level, 1, 0);
+    lv_obj_set_style_radius(lvt_home.level, 1, LV_PART_INDICATOR);
+    lv_obj_set_style_bg_opa(lvt_home.level, LV_OPA_COVER, 0);
+    lv_bar_set_range(lvt_home.level, 0, 100);
+
+    lvt_home.env = lv_line_create(panel);
+    lv_obj_set_size(lvt_home.env, HOME_ENV_W, HOME_ENV_H + 2);
+    lv_obj_set_style_line_width(lvt_home.env, 1, 0);
+    lv_obj_add_style(lvt_home.env, &lvt_st_dim, 0);     /* its line colour too */
+    lv_obj_set_style_margin_top(lvt_home.env, 6, 0);
+    lvt_home.env_sig = 0xFFFFFFFFu;
+
+    l = lvt_caption(panel, CONFIG_FIRMWARE_VERSION);
+    lv_obj_set_flex_grow(l, 1);         /* the version sits at the bottom */
+    lv_obj_set_style_align(l, LV_ALIGN_BOTTOM_LEFT, 0);
+    lvt_footer("", "modd", "");
+    lvt_home_show();
+}
+
+static int lvt_home_knob(uint32_t id, int32_t clicks)
 {
     if (id == ENC_SELECT) {
         int32_t s = (int32_t)song.sel + clicks;
         if (s < 0) s = 0;
         if (s >= (int32_t)NTRK) s = (int32_t)NTRK - 1;
         song.sel = (uint8_t)s;
-        nav_dirty = 1;
         return 1;
     }
     return 0;
 }
 
 #ifdef CONFIG_AUDIO
-static int home_key(uint32_t note, uint32_t vel)
+static int lvt_home_key(uint32_t note, uint32_t vel)
 {
     track_t *t = &trk[song.sel];
     if (vel)
@@ -193,17 +163,18 @@ static int home_key(uint32_t note, uint32_t vel)
 #endif
 
 static const modd_page_t PAGE_HOME = {
-    .name  = "HOME",
-    .title = "modd",
-    .view  = VIEW_HOME,
-    .flags = PAGEF_HOME,
-    .draw  = home_draw,
-    .knob  = home_knob,
+    .name   = "HOME",
+    .title  = "modd",
+    .view   = VIEW_HOME,
+    .flags  = PAGEF_HOME,
+    .enter  = lvt_home_enter,
+    .status = lvt_home_show,
+    .knob   = lvt_home_knob,
 #ifdef CONFIG_AUDIO
-    .key   = home_key,
+    .key    = lvt_home_key,
 #endif
     .help_text =
         "SELECT  Track 1-4\n"
         "HOME hold  Settings\n"
-        "GLO hold   Weather",
+        "GLO hold   Log",
 };

@@ -14,7 +14,7 @@ Each shell (Felucca, Melodee, SLOOP) provides a theme that renders elements with
 
 For event flow and page card layouts, see [COMPONENTS.md](COMPONENTS.md#ui). Per-theme navigation maps and page controls are in each theme's [UI.md](themes/).
 
-The `lvgl` theme does not use the element system below: LVGL draws it from its own widgets. See [LVGL.md](LVGL.md).
+The modd theme does not use the element system below: LVGL draws it from its own widgets. See [LVGL.md](LVGL.md).
 
 <!-- ui-hw-controls:start -->
 ## Physical controls
@@ -106,10 +106,9 @@ firmware/src/ui/
     melodee/             # (future)
     sloop/               # (future)
 
-  themes/modd/           # modd's own theme on Melodee's renderer: HOME, Settings, Conn, Demo
   themes/felucca/        # port of Felucca's UI (full page set)
   themes/melodee/        # Melodee's renderer and LCD driver; its shell is still a stub
-  themes/lvgl/           # LVGL 9.6 widgets instead of the renderer: Home, Conn, Config, Debug (LVGL.md)
+  themes/modd/           # the default theme, drawn with LVGL 9.6 widgets: Home, Settings, Weather, Files, Disk, Debug, Demo (LVGL.md)
 ```
 
 The split:
@@ -462,19 +461,18 @@ Kitchen-sink UI showcase. SELECT cycles 6 screens, K1-K4 adjust card values per 
 
 On the EDIT screen, pressing OCT+ opens the [piano keyboard modal](#piano-keyboard-modal) to edit the text field. The MODALS screen opens real dialogs (`dlg_confirm`, `dlg_ok`, `kbd_piano`).
 
-**modd theme** (uses `cv_*` / `mt_panel_*`, no modal system):
+**modd theme** (LVGL widgets, no modal system; screens in `firmware/src/ui/themes/modd/page_demo.c`):
 
-| Screen | Cards | Panel area | K1 special | K2 special |
-|---|---|---|---|---|
-| CARDS | FRA, SCR, K1, NOTE | Theme color swatches | Counter (0-99) | -- |
-| LIST | ITEMS, SEL | Scrollable 16-item list | List selection + auto-scroll | -- |
-| GRAPH | BARS, FRAME, ANIM, STYLE | Animated bar chart | Counter (0-99) | -- |
-| TEXT | FONT S/M/L, DEMO | Font samples, alignment, rounded rects | Counter (0-99) | -- |
-| EDIT | EDIT, LEN, CUR, MAX | Inline text editor with blinking cursor | Move cursor | Change character |
-| MODALS | MODALS, SEL, -, STYLE | Mock dialog overlays drawn in panel | Select modal type | -- |
+| Screen | Panel area | K1 special | K2 special |
+|---|---|---|---|
+| CARDS | The palette's tones as swatches | -- | -- |
+| LIST | 16 rows with a bar each | List selection + auto-scroll | -- |
+| GRAPH | 16 moving bars | -- | -- |
+| TEXT | Type sizes, left / centre / right, three buttons | -- | -- |
+| EDIT | Inline text editor | Move cursor | Change character |
+| MODALS | Three mock dialog types | Select dialog type | -- |
+| TOAST | The six toast states, shown over the footer | Raise a toast state | -- |
 
-modd's EDIT screen has an inline character editor (K1 moves cursor, K2 changes character value). The MODALS screen renders mock dialog overlays (no real modal system).
-
-The modd DEMO view also includes a FILES page (`CONFIG_UDISK`) before DEMO: a USB disk browser using the shared `udisk.c` FAT32 layer.
+On the other screens K1-K4 set 0..99.
 
 The USB disk is mounted only while something needs it. FILES, DISK and the dock instrument list need it while they are open: opening one switches the USB port to host mode and mounts the disk, closing the last one unmounts it and returns the port to device mode, so USB-MIDI and SysEx work again. The DISK row in Settings > HW is the permission for this (stored, on by default): with it off the port never switches for a disk and both pages say so. Nothing mounts the disk at boot.

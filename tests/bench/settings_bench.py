@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""Bench: modd theme settings walkthrough via fm1-live --shot.
+"""Bench: settings walkthrough via fm1-live --shot.
 
 Headless emulator with FM1_BENCH_KEYS scripted input. Produces PPM frames
 for visual inspection. Scenario:
@@ -47,7 +47,7 @@ def results_dir():
 def build_keys_script():
     """FM1_BENCH_KEYS for a settings walkthrough.
 
-    Encoder mapping (modd theme settings):
+    Encoder mapping (settings):
       enc0 = SELECT (switches tabs)
       enc1 = ALGO (scrolls rows)
       enc2 = PRESET/K1 (changes value)

@@ -9,7 +9,7 @@
  * settings tab) stays with the theme.
  *
  * Included from modd.c after ui_nav.c, before the theme root, for the themes with the
- * shell_* entry points (UI_SHELL: modd, LVGL). Readers are cheap: a theme may call them
+ * shell_* entry points (UI_SHELL: the modd theme). Readers are cheap: a theme may call them
  * every frame.
  *
  *   home_read()      tracks, transport, the selected track's sound

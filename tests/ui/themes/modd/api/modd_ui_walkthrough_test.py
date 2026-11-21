@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""UI walkthrough of the LVGL theme: every page, screenshots, OCR text, colours, page data.
+"""UI walkthrough of the modd theme: every page, screenshots, OCR text, colours, page data.
 
 Two phases:
   Phase 1: go to every page over the REST API (/modd/<page>), save the screenshot
            (screenshots/NN_<name>.png) and the page's /api/page reply (data/NN_<name>.json).
-  Phase 2: RapidOCR on the screenshots (data/ocr_<name>.txt), colour checks of the LVGL
+  Phase 2: RapidOCR on the screenshots (data/ocr_<name>.txt), colour checks of the modd
            theme in the default palette (CLAY: cream background, ink text, the selected
            track's colour), structure of the page data.
 
-The LVGL theme has the modd theme's pages, settings tabs included. It builds a page in its UI task, so phase 1 waits until /api/page names the
+The modd theme builds a page in its UI task, so phase 1 waits until /api/page names the
 page (and the tab, for /modd/menu/<tab>); WX is captured once it holds a weather report.
 OCR and colour helpers: tests/ui/lcd_checks.py.
 
 Boots fm1-live with modd_emu (tests/api_fixtures.py). Results:
-tests/results/<datetimeISO>-lvgl_ui_walkthrough_test/.
+tests/results/<datetimeISO>-modd_ui_walkthrough_test/.
 
 Usage:
     task modd:test:modd_emu:api
-    uv run --group ui-test python -m pytest tests/ui/themes/lvgl/api/lvgl_ui_walkthrough_test.py -v
+    uv run --group ui-test python -m pytest tests/ui/themes/modd/api/modd_ui_walkthrough_test.py -v
 """
 import json
 import sys
@@ -38,7 +38,7 @@ def _rgb565(c):
     return (r * 255 // 31, g * 255 // 63, b * 255 // 31)
 
 
-# CLAY, the default palette (build/<defconfig>/gen/lvgl/ui_palettes.h): BG, SURF, TEXT, tracks
+# CLAY, the default palette (build/<defconfig>/gen/modd/ui_palettes.h): BG, SURF, TEXT, tracks
 CLAY_BG, CLAY_SURF, CLAY_TEXT = _rgb565(0xef3b), _rgb565(0xdeda), _rgb565(0x2124)
 CLAY_TRK = [_rgb565(c) for c in (0x9143, 0x69e0, 0x02a8, 0x41b4)]
 
@@ -80,8 +80,8 @@ PAGES = [
 
 # -- test class ---------------------------------------------------------------
 
-class LvglUIWalkthrough(ApiTestCase):
-    """Full UI walkthrough of the LVGL theme with OCR text and colour assertions."""
+class ModdUIWalkthrough(ApiTestCase):
+    """Full UI walkthrough of the modd theme with OCR text and colour assertions."""
 
     _captures = {}
 
@@ -248,7 +248,7 @@ class LvglUIWalkthrough(ApiTestCase):
         d = self._results_dir()
         screenshots = sorted((d / 'screenshots').glob('*.png'))
         data_files = list((d / 'data').glob('*'))
-        print('\n    === LVGL UI Walkthrough Results ===')
+        print('\n    === modd UI Walkthrough Results ===')
         print(f'    results:      {d}/')
         print(f'    screenshots:  {len(screenshots)} captured')
         for s in screenshots:

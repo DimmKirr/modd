@@ -14,8 +14,8 @@
 A modular firmware framework for the M-VAVE FM-1 synthesizer. Bring features
 from any FM-1 firmware into one configurable source tree: WiFi, USB tethering,
 a file browser, direct-API tests, and a theming system. Two themes ship today
-(modd, Felucca) and nine community firmwares are vendored for
-reference and reuse.
+(modd, the default, and Felucca) and nine community firmwares are
+vendored for reference and reuse.
 
 ### How modd compares
 
@@ -26,7 +26,7 @@ firmwares, enable WiFi or USB storage, and test the result in the
 emulator. The default build uses Melodee's audio core with FMLab's FM6
 and four Felucca-Engines.
 
-See the [full comparison](docs/COMPARISON.md) against all 8 community
+See the [full comparison](docs/COMPARISON.md) against all 9 community
 firmwares, covering connectivity, audio engines, theming, testing,
 and modularity.
 
@@ -44,7 +44,7 @@ contracts, never hardware registers.
 
 Build and test firmware without hardware. The native fm1-live emulator runs the
 real binary, and the tests drive it over its HTTP API: pages, panel input, audio
-capture, LCD screenshots and network flows. CI publishes screenshots on every push.
+capture, LCD screenshots and network flows.
 
 ```sh
 task test:api    # build, boot in fm1-live, run the API tests
@@ -55,10 +55,11 @@ task test:api    # build, boot in fm1-live, run the API tests
 - **WiFi**: WPA2-PSK STA, RF calibration, SDIO transport ([20 files](firmware/src/wifi/))
 - **USB tethering**: Apple USB tethering (ipheth) for wired networking via iPhone<sup>1</sup> ([usbnet.c](firmware/src/net/usbnet.c))
 - **USB disk**: FAT filesystem, mass storage, hub enumeration ([firmware/src/udisk/](firmware/src/udisk/))
-- **List widget**: scrolling list over any source: USB directory, dock instruments, HTTP index ([modd_list.h](firmware/adapters/modd_list.h))
+- **List widget**: scrolling list over any source: USB directory, dock instruments, HTTP index (planned) ([modd_list.h](firmware/adapters/modd_list.h))
 
-Link priority election (wired > WiFi > tethering), async HTTP, weather
-pixel-art, and LLM inference run on top of lwIP. The WiFi driver's RF and
+WiFi and USB ethernet can auto-start or be disabled in config; link priority
+election (wired > WiFi > tethering), async HTTP, weather pixel-art,
+and LLM inference run on top of lwIP. The WiFi driver's RF and
 hardware layers are
 [clean-room](docs/hardware/wifi/CLEAN_ROOM_METHODOLOGY.md) from register specs
 and protocol documentation; upper layers use public standards and
@@ -70,9 +71,9 @@ permissive-licensed code (see the
 Implement three render hooks (`render_header`, `render_footer`, `render_card`),
 map buttons to views with a declarative controls struct, add pages with toast
 notifications and scrolling lists. Auto-generated docs with emulator screenshots
-verify your theme in CI. Two themes ship: modd (native with widget library)
-and Felucca (ported from hugelton's firmware). Melodee provides the graphics
-primitives (renderer, fonts, palettes) that the modd theme builds on.
+verify your theme in CI. Two themes ship: modd (the default, drawn with LVGL v9.6
+widgets) and Felucca (ported from hugelton's firmware). Melodee provides the
+LCD driver the modd theme draws through.
 
 - Theme vtable: [`firmware/src/ui/ui_theme.h`](firmware/src/ui/ui_theme.h)
 - Per-theme controls: [`firmware/src/ui/themes/modd/controls.c`](firmware/src/ui/themes/modd/controls.c)
@@ -114,7 +115,8 @@ primitives (renderer, fonts, palettes) that the modd theme builds on.
 <!-- theme-screenshots:end -->
 
 Screenshots are captured automatically by the docs tasks. CI publishes the
-latest set on every push. See the [full screenshot gallery](docs/ui/themes/modd/THEME.md).
+latest set on main pushes. See the full screenshot gallery for
+[modd](docs/ui/themes/modd/THEME.md).
 
 <sup>1</sup> iPhone tethering is still being tested.
 
@@ -131,10 +133,10 @@ mise exec -- task test:api          # see your firmware run in the emulator
 ```
 
 The build downloads the JieLi toolchain and SDK when needed and writes
-`build/modd.fwsc`. The compiler runs on x86-64 Linux; macOS builds use Docker,
-and ARM Linux uses QEMU.
+`build/modd/modd.fwsc`. The compiler runs on x86-64 Linux; macOS builds use
+Docker, and ARM Linux uses QEMU (see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#toolchains-open-default-and-jieli) for runner details).
 
-> **Early development:** the modd theme builds and boots in the emulator.
+> **Early development:** the firmware builds and boots in the emulator.
 > Audio integration and musical workflows are still in progress.
 
 ## Move modules around

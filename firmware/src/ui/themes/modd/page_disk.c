@@ -1,143 +1,78 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* modd DISK INFO: USB disk stats page under VIEW_DEMO.
- * Shows volume info, capacity, free space, device VID/PID. */
+/* DISK: the USB disk's state and volume, one row per field, the disk's state in the
+ * footer (OFF, FAT32, ERR, WAIT, SCAN, ---). SELECT goes on to FILES.
+ *
+ *   mounted   Status, Type, Capacity, Volume, Files, Device (VID:PID), Cluster
+ *   not       Status (Off, Error, Enumerating, Scanning, Not mounted), then where to turn
+ *             the disk on, or the attached device's VID and PID
+ *
+ * The page needs the disk while it is open (udisk_need / udisk_release). Values are re-read when the disk's state changes and once a second. */
 
-#define MDISK_X_PAD    8
-#define MDISK_HDR_H   30
-#define MDISK_NROWS_MOUNTED   7
-#define MDISK_NROWS_UNMOUNTED 3
+#define LVT_DISK_ROWS 7u
 
-static void mdisk_fmt_u32(char *out, uint32_t v) { ui_fmt_u32(out, v); }
+static struct {
+    lv_obj_t *row[LVT_DISK_ROWS], *key[LVT_DISK_ROWS], *val[LVT_DISK_ROWS];
+    uint32_t  shown_ms, state;
+} lvt_disk;
 
-static void mdisk_fmt_mb(char *out, uint32_t sectors)
+static void lvt_disk_set(uint32_t i, const char *key, const char *fmt, ...)
+{
+    va_list ap;
+    lv_obj_set_hidden(lvt_disk.row[i], false);
+    lv_label_set_text_static(lvt_disk.key[i], key);
+    va_start(ap, fmt);
+    lv_label_set_text_vfmt(lvt_disk.val[i], fmt, ap);
+    va_end(ap);
+}
+
+/* sectors of 512 bytes as "512 MB" or "14.9 GB" */
+static void lvt_disk_size(uint32_t i, const char *key, uint32_t sectors)
 {
     uint32_t mb = sectors / 2048u;
-    if (mb >= 1024u) {
-        uint32_t gb = mb / 1024u;
-        uint32_t frac = (mb % 1024u) * 10u / 1024u;
-        mdisk_fmt_u32(out, gb);
-        uint32_t i = 0;
-        while (out[i]) i++;
-        out[i++] = '.';
-        out[i++] = '0' + (char)(frac % 10u);
-        out[i++] = ' ';
-        out[i++] = 'G';
-        out[i++] = 'B';
-        out[i] = 0;
-    } else {
-        mdisk_fmt_u32(out, mb);
-        uint32_t i = 0;
-        while (out[i]) i++;
-        out[i++] = ' ';
-        out[i++] = 'M';
-        out[i++] = 'B';
-        out[i] = 0;
-    }
+    if (mb >= 1024u)
+        lvt_disk_set(i, key, "%u.%u GB", (unsigned)(mb / 1024u), (unsigned)((mb % 1024u) * 10u / 1024u));
+    else
+        lvt_disk_set(i, key, "%u MB", (unsigned)mb);
 }
 
-static void mdisk_fmt_hex16(char *out, uint16_t v)
+static uint32_t lvt_disk_state(void)
 {
-    static const char hex[] = "0123456789ABCDEF";
-    out[0] = '0'; out[1] = 'x';
-    out[2] = hex[(v >> 12) & 0xF];
-    out[3] = hex[(v >> 8) & 0xF];
-    out[4] = hex[(v >> 4) & 0xF];
-    out[5] = hex[v & 0xF];
-    out[6] = 0;
+    return (uint32_t)udisk_is_enabled() | (uint32_t)(udisk_is_mounted() ? 2u : 0u) |
+           (uint32_t)(udisk_active ? 4u : 0u) | ((uint32_t)uhost.state << 8);
 }
 
-static void mdisk_row(int32_t y, const char *label, const char *val,
-                      uint16_t val_color)
+static void lvt_disk_show(void)
 {
-    cv_text_fit(MDISK_X_PAD, y, TY_LB, label, T_DIM, T_BG, 80);
-    cv_text_r(UI_W - MDISK_X_PAD, y, TY_LB, val, val_color, T_BG);
-}
-
-static void mdisk_draw(void)
-{
-    mt_panel_begin();
-
-    cv_text_fit(MDISK_X_PAD, 0, TY_LB, "DISK INFO", T_ACCENT, T_BG, 100);
-    cv_rect(0, 14, UI_W, 1, T_LINE);
-
-    char buf[24];
-    uint32_t row = 0;
-
+    uint32_t n = 0, i;
     if (!udisk_is_mounted()) {
-        uint32_t rh = (UI_PANEL_H - MDISK_HDR_H) / MDISK_NROWS_UNMOUNTED;
-
         const char *st = "Not mounted";
-        if (!udisk_is_enabled()) st = "Off";
-        else if (uhost.state == UHOST_ERROR) st = "Error";
-        else if (uhost.state == UHOST_ATTACHED) st = "Enumerating";
-        else if (udisk_active) st = "Scanning";
-        mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Status", st, T_MID);
-        row++;
-
-        if (!udisk_is_enabled()) {              /* the DISK setting is off: say where it is */
-            mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Turn on", "Settings HW", T_TEXT);
+        if (!udisk_is_enabled())                 st = "Off";
+        else if (uhost.state == UHOST_ERROR)     st = "Error";
+        else if (uhost.state == UHOST_ATTACHED)  st = "Enumerating";
+        else if (udisk_active)                   st = "Scanning";
+        lvt_disk_set(n++, "Status", "%s", st);
+        if (!udisk_is_enabled()) {               /* the DISK setting is off: say where it is */
+            lvt_disk_set(n++, "Turn on", "Settings HW");
         } else if (uhost.vid) {
-            mdisk_fmt_hex16(buf, uhost.vid);
-            mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "VID", buf, T_TEXT);
-            row++;
-            mdisk_fmt_hex16(buf, uhost.pid);
-            mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "PID", buf, T_TEXT);
+            lvt_disk_set(n++, "VID", "0x%04X", (unsigned)uhost.vid);
+            lvt_disk_set(n++, "PID", "0x%04X", (unsigned)uhost.pid);
         }
     } else {
-        uint32_t rh = (UI_PANEL_H - MDISK_HDR_H) / MDISK_NROWS_MOUNTED;
-
-        mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Status", "Mounted", T_THEME);
-        row++;
-
-        const char *fsname = "FAT??";
-        if (udisk_fs.fs_type == FS_FAT32) fsname = "FAT32";
-        else if (udisk_fs.fs_type == FS_FAT16) fsname = "FAT16";
-        else if (udisk_fs.fs_type == FS_FAT12) fsname = "FAT12";
-        mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Type", fsname, T_TEXT);
-        row++;
-
-        mdisk_fmt_mb(buf, uhost.capacity);
-        mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Capacity", buf, T_TEXT);
-        row++;
-
-        {
-            uint32_t total_clust = udisk_fs.n_fatent - 2u;
-            uint32_t total_sec = total_clust * (uint32_t)udisk_fs.csize;
-            mdisk_fmt_mb(buf, total_sec);
-            mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Volume", buf, T_TEXT);
-            row++;
-        }
-
-        mdisk_fmt_u32(buf, udisk_nentry);
-        mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Files", buf, T_TEXT);
-        row++;
-
-        mdisk_fmt_hex16(buf, uhost.vid);
-        {
-            uint32_t i = 0;
-            while (buf[i]) i++;
-            buf[i++] = ':';
-            mdisk_fmt_hex16(buf + i, uhost.pid);
-        }
-        mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Device", buf, T_TEXT);
-        row++;
-
-        mdisk_fmt_u32(buf, (uint32_t)udisk_fs.csize);
-        {
-            uint32_t i = 0;
-            while (buf[i]) i++;
-            buf[i++] = ' ';
-            buf[i++] = 's';
-            buf[i++] = 'e';
-            buf[i++] = 'c';
-            buf[i] = 0;
-        }
-        mdisk_row((int32_t)(MDISK_HDR_H + row * rh), "Cluster", buf, T_DIM);
+        const char *fs = udisk_fs.fs_type == FS_FAT32 ? "FAT32" : udisk_fs.fs_type == FS_FAT16 ? "FAT16"
+                       : udisk_fs.fs_type == FS_FAT12 ? "FAT12" : "FAT??";
+        lvt_disk_set(n++, "Status", "Mounted");
+        lvt_disk_set(n++, "Type", "%s", fs);
+        lvt_disk_size(n++, "Capacity", uhost.capacity);
+        lvt_disk_size(n++, "Volume", (udisk_fs.n_fatent - 2u) * (uint32_t)udisk_fs.csize);
+        lvt_disk_set(n++, "Files", "%u", (unsigned)udisk_nentry);
+        lvt_disk_set(n++, "Device", "0x%04X:0x%04X", (unsigned)uhost.vid, (unsigned)uhost.pid);
+        lvt_disk_set(n++, "Cluster", "%u sec", (unsigned)udisk_fs.csize);
     }
-
-    mt_panel_end();
-
+    for (i = n; i < LVT_DISK_ROWS; i++)
+        lv_obj_set_hidden(lvt_disk.row[i], true);
+    lvt_disk.shown_ms = fm1_ms;
+    lvt_disk.state = lvt_disk_state();
     {
         const char *mid = "---";
         if (!udisk_is_enabled()) mid = "OFF";
@@ -145,30 +80,39 @@ static void mdisk_draw(void)
         else if (uhost.state == UHOST_ERROR) mid = "ERR";
         else if (uhost.state == UHOST_ATTACHED) mid = "WAIT";
         else if (udisk_active) mid = "SCAN";
-        ui_footer("", mid, "");
+        lvt_footer("", mid, "");
     }
 }
 
-static uint8_t mdisk_was_mounted;
-
-static void mdisk_status(void)
+static void lvt_disk_enter(void)
 {
-    uint8_t m = udisk_is_mounted() ? 1 : 0;
-    if (m != mdisk_was_mounted) {
-        mdisk_was_mounted = m;
-        nav_dirty = 1;
+    lv_obj_t *body = lvt_page_begin(), *l;
+    uint32_t i;
+    l = lv_label_create(body);
+    lv_obj_add_style(l, &lvt_st_small, 0);
+    lv_obj_set_style_text_color(l, lvt_pal.accent, 0);
+    lv_label_set_text_static(l, "DISK INFO");
+    lvt_rule(body);
+    for (i = 0; i < LVT_DISK_ROWS; i++) {
+        lv_obj_t *row = lvt_row(body, 20);
+        lvt_disk.key[i] = lvt_caption(row, "");
+        lv_obj_set_flex_grow(lvt_disk.key[i], 1);
+        lvt_disk.val[i] = lv_label_create(row);
+        lvt_disk.row[i] = row;
     }
-}
-
-static void mdisk_enter(void)                   /* the page needs the disk while it is open */
-{
     udisk_need();
-    mdisk_was_mounted = udisk_is_mounted() ? 1 : 0;
+    lvt_disk_show();
 }
 
-static void mdisk_leave(void)
+static void lvt_disk_leave(void)
 {
     udisk_release();
+}
+
+static void lvt_disk_status(void)
+{
+    if (lvt_disk_state() != lvt_disk.state || fm1_ms - lvt_disk.shown_ms >= 1000u)
+        lvt_disk_show();
 }
 
 static const modd_page_t PAGE_DISK = {
@@ -176,8 +120,7 @@ static const modd_page_t PAGE_DISK = {
     .title  = "Disk",
     .view   = VIEW_DEMO,
     .flags  = PAGEF_SYSTEM,
-    .enter  = mdisk_enter,
-    .leave  = mdisk_leave,
-    .draw   = mdisk_draw,
-    .status = mdisk_status,
+    .enter  = lvt_disk_enter,
+    .leave  = lvt_disk_leave,
+    .status = lvt_disk_status,
 };

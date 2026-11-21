@@ -36,7 +36,7 @@ def _test_vars():
 def test_rule_examples():
     t = ROOT / 'tests'
     assert is_api_test(t / 'audio' / 'api_audio_test.py')
-    assert is_api_test(t / 'ui' / 'themes' / 'lvgl' / 'api' / 'lvgl_api_test.py')
+    assert is_api_test(t / 'ui' / 'themes' / 'modd' / 'api' / 'modd_api_test.py')
     assert is_api_test(t / 'made_up' / 'api_made_up_test.py')
     assert not is_api_test(t / 'build' / 'genconfig_test.py')
     assert not is_api_test(t / 'build' / 'taskfile_tiers_test.py')

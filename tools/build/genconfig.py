@@ -18,6 +18,8 @@ ROOT = Path(__file__).resolve().parents[2]
 # them); config.masked.h does not, and it is the only one debug dumps and
 # logs may print. Add every new credential symbol here.
 SECRET_SYMBOLS = ('WIFI_PASSWORD', 'OPENROUTER_API_KEY')
+# Symbols an emulator build (CONFIG_EMU) takes from its defconfig, never from the environment.
+EMU_KEEPS = ('WIFI_SSID', 'WIFI_PASSWORD')
 SECRET_MASK = '***'
 
 
@@ -80,11 +82,10 @@ COMPONENT_SYMBOLS = {
     'USB_NET': 'usb-net',
     'USB_AUDIO': 'usb-audio',
     'INPUT': 'input',
-    'UI_FELUCCA': 'ui:felucca',
-    'UI_SLOOP': 'ui:sloop',
-    'UI_MELODEE': 'ui:melodee',
-    'UI_MODD': 'ui:modd',
-    'UI_LVGL': 'ui:lvgl',
+    'UI_THEME_FELUCCA': 'ui:felucca',
+    'UI_THEME_SLOOP': 'ui:sloop',
+    'UI_THEME_MELODEE': 'ui:melodee',
+    'UI_THEME_MODD': 'ui:modd',
     'FLASH': 'flash',
     'STORAGE_FELUCCA': 'storage:felucca',
     'STORAGE_SLOOP': 'storage:sloop',
@@ -167,9 +168,15 @@ def main():
     # Taskfile dotenv loads .env; WIFI_PASSWORD=x overrides CONFIG_WIFI_PASSWORD.
     ENV_OVERRIDES = ['WIFI_SSID', 'WIFI_PASSWORD', 'WIFI_MAC_OVERRIDE',
                       'OPENROUTER_API_KEY']
+    # An emulator build (CONFIG_EMU) joins fm1-live's virtual AP with the credentials its
+    # defconfig carries: the ones in the environment (.env, a real network) do not replace them.
+    emu = 'EMU' in kconf.syms and kconf.syms['EMU'].str_value == 'y'
     for name in ENV_OVERRIDES:
         val = os.environ.get(name)
         if val is not None:
+            if emu and name in EMU_KEEPS:
+                print(f'genconfig: {name} from the environment ignored (emulator build)')
+                continue
             sym = kconf.syms.get(name)
             if sym:
                 sym.set_value(val)

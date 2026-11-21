@@ -6,13 +6,12 @@
  * net_read, wx_read), the same structs the themes draw from, so every theme that
  * registers pages with ui_nav.c gets the same JSON for the same page name. A lookup
  * table maps a page's .name to its serializer (pages are const, so they carry no
- * callback). The modd and LVGL themes have the same pages; the palette and the
- * settings tab are each theme's own state (ux / lvt_pal, mset).
+ * callback). The palette and the settings tab are the theme's own state (lvt_pal, mset).
  *
- *   page     modd theme   LVGL theme   data
- *   HOME     yes          yes          tracks, transport, the selected track's sound, palette
- *   MENU     yes          yes          the settings of the tab showing (NETWORK: the link)
- *   WX       yes          yes          the weather report
+ *   page     data
+ *   HOME     tracks, transport, the selected track's sound, palette
+ *   MENU     the settings of the tab showing (NETWORK: the link)
+ *   WX       the weather report
  *
  * api_page_goto() is the one page lookup: GET /modd/<page>[/<sub>] (api_ctl.c)
  * and FM1.navigate (rpc_fm1.c) both call it. */
@@ -61,12 +60,7 @@ static void api_page_home_json(struct rpc_tx *tx)
         rpc_tx_raw(tx, "}");
     }
     rpc_tx_raw(tx, "]");
-#if defined(CONFIG_UI_MODD)
-    rpc_tx_char(tx, ',');
-    rpc_tx_key_uint(tx, "palette", ux.pal);
-    rpc_tx_char(tx, ',');
-    rpc_tx_key_str(tx, "palette_name", UI_PALETTES[ux.pal].name);
-#elif defined(CONFIG_UI_LVGL)
+#ifdef CONFIG_UI_THEME_MODD
     rpc_tx_char(tx, ',');
     rpc_tx_key_uint(tx, "palette", lvt_pal.idx);
     rpc_tx_char(tx, ',');
@@ -231,7 +225,7 @@ static int api_page_sub(uint32_t idx, const char *sub)
         uint32_t t;
         for (t = 0; t < SMTAB_COUNT; t++) {
             if (rpc_streq_nocase(SMTAB_NAME[t], sub)) {
-#ifdef CONFIG_UI_LVGL
+#ifdef CONFIG_UI_THEME_MODD
                 mset.req = (uint8_t)(t + 1u);   /* entered later, on the UI task: the page takes the tab */
 #else
                 mset.tab = (uint8_t)t;
@@ -250,8 +244,8 @@ static int api_page_sub(uint32_t idx, const char *sub)
 enum { API_GOTO_OK = 0, API_GOTO_NO_PAGE = -1, API_GOTO_NO_SUB = -2 };
 
 /* Go to the page called `page` (case ignored), then to its `sub` ("" for none). On
- * API_GOTO_OK *idx is the page. A theme that changes pages in its own task (LVGL) shows
- * it on its next frame: /api/page reports it from then on. */
+ * API_GOTO_OK *idx is the page. A theme that changes pages in its own task (the modd
+ * theme) shows it on its next frame: /api/page reports it from then on. */
 static int api_page_goto(const char *page, const char *sub, uint32_t *idx)
 {
     uint32_t i = nav_find(page);

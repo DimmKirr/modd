@@ -3,23 +3,19 @@
 #  Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Capture per-page screenshots for a UI theme.
 
-The modd theme uses fm1-live (native CLI emulator) with USB ethernet and
-real network access for weather data.  Other themes fall back to the WASM
-emulator via Playwright.
-
-Extended captures for the modd theme:
-  - All settings tabs (DISPLAY, MIDI, HW, NET)
-  - All color palettes (10 palettes, each shown on the HOME page)
-  - Weather, Demo, Files, Disk, Log pages
-
-The lvgl theme has the modd theme's pages and controls, so it gets the same captures
-from the same key sequences (fm1-live), into docs/ui/themes/lvgl/screenshots/.
+Two backends:
+  - modd: fm1-live (native CLI emulator) with USB ethernet and real network access for
+    weather data. Captures the HOME page, all settings tabs (DISPLAY, MIDI, HW, NET), all
+    color palettes (10, each shown on HOME), Weather, Demo, Files, Disk and Log pages into
+    docs/ui/themes/modd/screenshots/, then refreshes the README hero block and the THEME.md
+    gallery.
+  - felucca (and any other theme without network features): the WASM emulator via
+    Playwright in Chromium.
 
 Usage:
   python3 tools/codegen/gen_ui_screenshots.py modd
-  python3 tools/codegen/gen_ui_screenshots.py lvgl
   python3 tools/codegen/gen_ui_screenshots.py felucca
-  python3 tools/codegen/gen_ui_screenshots.py --all
+  python3 tools/codegen/gen_ui_screenshots.py --all      # every theme with a pages.c
 """
 from __future__ import annotations
 
@@ -39,7 +35,7 @@ from gen_ui_map import discover_themes
 
 THEME_DEFCONFIG = {
     'felucca': 'felucca',
-    'lvgl': 'modd_emu',
+    'modd': 'modd_emu',
 }
 
 EMU_WIFI_SSID = 'Home'
@@ -198,10 +194,20 @@ def _hold_keys(button: str, start_ms: int, hold_ms: int = 700) -> str:
     return f'{start_ms}:{button},{start_ms + hold_ms}:{button}^'
 
 
-def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path,
-                       build: bool = True, disk_defconfig: str = 'modd') -> int:
-    """Capture all modd theme screenshots using fm1-live (the LVGL theme's too: same pages,
-    same controls). FILES and DISK use `disk_defconfig`'s firmware."""
+# WiFi is up from boot (commit 01ad12e0f) and input sent in the first seconds is unreliable.
+# Measured with fm1-live on modd_emu: an encoder step is lost before ~6.5 s (steps at 4 s and
+# 5 s never show, even in a shot taken at 13 s), a 100 ms or 300 ms button press does nothing
+# in the first seconds (400 ms works; the same 100 ms press works at 14 s), and a hold's page
+# opens ~300 ms after the release. So scripts that do not already wait for the network start
+# their keys after BOOT_SETTLE_MS. Cause not found; see
+# .scratch/tasks/todo/2026-11-21T09-30-input-dropped-in-first-seconds-after-boot.md.
+BOOT_SETTLE_MS = 9000
+
+
+def _capture_live(fm1_live: Path, fwsc: Path, out_dir: Path,
+                  build: bool = True, disk_defconfig: str = 'modd') -> int:
+    """Capture all the modd theme's screenshots using fm1-live.
+    FILES and DISK use `disk_defconfig`'s firmware."""
     idx = 0
 
     with tempfile.TemporaryDirectory() as td:
@@ -209,7 +215,7 @@ def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path,
 
         # --- HOME (boot, no network needed for fast capture) ---
         print('    HOME...')
-        ppm = _shot(fm1_live, fwsc, '', 2000, work, net=False)
+        ppm = _shot(fm1_live, fwsc, '', BOOT_SETTLE_MS, work, net=False)
         _ppm_to_png(ppm, out_dir / f'{idx:02d}_home.png')
         idx += 1
 
@@ -219,7 +225,8 @@ def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path,
         # NET tab uses network so it shows LINK/IP/GATEWAY/DNS values
         for tab_i, tab_name in enumerate(SETTINGS_TABS):
             use_net = tab_name == 'NET'
-            boot_wait = 15000 if use_net else 0
+            # with USB ethernet the input is dropped longer (steps at 17 s lost, at 22 s work)
+            boot_wait = 21500 if use_net else BOOT_SETTLE_MS
             print(f'    settings {tab_name}{"  (with network)" if use_net else ""}...')
             keys = _hold_keys('HOME', 500 + boot_wait)
             enc_clicks = ','.join(
@@ -249,8 +256,8 @@ def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path,
         # the palette name and colour swatches (HOME page barely changes).
         for pal_i in range(PALETTE_COUNT):
             print(f'    palette {pal_i}/{PALETTE_COUNT}...')
-            keys = _hold_keys('HOME', 500)
-            t = 1500
+            keys = _hold_keys('HOME', 500 + BOOT_SETTLE_MS)
+            t = 1500 + BOOT_SETTLE_MS
             for _ in range(pal_i):
                 keys += f',{t}:OCTUP,{t + 100}:OCTUP^'
                 t += 300
@@ -270,8 +277,9 @@ def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path,
 
         # --- DEMO (FX hold -> VIEW_CONN, e0+1 -> page 2 = DEMO) ---
         print('    demo...')
-        keys = _hold_keys('FX', 500) + ',1500:e0:+1'
-        ppm = _shot(fm1_live, fwsc, keys, 2500, work, net=False)
+        keys = (_hold_keys('FX', 500 + BOOT_SETTLE_MS)
+                + f',{1500 + BOOT_SETTLE_MS}:e0:+1')
+        ppm = _shot(fm1_live, fwsc, keys, 2500 + BOOT_SETTLE_MS, work, net=False)
         _ppm_to_png(ppm, out_dir / f'{idx:02d}_demo.png')
         idx += 1
 
@@ -297,25 +305,31 @@ def _capture_modd_live(fm1_live: Path, fwsc: Path, out_dir: Path,
         idx += 1
 
         # --- DISK (SAVE hold -> VIEW_DEMO, e0+1 -> page 2 = DISK) ---
+        # The encoder step waits for the mount: sent at 3 s it is lost (BOOT_SETTLE_MS, longer
+        # with USB ethernet) and the shot shows FILES again; at 23 s it lands.
         print('    disk (with USB disk)...' if disk_img else '    disk...')
-        keys = _hold_keys('SAVE', 2000) + ',3000:e0:+1'
-        ppm = _shot(fm1_live, disk_fwsc, keys, 20000, work, net=True,
+        keys = _hold_keys('SAVE', 2000) + ',23000:e0:+1'
+        ppm = _shot(fm1_live, disk_fwsc, keys, 25000, work, net=True,
                      disk_image=disk_img)
         _ppm_to_png(ppm, out_dir / f'{idx:02d}_disk.png')
         idx += 1
 
         # --- DEBUG LOG (GLO hold toggles debug page) ---
         print('    log...')
-        keys = _hold_keys('GLO', 500)
-        ppm = _shot(fm1_live, fwsc, keys, 2000, work, net=False)
+        keys = _hold_keys('GLO', 500 + BOOT_SETTLE_MS)
+        ppm = _shot(fm1_live, fwsc, keys, 2000 + BOOT_SETTLE_MS, work, net=False)
         _ppm_to_png(ppm, out_dir / f'{idx:02d}_log.png')
         idx += 1
 
     return idx
 
 
+# ---------------------------------------------------------------------------
+# fm1-live backend (modd theme): capture entry point
+# ---------------------------------------------------------------------------
+
 def capture_modd(build: bool = True) -> Path:
-    """Capture modd theme screenshots using fm1-live."""
+    """Capture the modd theme's pages using fm1-live."""
     fm1_live = _find_fm1_live()
     if fm1_live is None:
         print('fm1-live not found. Set FM1_EMU_DIR or build fm1-live from '
@@ -337,45 +351,10 @@ def capture_modd(build: bool = True) -> Path:
     for f in out_dir.glob('*.png'):
         f.unlink()
 
-    idx = _capture_modd_live(fm1_live, fwsc, out_dir, build=build)
+    idx = _capture_live(fm1_live, fwsc, out_dir, build=build, disk_defconfig=defconfig)
 
     _copy_stable_names(out_dir)
     _inject_readme_screenshots(out_dir)
-    _inject_theme_gallery(out_dir)
-    print(f'  {idx} screenshots saved to {out_dir}')
-    return out_dir
-
-
-# ---------------------------------------------------------------------------
-# fm1-live backend (lvgl theme): the modd theme's captures, LVGL-drawn
-# ---------------------------------------------------------------------------
-
-def capture_lvgl(build: bool = True) -> Path:
-    """Capture the LVGL theme's pages using fm1-live: the modd theme's sequence."""
-    fm1_live = _find_fm1_live()
-    if fm1_live is None:
-        print('fm1-live not found. Set FM1_EMU_DIR or build fm1-live from '
-              'fm1-emu master.', file=sys.stderr)
-        raise SystemExit(1)
-    print(f'  Using fm1-live: {fm1_live}')
-
-    defconfig = THEME_DEFCONFIG['lvgl']
-    if build:
-        fwsc = _build_firmware('lvgl')
-    else:
-        fwsc = _fwsc_path(defconfig)
-        if not fwsc.is_file():
-            print(f'Firmware not built ({fwsc}).', file=sys.stderr)
-            raise SystemExit(1)
-
-    out_dir = ROOT / 'docs' / 'ui' / 'themes' / 'lvgl' / 'screenshots'
-    out_dir.mkdir(parents=True, exist_ok=True)
-    for f in out_dir.glob('*.png'):
-        f.unlink()
-
-    idx = _capture_modd_live(fm1_live, fwsc, out_dir, build=build, disk_defconfig=defconfig)
-
-    _copy_stable_names(out_dir)
     _inject_theme_gallery(out_dir)
     print(f'  {idx} screenshots saved to {out_dir}')
     return out_dir
@@ -390,7 +369,7 @@ def _default_emu_dir() -> Path:
 
 
 def capture_theme_playwright(theme: str, build: bool = True) -> Path:
-    """Capture screenshots for a non-modd theme via the WASM emulator."""
+    """Capture screenshots for a theme without network features via the WASM emulator."""
     import http.server
     import socket
     import threading
@@ -677,11 +656,7 @@ def main() -> None:
     for theme in themes:
         print(f'[{theme}]')
         if theme == 'modd':
-            # MODD LEGACY: no defconfig builds this theme (see configs/modd_emu_defconfig);
-            # its screenshots stay as last captured.
-            print('    skipped: MODD LEGACY theme, no defconfig builds it')
-        elif theme == 'lvgl':
-            capture_lvgl(build=build)
+            capture_modd(build=build)
         else:
             capture_theme_playwright(theme, build=build)
 

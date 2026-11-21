@@ -3,7 +3,7 @@
 /* modd theme LED indicators.
  * Felucca's addressing scheme (led_put) over Melodee's 3-plane HAL
  * (fm1_led_dim[3], fm1_led_dim_mask[3], fm1_led_pwm.h). Each theme owns its
- * own ui_leds(); a Felucca or Melodee theme would have a different one. */
+ * own ui_leds(); the LEDs do not depend on who draws the screen. */
 
 /* --- LED addressing (inline scan, no lookup table: saves 41 bytes of RAM) --- */
 

@@ -51,7 +51,7 @@ The UI never calls audio functions, never allocates voices, never touches hardwa
 
 Screen rendering, event dispatch, menu system, splash screen.
 
-Kconfig: `CONFIG_UI_FELUCCA`, `CONFIG_UI_MELODEE`, `CONFIG_UI_SLOOP`, `CONFIG_UI_MODD`.
+Kconfig: `CONFIG_UI_THEME_FELUCCA`, `CONFIG_UI_THEME_MELODEE`, `CONFIG_UI_THEME_SLOOP`, `CONFIG_UI_THEME_MODD`.
 
 ### Components
 
@@ -133,7 +133,7 @@ Each page is a `modd_page_t` with `.draw`, `.knob`, `.button`, `.key` callbacks:
 `configs/felucca_mock_defconfig`:
 ```
 CONFIG_INPUT=y
-CONFIG_UI_FELUCCA=y
+CONFIG_UI_THEME_FELUCCA=y
 # CONFIG_AUDIO is not set
 ```
 

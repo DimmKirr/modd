@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* What every page shares: the styles, the frame around the content, the cards, the
- * hints and the toasts. The same parts as the modd theme (ui/themes/modd/theme.c,
- * shell.c, toast.c), drawn by LVGL:
+ * hints and the toasts. Drawn by LVGL:
  *
  *   header  24   page title ............. WiFi bars, E(thernet), disk, page n/m
  *   body   188   the page's widgets; pages with cards start with a row of four (48)
@@ -213,7 +212,7 @@ static lv_obj_t *lvt_row(lv_obj_t *parent, uint32_t h)
 }
 
 /* ------------------------------------------------------------- cards --- */
-/* Four cards across the top of the body, as the modd theme's ui_card(): a label, a value
+/* Four cards across the top of the body: a label, a value
  * and a gauge (0..1000, hidden below 0) in a colour. */
 static struct {
     lv_obj_t *box, *label, *value, *unit, *gauge;
@@ -276,7 +275,7 @@ static void lvt_card_set(uint32_t k, const char *label, const char *value, const
     lvt_text(lvt_card[k].label, label);
     lvt_text(lvt_card[k].value, value);
     lvt_text(lvt_card[k].unit, unit);
-    {   /* a long value in the small type, as the modd theme's ty_fit() */
+    {   /* a long value in the small type */
         const lv_font_t *f = lv_strlen(value ? value : "") > 4u ? &lv_font_montserrat_10 : &lv_font_montserrat_14;
         if (lv_obj_get_style_text_font(lvt_card[k].value, 0) != f)
             lv_obj_set_style_text_font(lvt_card[k].value, f, 0);
@@ -297,7 +296,7 @@ static struct {
 } lvt_head;
 
 #if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
-static uint32_t lvt_wifi_bars(void)     /* as the modd theme's mt_wifi_bars() */
+static uint32_t lvt_wifi_bars(void)     /* WiFi signal as 0..n bars */
 {
     int st = wifi_get_state();
     if (st == WIFI_STATE_CONNECTED) return 3;
@@ -387,7 +386,7 @@ static struct {
 
 static void lvt_hints_frame(void);
 
-/* OCT- action, context, OCT+ action, as the modd theme's ui_footer(): an empty action
+/* OCT- action, context, OCT+ action: an empty action
  * hides its pill. The strings must outlive the call or be copied: labels copy them. */
 static void lvt_footer(const char *left, const char *center, const char *right)
 {
@@ -518,7 +517,7 @@ static void lvt_hints_poll(const modd_page_t *p)
 }
 
 /* -------------------------------------------------------------- toast --- */
-/* modd_toast.h, as the modd theme's toast.c: one slot, the newest wins. A status toast
+/* modd_toast.h: one slot, the newest wins. A status toast
  * (three dots running) goes after 3 s, an error ("!") after 5 s or the next button. */
 #define TOAST_NONE   0
 #define TOAST_STATUS 1
@@ -620,7 +619,7 @@ static void lvt_toast_tick(void)
 
 /* --------------------------------------------------------------- page --- */
 /* Build the next page's screen and show it. Returns the body: the page adds its widgets
- * to it. The title is the page's (.title, else .name), as in the modd theme's header. */
+ * to it. The title is the page's (.title, else .name). */
 static lv_obj_t *lvt_page_begin(void)
 {
     const modd_page_t *p = nav_active();
@@ -649,7 +648,7 @@ static lv_obj_t *lvt_page_begin(void)
     return body;
 }
 
-/* the area under the cards, as the modd theme's panel: a column filling the rest */
+/* the area under the cards: a column filling the rest */
 static lv_obj_t *lvt_panel(lv_obj_t *body)
 {
     lv_obj_t *p = lvt_box(body, LV_FLEX_FLOW_COLUMN);

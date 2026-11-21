@@ -75,7 +75,7 @@ and permissive-licensed code (see the
 ## Audio, synthesis, and wireless
 
 Audio engines plug in through the [`engine_t` vtable](../firmware/adapters/modd_engine.h).
-The default build includes Melodee's audio core with engines from two upstreams (audio integration with the modd theme is in progress).
+The default build includes Melodee's audio core with engines from two upstreams (audio integration with the UI is in progress).
 
 |  | modd | Felucca | Melodee | SLOOP | JIANT | Optimist | fm1-base | fm1-dock |
 |--|:----:|:-------:|:-------:|:-----:|:-----:|:--------:|:--------:|:--------:|

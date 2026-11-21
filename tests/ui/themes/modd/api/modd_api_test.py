@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""API: the LVGL theme (firmware/src/ui/themes/lvgl) driven over HTTP in fm1-live.
+"""API: the modd theme (firmware/src/ui/themes/modd) driven over HTTP in fm1-live.
 
-The LVGL theme has the modd theme's pages, page data and controls (only the drawing is its
-own), so these tests check the modd theme's behaviour on it: the page list and order, the
-page data of the shared controllers (firmware/src/ui/page_data.c, rpc/api_pages.c), and
-every button and knob of the control map through /api/input, reading the effect back from
-/api/page. The LVGL theme builds a page in its own UI task, so after /modd/<page> or an
+These tests check the page list and order, the page data of the shared controllers
+(firmware/src/ui/page_data.c, rpc/api_pages.c), and every button and knob of the control map through /api/input, reading the effect back from
+/api/page. The modd theme builds a page in its own UI task, so after /modd/<page> or an
 input the tests wait until /api/page shows it.
 
 Build: task modd:build:modd_emu. Run: task modd:test:modd_emu:api.
@@ -21,11 +19,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 from api_fixtures import ApiError, ApiTestCase, rms
 
-# the modd theme's pages in its registration order (ui/themes/modd/pages.c and lvgl/pages.c)
+# the pages in registration order (ui/themes/modd/pages.c)
 PAGES = ['HOME', 'MENU', 'WX', 'DEMO', 'FILES', 'DISK', 'LOG']
 
 
-class LvglApiCase(ApiTestCase):
+class ModdApiCase(ApiTestCase):
 
     def goto(self, name, sub=None):
         """Jump by name; wait until the UI task has built the page."""
@@ -49,7 +47,7 @@ class LvglApiCase(ApiTestCase):
         return items[name]
 
 
-class PagesTest(LvglApiCase):
+class PagesTest(ModdApiCase):
     """Every page is listed, reachable by name and drawn."""
 
     def test_01_pages_listed(self):
@@ -79,8 +77,8 @@ class PagesTest(LvglApiCase):
         self.assertAlive()
 
 
-class PageDataTest(LvglApiCase):
-    """/api/page carries the shared controllers' data, the same shape as the modd theme's."""
+class PageDataTest(ModdApiCase):
+    """/api/page carries the shared controllers' data, the same shape on every theme."""
 
     def test_home_data(self):
         d = self.goto('HOME')['data']
@@ -95,7 +93,7 @@ class PageDataTest(LvglApiCase):
         self.assertTrue(d['palette_name'])
 
     def test_menu_tabs(self):
-        """/modd/menu/<tab> shows that tab, as on the modd theme."""
+        """/modd/menu/<tab> shows that tab."""
         self.goto('MENU', 'display')
         self.wait_data(lambda d: d['tab'] == 'DISPLAY', 'DISPLAY tab')
         self.goto('MENU', 'midi')
@@ -116,8 +114,8 @@ class PageDataTest(LvglApiCase):
         self.assertAlive()
 
 
-class PanelTest(LvglApiCase):
-    """The modd theme's control map on the LVGL theme: holds, taps, SELECT, ALGO, OCT+/-."""
+class PanelTest(ModdApiCase):
+    """The modd theme's control map: holds, taps, SELECT, ALGO, OCT+/-."""
 
     def test_01_holds_open_pages(self):
         """HOME hold: settings; FX hold: WX, again DEMO; GLO hold: LOG and back; HOME tap: HOME."""
@@ -279,9 +277,9 @@ class PanelTest(LvglApiCase):
         self.assertAlive()
 
 
-class AudioTest(LvglApiCase):
+class AudioTest(ModdApiCase):
     """With audio in the build (modd_emu), the note keys
-    on HOME play the selected track, as on the modd theme's HOME."""
+    on HOME play the selected track."""
 
     def test_home_keys_play(self):
         api = self.api

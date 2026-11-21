@@ -1,13 +1,8 @@
-# modd: the production firmware, LVGL theme (firmware/src/ui/themes/lvgl/).
+# modd: the production firmware, modd theme (firmware/src/ui/themes/modd/).
 # The Melodee audio core, engines, effects, sequencer, storage, USB audio, USB disk and the
 # REST API (CONFIG_RPC). Network on: WiFi on at boot, USB network adapter auto-selected.
 # Weather off. modd_emu_defconfig is this plus the debug and emulator hooks; keep the two
 # in step.
-#
-# MODD LEGACY theme (the original modd theme, firmware/src/ui/themes/modd/): no defconfig
-# builds it. To build it, replace `CONFIG_UI_LVGL=y` below with `CONFIG_UI_MODD=y` and
-# delete the `# CONFIG_UI_MODD is not set` line. Its own fonts and palettes are generated
-# automatically (CONFIG_GEN_MELODEE_UI is selected by CONFIG_UI_MODD).
 #
 CONFIG_FIRMWARE_NAME="modd"
 CONFIG_FIRMWARE_VERSION="v0.0.0"
@@ -160,9 +155,8 @@ CONFIG_USB_AUDIO_HOST=y
 # UI
 #
 CONFIG_INPUT=y
-# CONFIG_UI_FELUCCA is not set
-# CONFIG_UI_MODD is not set
-CONFIG_UI_LVGL=y
+# CONFIG_UI_THEME_FELUCCA is not set
+CONFIG_UI_THEME_MODD=y
 CONFIG_SPLASH_LOGO=y
 # CONFIG_SPLASH_NONE is not set
 # end of UI

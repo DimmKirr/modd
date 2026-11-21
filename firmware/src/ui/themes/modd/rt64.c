@@ -4,13 +4,13 @@
  *
  * pi32v2 clang turns a 64-bit `/` or `%` into a call to __udivdi3 and its relatives.
  * modd itself never divides 64-bit values and links no compiler runtime; LVGL does in
- * two places (its printf's long long conversion and image transforms), so the LVGL theme
+ * two places (its printf's long long conversion and image transforms), so the modd theme
  * brings these. Not static: the calls come from the LVGL library's objects too.
  *
  * Plain shift-and-subtract, one bit a round, with the CPU's own divider when both
  * operands fit 32 bits. Shifts are by constants only: a variable 64-bit shift would
  * itself be a runtime call. Dividing by zero returns 0 (C leaves it undefined).
- * Host test: tests/ui/themes/lvgl/rt64_test.py. */
+ * Host test: tests/ui/themes/modd/rt64_test.py. */
 
 unsigned long long __udivmoddi4(unsigned long long n, unsigned long long d, unsigned long long *rem)
 {

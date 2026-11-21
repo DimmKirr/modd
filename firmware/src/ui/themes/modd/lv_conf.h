@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Dmitry Kireev (@DimmKirr) */
-/* LVGL 9.6 configuration for the LVGL theme (CONFIG_UI_LVGL).
+/* LVGL 9.6 configuration for the modd theme (CONFIG_UI_THEME_MODD).
  *
  * Found through -DLV_CONF_INCLUDE_SIMPLE and an include path (tools/build/build.py
  * lvgl_flags), by the LVGL library and by modd.c alike. An option not set here keeps

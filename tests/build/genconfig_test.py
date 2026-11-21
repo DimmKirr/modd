@@ -56,8 +56,8 @@ def test_genconfig_writes_header():
     assert '#define' in content
     assert '#define CONFIG_AUDIO 1' in content
     assert '#define CONFIG_USB 1' in content
-    assert '#define CONFIG_UI_LVGL 1' in content
-    for symbol in ('EMU', 'UI_MODD', 'DEBUG_FRAMEBUFFER', 'RPC_INPUT'):
+    assert '#define CONFIG_UI_THEME_MODD 1' in content
+    for symbol in ('EMU', 'DEBUG_FRAMEBUFFER', 'RPC_INPUT'):
         assert f'#define CONFIG_{symbol} ' not in content, f'production modd must not set {symbol}'
     assert (out / '.config').exists(), '.config not written to outdir'
 
@@ -119,7 +119,7 @@ EXPECTED_COMPONENTS = {
         'audio', 'audio-core:melodee', 'boot:melodee', 'debug-log', 'effects:melodee',
         'engine:analog', 'engine:fm6', 'engine:lofi', 'engine:noise', 'engine:trio', 'flash',
         'input', 'midi:melodee', 'mod:melodee', 'modulation', 'net:lwip', 'ota',
-        'scales:melodee', 'seq:melodee', 'storage:melodee', 'udisk', 'ui:lvgl', 'usb',
+        'scales:melodee', 'seq:melodee', 'storage:melodee', 'udisk', 'ui:modd', 'usb',
         'usb-audio', 'usb-host', 'usb-net',
     ]),
 }
@@ -261,3 +261,25 @@ def test_secret_symbols_are_masked_for_debug_dumps():
     plain = [l for l in header.splitlines()
              if 'WIFI_PASSWORD' not in l and 'OPENROUTER_API_KEY' not in l]
     assert all(l in masked.splitlines() for l in plain)
+
+
+def test_emulator_build_keeps_its_wifi_credentials():
+    """WIFI_SSID / WIFI_PASSWORD from the environment (.env: a real network) reach a hardware
+    build, not an emulator build: modd_emu has to join fm1-live's AP with its defconfig's."""
+    genconfig = ROOT / 'tools' / 'build' / 'genconfig.py'
+    env = dict(os.environ, WIFI_SSID='ssid-for-this-test', WIFI_PASSWORD='pw-for-this-test')
+    headers = {}
+    for dc in ('modd', 'modd_emu'):
+        out = _outdir(f'emu_wifi_{dc}')
+        r = subprocess.run(
+            [sys.executable, str(genconfig), '--defconfig', dc, '--outdir', str(out)],
+            capture_output=True, text=True, cwd=str(ROOT), env=env)
+        assert r.returncode == 0, r.stderr
+        headers[dc] = (out / 'config.h').read_text()
+    assert '#define CONFIG_WIFI_SSID "ssid-for-this-test"' in headers['modd']
+    assert '#define CONFIG_WIFI_PASSWORD "pw-for-this-test"' in headers['modd']
+    assert '#define CONFIG_EMU 1' in headers['modd_emu']
+    assert '#define CONFIG_WIFI_SSID "Home"' in headers['modd_emu']
+    assert '#define CONFIG_WIFI_PASSWORD "fm1pass"' in headers['modd_emu']
+    assert 'for-this-test' not in headers['modd_emu']
+

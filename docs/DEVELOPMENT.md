@@ -6,7 +6,7 @@
 task build
 ```
 
-Produces `build/modd.fwsc`. Requires the JieLi toolchain (downloaded
+Produces `build/modd/modd.fwsc`. Requires the JieLi toolchain (downloaded
 automatically on first run). `task build` delegates to `build:live`, which
 caches on source checksums, one per defconfig, and skips when nothing changed
 since that defconfig was last built.
@@ -250,6 +250,14 @@ starts. On macOS, build in the container first, then flash from the host:
 # macOS:      task vendor:flash:felucca
 ```
 
+## Default build behaviour
+
+The `modd` and `modd_emu` defconfigs enable WiFi, USB ethernet and the weather
+client. Each can be disabled in Kconfig. When enabled, the link auto-starts at
+boot and stays up while any consumer needs it (`net_need.c`, `wifi_need.c`):
+the weather client, the LLM client and the Settings NET page each register
+interest, and the link is brought down only when no consumer remains.
+
 ## Debugging
 
 ### USB error codes on LCD
@@ -262,6 +270,14 @@ the LCD shows `USB:ERR -N` where N is the error code:
 |------|---------|
 | -1 to -7 | USB enumeration error (step number) |
 | -11 to -16 | MSC (Mass Storage Class) init error, offset by -10 |
+
+### Fault screen
+
+Stack overflow canaries guard each task stack. On a fault (illegal instruction,
+bus error, stack overflow) the LCD shows a red FAULT screen with the exception
+type, faulting PC, saved registers and the tail of the debug log ring. The same
+information is printed to the debug log. A UBOOT reflash recovers from any
+fault in the application area that makes the firmware unbootable.
 
 ### Flash debug
 

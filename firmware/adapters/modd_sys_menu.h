@@ -139,9 +139,9 @@ static uint8_t sm_ble_name_get(void) { return 0; }
 static void    sm_ble_name_set(uint8_t v) { (void)v; }
 #endif
 
-/* --- LIGHTS setting (LED brightness: the modd and LVGL themes' leds.c) --- */
+/* --- LIGHTS setting (LED brightness: the modd theme's leds.c) --- */
 
-#if defined(CONFIG_UI_MODD) || defined(CONFIG_UI_LVGL)
+#ifdef CONFIG_UI_THEME_MODD
 static const char *const SM_LIGHTS[] = {"OFF", "LOW", "MID", "HIGH", "FULL"};
 
 static uint8_t sm_lights_get(void) {
@@ -191,7 +191,7 @@ static void    sm_demo_set(uint8_t v) { sm_demo_val = v; }
 /* --- Item array (static, Kconfig-gated) --- */
 
 static const sys_menu_item_t SYS_MENU[] = {
-#if defined(CONFIG_UI_MODD) || defined(CONFIG_UI_LVGL)
+#ifdef CONFIG_UI_THEME_MODD
     { "LIGHTS",   SMTAB_DISPLAY, 5, SM_LIGHTS, sm_lights_get, sm_lights_set },
 #endif
 #ifdef CONFIG_SYS_MENU_USB_MODE

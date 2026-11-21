@@ -1,139 +1,141 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* modd DEBUG: scrollable system log viewer.
- * Adapted from Felucca's page_debug.c for the modd theme (AF_XS font,
- * T_* palette tokens, mt_panel canvas + ui_card status bar). Opened via
- * GLO tap toggle from any page when CONFIG_DEBUG_LOG is enabled. */
+/* LOG: the firmware's log (modd_log's ring) as LVGL widgets.
+ * GLO held opens it and returns (shell.c).
+ *
+ *   cards    LOG lines logged, FROM the first line shown (and where in the ring), BUF the
+ *            ring's lines, LEN a line's bytes
+ *   rows     mm:ss.mmm and the line; a line longer than 22 characters wraps once
+ *   footer   LVGL's heap in use / its size, the most used, and the longest frame: how to
+ *            size LV_MEM_SIZE (lv_conf.h) and the UI task's stack (modd.c): visit every
+ *            page, then read it here
+ *
+ * ALGO scrolls; while the view is at the bottom it follows new lines. */
 
-#define MDBG_VIS      (UI_PANEL_H / UI_ROW_H_XS)
-#define MDBG_TS_W     56
-#define MDBG_MSG_X    (UI_INSET_S + MDBG_TS_W)
-#define MDBG_MSG_W    (UI_W - MDBG_MSG_X - 2)
-#define MDBG_WRAP_AT  22
+#define LVT_LOG_ROWS 10u
+#define LVT_LOG_WRAP 22u
 
-static uint32_t mdbg_last_count;
+static struct {
+    lv_obj_t *ts[LVT_LOG_ROWS], *msg[LVT_LOG_ROWS];
+    uint32_t  shown;                    /* count and scroll the rows show, in one number */
+    uint32_t  last_count, mem_ms;
+} lvt_log;
 
-static void mdbg_fmt_ts(char *out, uint32_t ms)
+static uint32_t lvt_log_n(void)
 {
-    uint32_t mm  = (ms / 60000u) % 100u;
-    uint32_t ss  = (ms / 1000u) % 60u;
-    uint32_t frac = ms % 1000u;
-    out[0] = '0' + (char)(mm / 10u);
-    out[1] = '0' + (char)(mm % 10u);
-    out[2] = ':';
-    out[3] = '0' + (char)(ss / 10u);
-    out[4] = '0' + (char)(ss % 10u);
-    out[5] = '.';
-    out[6] = '0' + (char)(frac / 100u);
-    out[7] = '0' + (char)((frac / 10u) % 10u);
-    out[8] = '0' + (char)(frac % 10u);
-    out[9] = 0;
+    return modd_log_count < MODD_LOG_LINES ? modd_log_count : MODD_LOG_LINES;
 }
 
-static void mdbg_fmt_u32(char *out, uint32_t v) { ui_fmt_u32(out, v); }
-
-static int mdbg_at_bottom(void)
+static uint32_t lvt_log_max(void)
 {
-    uint32_t n = modd_log_count < MODD_LOG_LINES ? modd_log_count : MODD_LOG_LINES;
-    if (n <= MDBG_VIS) return 1;
-    return modd_log_scroll >= n - MDBG_VIS;
+    uint32_t n = lvt_log_n();
+    return n > LVT_LOG_ROWS ? n - LVT_LOG_ROWS : 0;
 }
 
-static void mdbg_draw(void)
+static void lvt_log_show(void)
 {
-    uint32_t n = modd_log_count < MODD_LOG_LINES ? modd_log_count : MODD_LOG_LINES;
-    uint32_t row = 0, i;
+    uint32_t n = lvt_log_n(), row = 0, i, sig;
+    char b[16];
 
-    /* info cards: LOG count, FROM scroll position, BUF capacity */
-    {
-        char cnt[8];
-        mdbg_fmt_u32(cnt, modd_log_count);
-        ui_card(0, "LOG", cnt, "", T_THEME, -1, 0);
-    }
-    {
-        char scr[8];
-        mdbg_fmt_u32(scr, n > 0 ? modd_log_scroll + 1 : 0);
-        int32_t ratio = n > MDBG_VIS ? (int32_t)modd_log_scroll * 1000 / (int32_t)(n - MDBG_VIS) : 0;
-        ui_card(1, "FROM", scr, "", T_ACCENT, ratio, 0);
-    }
-    {
-        char buf[8];
-        mdbg_fmt_u32(buf, MODD_LOG_LINES);
-        ui_card(2, "BUF", buf, "", T_DIM, -1, 0);
-    }
-    {
-        char len[8];
-        mdbg_fmt_u32(len, MODD_LOG_LINE_LEN);
-        ui_card(3, "LEN", len, "", T_DIM, -1, 0);
-    }
+    sig = modd_log_count * 64u + modd_log_scroll + ((uint32_t)lvt_pal.trk << 28);
+    if (sig == lvt_log.shown)
+        return;
+    lvt_log.shown = sig;
 
-    /* log text area: full panel, no inline header */
-    mt_panel_begin();
+    lv_snprintf(b, sizeof b, "%u", (unsigned)modd_log_count);
+    lvt_card_set(0, "LOG", b, "", lvt_pal.theme, -1);
+    lv_snprintf(b, sizeof b, "%u", (unsigned)(n ? modd_log_scroll + 1u : 0u));
+    lvt_card_set(1, "FROM", b, "", lvt_pal.accent,
+                 lvt_log_max() ? (int32_t)(modd_log_scroll * 1000u / lvt_log_max()) : 0);
+    lv_snprintf(b, sizeof b, "%u", (unsigned)MODD_LOG_LINES);
+    lvt_card_set(2, "BUF", b, "", lvt_pal.dim, -1);
+    lv_snprintf(b, sizeof b, "%u", (unsigned)MODD_LOG_LINE_LEN);
+    lvt_card_set(3, "LEN", b, "", lvt_pal.dim, -1);
 
-    if (n == 0) {
-        cv_text_c(UI_W / 2, ty_y(UI_PANEL_H / 2, &AF_XS), &AF_XS,
-                  "(no log)", T_DIM, T_BG);
-    } else {
-        for (i = 0; row < MDBG_VIS && (modd_log_scroll + i) < n; i++) {
-            uint32_t idx = modd_log_scroll + i;
-            const char *line = modd_log_line(idx);
-            int32_t ry = (int32_t)(row * UI_ROW_H_XS);
-            uint32_t len = 0;
-            char ts[10];
-
-            while (line[len]) len++;
-
-            mdbg_fmt_ts(ts, modd_log_time(idx));
-            cv_text_fit(UI_INSET_S, ry + 1, &AF_XS, ts, T_DIM, T_BG, MDBG_TS_W - 2);
-            cv_text_fit(MDBG_MSG_X, ry + 1, &AF_XS, line, T_TEXT, T_BG, MDBG_MSG_W);
+    for (i = 0; row < LVT_LOG_ROWS && modd_log_scroll + i < n; i++) {
+        uint32_t idx = modd_log_scroll + i, ms = modd_log_time(idx);
+        const char *line = modd_log_line(idx);
+        lv_snprintf(b, sizeof b, "%02u:%02u.%03u", (unsigned)((ms / 60000u) % 100u),
+                    (unsigned)((ms / 1000u) % 60u), (unsigned)(ms % 1000u));
+        lvt_text(lvt_log.ts[row], b);
+        lvt_text(lvt_log.msg[row], line);
+        row++;
+        if (lv_strlen(line) > LVT_LOG_WRAP && row < LVT_LOG_ROWS) {
+            lvt_text(lvt_log.ts[row], "");
+            lvt_text(lvt_log.msg[row], line + LVT_LOG_WRAP);
             row++;
-
-            if (len > MDBG_WRAP_AT && row < MDBG_VIS) {
-                ry = (int32_t)(row * UI_ROW_H_XS);
-                cv_text_fit(MDBG_MSG_X, ry + 1, &AF_XS,
-                            line + MDBG_WRAP_AT, T_TEXT, T_BG, MDBG_MSG_W);
-                row++;
-            }
         }
     }
-
-    mt_panel_end();
-    ui_footer("", "---", "");
-}
-
-static int mdbg_knob(uint32_t id, int32_t clicks)
-{
-    if (id == ENC_ALGO) {
-        uint32_t n = modd_log_count < MODD_LOG_LINES ? modd_log_count : MODD_LOG_LINES;
-        int32_t s = (int32_t)modd_log_scroll + clicks;
-        uint32_t max = n > MDBG_VIS ? n - MDBG_VIS : 0;
-        if (s < 0) s = 0;
-        if ((uint32_t)s > max) s = (int32_t)max;
-        modd_log_scroll = (uint32_t)s;
-        nav_dirty = 1;
-        return 1;
+    for (; row < LVT_LOG_ROWS; row++) {
+        lvt_text(lvt_log.ts[row], "");
+        lvt_text(lvt_log.msg[row], row == 0 && n == 0 ? "(no log)" : "");
     }
-    return 0;
 }
 
-static void mdbg_enter(void)
+static void lvt_log_mem(void)
 {
-    uint32_t n = modd_log_count < MODD_LOG_LINES ? modd_log_count : MODD_LOG_LINES;
-    modd_log_scroll = n > MDBG_VIS ? n - MDBG_VIS : 0;
-    mdbg_last_count = modd_log_count;
+    lv_mem_monitor_t m;
+    char b[48];
+    lv_mem_monitor(&m);
+    lv_snprintf(b, sizeof b, "heap %u/%uK max %uK  %u ms",
+                (unsigned)((m.total_size - m.free_size + 512u) / 1024u),
+                (unsigned)(m.total_size / 1024u), (unsigned)((m.max_used + 512u) / 1024u),
+                (unsigned)lvt_draw_max_ms);
+    lvt_footer("", b, "");
 }
 
-static void mdbg_status(void)
+static void lvt_log_status(void)
 {
-    if (modd_log_count != mdbg_last_count) {
-        int was_bottom = mdbg_at_bottom();
-        mdbg_last_count = modd_log_count;
-        if (was_bottom) {
-            uint32_t n = modd_log_count < MODD_LOG_LINES ? modd_log_count : MODD_LOG_LINES;
-            modd_log_scroll = n > MDBG_VIS ? n - MDBG_VIS : 0;
-        }
-        nav_dirty = 1;
+    if (modd_log_count != lvt_log.last_count) {
+        /* at the bottom (or before the screen filled): follow the new lines */
+        uint32_t n_before = lvt_log.last_count < MODD_LOG_LINES ? lvt_log.last_count : MODD_LOG_LINES;
+        uint32_t max_before = n_before > LVT_LOG_ROWS ? n_before - LVT_LOG_ROWS : 0;
+        if (modd_log_scroll >= max_before)
+            modd_log_scroll = lvt_log_max();
+        lvt_log.last_count = modd_log_count;
     }
+    lvt_log_show();
+    if (fm1_ms - lvt_log.mem_ms >= 1000u) {
+        lvt_log.mem_ms = fm1_ms;
+        lvt_log_mem();
+    }
+}
+
+static void lvt_log_enter(void)
+{
+    lv_obj_t *body = lvt_page_begin(), *panel;
+    uint32_t i;
+    lvt_cards(body);
+    panel = lvt_panel(body);
+    lv_obj_set_style_pad_row(panel, 0, 0);
+    for (i = 0; i < LVT_LOG_ROWS; i++) {
+        lv_obj_t *row = lvt_box(panel, LV_FLEX_FLOW_ROW);
+        lv_obj_set_height(row, 13);
+        lvt_log.ts[i] = lvt_caption(row, "");
+        lv_obj_set_width(lvt_log.ts[i], 54);
+        lvt_log.msg[i] = lv_label_create(row);
+        lv_obj_add_style(lvt_log.msg[i], &lvt_st_small, 0);
+        lv_obj_set_flex_grow(lvt_log.msg[i], 1);
+        lv_label_set_long_mode(lvt_log.msg[i], LV_LABEL_LONG_MODE_CLIP);
+        lv_label_set_text_static(lvt_log.msg[i], "");
+    }
+    modd_log_scroll = lvt_log_max();
+    lvt_log.last_count = modd_log_count;
+    lvt_log.shown = 0xFFFFFFFFu;
+    lvt_log.mem_ms = fm1_ms - 1000u;
+    lvt_log_status();
+}
+
+static int lvt_log_knob(uint32_t id, int32_t clicks)
+{
+    int32_t s;
+    if (id != ENC_ALGO)
+        return 0;
+    s = (int32_t)modd_log_scroll + clicks;
+    if (s < 0) s = 0;
+    if ((uint32_t)s > lvt_log_max()) s = (int32_t)lvt_log_max();
+    modd_log_scroll = (uint32_t)s;
+    return 1;
 }
 
 static const modd_page_t PAGE_DEBUG = {
@@ -141,10 +143,9 @@ static const modd_page_t PAGE_DEBUG = {
     .title  = "Log",
     .view   = VIEW_GLO,
     .flags  = PAGEF_SYSTEM,
-    .enter  = mdbg_enter,
-    .draw   = mdbg_draw,
-    .status = mdbg_status,
-    .knob   = mdbg_knob,
+    .enter  = lvt_log_enter,
+    .status = lvt_log_status,
+    .knob   = lvt_log_knob,
     .help_text =
         "ALGO    Scroll log",
 };

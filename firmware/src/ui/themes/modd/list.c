@@ -1,124 +1,84 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* modd list widget: rows from a modd_list_src_t (modd_list.h) with a cursor, a scroll window and a
- * status line under the rows. Draws into the caller's canvas with the Melodee renderer (cv_*), so
- * it is included after gfx.c. Nothing here touches a disk: a source answers from its cache. */
+/* The list widget: rows from a modd_list_src_t (modd_list.h) with a cursor, a window and a
+ * status line under the rows, built from LVGL
+ * labels. FILES shows LIST_UDISK with it, Settings > INSTR shows LIST_INSTR (CONFIG_DOCK).
+ *
+ *   rows     a window of `vis` entries; the cursor's row raised; a folder marked "/";
+ *            the detail right, in THEME (active), ACCENT (info) or DIM
+ *   status   the last action's message (THEME), else the source's status, "(empty)", or
+ *            the bound controls ("+ok  -back")
+ *
+ * The page gives it one encoder (enc) and OCT- / OCT+: tapped or held past
+ * modd_controls.hold_us they run the source's four action slots. The rows are labels made
+ * once: a long list costs no LVGL heap. */
 
+#define LVT_LIST_ROWS_MAX 9u
 
-static void ui_list_hints(const ui_list_t *l, char *out, uint32_t max);
+typedef struct {
+    const modd_list_src_t *src;
+    uint32_t cursor, top, vis;
+    uint8_t  enc, press_id, dirty;
+    uint32_t press_us;                  /* an OCT button went down (0: none) */
+    const char *msg;                    /* the last action's message, until the next move */
+    lv_obj_t *row[LVT_LIST_ROWS_MAX], *name[LVT_LIST_ROWS_MAX], *detail[LVT_LIST_ROWS_MAX];
+    lv_obj_t *status;
+} lvt_list_t;
 
-static void ui_list_init(ui_list_t *l, const modd_list_src_t *src, uint8_t row_h)
+static void lvt_list_init(lvt_list_t *l, const modd_list_src_t *src, uint8_t enc)
 {
+    lv_memzero(l, sizeof *l);
     l->src = src;
-    l->cursor = 0;
-    l->scroll = 0;
-    l->vis = 4;
-    l->row_h = row_h;
-    l->enc = ENC_NONE;
-    l->msg = 0;
-    l->press_us = 0;
-    l->press_id = 0;
+    l->enc = enc;
 }
 
-static void ui_list_clamp(ui_list_t *l)
+/* `vis` rows of `row_h` and the status line, into `parent` (a column) */
+static void lvt_list_build(lvt_list_t *l, lv_obj_t *parent, uint32_t vis, uint32_t row_h)
+{
+    uint32_t i;
+    l->vis = vis < LVT_LIST_ROWS_MAX ? vis : LVT_LIST_ROWS_MAX;
+    for (i = 0; i < l->vis; i++) {
+        lv_obj_t *row = lvt_row(parent, row_h), *t;
+        t = lv_label_create(row);
+        lv_obj_set_flex_grow(t, 1);
+        lv_label_set_long_mode(t, LV_LABEL_LONG_MODE_DOTS);
+        lv_label_set_text_static(t, "");
+        l->name[i] = t;
+        t = lv_label_create(row);
+        lv_obj_add_style(t, &lvt_st_small, 0);
+        lv_label_set_text_static(t, "");
+        l->detail[i] = t;
+        l->row[i] = row;
+    }
+    l->status = lv_label_create(parent);
+    lv_obj_add_style(l->status, &lvt_st_small, 0);
+    lv_obj_set_width(l->status, lv_pct(100));
+    lv_obj_set_style_text_align(l->status, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_text_static(l->status, "");
+    l->dirty = 1;
+}
+
+static void lvt_list_clamp(lvt_list_t *l)
 {
     uint32_t n = l->src->count();
-    if (n == 0) { l->cursor = l->scroll = 0; return; }
+    if (n == 0) { l->cursor = l->top = 0; return; }
     if (l->cursor >= n) l->cursor = n - 1u;
-    if (l->cursor < l->scroll) l->scroll = l->cursor;
-    if (l->vis && l->cursor >= l->scroll + l->vis) l->scroll = l->cursor - l->vis + 1u;
+    if (l->cursor < l->top) l->top = l->cursor;
+    if (l->vis && l->cursor >= l->top + l->vis) l->top = l->cursor - l->vis + 1u;
 }
 
-static uint16_t ui_list_detail_col(uint8_t kind)
-{
-    switch (kind) {
-    case LIST_ACTIVE: return T_THEME;
-    case LIST_INFO:   return T_ACCENT;
-    default:          return T_DIM;
-    }
-}
+static const char *const LVT_LIST_GLYPH[LIST_N_ACTIONS] = {"-", "--", "+", "++"};
+static const char *const LVT_LIST_LABEL[LIST_N_ACTIONS] = {"back", 0, "ok", 0};
 
-/* rows from y0 over h pixels of the current canvas; the last row is the status line */
-static void ui_list_draw(ui_list_t *l, int32_t y0, int32_t h)
-{
-    const modd_list_src_t *s = l->src;
-    uint32_t n = s->count(), r, rows = (uint32_t)h / l->row_h;
-    const char *status;
-    if (rows == 0) return;
-    l->vis = rows - 1u;
-    if (l->vis == 0) l->vis = 1;
-    ui_list_clamp(l);
-    for (r = 0; r < l->vis && l->scroll + r < n; r++) {
-        uint32_t idx = l->scroll + r;
-        int32_t y = y0 + (int32_t)r * l->row_h;
-        uint8_t sel = idx == l->cursor;
-        uint16_t bg = sel ? T_SURF : T_BG;
-        uint16_t fg = sel ? T_THEME : T_TEXT;
-        modd_list_entry_t e = {"", "", LIST_FILE};
-        int32_t x = UI_INSET;
-        s->entry(idx, &e);
-        if (sel)
-            cv_rrect(2, y, UI_W - 4, l->row_h - 2, 4, T_SURF, T_BG);
-        if (e.kind == LIST_FOLDER) {
-            cv_text_fit(x, UI_TEXT_Y(y, l->row_h), TY_LB, "/", T_ACCENT, bg, 8);
-            x += 8;
-        }
-        cv_text_fit(x, UI_TEXT_Y(y, l->row_h), TY_LB, e.name ? e.name : "", fg, bg, 150);
-        if (e.detail && e.detail[0])
-            cv_text_r(UI_W - UI_INSET, UI_TEXT_Y(y, l->row_h), TY_LB, e.detail, ui_list_detail_col(e.kind), bg);
-    }
-    ui_scrollbar(y0, (int32_t)l->vis * l->row_h, n, l->vis, l->scroll);
-    status = l->msg ? l->msg : (s->status ? s->status() : 0);
-    if (!status && n == 0)
-        status = "(empty)";
-    if (!status) {
-        static char hints[48];
-        ui_list_hints(l, hints, sizeof hints);
-        status = hints;
-    }
-    if (status[0])
-        cv_text_c(UI_W / 2, y0 + (int32_t)l->vis * l->row_h + 2, TY_LB, status,
-                  l->msg ? T_THEME : T_DIM, T_BG);
-    if (hints_visible && l->enc != ENC_NONE) {
-        int32_t zh = (int32_t)l->vis * l->row_h + l->row_h;
-        uint8_t eid = l->enc;
-        ui_zone_enc(1, y0, UI_W - 2, zh, UI_Y_CARD, &eid, 1);
-    }
-}
-
-static void ui_list_knob(ui_list_t *l, int32_t clicks)
-{
-    uint32_t n = l->src->count();
-    int32_t c = (int32_t)l->cursor + clicks;
-    if (c < 0) c = 0;
-    if (n && (uint32_t)c >= n) c = (int32_t)(n - 1u);
-    l->cursor = n ? (uint32_t)c : 0;
-    l->msg = 0;
-    ui_list_clamp(l);
-    nav_dirty = 1;
-}
-
-static int ui_list_input(ui_list_t *l, uint32_t id, int32_t clicks)
-{
-    if (l->enc == ENC_NONE || id != l->enc) return 0;
-    ui_list_knob(l, clicks);
-    return 1;
-}
-
-static const char *const UI_LIST_GLYPH[LIST_N_ACTIONS] = {"-", "--", "+", "++"};
-static const char *const UI_LIST_LABEL[LIST_N_ACTIONS] = {"back", 0, "ok", 0};
-
-static int ui_list_up(ui_list_t *l);
-
-/* the hint line: every slot that does something, "glyph label" */
-static void ui_list_hints(const ui_list_t *l, char *out, uint32_t max)
+/* every slot that does something, "glyph label", as ui_list_hints() */
+static void lvt_list_hints(const lvt_list_t *l, char *out, uint32_t max)
 {
     const modd_list_src_t *s = l->src;
     uint32_t n = 0, a;
     for (a = 0; a < LIST_N_ACTIONS; a++) {
         const modd_list_action_t *act = &s->actions[a];
-        const char *g = act->glyph ? act->glyph : UI_LIST_GLYPH[a];
-        const char *t = act->label ? act->label : UI_LIST_LABEL[a];
+        const char *g = act->glyph ? act->glyph : LVT_LIST_GLYPH[a];
+        const char *t = act->label ? act->label : LVT_LIST_LABEL[a];
         const char *p;
         int bound = act->fn != 0 || (a == LIST_SHORT_PLUS && s->enter) || (a == LIST_SHORT_MINUS && s->up);
         if (!bound || !t) continue;
@@ -129,8 +89,93 @@ static void ui_list_hints(const ui_list_t *l, char *out, uint32_t max)
     out[n] = 0;
 }
 
-/* run slot a on the cursor's entry; 1 when something happened */
-static int ui_list_run(ui_list_t *l, uint32_t a)
+static void lvt_list_show(lvt_list_t *l)
+{
+    const modd_list_src_t *s = l->src;
+    uint32_t n = s->count(), r;
+    const char *st;
+    char hints[48];
+    lvt_list_clamp(l);
+    for (r = 0; r < l->vis; r++) {
+        uint32_t idx = l->top + r;
+        modd_list_entry_t e = {"", "", LIST_FILE};
+        char b[72];
+        if (idx >= n) {
+            lv_obj_set_hidden(l->row[r], true);
+            continue;
+        }
+        s->entry(idx, &e);
+        lv_obj_set_hidden(l->row[r], false);
+        lv_obj_set_state(l->row[r], LV_STATE_CHECKED, idx == l->cursor);
+        lv_snprintf(b, sizeof b, "%s%s", e.kind == LIST_FOLDER ? "/" : "", e.name ? e.name : "");
+        lvt_text(l->name[r], b);
+        lvt_text(l->detail[r], e.detail ? e.detail : "");
+        lvt_text_color(l->detail[r], e.kind == LIST_ACTIVE ? lvt_pal.theme
+                                     : e.kind == LIST_INFO ? lvt_pal.accent : lvt_pal.dim);
+    }
+    st = l->msg ? l->msg : (s->status ? s->status() : 0);
+    if (!st && n == 0)
+        st = "(empty)";
+    if (!st) {
+        lvt_list_hints(l, hints, sizeof hints);
+        st = hints;
+    }
+    lvt_text(l->status, st);
+    lvt_text_color(l->status, l->msg ? lvt_pal.theme : lvt_pal.dim);
+    l->dirty = 0;
+}
+
+static void lvt_list_open(lvt_list_t *l)
+{
+    if (l->src->open) l->src->open();
+    l->msg = 0;
+    l->dirty = 1;
+}
+
+static void lvt_list_close(lvt_list_t *l)
+{
+    if (l->src->close) l->src->close();
+}
+
+/* every frame, from the page's status: follow the source, show what changed */
+static void lvt_list_poll(lvt_list_t *l)
+{
+    if (l->src->poll && l->src->poll())
+        l->dirty = 1;
+    if (l->dirty && l->status)
+        lvt_list_show(l);
+}
+
+/* the list's encoder moves the cursor; 1 when taken */
+static int lvt_list_input(lvt_list_t *l, uint32_t id, int32_t clicks)
+{
+    uint32_t n;
+    int32_t c;
+    if (l->enc == ENC_NONE || id != l->enc)
+        return 0;
+    n = l->src->count();
+    c = (int32_t)l->cursor + clicks;
+    if (c < 0) c = 0;
+    if (n && (uint32_t)c >= n) c = (int32_t)(n - 1u);
+    l->cursor = n ? (uint32_t)c : 0;
+    l->msg = 0;
+    l->dirty = 1;
+    return 1;
+}
+
+static int lvt_list_up(lvt_list_t *l)            /* OCT-: 1 when the source went up a level */
+{
+    if (l->src->up && l->src->up() == 0) {
+        l->cursor = l->top = 0;
+        l->msg = 0;
+        l->dirty = 1;
+        return 1;
+    }
+    return 0;
+}
+
+/* run slot `a` on the cursor's entry; 0 when nothing is bound (the page may close) */
+static int lvt_list_run(lvt_list_t *l, uint32_t a)
 {
     const modd_list_src_t *s = l->src;
     const modd_list_action_t *act = &s->actions[a];
@@ -138,31 +183,28 @@ static int ui_list_run(ui_list_t *l, uint32_t a)
     if (act->fn) {
         if (n == 0) return 1;
         l->msg = act->fn(l->cursor);
-        ui_list_clamp(l);
-        nav_dirty = 1;
+        l->dirty = 1;
         return 1;
     }
     if (a == LIST_SHORT_PLUS && s->enter && n) {
         modd_list_entry_t e = {"", "", LIST_FILE};
         s->entry(l->cursor, &e);
         if (e.kind == LIST_FOLDER && s->enter(l->cursor) == 0) {
-            l->cursor = l->scroll = 0;
+            l->cursor = l->top = 0;
             l->msg = 0;
-            nav_dirty = 1;
+            l->dirty = 1;
             return 1;
         }
         return 0;
     }
     if (a == LIST_SHORT_MINUS)
-        return ui_list_up(l);
+        return lvt_list_up(l);
     return 0;
 }
 
-static void ui_list_act(ui_list_t *l) { (void)ui_list_run(l, LIST_SHORT_PLUS); }
-
-/* OCT- / OCT+ down: remembered; up: the slot by hold time (modd_controls.hold_us). 1 when
- * taken; 0 on a release nothing was bound to, so the page may close or navigate. */
-static int ui_list_button(ui_list_t *l, uint32_t id, uint32_t down)
+/* OCT- / OCT+ down: remembered; up: the slot by hold time. 1 when taken; 0 on a release
+ * nothing was bound to, so the page may close or navigate. */
+static int lvt_list_button(lvt_list_t *l, uint32_t id, uint32_t down)
 {
     uint32_t held, a;
     if (id != BTN_OCTUP && id != BTN_OCTDN)
@@ -179,36 +221,5 @@ static int ui_list_button(ui_list_t *l, uint32_t id, uint32_t down)
     a = id == BTN_OCTUP ? LIST_SHORT_PLUS : LIST_SHORT_MINUS;
     if (held > modd_controls.hold_us && l->src->actions[a + 1u].fn)
         a += 1u;                                /* the long slot, when bound */
-    return ui_list_run(l, a);
-}
-
-static int ui_list_up(ui_list_t *l)                   /* OCT-: 1 when the source went up a level */
-{
-    if (l->src->up && l->src->up() == 0) {
-        l->cursor = l->scroll = 0;
-        l->msg = 0;
-        nav_dirty = 1;
-        return 1;
-    }
-    return 0;
-}
-
-static void ui_list_open(ui_list_t *l)
-{
-    if (l->src->open) l->src->open();
-    l->msg = 0;
-    ui_list_clamp(l);
-}
-
-static void ui_list_close(ui_list_t *l)
-{
-    if (l->src->close) l->src->close();
-}
-
-static void ui_list_poll(ui_list_t *l)                /* every frame, from the page's status hook */
-{
-    if (l->src->poll && l->src->poll()) {
-        ui_list_clamp(l);
-        nav_dirty = 1;
-    }
+    return lvt_list_run(l, a);
 }

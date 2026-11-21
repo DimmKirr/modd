@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-modd is a modular firmware framework for the M-VAVE FM-1 synthesizer (JieLi AC791N SoC, pi32v2 architecture). It brings modules from any FM-1 firmware into one configurable source tree. Three community upstreams are vendored today: **Felucca** (hugelton), **Melodee** (keremimo), and **SLOOP** (isod89). Any FM-1 firmware that builds with the JieLi toolchain can be added the same way (see [Adding Upstream Firmware](#adding-upstream-firmware)). Everything in modd is GPL-3.0-only; the upstream Felucca-Engines interface (`felucca_engine.h`) and engines are MIT.
+modd is a modular firmware framework for the M-VAVE FM-1 synthesizer (JieLi AC791N SoC, pi32v2 architecture). It brings modules from any FM-1 firmware into one configurable source tree. Nine community firmwares are vendored today — **Felucca** (hugelton), **Melodee** (keremimo), **SLOOP** (isod89), FMLab, fm1-dock, Skiff, Optimist, JIANT and fm1-base. Any FM-1 firmware that builds with the JieLi toolchain can be added the same way (see [Adding Upstream Firmware](#adding-upstream-firmware)). Everything in modd is GPL-3.0-only; the upstream Felucca-Engines interface (`felucca_engine.h`) and engines are MIT.
 
 ## Build System
 
@@ -89,8 +89,8 @@ See [docs/COMPONENTS.md](docs/COMPONENTS.md) for full component map with diagram
 4. **MIDI, UI, Storage, Boot**: each a module with upstream-specific component implementations selected via Kconfig radio choices.
 5. **USB**: device driver, USB Audio, host controller, mass storage.
 6. **BLE**: optional module (Optimist upstream) for Bluetooth Low Energy; depends on HAL, enables BLE MIDI transport.
-7. **Network** (`firmware/src/net/`, `CONFIG_LWIP`): the lwIP stack, HTTP client and LLM client, link-agnostic. Links add a `netif` on top: WiFi (`CONFIG_WIFI_LWIP`) today, USB ethernet / iPhone tethering (`CONFIG_USB_NET`) planned. `net_on_up()` is the "an interface got an address" hook; RPC and LLM depend on `LWIP`, not on a link.
-8. **WiFi**: STA driver, WPA, the WiFi `netif`, weather client.
+7. **Network** (`firmware/src/net/`, `CONFIG_LWIP`): the lwIP stack, HTTP client, LLM client and weather client, link-agnostic. Links add a `netif` on top: WiFi (`CONFIG_WIFI_LWIP`) and USB ethernet (`CONFIG_USB_NET`). `net_on_up()` is the "an interface got an address" hook; RPC and LLM depend on `LWIP`, not on a link.
+8. **WiFi**: STA driver, WPA, the WiFi `netif`.
 9. **Debug**: log buffer.
 
 ### Contracts (defined in `.scratch/GLUE.md`)
@@ -234,13 +234,13 @@ Upstream trees are fetched with vendir and are not committed: `vendir.yml` pins 
 - fm1-dock: `firmware/upstream/fm1-dock/`
 - Optimist (BLE): `firmware/upstream/optimist/`
 - lwIP: `firmware/vendor/lwip/`; FatFs: `firmware/vendor/fatfs/` (project config in `firmware/src/udisk/`)
-- LVGL v9.6.0: `firmware/vendor/lvgl/` (project config in `firmware/src/ui/themes/lvgl/lv_conf.h`); its manual and examples at the same pin: `docs/lvgl/` (see [LVGL](#lvgl))
+- LVGL v9.6.0: `firmware/vendor/lvgl/` (project config in `firmware/src/ui/themes/modd/lv_conf.h`); its manual and examples at the same pin: `docs/lvgl/` (see [LVGL](#lvgl))
 
 Research data: `.scratch/fw-test.json` (firmware catalog), `.scratch/kconfig-subsystems.json` (layer analysis), `.scratch/GLUE.md` (contract specs).
 
 ## LVGL
 
-The `lvgl` theme (`CONFIG_UI_LVGL`, `firmware/src/ui/themes/lvgl/`, defconfigs `modd` and `modd_emu`; the main theme) is drawn by LVGL 9.6 widgets. **Before any LVGL work (a widget, a style, the theme, input, the display port, `lv_conf.h`), read the vendored manual.** Do not work from LVGL 8 knowledge or from tutorials on the web: names, signatures and behaviour differ.
+The modd theme (`CONFIG_UI_THEME_MODD`, `firmware/src/ui/themes/modd/`, defconfigs `modd` and `modd_emu`; the main theme) is drawn with LVGL 9.6 widgets. **Before any LVGL work (a widget, a style, the theme, input, the display port, `lv_conf.h`), read the vendored manual.** Do not work from LVGL 8 knowledge or from tutorials on the web: names, signatures and behaviour differ.
 
 - Manual: `docs/lvgl/docs/src/**/*.mdx` (a widget: `widgets/<name>.mdx`; styles and themes: `common-widget-features/styles/`; encoder and groups: `main-modules/indev/`; subjects: `main-modules/data_binding/`). Examples: `docs/lvgl/examples/`.
 - Headers: `firmware/vendor/lvgl/include/lvgl/`. Where the manual and a header disagree, the header is what compiles.
@@ -267,10 +267,10 @@ defconfigs are implemented.
 ### Direct-API tests (fm1-live + HTTP)
 
 ```
-task test:api                           # builds modd_emu, runs tests/**/api_*_test.py and tests/ui/themes/lvgl/api/
+task test:api                           # builds modd_emu, runs tests/**/api_*_test.py and tests/ui/themes/modd/api/
 ```
 
-`ApiTestCase` (`tests/api_fixtures.py`) boots fm1-live per test class with a port forward to the firmware's REST API and drives everything over HTTP GET: pages (`/modd/<page>`, `/api/page`), panel input ORed into the key scan (`/api/input/...`, `CONFIG_RPC_INPUT`), the audio output (`/api/audio/capture`, `CONFIG_RPC_AUDIO_TAP`), memory (`/api/mem/...`, `CONFIG_RPC_MEM`), LCD and log. Routes live in `API_ROUTES[]` (`firmware/src/rpc/api_ctl.c`); `task build` generates the OpenAPI 3.1 document from the C (`tools/codegen/gen_openapi.py`, prose from `docs/api/openapi.overlay.yaml`) into `build/<defconfig>/openapi.json`, served at `GET /openapi.json` (`CONFIG_RPC_OPENAPI`). The generator stops the build on a handler it cannot read and says what to change; rules in docs/TESTING.md, "Writing a REST handler". Boot, audio, engine, USB-safety and weather tests live here; `test:unit` skips them (except `tests/usb/usb_otg_presence_safety_test.py`, which runs under both). fm1-emu's NAT allows ~30 connections per 30 s, so the client spaces its requests (see docs/TESTING.md, "Direct-API tests").
+`ApiTestCase` (`tests/api_fixtures.py`) boots fm1-live per test class with a port forward to the firmware's REST API and drives everything over HTTP GET: pages (`/modd/<page>`, `/api/page`), panel input ORed into the key scan (`/api/input/...`, `CONFIG_RPC_INPUT`), the audio output (`/api/audio/capture`, `CONFIG_RPC_AUDIO_TAP`), memory (`/api/mem/...`, `CONFIG_RPC_MEM`), LCD and log. Routes live in `API_ROUTES[]` (`firmware/src/rpc/api_ctl.c`); `task build` generates the OpenAPI 3.1 document from the C (`tools/codegen/gen_openapi.py`, prose from `docs/api/openapi.overlay.yaml`) into `build/<defconfig>/openapi.json`, served at `GET /openapi.json` (`CONFIG_RPC_OPENAPI`). The generator stops the build on a handler it cannot read and says what to change; rules in docs/TESTING.md, "Writing a REST handler". Boot, audio, engine, USB-safety and weather tests live here; `test:unit` skips them (except `tests/usb/usb_otg_presence_safety_test.py`, which runs under both). fm1-emu's NAT allows ~24 connections per 30 s, so the client spaces its requests (see docs/TESTING.md, "Direct-API tests").
 
 ### CI
 
@@ -292,7 +292,7 @@ a versioned release.
 
 ### Screenshot generation
 
-`tools/codegen/gen_ui_screenshots.py` captures per-page screenshots for each UI theme using the fm1-live headless emulator (modd and lvgl themes) or the WASM emulator via Playwright in Chromium (the Felucca theme). Run via Taskfile:
+`tools/codegen/gen_ui_screenshots.py` captures per-page screenshots for each UI theme using the fm1-live headless emulator (the modd theme) or the WASM emulator via Playwright in Chromium (the Felucca theme). Run via Taskfile:
 
 ```
 task docs:themes:ui:screenshots          # all themes
