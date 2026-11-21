@@ -20,10 +20,12 @@ static const char *wifi_cfg_pass;
 /* next automatic scan (autoscan / autojoin): the first one 2 s after the task starts, and wifi_init()
  * sets it to "now", so a scan starts at once after the radio comes back */
 static uint32_t wifi_scan_next_ms = 2000u;
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
 static uint8_t wifi_join_need;      /* a join by hand took a net_need(); leaving the network gives it back */
+#endif
 
 static void wifi_disconnect(void);
-#ifdef CONFIG_DOCK
+#if defined(CONFIG_DOCK) && defined(CONFIG_WIFI_IN_SHARED_POOL)
 static uint8_t wifi_dock_logged;    /* "a module is running" is logged once per wait, not per poll */
 #endif
 
@@ -77,6 +79,7 @@ static void wifi_init(void)
     modd_log("wifi: init done");
 }
 
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
 /* Tear the radio down: the reverse of wifi_init(). Runs from wifi_poll() (the fixed context), after
  * wifi_disconnect() has left the network (the deauth needs the radio). Order: interrupts first, so
  * no ISR runs against a half-torn-down chip; then software state; then MAC, DMA, RF in the reverse
@@ -109,6 +112,7 @@ static void wifi_power(uint8_t on)
 {
     (void)on;                       /* wifi_need_update() has logged the change */
 }
+#endif /* CONFIG_WIFI_IN_SHARED_POOL */
 
 static int wifi_scan(void (*cb)(const char *ssid, int rssi, int channel))
 {
@@ -138,12 +142,12 @@ static int wifi_connect(const char *ssid, const char *password)
 
     wifi_cfg_ssid = ssid;
     wifi_cfg_pass = password;
-    /* a network joined by hand stays joined after its page closes: it holds a
-     * need until wifi_disconnect() (auto-join has the boot need, net_need.c) */
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
     if (!wifi_join_need) {
         wifi_join_need = 1;
         net_need();
     }
+#endif
 
 #ifdef CONFIG_WIFI_WPA
     if (password) {
@@ -155,11 +159,12 @@ static int wifi_connect(const char *ssid, const char *password)
                       (const uint8_t *)ssid, slen,
                       wifi_sta.our_mac,
                       wifi_sta.results[idx].bssid);
-        /* the PMK derivation yields to other tasks: the radio may have gone down meanwhile */
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
         if (!wifi_inited || wifi_sta.state == WIFI_STATE_OFF) {
             wifi_disconnect();
             return -1;
         }
+#endif
     }
 #endif
 
@@ -169,16 +174,22 @@ static int wifi_connect(const char *ssid, const char *password)
 static void wifi_disconnect(void)
 {
     modd_log("wifi: disconnect");
-    if (wifi_inited) {              /* radio down: nothing to leave, and no register may be touched */
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
+    if (wifi_inited) {
+#endif
         wifi_lwip_stop_dhcp();
         wifi_sta_do_disconnect();
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
     }
+#endif
     wifi_cfg_ssid = 0;
     wifi_cfg_pass = 0;
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
     if (wifi_join_need) {
         wifi_join_need = 0;
         net_release();
     }
+#endif
 }
 
 static wifi_state_t wifi_get_state(void)
@@ -255,8 +266,13 @@ static void wifi_autojoin_poll(void)
     if (wifi_sta.state != WIFI_STATE_IDLE || CONFIG_WIFI_SSID[0] == '\0')
         return;
     /* checked before the timer, so switching WiFi on scans straight away */
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
     if (!wifi_active)
         return;
+#elif defined(CONFIG_SYS_MENU_NETWORK)
+    if (!sys_settings.wifi_on)
+        return;
+#endif
     if ((int32_t)(now - wifi_scan_next_ms) < 0)
         return;
     wifi_scan_next_ms = now + 15000u;
@@ -343,6 +359,7 @@ static void wifi_wlctl0_probe_poll(void)
 }
 #endif
 
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
 /* Boot only: the bring-up branch of wifi_poll(), once, called from fm1_main() right after
  * net_boot_needs(), on the main stack before the scheduler and before interrupts, timer 5 and audio
  * are on (the ordering proven on hardware). Later activations (setting switched on, first need taken
@@ -355,6 +372,7 @@ static void wifi_boot_init(void)
         wifi_inited = 1;
     }
 }
+#endif /* CONFIG_WIFI_IN_SHARED_POOL */
 
 #ifdef CONFIG_WIFI_IN_SHARED_POOL
 /* Experimental: on-demand power cycling via wifi_need.c (wifi_active / wifi_inited state machine).
@@ -388,6 +406,10 @@ static void wifi_poll(void)
             wifi_disconnect();
             if (joining)
                 toast_status("WiFi off");
+        }
+        if (wifi_inited) {
+            wifi_deinit();
+            wifi_inited = 0;
         }
         return;
     }

@@ -8,6 +8,7 @@
 #include <string.h>
 
 #define CONFIG_WIFI 1
+#define CONFIG_WIFI_IN_SHARED_POOL 1
 #define CONFIG_USB_NET 1
 #define CONFIG_WIFI_AUTOJOIN 1
 #ifndef TEST_NO_RPC
@@ -18,6 +19,7 @@ static char test_ssid[8];                       /* CONFIG_WIFI_SSID may be "" */
 
 static struct { uint8_t wifi_on; } sys_settings;
 static void modd_log(const char *s) { (void)s; }
+static void modd_log_int(const char *s, int32_t v) { (void)s; (void)v; }
 
 static int powered_on, powered_off, wifi_inits;
 static uint8_t wifi_inited;                     /* stands for the radio: here the stub brings it up at once;

@@ -289,7 +289,7 @@ static int dock_net_busy(void)
 #ifdef CONFIG_USB_NET_ECM
     busy |= ecm_is_up();
 #endif
-#ifdef CONFIG_WIFI
+#if defined(CONFIG_WIFI) && defined(CONFIG_WIFI_IN_SHARED_POOL)
     busy |= wifi_inited;
 #endif
     return busy;

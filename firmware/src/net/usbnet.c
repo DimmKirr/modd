@@ -267,7 +267,11 @@ static void usbnet_init(void)
 #else
     usbnet_allowed = sys_settings.usb_net_on;
 #endif
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
     usbnet_wanted = (usbnet_allowed && eth_needs) ? 1 : 0;
+#else
+    usbnet_wanted = usbnet_allowed;
+#endif
 }
 
 static void usbnet_set_wanted(uint8_t on)       /* the USB NET setting */
@@ -276,7 +280,11 @@ static void usbnet_set_wanted(uint8_t on)       /* the USB NET setting */
     if (!on) return;
 #endif
     usbnet_allowed = on;
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
     usbnet_wanted = (on && eth_needs) ? 1 : 0;
+#else
+    usbnet_wanted = on;
+#endif
     modd_log(on ? "usbnet: allowed" : "usbnet: off");
 }
 

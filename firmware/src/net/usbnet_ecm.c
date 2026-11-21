@@ -489,7 +489,11 @@ static void ecm_init(void)
 #else
     ecm_allowed = sys_settings.usb_net_on;
 #endif
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
     ecm_wanted = (ecm_allowed && eth_needs) ? 1 : 0;
+#else
+    ecm_wanted = ecm_allowed;
+#endif
 }
 
 static void ecm_set_wanted(uint8_t on)
@@ -498,7 +502,11 @@ static void ecm_set_wanted(uint8_t on)
     if (!on) return;
 #endif
     ecm_allowed = on;
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
     ecm_wanted = (on && eth_needs) ? 1 : 0;
+#else
+    ecm_wanted = on;
+#endif
     modd_log(on ? "ecm: allowed" : "ecm: off");
 }
 

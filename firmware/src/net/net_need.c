@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
 /* Who needs the network. Consumers (weather, LLM, RPC, a settings page) do not know which link
  * carries it: they call net_need() while they use the network and net_release() when done. This
  * file turns that one count into a need on a link, by policy:
@@ -101,3 +103,31 @@ static void net_boot_needs(void)
         net_need();                              /* join the configured SSID */
 #endif
 }
+
+#else /* !CONFIG_WIFI_IN_SHARED_POOL ------------------------------------------
+ * Non-pool: radio always on (if the setting is on at boot), never power-cycled.
+ * WiFi need tracking is a no-op; USB-net variables are kept so usbnet.c / usbnet_ecm.c compile. */
+
+#ifdef CONFIG_USB_NET
+static uint8_t eth_needs;
+static uint8_t usbnet_wanted, ecm_wanted, usbnet_allowed, ecm_allowed;
+static uint8_t net_ethernet_up(void);            /* net.c */
+#endif
+
+static void net_need(void) {}
+static void net_release(void) {}
+static void net_need_update(void) {}
+static void net_boot_needs(void) {}
+static int  eth_need(void) {
+#ifdef CONFIG_USB_NET
+    if (eth_needs < 255u) eth_needs++;
+#endif
+    return 1;
+}
+static void eth_release(void) {
+#ifdef CONFIG_USB_NET
+    if (eth_needs) eth_needs--;
+#endif
+}
+
+#endif /* CONFIG_WIFI_IN_SHARED_POOL */

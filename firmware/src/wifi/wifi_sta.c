@@ -899,7 +899,7 @@ static void wifi_sta_poll(void)
                 wifi_sta_t19_test();
 #endif
 #if defined(CONFIG_WIFI_AUTOJOIN) && defined(CONFIG_WIFI_SSID)
-                if (CONFIG_WIFI_SSID[0] != '\0' && wifi_is_active()) {
+                if (CONFIG_WIFI_SSID[0] != '\0' && sys_settings.wifi_on) {
                     modd_log("wifi: autojoin");
                     wifi_sta_set_state(WIFI_STATE_IDLE);
                     wifi_sta_start_connect(CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD);

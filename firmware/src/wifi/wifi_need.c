@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+
+#ifdef CONFIG_WIFI_IN_SHARED_POOL
 /* When the WiFi radio runs: the WiFi setting allows it (sys_settings.wifi_on, a permission) and
  * somebody needs a network right now (wifi_needs, taken by net.c through net_need() while a
  * consumer uses the network). Both together are wifi_active. It is the same pattern as
@@ -55,3 +57,14 @@ static void wifi_set_enabled(uint8_t on)         /* the WIFI setting (modd_sys_m
     (void)on;                                    /* sys_settings.wifi_on is already set */
     wifi_need_update();
 }
+
+#else /* !CONFIG_WIFI_IN_SHARED_POOL ------------------------------------------
+ * Non-pool: radio lifecycle is static (init at boot if wifi_on, never deinit).
+ * Zero BSS; callers compile via inline stubs. */
+
+static uint8_t wifi_is_active(void) { return sys_settings.wifi_on; }
+static int  wifi_need(void)         { return sys_settings.wifi_on; }
+static void wifi_release(void)      {}
+static void wifi_set_enabled(uint8_t on) { (void)on; }
+
+#endif /* CONFIG_WIFI_IN_SHARED_POOL */

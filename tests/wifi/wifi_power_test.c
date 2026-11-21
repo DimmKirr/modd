@@ -13,6 +13,7 @@
 
 #define CONFIG_WIFI 1
 #define CONFIG_WIFI_WPA 1
+#define CONFIG_WIFI_IN_SHARED_POOL 1
 #ifdef TEST_DOCK
 #define CONFIG_DOCK 1
 static const void *volatile dock_active;
