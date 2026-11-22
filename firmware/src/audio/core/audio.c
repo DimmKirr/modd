@@ -14,6 +14,9 @@ static int32_t abuf[2u * HALF_WORDS] __attribute__((aligned(32)));
 static int32_t mix_buf_l[BLOCK];
 static int32_t mix_buf_r[BLOCK];
 
+#ifdef CONFIG_EFFECTS_FELUCCA
+static void mix_block(int32_t *out, uint32_t n);
+#else
 static void mix_block(void)
 {
     uint32_t i;
@@ -30,6 +33,7 @@ static void mix_block(void)
     for (i = 0; i < NTRK; i++)
         engine_block(&trk[i], mix_buf_l, mix_buf_r, BLOCK);
 }
+#endif /* !CONFIG_EFFECTS_FELUCCA */
 
 void fm1_alnk0_irq(void)
 {
@@ -40,10 +44,19 @@ void fm1_alnk0_irq(void)
     if (p & FM1_AUDIO_HALF) {
         uint32_t half = fm1_audio_free_half();
         int32_t *o = &abuf[half * HALF_WORDS];
-        uint32_t i;
-        mix_block();
+#ifdef CONFIG_EFFECTS_FELUCCA
+        mix_block(o, BLOCK);
         {
-            int32_t mv = (int32_t)song.master_q12;
+            uint32_t j;
+            for (j = 0; j < 2u * HALF_FRAMES; j++)
+                o[j] <<= AUDIO_OUT_SHIFT;
+        }
+#else
+        {
+            uint32_t i;
+            int32_t mv;
+            mix_block();
+            mv = (int32_t)song.master_q12;
             for (i = 0; i < HALF_FRAMES; i++) {
 #ifdef CONFIG_AUDIO_24BIT
                 int32_t l = (int32_t)(((int64_t)mix_buf_l[i] * mv) >> 12);
@@ -56,6 +69,7 @@ void fm1_alnk0_irq(void)
 #endif
             }
         }
+#endif /* CONFIG_EFFECTS_FELUCCA */
 #ifdef CONFIG_RPC_AUDIO_TAP
         audio_tap_block(o, HALF_FRAMES);
 #endif

@@ -14,18 +14,18 @@ config INPUT
 # kc2mm:label "Shell"
 choice
     prompt "UI theme"
-    default UI_THEME_FELUCCA if INPUT
+    default UI_THEME_FELUCCA_UPSTREAM if INPUT
     default UI_THEME_MODD
 
-config UI_THEME_FELUCCA
-    bool "Felucca"
+config UI_THEME_FELUCCA_UPSTREAM
+    bool "Felucca (upstream canvas)"
     depends on INPUT
     select GEN_FELUCCA_UI
     help
-      Port of Felucca's UI: SURF cards, Inter Tight font, anti-aliased
-      icons, knob arcs, Felucca's pages and button map. Goal is a faithful
-      port; modd-only modules (WiFi, weather, BLE) add pages under the
-      existing views. Source: firmware/src/ui/themes/felucca/.
+      Upstream Felucca UI: SURF cards, Inter Tight font, anti-aliased
+      icons, knob arcs, Felucca's pages and button map rendered through
+      Felucca's own canvas (gfx.c), not LVGL. Source:
+      firmware/src/ui/themes/felucca/.
 
 # Not yet selectable: no SLOOP theme exists (firmware/src/ui/themes/sloop/).
 # Remove the 'depends on n' guard when it does.
@@ -55,13 +55,22 @@ config UI_THEME_MODD
       Manual for the vendored version: docs/lvgl/. Source:
       firmware/src/ui/themes/modd/.
 
+config UI_THEME_FELUCCA
+    bool "Felucca (LVGL)"
+    help
+      The Felucca palettes (GREY default, 10 total) on LVGL 9.6 widgets.
+      Same shared page code as the modd theme, different palette. Dark by
+      default; upstream Felucca pages (SONG, STEP, etc.) are added as they
+      are ported. Source: firmware/src/ui/themes/felucca/lvgl_*.c, shared
+      page code from firmware/src/ui/themes/modd/page_*.c.
+
 endchoice
 
 # kc2mm:label "Controls"
 choice
     prompt "Control model"
     default CONTROLS_FELUCCA
-    depends on !UI_THEME_MODD
+    depends on !UI_THEME_MODD && !UI_THEME_FELUCCA
 
 config CONTROLS_FELUCCA
     bool "Felucca"
@@ -111,7 +120,7 @@ config PAGE_DEMO
 config GEN_FELUCCA_UI
     bool
     help
-      Hidden. Selected by UI_THEME_FELUCCA. Tells the build system to run
+      Hidden. Selected by UI_THEME_FELUCCA_UPSTREAM. Tells the build system to run
       Felucca font/icon/keycap/palette generators before compiling.
 
 config GEN_MELODEE_UI

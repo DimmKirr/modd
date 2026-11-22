@@ -9,8 +9,8 @@ MEMORY
     XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = 0x8C000
     RAMTEXT (rwx): ORIGIN = 0x01C00000, LENGTH = 0x7F00
     RAM    (rwx) : ORIGIN = 0x01C08000, LENGTH = 96K
-    POOL   (rwx) : ORIGIN = 0x01C20000, LENGTH = 0x54000  /* 336 KiB, same as HW */
-    NOINIT (rw)  : ORIGIN = 0x01C7C020, LENGTH = 0x3D30
+    POOL   (rwx) : ORIGIN = 0x01C20000, LENGTH = 0x74000  /* 464 KiB (HW is 336 KiB) */
+    NOINIT (rw)  : ORIGIN = 0x01C9C020, LENGTH = 0x3D30
     CACHE  (rw)  : ORIGIN = 0x01F28000, LENGTH = 28K
 }
 SECTIONS
@@ -53,7 +53,7 @@ SECTIONS
     ASSERT(_resource_low_start <= _resource_low_end, "RAM code overlaps startup STATUS")
     ASSERT(_resource_data_start <= _resource_data_end, "data overlaps resource pool")
     ASSERT(_resource_retained_start <= _resource_retained_end, "retained state overlaps boot records")
-    _guard0 = 0x01C74000; _ustack_lo = 0x01C74100; _ustack_top = 0x01C7A000;
-    _guard1 = 0x01C7A000; _sstack_lo = 0x01C7A100; _sstack_top = 0x01C7C000;
+    _guard0 = 0x01C94000; _ustack_lo = 0x01C94100; _ustack_top = 0x01C9A000;
+    _guard1 = 0x01C9A000; _sstack_lo = 0x01C9A100; _sstack_top = 0x01C9C000;
     /DISCARD/ : { *(.comment) *(.note*) }
 }

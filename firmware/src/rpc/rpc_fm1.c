@@ -9,7 +9,7 @@ static void rpc_fm1_get_info(int32_t id, struct rpc_tx *tx)
     rpc_tx_char(tx, ',');
     rpc_tx_key_str(tx, "version", CONFIG_FIRMWARE_VERSION);
     rpc_tx_char(tx, ',');
-#if defined(CONFIG_UI_THEME_FELUCCA)
+#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
     rpc_tx_key_str(tx, "lineage", "felucca");
 #elif defined(CONFIG_UI_THEME_MELODEE)
     rpc_tx_key_str(tx, "lineage", "melodee");

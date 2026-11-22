@@ -20,7 +20,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 from api_fixtures import ApiError, ApiTestCase, rms
 
 # the pages in registration order (ui/themes/modd/pages.c)
-PAGES = ['HOME', 'MENU', 'WX', 'DEMO', 'FILES', 'DISK', 'LOG']
+PAGES = ['HOME', 'MIXER', 'ENV', 'LFO', 'FX', 'SCL', 'EDIT', 'VOICE',
+         'MENU', 'ARP', 'SEQ', 'WX', 'DEMO', 'FILES', 'DISK', 'ABOUT', 'LOG']
 
 
 class ModdApiCase(ApiTestCase):

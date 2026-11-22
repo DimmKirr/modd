@@ -82,7 +82,7 @@ typedef struct modd_controls {
 
 /* The modd theme ships its own map (ui/themes/modd/controls.c); the tables below
  * serve the ported themes, chosen by the Control model Kconfig choice. */
-#ifndef CONFIG_UI_THEME_MODD
+#if !defined(CONFIG_UI_THEME_MODD) && !defined(CONFIG_UI_THEME_FELUCCA)
 
 /* --- Felucca control map --- */
 
@@ -232,6 +232,6 @@ static const theme_enc_roles_t modd_enc_roles = {
 
 #endif
 
-#endif /* !CONFIG_UI_THEME_MODD */
+#endif /* !CONFIG_UI_THEME_MODD && !CONFIG_UI_THEME_FELUCCA */
 
 #endif /* MODD_CONTROLS_H */

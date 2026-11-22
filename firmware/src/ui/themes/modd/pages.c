@@ -5,6 +5,17 @@
 #ifndef CONFIG_HOME_PAGE_FILES
 #include "ui/themes/modd/page_home.c"
 #endif
+#ifdef CONFIG_AUDIO
+#include "ui/themes/modd/page_mixer.c"
+#include "ui/themes/modd/page_env.c"
+#include "ui/themes/modd/page_lfo.c"
+#include "ui/themes/modd/page_fx.c"
+#include "ui/themes/modd/page_scl.c"
+#include "ui/themes/modd/page_edit.c"
+#include "ui/themes/modd/page_voice.c"
+#include "ui/themes/modd/page_arp.c"
+#include "ui/themes/modd/page_seq.c"
+#endif
 #ifdef CONFIG_SYS_MENU
 #include "ui/themes/modd/page_settings.c"
 #endif
@@ -18,6 +29,7 @@
 #ifdef CONFIG_PAGE_DEMO
 #include "ui/themes/modd/page_demo.c"
 #endif
+#include "ui/themes/modd/page_about.c"
 #ifdef CONFIG_DEBUG_LOG_BUF
 #include "ui/themes/modd/page_debug.c"
 #endif
@@ -30,10 +42,49 @@ static void shell_register_pages(void)
 #else
     nav_register(&PAGE_HOME);
 #endif
+#ifdef CONFIG_AUDIO
+    nav_register(&PAGE_MIXER);
+#endif
+
+    /* VIEW_ENV */
+#ifdef CONFIG_AUDIO
+    nav_register(&PAGE_ENV);
+#endif
+
+    /* VIEW_LFO */
+#ifdef CONFIG_AUDIO
+    nav_register(&PAGE_LFO);
+#endif
+
+    /* VIEW_FX */
+#ifdef CONFIG_AUDIO
+    nav_register(&PAGE_FX);
+#endif
+
+    /* VIEW_SCL */
+#ifdef CONFIG_AUDIO
+    nav_register(&PAGE_SCL);
+#endif
+
+    /* VIEW_EDIT */
+#ifdef CONFIG_AUDIO
+    nav_register(&PAGE_EDIT);
+    nav_register(&PAGE_VOICE);
+#endif
 
     /* VIEW_SETTINGS (HOME hold) */
 #ifdef CONFIG_SYS_MENU
     nav_register(&PAGE_SETTINGS);
+#endif
+
+    /* VIEW_ARP */
+#ifdef CONFIG_AUDIO
+    nav_register(&PAGE_ARP);
+#endif
+
+    /* VIEW_SEQ */
+#ifdef CONFIG_AUDIO
+    nav_register(&PAGE_SEQ);
 #endif
 
     /* VIEW_CONN (FX hold): weather + demo */
@@ -52,7 +103,8 @@ static void shell_register_pages(void)
     nav_register(&PAGE_DISK);
 #endif
 
-    /* VIEW_GLO (GLO hold): the log */
+    /* VIEW_GLO (GLO hold): about + log */
+    nav_register(&PAGE_ABOUT);
 #ifdef CONFIG_DEBUG_LOG_BUF
     lvt_dbg_idx = nav_npage;
     nav_register(&PAGE_DEBUG);

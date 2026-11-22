@@ -725,7 +725,7 @@ def build(dry_run=False):
 
     if 'DUAL_CORE' in enabled:
         flags.append('-DMODD_DUAL_CORE=1')
-    if 'UI_THEME_MODD' in enabled:
+    if enabled & {'UI_THEME_MODD', 'UI_THEME_FELUCCA'}:
         flags += lvgl_flags()
 
     version = _firmware_version()
@@ -771,7 +771,7 @@ def build(dry_run=False):
         for name, path in asm_srcs:
             print(f'  [asm] {path.relative_to(ROOT)}')
         print(f'  [cc]  {c_src.relative_to(ROOT)}')
-        if 'UI_THEME_MODD' in enabled:
+        if enabled & {'UI_THEME_MODD', 'UI_THEME_FELUCCA'}:
             print(f'  [lib] {LVGL.relative_to(ROOT)}/src/**/*.c -> liblvgl.a')
         print(f'Flags: {" ".join(flags)}')
         print(f'Then build firmware/stub, firmware/loader and package {OUT.relative_to(ROOT)}/modd.fwsc')
@@ -804,7 +804,7 @@ def build(dry_run=False):
 
     objs = [str(OUT / (Path(name).stem + '.o')) for name, _ in asm_srcs]
     objs.append(str(OUT / 'modd.o'))
-    if 'UI_THEME_MODD' in enabled:
+    if enabled & {'UI_THEME_MODD', 'UI_THEME_FELUCCA'}:
         objs.append(str(build_lvgl()))   # after modd.o: the linker takes what it refers to
 
     if 'USB_HOST' in enabled:

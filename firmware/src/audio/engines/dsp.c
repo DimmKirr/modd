@@ -24,6 +24,10 @@
 #define FE_NOISE_PINK2_G 17247
 #define FE_NOISE_BROWN_P 32580
 #define FE_NOISE_BROWN_G 3480
+
+#define FE_WHEEL_PDEC_SLOW 65457 /* WHEEL percussion decay a block, Q16: tau 0.6 s */
+#define FE_WHEEL_PDEC_FAST 65219 /* tau 0.15 s */
+#define FE_WHEEL_CLKDEC 24576    /* WHEEL key click decay a block, Q15: tau ~2.5 ms */
 #if FS == 44100
 #define FE_T(n) (n)
 #define FE_HOLD(n) (n)

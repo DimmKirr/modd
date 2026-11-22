@@ -152,6 +152,58 @@ tasks:
     cmds:
       - uv run --quiet --group ui-test python -m pytest tests/usb/usb_otg_presence_safety_test.py -v {{.CLI_ARGS}}
 
+  # --- modd_felucca_emu ---------------------------------------------------
+  build:modd_felucca_emu:
+    desc: "Build modd_felucca_emu defconfig (-> build/modd_felucca_emu-open/modd.fwsc)"
+    dotenv: ['.env.emu']
+    env:
+      USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
+    cmds:
+      - task: _build
+        vars: { DEFCONFIG: modd_felucca_emu, OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}' }
+
+  test:modd_felucca_emu:api:
+    desc: "Build modd_felucca_emu + run the modd theme API tests against the Felucca audio stack"
+    dotenv: ['.env.emu']
+    env:
+      USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
+    vars:
+      _EMU_SUFFIX: '{{if eq (env "USE_OPEN_TOOLCHAIN" | default "1") "1"}}-open{{end}}'
+    cmds:
+      - task: _test:api
+        vars:
+          DEFCONFIG: modd_felucca_emu
+          OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
+          TC_SUFFIX_OVERRIDE: '{{._EMU_SUFFIX}}'
+          TESTS: 'tests/ui/themes/modd/api/'
+          CLI_ARGS: '{{.CLI_ARGS}}'
+
+  # --- modd_felucca_lvgl_emu -----------------------------------------------
+  build:modd_felucca_lvgl_emu:
+    desc: "Build modd_felucca_lvgl_emu defconfig (-> build/modd_felucca_lvgl_emu-open/modd.fwsc)"
+    dotenv: ['.env.emu']
+    env:
+      USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
+    cmds:
+      - task: _build
+        vars: { DEFCONFIG: modd_felucca_lvgl_emu, OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}' }
+
+  test:modd_felucca_lvgl_emu:api:
+    desc: "Build modd_felucca_lvgl_emu + run the modd theme API tests with the Felucca LVGL palette"
+    dotenv: ['.env.emu']
+    env:
+      USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
+    vars:
+      _EMU_SUFFIX: '{{if eq (env "USE_OPEN_TOOLCHAIN" | default "1") "1"}}-open{{end}}'
+    cmds:
+      - task: _test:api
+        vars:
+          DEFCONFIG: modd_felucca_lvgl_emu
+          OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
+          TC_SUFFIX_OVERRIDE: '{{._EMU_SUFFIX}}'
+          TESTS: 'tests/ui/themes/modd/api/'
+          CLI_ARGS: '{{.CLI_ARGS}}'
+
   test:modd_emu:api:wifi:
     desc: "Build modd_emu + run the API tests with WiFi as the only link (fm1-live --wifi oss): pages, weather, WIFI off then on"
     dotenv: ['.env.emu']

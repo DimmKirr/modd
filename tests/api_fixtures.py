@@ -56,7 +56,7 @@ import fm1_paths  # noqa: E402
 from fm1_paths import EMU_ROOT, FM1_LIVE  # noqa: E402,F401
 RESULTS_DIR = io_log.RESULTS
 RPC_PORT = 9222                     # CONFIG_RPC_PORT of the API defconfigs
-DEFAULT_DEFCONFIG = 'modd_emu'
+DEFAULT_DEFCONFIG = os.environ.get('MODD_API_DEFCONFIG', 'modd_emu')
 
 _run_timestamp = io_log.RUN_STAMP          # one per session: every results folder and debug.log share it
 

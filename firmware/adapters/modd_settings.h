@@ -42,7 +42,7 @@ typedef struct {
 #ifdef CONFIG_USB_NET
     uint8_t usb_net_on;    /* 0 = OFF, 1 = ON (auto-detects ECM or iPhone) */
 #endif
-#ifdef CONFIG_UI_THEME_MODD
+#if defined(CONFIG_UI_THEME_MODD) || defined(CONFIG_UI_THEME_FELUCCA)
     uint8_t ui_pal;         /* palette: UI_PAL_TAG + index (Settings > DISPLAY > THEME) */
     uint8_t ui_lights;      /* LED brightness: 0=OFF, 1=LOW, 2=MID, 3=HIGH, 4=FULL */
 #endif
@@ -80,7 +80,7 @@ static void sys_settings_defaults(void)
     sys_settings.ble_on = 1;     /* ON */
     sys_settings.ble_discoverable = 1; /* ON */
 #endif
-#ifdef CONFIG_UI_THEME_MODD
+#if defined(CONFIG_UI_THEME_MODD) || defined(CONFIG_UI_THEME_FELUCCA)
     sys_settings.ui_pal = 0;     /* below UI_PAL_TAG: reads as the default palette */
     sys_settings.ui_lights = 3;  /* HIGH */
 #endif
@@ -104,7 +104,7 @@ static void sys_settings_init(void)
 #ifdef CONFIG_USB_NET
     if (sys_settings.usb_net_on > 1u) sys_settings.usb_net_on = 0;
 #endif
-#ifdef CONFIG_UI_THEME_MODD
+#if defined(CONFIG_UI_THEME_MODD) || defined(CONFIG_UI_THEME_FELUCCA)
     if (sys_settings.ui_lights > 4u) sys_settings.ui_lights = 3;
 #endif
 #ifdef CONFIG_UDISK

@@ -6,7 +6,7 @@
 #ifndef MODD_TOAST_H
 #define MODD_TOAST_H
 
-#ifdef CONFIG_UI_THEME_MODD
+#if defined(CONFIG_UI_THEME_MODD) || defined(CONFIG_UI_THEME_FELUCCA)
 static void toast_status(const char *msg);
 static void toast_error(const char *msg);
 static void toast_clear(void);

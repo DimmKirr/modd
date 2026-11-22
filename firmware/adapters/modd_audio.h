@@ -69,11 +69,25 @@ enum {
     P_M4SRC, P_M4DST, P_M4AMT,
     /* FX sends (common across upstreams) */
     P_DIST, P_CHOR, P_DLY, P_REV,
+    /* Felucca INSERT effect per-track params (1.5) */
+    P_ITYPE, P_IMIX, P_IA, P_IB, P_IC,
+    /* Felucca spread */
+    P_SPRD,
     /* per-engine track params (Felucca 1.5: ANALOG filter type) */
     P_FTYPE,
     /* engine params (always last 8) */
     P_E0, P_E1, P_E2, P_E3, P_E4, P_E5, P_E6, P_E7,
     P_COUNT
+};
+
+/* --- global (song-level) effect parameters (Felucca) --- */
+
+enum {
+    G_BPM, G_CLOCK,
+    G_RTYPE, G_RSIZE, G_RDAMP,
+    G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX,
+    G_CDEPTH, G_CRATE,
+    G_COUNT
 };
 
 /* --- step (sequencer pattern data) --- */
@@ -100,6 +114,11 @@ typedef struct track {
     int32_t lfo_fade;
     uint32_t lfo_rnd;
     int16_t lfo_prev;
+    /* effects state (Felucca fx.c) */
+    int32_t dist_hp, dist_lp1, dist_lp2;
+    int32_t peak;
+    uint8_t tail;
+    uint8_t ins_run;
     /* keyboard input */
     uint8_t held[16];
     uint8_t nheld;
@@ -122,6 +141,7 @@ typedef struct {
     uint8_t recording;
     uint8_t rec;
     uint8_t sel;
+    int16_t g[G_COUNT];
 } song_t;
 
 /* --- globals (the audio core owns these) --- */
@@ -264,6 +284,16 @@ static void modd_song_init(void)
     uint32_t k;
     song.bpm = 128;
     song.sel = 1;
+    song.g[G_BPM]    = 128;
+    song.g[G_RTYPE]  = 0;      /* ROOM */
+    song.g[G_RSIZE]  = 70;
+    song.g[G_RDAMP]  = 60;
+    song.g[G_DTIME]  = 2;      /* 1/4 note */
+    song.g[G_DFDBK]  = 50;
+    song.g[G_DCOLOR] = 64;
+    song.g[G_DMIX]   = 80;
+    song.g[G_CDEPTH] = 40;
+    song.g[G_CRATE]  = 30;
     for (k = 0; k < NTRK; k++) {
         trk[k].eng_req = (uint8_t)(k % NENGINES);
         trk[k].engine  = (uint8_t)(k % NENGINES);

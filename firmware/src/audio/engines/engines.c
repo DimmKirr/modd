@@ -19,6 +19,14 @@
 #include "upstream/felucca-engines/src/eng_trio.c"
 #endif
 
+#ifdef CONFIG_ENGINE_PHASE
+#include "upstream/felucca-engines/src/eng_phase.c"
+#endif
+
+#ifdef CONFIG_ENGINE_TONEWHEEL
+#include "upstream/felucca-engines/src/eng_wheel.c"
+#endif
+
 #ifdef CONFIG_ENGINE_FM6
 #if defined(CONFIG_ENGINE_FM6_FMLAB)
 #include "fm6/fm6_fmlab.c"
@@ -46,6 +54,12 @@ static const engine_t *const ENGINES[] = {
 #endif
 #ifdef CONFIG_ENGINE_TRIO
     &ENG_TRIO,
+#endif
+#ifdef CONFIG_ENGINE_PHASE
+    &ENG_PHASE,
+#endif
+#ifdef CONFIG_ENGINE_TONEWHEEL
+    &ENG_WHEEL,
 #endif
 #ifdef CONFIG_ENGINE_FM6
     &ENG_FM6,

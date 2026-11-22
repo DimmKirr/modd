@@ -90,6 +90,36 @@ static void modd_engine_select(track_t *t, uint32_t ei)
 
 static int32_t voice_buf[BLOCK];
 
+static uint32_t track_render(track_t *t, int32_t *buf, uint32_t n)
+{
+    const engine_t *eng;
+    uint32_t i, nr = 0;
+
+    if (t->engine >= NENGINES)
+        return 0;
+    eng = ENGINES[t->engine];
+    if (!eng->render)
+        return 0;
+
+    for (i = 0; i < n; i++)
+        buf[i] = 0;
+
+    for (i = 0; i < NVOICE; i++) {
+        voice_t *v = &t->v[i];
+        vmod_t m;
+        if (!v->active)
+            continue;
+        __builtin_memset(&m, 0, sizeof(m));
+        m.pitch16 = v->pitch16;
+        m.inc = pitch_inc((uint32_t)clamp(m.pitch16, 0, 2047));
+        m.amp0 = AUDIO_AMP_ONE;
+        m.amp1 = AUDIO_AMP_ONE;
+        eng->render(t, v, buf, n, &m);
+        nr++;
+    }
+    return nr;
+}
+
 static void engine_block(track_t *t, int32_t *buf_l, int32_t *buf_r, uint32_t n)
 {
     const engine_t *eng;
