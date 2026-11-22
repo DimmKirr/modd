@@ -6,7 +6,7 @@
 The condition artwork lives in gen_weather_art.py, which emits the pixel-art sprites.
 
 Usage:
-  python3 tools/codegen/gen_ui_weather.py colors  > firmware/src/ui/themes/felucca/weather_colors.h
+  python3 tools/codegen/gen_ui_weather.py colors  > firmware/src/ui/shells/felucca/weather_colors.h
 """
 import sys
 

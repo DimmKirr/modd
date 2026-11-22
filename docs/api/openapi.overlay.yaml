@@ -93,7 +93,7 @@ paths:
       type: object
 
   /api/pages:
-    summary: Every page of the UI theme, in navigation order
+    summary: Every page of the UI shell, in navigation order
     tags: [pages]
     operationId: listPages
     fields:
@@ -111,7 +111,7 @@ paths:
   /modd/{page}:
     summary: Go to a page by name
     description: |
-      Calls the page's leave and enter, as a key press would. A theme that
+      Calls the page's leave and enter, as a key press would. A shell that
       changes pages in its own task (LVGL) shows the page on its next frame;
       `/api/page` reports it from then on.
     tags: [pages]
@@ -123,7 +123,7 @@ paths:
 
   /modd/{page}/{sub}:
     summary: Go to a page and one of its sub-pages
-    description: 'Sub-pages: the MENU tabs of the modd theme (`menu/net`, `menu/midi`, ...).'
+    description: 'Sub-pages: the MENU tabs of the modd shell (`menu/net`, `menu/midi`, ...).'
     tags: [pages]
     operationId: gotoSubPage
     parameters:

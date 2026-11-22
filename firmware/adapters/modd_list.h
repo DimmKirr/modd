@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* List adapter: the contract between a scrolling-list page and what it lists. A source keeps
  * its entries in RAM (filled on open / poll, never while drawing or scrolling) and answers in
- * constant time; the widget (ui/themes/modd/list.c) owns the cursor, the window and the status
+ * constant time; the widget (ui/shells/modd/list.c) owns the cursor, the window and the status
  * line. Sources: a USB disk directory (udisk.c), the dock instruments (dock/dock_list.c), later
  * an HTTP index. */
 #ifndef MODD_LIST_H

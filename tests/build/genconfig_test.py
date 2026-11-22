@@ -56,7 +56,7 @@ def test_genconfig_writes_header():
     assert '#define' in content
     assert '#define CONFIG_AUDIO 1' in content
     assert '#define CONFIG_USB 1' in content
-    assert '#define CONFIG_UI_THEME_MODD 1' in content
+    assert '#define CONFIG_UI_SHELL_MODD 1' in content
     for symbol in ('EMU', 'DEBUG_FRAMEBUFFER', 'RPC_INPUT'):
         assert f'#define CONFIG_{symbol} ' not in content, f'production modd must not set {symbol}'
     assert (out / '.config').exists(), '.config not written to outdir'

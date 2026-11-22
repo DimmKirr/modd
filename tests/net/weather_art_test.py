@@ -83,7 +83,7 @@ def test_has_include_guard(out):
 
 
 def test_checked_in_header_matches_generator(out):
-    hdr = ROOT / 'firmware' / 'src' / 'ui' / 'themes' / 'felucca' / 'weather_art.h'
+    hdr = ROOT / 'firmware' / 'src' / 'ui' / 'shells' / 'felucca' / 'weather_art.h'
     assert hdr.exists(), 'weather_art.h is not checked in'
     drop = lambda s: '\n'.join(l for l in s.splitlines() if not l.startswith('/* Generated'))
     assert drop(hdr.read_text()) == drop(out), 'weather_art.h is stale; re-run the generator'

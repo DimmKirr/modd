@@ -57,7 +57,7 @@ nix develop -c mise exec -- task docs
 - Rebuilds with the generated headers already in place, `task test:unit` and the API tests run without the dev shell.
 - Do not add the x86-64 glibc to the dev shell's `buildInputs`: it leaks x86 headers into the native `cc` and breaks the host-compiled C harnesses in `tests/` (`gnu/stubs-32.h` not found).
 
-Before committing: `task docs` (about 5-6 minutes: two firmware builds plus emulator captures for every theme page), `task docs:check`, `uv lock --check`, `task test:unit`. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#before-committing).
+Before committing: `task docs` (about 5-6 minutes: two firmware builds plus emulator captures for every shell page), `task docs:check`, `uv lock --check`, `task test:unit`. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#before-committing).
 
 ### .config and defconfigs
 
@@ -107,7 +107,7 @@ Thin compatibility headers (`modd_*.h`) that let components from different upstr
 | Scales/Tuning | `modd_scales.h` | Swap scale sets |
 | Debug DAP | `modd_debug.h` | NOINIT byte ring + USB SysEx debug protocol |
 | Dock modules | `modd_dock.h` | fm1-dock `.dock` instruments: ABI tables, header/CRC/relocation; installed from a `dock_src_t` (USB disk today) and run one at a time |
-| Lists | `modd_list.h` | One scrolling-list widget (modd theme `list.c`) over any source: a USB disk directory, the dock instruments, later an HTTP index; four control slots (short/long OCT-/OCT+) with glyph, label and default hints |
+| Lists | `modd_list.h` | One scrolling-list widget (modd shell `list.c`) over any source: a USB disk directory, the dock instruments, later an HTTP index; four control slots (short/long OCT-/OCT+) with glyph, label and default hints |
 
 ### The P_COUNT Problem
 
@@ -234,17 +234,17 @@ Upstream trees are fetched with vendir and are not committed: `vendir.yml` pins 
 - fm1-dock: `firmware/upstream/fm1-dock/`
 - Optimist (BLE): `firmware/upstream/optimist/`
 - lwIP: `firmware/vendor/lwip/`; FatFs: `firmware/vendor/fatfs/` (project config in `firmware/src/udisk/`)
-- LVGL v9.6.0: `firmware/vendor/lvgl/` (project config in `firmware/src/ui/themes/modd/lv_conf.h`); its manual and examples at the same pin: `docs/lvgl/` (see [LVGL](#lvgl))
+- LVGL v9.6.0: `firmware/vendor/lvgl/` (project config in `firmware/src/ui/shells/modd/lv_conf.h`); its manual and examples at the same pin: `docs/lvgl/` (see [LVGL](#lvgl))
 
 Research data: `.scratch/fw-test.json` (firmware catalog), `.scratch/kconfig-subsystems.json` (layer analysis), `.scratch/GLUE.md` (contract specs).
 
 ## LVGL
 
-The modd theme (`CONFIG_UI_THEME_MODD`, `firmware/src/ui/themes/modd/`, defconfigs `modd` and `modd_emu`; the main theme) is drawn with LVGL 9.6 widgets. **Before any LVGL work (a widget, a style, the theme, input, the display port, `lv_conf.h`), read the vendored manual.** Do not work from LVGL 8 knowledge or from tutorials on the web: names, signatures and behaviour differ.
+The modd shell (`CONFIG_UI_SHELL_MODD`, `firmware/src/ui/shells/modd/`, defconfigs `modd` and `modd_emu`; the main shell) is drawn with LVGL 9.6 widgets. **Before any LVGL work (a widget, a style, the shell, input, the display port, `lv_conf.h`), read the vendored manual.** Do not work from LVGL 8 knowledge or from tutorials on the web: names, signatures and behaviour differ.
 
 - Manual: `docs/lvgl/docs/src/**/*.mdx` (a widget: `widgets/<name>.mdx`; styles and themes: `common-widget-features/styles/`; encoder and groups: `main-modules/indev/`; subjects: `main-modules/data_binding/`). Examples: `docs/lvgl/examples/`.
 - Headers: `firmware/vendor/lvgl/include/lvgl/`. Where the manual and a header disagree, the header is what compiles.
-- Project guide: [docs/ui/LVGL.md](docs/ui/LVGL.md). Where to edit, the rules a theme has to follow on the FM-1 (one task, heap, stack, density, encoder input), how to preview and measure, community projects.
+- Project guide: [docs/ui/LVGL.md](docs/ui/LVGL.md). Where to edit, the rules a shell has to follow on the FM-1 (one task, heap, stack, density, encoder input), how to preview and measure, community projects.
 - LVGL 9.6 has no XML engine (removed in 9.5.0; XML is LVGL Pro, commercial). Pages are C.
 - `docs/lvgl/` and `firmware/vendor/lvgl/` are fetched by vendir and never edited. Changing `lv_conf.h` recompiles the library (483 files, about 3 minutes).
 
@@ -267,7 +267,7 @@ defconfigs are implemented.
 ### Direct-API tests (fm1-live + HTTP)
 
 ```
-task test:api                           # builds modd_emu, runs tests/**/api_*_test.py and tests/ui/themes/modd/api/
+task test:api                           # builds modd_emu, runs tests/**/api_*_test.py and tests/ui/shells/modd/api/
 ```
 
 `ApiTestCase` (`tests/api_fixtures.py`) boots fm1-live per test class with a port forward to the firmware's REST API and drives everything over HTTP GET: pages (`/modd/<page>`, `/api/page`), panel input ORed into the key scan (`/api/input/...`, `CONFIG_RPC_INPUT`), the audio output (`/api/audio/capture`, `CONFIG_RPC_AUDIO_TAP`), memory (`/api/mem/...`, `CONFIG_RPC_MEM`), LCD and log. Routes live in `API_ROUTES[]` (`firmware/src/rpc/api_ctl.c`); `task build` generates the OpenAPI 3.1 document from the C (`tools/codegen/gen_openapi.py`, prose from `docs/api/openapi.overlay.yaml`) into `build/<defconfig>/openapi.json`, served at `GET /openapi.json` (`CONFIG_RPC_OPENAPI`). The generator stops the build on a handler it cannot read and says what to change; rules in docs/TESTING.md, "Writing a REST handler". Boot, audio, engine, USB-safety and weather tests live here; `test:unit` skips them (except `tests/usb/usb_otg_presence_safety_test.py`, which runs under both). fm1-emu's NAT allows ~24 connections per 30 s, so the client spaces its requests (see docs/TESTING.md, "Direct-API tests").
@@ -292,20 +292,20 @@ a versioned release.
 
 ### Screenshot generation
 
-`tools/codegen/gen_ui_screenshots.py` captures per-page screenshots for each UI theme using the fm1-live headless emulator (the modd theme) or the WASM emulator via Playwright in Chromium (the Felucca theme). Run via Taskfile:
+`tools/codegen/gen_ui_screenshots.py` captures per-page screenshots for each UI shell using the fm1-live headless emulator (the modd shell) or the WASM emulator via Playwright in Chromium (the Felucca shell). Run via Taskfile:
 
 ```
-task docs:themes:ui:screenshots          # all themes
+task docs:themes:ui:screenshots          # all shells
 python tools/codegen/gen_ui_screenshots.py modd          # modd only
 python tools/codegen/gen_ui_screenshots.py modd --no-build   # skip firmware build
 ```
 
-The modd theme uses fm1-live with `--usb ethernet --net internet` for network screenshots (Settings NET, Weather) and a 34MB FAT32 disk image (`tools/codegen/screenshot_disk.img`) for Files/Disk screenshots. The disk image contains prebuilt `.dock` modules from fm1-dock.
+The modd shell uses fm1-live with `--usb ethernet --net internet` for network screenshots (Settings NET, Weather) and a 34MB FAT32 disk image (`tools/codegen/screenshot_disk.img`) for Files/Disk screenshots. The disk image contains prebuilt `.dock` modules from fm1-dock.
 
 Output and auto-injection:
-- Screenshots go to `docs/ui/themes/<theme>/screenshots/` as both numbered (`00_home.png`) and stable-named (`home.png`) files.
-- `THEME.md` gallery: the generator injects a full screenshot table between `<!-- theme-gallery:start/end -->` markers in `docs/ui/themes/<theme>/THEME.md`.
-- `README.md` hero section: the generator injects selected screenshots between `<!-- theme-screenshots:start/end -->` markers. Hero shots and their order are defined by `HERO_SHOTS` in the script.
+- Screenshots go to `docs/ui/shells/<shell>/screenshots/` as both numbered (`00_home.png`) and stable-named (`home.png`) files.
+- `THEME.md` gallery: the generator injects a full screenshot table between `<!-- shell-gallery:start/end -->` markers in `docs/ui/shells/<shell>/THEME.md`.
+- `README.md` hero section: the generator injects selected screenshots between `<!-- shell-screenshots:start/end -->` markers. Hero shots and their order are defined by `HERO_SHOTS` in the script.
 - Both injections happen automatically on every run.
 
 Environment: set `FM1_EMU_ROOT` (in `devcell.toml [env]` or shell) to the fm1-emu worktree root so the generator finds fm1-live.
@@ -361,7 +361,7 @@ For the mock-first porting strategy (start with stub data, wire real components 
 
 ### Combining modules from multiple firmwares
 
-If you want modules from multiple firmwares in one build (e.g. one engine from Felucca, one engine from Melodee, a UI theme from SLOOP), the recommended path is to add them as modules via adapters to modd. Each module conforms to its adapter contract independently, so modules from different upstreams coexist as long as they fit the voice budget and satisfy Kconfig dependencies.
+If you want modules from multiple firmwares in one build (e.g. one engine from Felucca, one engine from Melodee, a UI shell from SLOOP), the recommended path is to add them as modules via adapters to modd. Each module conforms to its adapter contract independently, so modules from different upstreams coexist as long as they fit the voice budget and satisfy Kconfig dependencies.
 
 Upstream firmwares are vendored under `firmware/upstream/` via vendir and are never modified. To port a component, copy or adapt it into `firmware/src/` (or `firmware/adapters/`), wire it through the relevant contract, and add its `CONFIG_*` guard. The [Engine source locations](#engine-source-locations) tables show what is ready and what needs porting.
 

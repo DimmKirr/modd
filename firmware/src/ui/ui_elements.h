@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* Element API: theme-agnostic drawing primitives.
- * Pages call these functions; the active theme's renderers do the work.
- * Each function dispatches through the registered ui_theme_t. */
+/* Element API: shell-agnostic drawing primitives.
+ * Pages call these functions; the active shell's renderers do the work.
+ * Each function dispatches through the registered ui_layout_t. */
 #ifndef UI_ELEMENTS_H
 #define UI_ELEMENTS_H
 #include <stdint.h>

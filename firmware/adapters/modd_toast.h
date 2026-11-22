@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Toast notification API.
- * Subsystem files call these; the modd theme defines them in chrome.c.
+ * Subsystem files call these; the modd shell defines them in chrome.c.
  * Without it, the stubs compile to nothing. */
 #ifndef MODD_TOAST_H
 #define MODD_TOAST_H
 
-#if defined(CONFIG_UI_THEME_MODD) || defined(CONFIG_UI_THEME_FELUCCA)
+#if defined(CONFIG_UI_SHELL_MODD)
 static void toast_status(const char *msg);
 static void toast_error(const char *msg);
 static void toast_clear(void);

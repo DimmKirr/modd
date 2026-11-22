@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #  SPDX-License-Identifier: GPL-3.0-only
 #  Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""Generate the pixel-art weather scenes: firmware/src/ui/themes/felucca/weather_art.h
+"""Generate the pixel-art weather scenes: firmware/src/ui/shells/felucca/weather_art.h
 
 Replaces the old 1-bit 32x32 glyphs. Each WMO condition gets a 64x48 indexed
 sprite drawn from a shared 16-colour palette, plus a two-colour sky the page

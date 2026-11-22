@@ -336,14 +336,14 @@ Enables BLE MIDI transport in the MIDI module.
 Screen rendering, event dispatch, view navigation.
 Enabled by `CONFIG_INPUT`.
 
-For the cross-theme framework (view/page/element model, navigation rules, theme contract), see [UI](ui/README.md).
+For the cross-shell framework (view/page/element model, navigation rules, shell contract), see [UI](ui/README.md).
 
 ### Shell component (pick one upstream)
 
 - **Felucca**: page-based shell with encoder/button dispatch
 - **SLOOP**
 - **Melodee**: Rubik font, track colors, 8 palettes, partial updates
-- **modd** (the default): drawn with LVGL 9.6 widgets on Melodee's LCD driver; the modd palettes; HOME, Settings (MENU) on HOME hold, Weather on FX hold, Demo on FX hold again, Files and Disk (`CONFIG_UDISK`) on SAVE hold, Log on GLO hold; its own button map in `controls.c` ([modd theme](ui/themes/modd/THEME.md))
+- **modd** (the default): drawn with LVGL 9.6 widgets on Melodee's LCD driver; the modd palettes; HOME, Settings (MENU) on HOME hold, Weather on FX hold, Demo on FX hold again, Files and Disk (`CONFIG_UDISK`) on SAVE hold, Log on GLO hold; its own button map in `controls.c` ([modd shell](ui/shells/modd/THEME.md))
 
 ### Event flow
 
@@ -584,6 +584,6 @@ graph LR
 | `modd_emu` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | modd | `modd` + emulator hooks, framebuffer, RPC input/audio/mem, weather (fixed location) | emulator only (API tests) |
 | `felucca` | Melodee core + FX | yes | FM6, Analog, LoFi, Trio, Noise, Stub | Felucca | WiFi + weather, OTA, storage, modulation, settings menu, USB disk, debug log | yes (24 components) |
 | `melodee` | Melodee | yes | all Melodee | Felucca (Melodee shell not ported) | -- | not yet |
-| `sloop` | SLOOP | yes | Felucca set | Felucca (no SLOOP theme) | -- | not yet |
+| `sloop` | SLOOP | yes | Felucca set | Felucca (no SLOOP shell) | -- | not yet |
 
 All presets have `CONFIG_USB=y` so the device is always reflashable over USB.

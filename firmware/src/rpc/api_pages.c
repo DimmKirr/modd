@@ -3,10 +3,10 @@
 /* REST API pages: going to a page, and what a page shows as JSON.
  *
  * The data comes from the shared page controllers (ui/page_data.c: home_read,
- * net_read, wx_read), the same structs the themes draw from, so every theme that
+ * net_read, wx_read), the same structs the shells draw from, so every shell that
  * registers pages with ui_nav.c gets the same JSON for the same page name. A lookup
  * table maps a page's .name to its serializer (pages are const, so they carry no
- * callback). The palette and the settings tab are the theme's own state (lvt_pal, mset).
+ * callback). The palette and the settings tab are the shell's own state (lvt_pal, mset).
  *
  *   page     data
  *   HOME     tracks, transport, the selected track's sound, palette
@@ -60,7 +60,7 @@ static void api_page_home_json(struct rpc_tx *tx)
         rpc_tx_raw(tx, "}");
     }
     rpc_tx_raw(tx, "]");
-#ifdef CONFIG_UI_THEME_MODD
+#ifdef CONFIG_UI_SHELL_MODD
     rpc_tx_char(tx, ',');
     rpc_tx_key_uint(tx, "palette", lvt_pal.idx);
     rpc_tx_char(tx, ',');
@@ -174,7 +174,7 @@ static void api_page_weather_json(struct rpc_tx *tx)
     rpc_tx_key_uint(tx, "humidity", d.w->humidity);
     rpc_tx_char(tx, ',');
     rpc_tx_key_uint(tx, "wmo_code", d.w->wmo_code);
-#ifdef WEATHER_COLORS_H    /* the condition names come with a theme's weather page */
+#ifdef WEATHER_COLORS_H    /* the condition names come with a shell's weather page */
     rpc_tx_char(tx, ',');
     rpc_tx_key_str(tx, "condition", weather_condition_name(d.w->wmo_code));
 #endif
@@ -225,7 +225,7 @@ static int api_page_sub(uint32_t idx, const char *sub)
         uint32_t t;
         for (t = 0; t < SMTAB_COUNT; t++) {
             if (rpc_streq_nocase(SMTAB_NAME[t], sub)) {
-#ifdef CONFIG_UI_THEME_MODD
+#ifdef CONFIG_UI_SHELL_MODD
                 mset.req = (uint8_t)(t + 1u);   /* entered later, on the UI task: the page takes the tab */
 #else
                 mset.tab = (uint8_t)t;
@@ -244,8 +244,8 @@ static int api_page_sub(uint32_t idx, const char *sub)
 enum { API_GOTO_OK = 0, API_GOTO_NO_PAGE = -1, API_GOTO_NO_SUB = -2 };
 
 /* Go to the page called `page` (case ignored), then to its `sub` ("" for none). On
- * API_GOTO_OK *idx is the page. A theme that changes pages in its own task (the modd
- * theme) shows it on its next frame: /api/page reports it from then on. */
+ * API_GOTO_OK *idx is the page. A shell that changes pages in its own task (the modd
+ * shell) shows it on its next frame: /api/page reports it from then on. */
 static int api_page_goto(const char *page, const char *sub, uint32_t *idx)
 {
     uint32_t i = nav_find(page);

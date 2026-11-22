@@ -6,7 +6,7 @@
 Replaces the browser e2e_audio_engines_test.py (felucca build, SELECT encoder to
 pick the engine, WebAudio tap to record). Here the modd_emu firmware is
 driven over HTTP: the engine of the selected track is set with
-/api/track/sel/engine/<name> (the modd theme has no engine picker on the panel:
+/api/track/sel/engine/<name> (the modd shell has no engine picker on the panel:
 its SELECT picks the track), notes are played on the note keys and the master
 pot through /api/input, and the firmware's own output is recorded with
 /api/audio/capture. WAV files are saved in

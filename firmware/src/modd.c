@@ -139,12 +139,12 @@ static int32_t master_pot_read(void)
 #include "debug/audio_tap.c"
 
 /* --- LCD driver (ST7789 240x240) --- */
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
-#include "ui/themes/felucca/lcd.c"
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
+#include "ui/shells/felucca/lcd.c"
 #else
-/* Melodee's ST7789 driver serves the modd theme (and the Melodee and
+/* Melodee's ST7789 driver serves the modd shell (and the Melodee and
  * SLOOP placeholders); only Felucca styles its own. */
-#include "ui/themes/melodee/lcd.c"
+#include "ui/shells/melodee/lcd.c"
 #endif
 
 /* --- minimal 5x7 bitmap font for boot screen --- */
@@ -424,18 +424,18 @@ static void fm1_fault(const fm1_crash_t *c)
 #include "modd_editor.h"
 #include "modd_console.h"
 
-#if defined(CONFIG_UI_THEME_MODD) || defined(CONFIG_UI_THEME_FELUCCA)
+#if defined(CONFIG_UI_SHELL_MODD)
 static uint8_t modd_lights = 3; /* LIGHTS_HIGH default; SYS_MENU overrides from flash */
 #endif
 
 /* Themes that provide the shell_* entry points the main loop calls (shell_init, shell_boot,
  * shell_register_pages, shell_draw, shell_key, shell_button, shell_knob) and ui_leds. */
-#if defined(CONFIG_UI_THEME_MODD) || defined(CONFIG_UI_THEME_FELUCCA)
+#if defined(CONFIG_UI_SHELL_MODD)
 #define UI_SHELL 1
 #endif
 /* LVGL may be called from the UI task only: a page change asked for by another task
- * (the REST API) waits for the theme's next draw (ui_nav.c nav_request). */
-#if defined(CONFIG_UI_THEME_MODD) || defined(CONFIG_UI_THEME_FELUCCA)
+ * (the REST API) waits for the shell's next draw (ui_nav.c nav_request). */
+#if defined(CONFIG_UI_SHELL_MODD)
 #define UI_NAV_DEFERRED 1
 #endif
 
@@ -892,7 +892,10 @@ static int32_t master_iir;
 
 /* --- modulation matrix --- */
 #ifdef CONFIG_MODULATION
-#if defined(CONFIG_MOD_MELODEE)
+#if defined(CONFIG_MOD_FELUCCA)
+#define MODD_HAS_MOD 1
+#include "audio/mod.c"
+#elif defined(CONFIG_MOD_MELODEE)
 #define MODD_HAS_MOD 1
 #include "audio/mod/melodee/mod.c"
 #endif
@@ -925,6 +928,10 @@ static int32_t master_iir;
 #include "scales/scales.c"
 #endif
 
+#if defined(CONFIG_MOD_FELUCCA)
+#include "audio/chord.c"   /* after scales: chord_tones reads scale_mask */
+#endif
+
 /* --- MIDI routing --- */
 #if defined(CONFIG_MIDI_MELODEE)
 #include "midi/melodee/midi_routing.c"
@@ -943,37 +950,37 @@ static int32_t master_iir;
 #if defined(CONFIG_STORAGE_MELODEE)
 #include "storage/melodee/storage.c"
 #elif defined(CONFIG_STORAGE_FELUCCA)
-#include "storage/storage.c"
+#include "storage/felucca/storage.c"
 #endif
 
 /* --- GFX renderer --- */
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
-#include "ui/themes/felucca/gfx.c"
-#elif defined(CONFIG_UI_THEME_MELODEE)
-#include "ui/themes/melodee/gfx.c"
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
+#include "ui/shells/felucca/gfx.c"
+#elif defined(CONFIG_UI_SHELL_MELODEE)
+#include "ui/shells/melodee/gfx.c"
 #endif
 
 /* --- UI shell --- */
 #include "modd_page.h"
 #include "modd_modal.h"
-#include "ui/ui_theme.h"
+#include "ui/ui_layout.h"
 static uint8_t hints_visible;                   /* GLO tap badge overlay (chrome.c draws, shell.c toggles) */
 #include "ui/ui_nav.c"
 #include "ui/ui_elements.c"
 #ifdef UI_SHELL
-#include "ui/page_data.c"             /* what pages show, for the theme and the REST API */
+#include "ui/page_data.c"             /* what pages show, for the shell and the REST API */
 #endif
 
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
-#include "ui/themes/felucca/ui.c"
-#elif defined(CONFIG_UI_THEME_MELODEE)
-#include "ui/themes/melodee/shell.c"
-#elif defined(CONFIG_UI_THEME_MODD)
-#include "ui/themes/modd/ui.c"
-#elif defined(CONFIG_UI_THEME_FELUCCA)
-#include "ui/themes/felucca/lvgl_ui.c"
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
+#include "ui/shells/felucca/ui.c"
+#elif defined(CONFIG_UI_SHELL_MELODEE)
+#include "ui/shells/melodee/shell.c"
+#elif defined(CONFIG_UI_SKIN_FELUCCA)
+#include "ui/shells/felucca/lvgl_ui.c"
+#elif defined(CONFIG_UI_SHELL_MODD)
+#include "ui/shells/modd/ui.c"
 #else
-#error "no UI theme selected"
+#error "no UI shell selected"
 #endif
 
 /* --- RPC server (CONFIG_RPC): JSON-RPC over WebSocket + REST API on lwIP TCP --- */
@@ -1043,7 +1050,7 @@ static void ui_input(void)
         uint32_t i;
         for (i = 0; i < 27u; i++) {
             if (np & (1u << i)) {
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
                 fsh_key(53u + i, 127);
 #elif defined(UI_SHELL)
                 shell_key(53u + i, 127);
@@ -1060,7 +1067,7 @@ static void ui_input(void)
         prev_notes = fm1_in.notes;
         for (i = 0; i < 27u; i++) {
             if (released & (1u << i)) {
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
                 fsh_key(53u + i, 0);
 #elif defined(UI_SHELL)
                 shell_key(53u + i, 0);
@@ -1077,14 +1084,14 @@ static void ui_input(void)
             uint32_t i;
             for (i = 0; i < 14u; i++) {
                 if (bp & (1u << i)) {
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
                     fsh_button(i, 1);
 #elif defined(UI_SHELL)
                     shell_button(i, 1);
 #endif
                 }
                 if (br & (1u << i)) {
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
                     fsh_button(i, 0);
 #elif defined(UI_SHELL)
                     shell_button(i, 0);
@@ -1098,7 +1105,7 @@ static void ui_input(void)
         for (e = 0; e < FM1_NENC; e++) {
             int32_t s = fm1_enc_take(e);
             if (s) {
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
                 fsh_knob(e, s);
 #elif defined(UI_SHELL)
                 shell_knob(e, s);
@@ -1277,7 +1284,7 @@ static void ui_task(void)
         }
 #endif
 #endif
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
         fsh_draw();
 #elif defined(UI_SHELL)
         shell_draw();           /* marks 10-17 inside */
@@ -1489,7 +1496,7 @@ static void fm1_main(void)
 
     /* ---- Phase 1: boot logo, no ISR ---- */
 
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
     fsh_init();
     fsh_splash_render();
     modd_log("boot: splash visible");
@@ -1560,7 +1567,7 @@ static void fm1_main(void)
     modd_log("guard: hw guards armed");
 #endif
 
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
     fsh_register_pages();
     modd_log_int("ui: felucca, pages=", (int32_t)nav_npage);
     fsh_boot();
@@ -1623,7 +1630,7 @@ static void fm1_main(void)
 #endif
     }
     {
-#if defined(CONFIG_UI_THEME_MODD) || defined(CONFIG_UI_THEME_FELUCCA)
+#if defined(CONFIG_UI_SHELL_MODD)
         /* LVGL lays out and draws through nested calls: its manual asks for more than
            2 kB of stack and recommends 8 kB. Measured over every page with a list open:
            7,180 bytes (the DEBUG page shows the figure). */
@@ -1747,7 +1754,7 @@ static void fm1_main(void)
 #endif
         usbnet_poll();
         ecm_poll();
-#if defined(CONFIG_UI_THEME_FELUCCA_UPSTREAM)
+#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
         fsh_draw();
 #elif defined(UI_SHELL)
         shell_draw();

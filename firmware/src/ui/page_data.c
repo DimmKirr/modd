@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* Page data: what a page shows, read from the firmware's state, for every theme.
+/* Page data: what a page shows, read from the firmware's state, for every shell.
  *
  * A data struct and a _read() function per subject (the "controller" of the REST API's
- * MVC pattern). A theme's page fills its widgets or canvas from them, and the REST API
- * (rpc/api_pages.c) serializes the same structs, so a theme and the API cannot disagree
- * about a value. Nothing here draws or knows a theme; theme state (the palette, a
- * settings tab) stays with the theme.
+ * MVC pattern). A shell's page fills its widgets or canvas from them, and the REST API
+ * (rpc/api_pages.c) serializes the same structs, so a shell and the API cannot disagree
+ * about a value. Nothing here draws or knows a shell; shell state (the palette, a
+ * settings tab) stays with the shell.
  *
- * Included from modd.c after ui_nav.c, before the theme root, for the themes with the
- * shell_* entry points (UI_SHELL: the modd theme). Readers are cheap: a theme may call them
+ * Included from modd.c after ui_nav.c, before the shell root, for the shells with the
+ * shell_* entry points (UI_SHELL: the modd shell). Readers are cheap: a shell may call them
  * every frame.
  *
  *   home_read()      tracks, transport, the selected track's sound

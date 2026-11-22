@@ -509,7 +509,7 @@ tasks:
       - uv run --quiet kc2mm inject docs/COMPONENTS.md --kconf-dir kconf
 
   docs:themes:
-    desc: Regenerate all theme documentation (controls, diagrams, screenshots)
+    desc: Regenerate all shell documentation (controls, diagrams, screenshots)
     cmds:
       - task: docs:themes:controls
       - task: docs:themes:ui:diagram
@@ -530,7 +530,7 @@ tasks:
         sh: uv run --quiet python tools/codegen/gen_ui_map.py list-themes
     cmds:
       - for: { var: THEMES }
-        cmd: uv run --quiet python tools/codegen/gen_ui_map.py inject docs/ui/themes/{{.ITEM}}/UI.md {{.ITEM}}
+        cmd: uv run --quiet python tools/codegen/gen_ui_map.py inject docs/ui/shells/{{.ITEM}}/UI.md {{.ITEM}}
 
   docs:themes:ui:screenshots:
     desc: Capture per-page emulator screenshots for all themes
@@ -546,7 +546,7 @@ tasks:
       - uv run --quiet kc2mm inject --check docs/COMPONENTS.md --kconf-dir kconf
       - uv run --quiet python tools/codegen/gen_ui_map.py hw-controls --check docs/ui/README.md
       - for: { var: THEMES }
-        cmd: uv run --quiet python tools/codegen/gen_ui_map.py inject --check docs/ui/themes/{{.ITEM}}/UI.md {{.ITEM}}
+        cmd: uv run --quiet python tools/codegen/gen_ui_map.py inject --check docs/ui/shells/{{.ITEM}}/UI.md {{.ITEM}}
 
   config:
     desc: "Configure the build (default: menuconfig)"

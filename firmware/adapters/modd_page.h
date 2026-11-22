@@ -44,6 +44,6 @@ typedef struct modd_page {
 } modd_page_t;
 
 /* a shell registers pages at startup */
-#define MODD_MAX_PAGES 20
+#define MODD_MAX_PAGES 50
 
 #endif /* MODD_PAGE_H */

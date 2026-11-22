@@ -6,14 +6,14 @@
   </picture>
 </p>
 
-<p align="center"><strong>Build FM-1 themes and firmware. Test in the emulator.</strong></p>
+<p align="center"><strong>Build FM-1 shells and skins and firmware. Test in the emulator.</strong></p>
 
 [![CI](https://img.shields.io/github/actions/workflow/status/dimmkirr/modd/ci.yml?branch=main)](https://github.com/dimmkirr/modd/actions)
 [![License](https://img.shields.io/github/license/dimmkirr/modd)](LICENSE)
 
 A modular firmware framework for the M-VAVE FM-1 synthesizer. Bring features
 from any FM-1 firmware into one configurable source tree: WiFi, USB tethering,
-a file browser, direct-API tests, and a theming system. Two themes ship today
+a file browser, direct-API tests, and a shell and skin system. Two shells ship today
 (modd, the default, and Felucca) and nine community firmwares are
 vendored for reference and reuse.
 
@@ -37,7 +37,7 @@ and modularity.
 28 [`modd_*.h`](firmware/adapters/) headers define every interface between
 modules: audio state, MIDI events, network status, settings, storage, dock
 modules, USB audio, BLE, OTA. No other FM-1 firmware defines a comparable set of
-inter-module contracts. Your theme or engine reads firmware state through
+inter-module contracts. Your shell or engine reads firmware state through
 contracts, never hardware registers.
 
 ### Emulator-first development
@@ -71,52 +71,52 @@ permissive-licensed code (see the
 Implement three render hooks (`render_header`, `render_footer`, `render_card`),
 map buttons to views with a declarative controls struct, add pages with toast
 notifications and scrolling lists. Auto-generated docs with emulator screenshots
-verify your theme in CI. Two themes ship: modd (the default, drawn with LVGL v9.6
+verify your shell in CI. Two shells ship: modd (the default, drawn with LVGL v9.6
 widgets) and Felucca (ported from hugelton's firmware). Melodee provides the
-LCD driver the modd theme draws through.
+LCD driver the modd shell draws through.
 
-- Theme vtable: [`firmware/src/ui/ui_theme.h`](firmware/src/ui/ui_theme.h)
-- Per-theme controls: [`firmware/src/ui/themes/modd/controls.c`](firmware/src/ui/themes/modd/controls.c)
-- Theme docs: [`docs/ui/themes/`](docs/ui/themes/)
+- Layout vtable: [`firmware/src/ui/ui_layout.h`](firmware/src/ui/ui_layout.h)
+- Per-skin controls: [`firmware/src/ui/shells/modd/controls.c`](firmware/src/ui/shells/modd/controls.c)
+- Shell and skin docs: [`docs/ui/shells/`](docs/ui/shells/)
 
-<!-- theme-screenshots:start -->
+<!-- shell-screenshots:start -->
 <p>
-  <img src="docs/ui/themes/modd/screenshots/home.png" alt="modd home" width="240">
-  <img src="docs/ui/themes/modd/screenshots/files.png" alt="modd files" width="240">
-  <img src="docs/ui/themes/modd/screenshots/disk.png" alt="modd disk" width="240">
-  <img src="docs/ui/themes/modd/screenshots/settings_net_wifi.png" alt="modd wifi config" width="240">
-  <img src="docs/ui/themes/modd/screenshots/wx.png" alt="modd weather" width="240">
-  <img src="docs/ui/themes/modd/screenshots/demo.png" alt="modd demo" width="240">
+  <img src="docs/ui/shells/modd/screenshots/home.png" alt="modd home" width="240">
+  <img src="docs/ui/shells/modd/screenshots/files.png" alt="modd files" width="240">
+  <img src="docs/ui/shells/modd/screenshots/disk.png" alt="modd disk" width="240">
+  <img src="docs/ui/shells/modd/screenshots/settings_net_wifi.png" alt="modd wifi config" width="240">
+  <img src="docs/ui/shells/modd/screenshots/wx.png" alt="modd weather" width="240">
+  <img src="docs/ui/shells/modd/screenshots/demo.png" alt="modd demo" width="240">
 </p>
 
 <details><summary>Settings tabs</summary>
 <p>
-  <img src="docs/ui/themes/modd/screenshots/settings_display.png" alt="settings display" width="240">
-  <img src="docs/ui/themes/modd/screenshots/settings_midi.png" alt="settings midi" width="240">
-  <img src="docs/ui/themes/modd/screenshots/settings_hw.png" alt="settings hw" width="240">
-  <img src="docs/ui/themes/modd/screenshots/settings_net.png" alt="settings net" width="240">
+  <img src="docs/ui/shells/modd/screenshots/settings_display.png" alt="settings display" width="240">
+  <img src="docs/ui/shells/modd/screenshots/settings_midi.png" alt="settings midi" width="240">
+  <img src="docs/ui/shells/modd/screenshots/settings_hw.png" alt="settings hw" width="240">
+  <img src="docs/ui/shells/modd/screenshots/settings_net.png" alt="settings net" width="240">
 </p>
 </details>
 
 <details><summary>Color palettes</summary>
 <p>
-  <img src="docs/ui/themes/modd/screenshots/palette_00.png" alt="palette_00" width="160">
-  <img src="docs/ui/themes/modd/screenshots/palette_01.png" alt="palette_01" width="160">
-  <img src="docs/ui/themes/modd/screenshots/palette_02.png" alt="palette_02" width="160">
-  <img src="docs/ui/themes/modd/screenshots/palette_03.png" alt="palette_03" width="160">
-  <img src="docs/ui/themes/modd/screenshots/palette_04.png" alt="palette_04" width="160">
-  <img src="docs/ui/themes/modd/screenshots/palette_05.png" alt="palette_05" width="160">
-  <img src="docs/ui/themes/modd/screenshots/palette_06.png" alt="palette_06" width="160">
-  <img src="docs/ui/themes/modd/screenshots/palette_07.png" alt="palette_07" width="160">
-  <img src="docs/ui/themes/modd/screenshots/palette_08.png" alt="palette_08" width="160">
-  <img src="docs/ui/themes/modd/screenshots/palette_09.png" alt="palette_09" width="160">
+  <img src="docs/ui/shells/modd/screenshots/palette_00.png" alt="palette_00" width="160">
+  <img src="docs/ui/shells/modd/screenshots/palette_01.png" alt="palette_01" width="160">
+  <img src="docs/ui/shells/modd/screenshots/palette_02.png" alt="palette_02" width="160">
+  <img src="docs/ui/shells/modd/screenshots/palette_03.png" alt="palette_03" width="160">
+  <img src="docs/ui/shells/modd/screenshots/palette_04.png" alt="palette_04" width="160">
+  <img src="docs/ui/shells/modd/screenshots/palette_05.png" alt="palette_05" width="160">
+  <img src="docs/ui/shells/modd/screenshots/palette_06.png" alt="palette_06" width="160">
+  <img src="docs/ui/shells/modd/screenshots/palette_07.png" alt="palette_07" width="160">
+  <img src="docs/ui/shells/modd/screenshots/palette_08.png" alt="palette_08" width="160">
+  <img src="docs/ui/shells/modd/screenshots/palette_09.png" alt="palette_09" width="160">
 </p>
 </details>
-<!-- theme-screenshots:end -->
+<!-- shell-screenshots:end -->
 
 Screenshots are captured automatically by the docs tasks. CI publishes the
 latest set on main pushes. See the full screenshot gallery for
-[modd](docs/ui/themes/modd/THEME.md).
+[modd](docs/ui/shells/modd/THEME.md).
 
 <sup>1</sup> iPhone tethering is still being tested.
 
@@ -182,11 +182,11 @@ way. See [AGENTS.md](AGENTS.md#adding-upstream-firmware) for the steps.
 
 ## Contribute
 
-Help build a theme, integrate an engine or module, or add tests for a
+Help build a shell, integrate an engine or module, or add tests for a
 supported combination. Include the configuration and test results with your
 contribution, and retain upstream credits and license notices. Start with:
 
-- [Theme vtable](firmware/src/ui/ui_theme.h) and [existing themes](firmware/src/ui/themes/)
+- [Layout vtable](firmware/src/ui/ui_layout.h) and [existing shells](firmware/src/ui/shells/)
 - [Adapter contracts](firmware/adapters/) (`modd_*.h` headers)
 - [Configuration](Kconfig) and [firmware entry point](firmware/src/modd.c)
 - [Build tasks](Taskfile.yml)

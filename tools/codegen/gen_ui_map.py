@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #  SPDX-License-Identifier: GPL-3.0-only
 #  Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""Generate a Mermaid navigation graph for a UI theme.
+"""Generate a Mermaid navigation graph for a UI shell.
 
 Parses pages.c for screen registrations (grouped by view, with #ifdef guards),
 modd_controls.h for button-to-view mappings, and ui_view.h for VIEW_* ids.
@@ -13,10 +13,10 @@ Usage:
   python3 tools/codegen/gen_ui_map.py felucca
 
   # Inject into a markdown file (replaces content between markers)
-  python3 tools/codegen/gen_ui_map.py inject docs/ui/themes/felucca/UI.md felucca
+  python3 tools/codegen/gen_ui_map.py inject docs/ui/shells/felucca/UI.md felucca
 
   # Check mode (for CI: exit 1 if file is stale)
-  python3 tools/codegen/gen_ui_map.py inject --check docs/ui/themes/felucca/UI.md felucca
+  python3 tools/codegen/gen_ui_map.py inject --check docs/ui/shells/felucca/UI.md felucca
 """
 from __future__ import annotations
 
@@ -216,7 +216,7 @@ def parse_pages(path: Path) -> list[dict]:
 
 # ── Parse page_*.c for .name and .view fields ─────────────────────────────
 
-def parse_page_details(theme_dir: Path) -> dict[str, dict]:
+def parse_page_details(shell_dir: Path) -> dict[str, dict]:
     """Return {SYMBOL: {name, title, view}} from modd_page_t structs in page_*.c."""
     details: dict[str, dict] = {}
     pat_ml = re.compile(r"static\s+const\s+modd_page_t\s+(\w+)\s*=\s*\{")
@@ -224,7 +224,7 @@ def parse_page_details(theme_dir: Path) -> dict[str, dict]:
     title_pat = re.compile(r'\.title\s*=\s*"([^"]+)"')
     view_pat = re.compile(r'\.view\s*=\s*(VIEW_\w+)')
 
-    for f in sorted(theme_dir.glob("page_*.c")):
+    for f in sorted(shell_dir.glob("page_*.c")):
         text = f.read_text()
         for m in pat_ml.finditer(text):
             symbol = m.group(1)
@@ -254,7 +254,7 @@ def parse_page_details(theme_dir: Path) -> dict[str, dict]:
 # Encoder names by ID (from modd_controls.h)
 ENC_NAMES = {0: "select", 1: "algorithm", 2: "knob1", 3: "knob2", 4: "knob3", 5: "knob4", 6: "presets"}
 
-def parse_page_controls(theme_dir: Path) -> dict[str, dict]:
+def parse_page_controls(shell_dir: Path) -> dict[str, dict]:
     """Return {SYMBOL: {knobs: {enc_id: label}, buttons: [BTN_*]}} per page.
 
     Parses fparams_def_t for knob1-4 labels, and knob handler `id == N` for
@@ -287,7 +287,7 @@ def parse_page_controls(theme_dir: Path) -> dict[str, dict]:
     )
     page_knob_map_assign = re.compile(r'\.knob_map\s*=\s*(\w+)')
 
-    for f in sorted(theme_dir.glob("page_*.c")):
+    for f in sorted(shell_dir.glob("page_*.c")):
         text = f.read_text()
 
         # Build def_name -> knob labels
@@ -406,10 +406,10 @@ def parse_page_controls(theme_dir: Path) -> dict[str, dict]:
     return controls
 
 
-# ── Parse screen layout from theme.c / ui.c ──────────────────────────────
+# ── Parse screen layout from shell.c / ui.c ──────────────────────────────
 
-def parse_screen_layout(theme_dir: Path) -> dict[str, int]:
-    """Return {zone: pixels} from #define lines in theme source files."""
+def parse_screen_layout(shell_dir: Path) -> dict[str, int]:
+    """Return {zone: pixels} from #define lines in shell source files."""
     layout: dict[str, int] = {}
     define_pat = re.compile(r"#define\s+\w+\s+(\d+)")
 
@@ -423,13 +423,13 @@ def parse_screen_layout(theme_dir: Path) -> dict[str, int]:
         "card_h": re.compile(r"#define\s+(?:MT_CARD_H|CARD_H)\s+(\d+)"),
     }
 
-    # Also try the ui_theme_t struct for .screen_w, .header_h etc.
+    # Also try the ui_layout_t struct for .screen_w, .header_h etc.
     struct_pat = {
         "screen_w": re.compile(r"\.screen_w\s*=\s*(\d+)"),
         "screen_h": re.compile(r"\.screen_h\s*=\s*(\d+)"),
     }
 
-    for f in sorted(theme_dir.glob("*.c")):
+    for f in sorted(shell_dir.glob("*.c")):
         text = f.read_text()
         for key, pat in name_map.items():
             for m in pat.finditer(text):
@@ -442,7 +442,7 @@ def parse_screen_layout(theme_dir: Path) -> dict[str, int]:
     return layout
 
 
-def generate_screen_schematic(theme: str, layout: dict[str, int]) -> str:
+def generate_screen_schematic(shell: str, layout: dict[str, int]) -> str:
     """Generate an ASCII screen schematic from parsed layout dimensions."""
     w = layout.get("screen_w", 240)
     h = layout.get("screen_h", 240)
@@ -623,12 +623,12 @@ def generate_controls_table(page_controls: dict, page_details: dict, pages: list
 
 # ── Structured nav map (for tests) ──────────────────────────────────────────
 
-def load_nav_map(theme: str, root: Path | None = None) -> dict:
+def load_nav_map(shell: str, root: Path | None = None) -> dict:
     """Return the full navigation map as structured data.
 
     Returns:
         {
-            "theme": str,
+            "shell": str,
             "pages": [{symbol, name, view, guards}],
             "view_groups": {VIEW_*: [{symbol, name, view, guards}]},
             "tap_map": {BTN_*: VIEW_*},
@@ -637,20 +637,20 @@ def load_nav_map(theme: str, root: Path | None = None) -> dict:
         }
     """
     root = root or ROOT
-    theme_dir = root / "firmware" / "src" / "ui" / "themes" / theme
-    if not theme_dir.is_dir():
-        raise SystemExit(f"Theme directory not found: {theme_dir}")
+    shell_dir = root / "firmware" / "src" / "ui" / "shells" / shell
+    if not shell_dir.is_dir():
+        raise SystemExit(f"Shell directory not found: {shell_dir}")
 
-    theme_controls = theme_dir / "controls.c"
-    if theme_controls.is_file():
-        tap_map, hold_map = _parse_controls_c(theme_controls)
+    shell_controls = shell_dir / "controls.c"
+    if shell_controls.is_file():
+        tap_map, hold_map = _parse_controls_c(shell_controls)
     else:
-        controls_name = theme if theme in ("felucca", "melodee", "sloop") else "felucca"
+        controls_name = shell if shell in ("felucca", "melodee", "sloop") else "felucca"
         tap_map, hold_map = parse_controls(
             root / "firmware" / "adapters" / "modd_controls.h", controls_name
         )
-    pages = parse_pages(theme_dir / "pages.c")
-    page_details = parse_page_details(theme_dir)
+    pages = parse_pages(shell_dir / "pages.c")
+    page_details = parse_page_details(shell_dir)
 
     for p in pages:
         if not p["view"] and p["symbol"] in page_details:
@@ -675,7 +675,7 @@ def load_nav_map(theme: str, root: Path | None = None) -> dict:
         hold_map["BTN_GLO"] = "VIEW_GLO"
 
     return {
-        "theme": theme,
+        "shell": shell,
         "pages": pages,
         "view_groups": view_groups,
         "tap_map": tap_map,
@@ -742,18 +742,18 @@ def control_path(nav_map: dict, config: set[str] | None = None) -> list[dict]:
 
 # ── Generate Mermaid ────────────────────────────────────────────────────────
 
-def generate_mermaid(theme: str) -> str:
-    theme_dir = ROOT / "firmware" / "src" / "ui" / "themes" / theme
-    if not theme_dir.is_dir():
+def generate_mermaid(shell: str) -> str:
+    shell_dir = ROOT / "firmware" / "src" / "ui" / "shells" / shell
+    if not shell_dir.is_dir():
         # Try the renamed variant (felucca -> reluca in git status, but source is felucca)
-        raise SystemExit(f"Theme directory not found: {theme_dir}")
+        raise SystemExit(f"Shell directory not found: {shell_dir}")
 
-    # One source for pages, views and button maps (theme controls.c when present)
-    nav = load_nav_map(theme)
+    # One source for pages, views and button maps (shell controls.c when present)
+    nav = load_nav_map(shell)
     pages = nav["pages"]
     view_groups = nav["view_groups"]
     tap_map, hold_map = nav["tap_map"], nav["hold_map"]
-    page_details = parse_page_details(theme_dir)
+    page_details = parse_page_details(shell_dir)
 
     # Friendly view labels
     view_label = {
@@ -880,22 +880,22 @@ def generate_mermaid(theme: str) -> str:
 DIAGRAM_ONLY_THEMES = {"modd"}
 
 
-def generate_full(theme: str) -> tuple[str, str | None]:
-    """Return (mermaid_diagram, controls_table) for a theme."""
-    theme_dir = ROOT / "firmware" / "src" / "ui" / "themes" / theme
-    if not theme_dir.is_dir():
-        raise SystemExit(f"Theme directory not found: {theme_dir}")
+def generate_full(shell: str) -> tuple[str, str | None]:
+    """Return (mermaid_diagram, controls_table) for a shell."""
+    shell_dir = ROOT / "firmware" / "src" / "ui" / "shells" / shell
+    if not shell_dir.is_dir():
+        raise SystemExit(f"Shell directory not found: {shell_dir}")
 
-    pages = parse_pages(theme_dir / "pages.c")
-    page_details = parse_page_details(theme_dir)
-    page_controls = parse_page_controls(theme_dir)
+    pages = parse_pages(shell_dir / "pages.c")
+    page_details = parse_page_details(shell_dir)
+    page_controls = parse_page_controls(shell_dir)
 
     for p in pages:
         if not p["view"] and p["symbol"] in page_details:
             p["view"] = page_details[p["symbol"]].get("view", "")
 
-    mermaid = generate_mermaid(theme)
-    if theme in DIAGRAM_ONLY_THEMES:
+    mermaid = generate_mermaid(shell)
+    if shell in DIAGRAM_ONLY_THEMES:
         return mermaid, None
     table = generate_controls_table(page_controls, page_details, pages)
     return mermaid, table
@@ -967,12 +967,12 @@ def inject_hw_controls(md_path: Path, check: bool = False) -> bool:
 
 # ── CLI ─────────────────────────────────────────────────────────────────────
 
-def discover_themes(root: Path | None = None) -> list[str]:
-    """Return sorted list of theme names that have a pages.c."""
+def discover_shells(root: Path | None = None) -> list[str]:
+    """Return sorted list of shell/skin names that have a pages.c."""
     root = root or ROOT
-    themes_dir = root / "firmware" / "src" / "ui" / "themes"
+    shells_dir = root / "firmware" / "src" / "ui" / "shells"
     return sorted(
-        d.name for d in themes_dir.iterdir()
+        d.name for d in shells_dir.iterdir()
         if d.is_dir() and (d / "pages.c").exists()
     )
 
@@ -983,8 +983,8 @@ def main() -> None:
         print(__doc__)
         sys.exit(0)
 
-    if args[0] == "list-themes":
-        for t in discover_themes():
+    if args[0] == "list-shells":
+        for t in discover_shells():
             print(t)
         return
 
@@ -1008,10 +1008,10 @@ def main() -> None:
         check = "--check" in args
         rest = [a for a in args[1:] if a != "--check"]
         if len(rest) != 2:
-            print("Usage: gen_ui_map.py inject [--check] <file.md> <theme>", file=sys.stderr)
+            print("Usage: gen_ui_map.py inject [--check] <file.md> <shell>", file=sys.stderr)
             sys.exit(1)
-        md_path, theme = Path(rest[0]), rest[1]
-        mermaid, table = generate_full(theme)
+        md_path, shell = Path(rest[0]), rest[1]
+        mermaid, table = generate_full(shell)
         changed = inject(md_path, mermaid, check=check, controls_table=table)
         if check and changed:
             print(f"STALE: {md_path} needs regeneration", file=sys.stderr)
@@ -1020,8 +1020,8 @@ def main() -> None:
             status = "updated" if changed else "up to date"
             print(f"{md_path}: {status}")
     else:
-        theme = args[0]
-        mermaid, table = generate_full(theme)
+        shell = args[0]
+        mermaid, table = generate_full(shell)
         print(mermaid)
         if table:
             print()

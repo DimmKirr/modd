@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 #  SPDX-License-Identifier: GPL-3.0-only
 #  Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""Capture per-page screenshots for a UI theme.
+"""Capture per-page screenshots for a UI shell.
 
 Two backends:
   - modd: fm1-live (native CLI emulator) with USB ethernet and real network access for
     weather data. Captures the HOME page, all settings tabs (DISPLAY, MIDI, HW, NET), all
     color palettes (10, each shown on HOME), Weather, Demo, Files, Disk and Log pages into
-    docs/ui/themes/modd/screenshots/, then refreshes the README hero block and the THEME.md
+    docs/ui/shells/modd/screenshots/, then refreshes the README hero block and the THEME.md
     gallery.
-  - felucca (and any other theme without network features): the WASM emulator via
+  - felucca (and any other shell without network features): the WASM emulator via
     Playwright in Chromium.
 
 Usage:
   python3 tools/codegen/gen_ui_screenshots.py modd
   python3 tools/codegen/gen_ui_screenshots.py felucca
-  python3 tools/codegen/gen_ui_screenshots.py --all      # every theme with a pages.c
+  python3 tools/codegen/gen_ui_screenshots.py --all      # every shell with a pages.c
 """
 from __future__ import annotations
 
@@ -31,9 +31,9 @@ sys.path.insert(0, str(ROOT / 'tools' / 'codegen'))
 sys.path.insert(0, str(ROOT / 'tools' / 'build'))
 
 import fm1_paths
-from gen_ui_map import discover_themes
+from gen_ui_map import discover_shells
 
-THEME_DEFCONFIG = {
+SHELL_DEFCONFIG = {
     'felucca': 'felucca',
     'modd': 'modd_emu',
 }
@@ -44,11 +44,11 @@ EMU_WIFI_PASSWORD = 'fm1pass'
 SETTINGS_TABS = ['DISPLAY', 'MIDI', 'HW', 'NET']
 PALETTE_COUNT = 10
 
-README_MARKER_START = '<!-- theme-screenshots:start -->'
-README_MARKER_END = '<!-- theme-screenshots:end -->'
+README_MARKER_START = '<!-- shell-screenshots:start -->'
+README_MARKER_END = '<!-- shell-screenshots:end -->'
 
-GALLERY_MARKER_START = '<!-- theme-gallery:start -->'
-GALLERY_MARKER_END = '<!-- theme-gallery:end -->'
+GALLERY_MARKER_START = '<!-- shell-gallery:start -->'
+GALLERY_MARKER_END = '<!-- shell-gallery:end -->'
 
 HERO_SHOTS = ['home', 'files', 'disk', 'settings_net_wifi', 'wx', 'demo']
 HERO_ALT = {
@@ -112,8 +112,8 @@ def _build_firmware_defconfig(defconfig: str, build: bool = True) -> Path:
     return fwsc
 
 
-def _build_firmware(theme: str) -> Path:
-    defconfig = THEME_DEFCONFIG.get(theme, theme)
+def _build_firmware(shell: str) -> Path:
+    defconfig = SHELL_DEFCONFIG.get(shell, shell)
     env = {**os.environ}
     tc = Path.home() / '.fm1-toolchain' / 'toolchain'
     if 'JIELI_TOOLCHAIN' not in env and tc.is_dir():
@@ -140,7 +140,7 @@ def _build_firmware(theme: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# fm1-live backend (modd theme): headless --shot with USB ethernet
+# fm1-live backend (modd shell): headless --shot with USB ethernet
 # ---------------------------------------------------------------------------
 
 SCREENSHOT_DISK_IMG = Path(__file__).resolve().parent / 'screenshot_disk.img'
@@ -206,7 +206,7 @@ BOOT_SETTLE_MS = 9000
 
 def _capture_live(fm1_live: Path, fwsc: Path, out_dir: Path,
                   build: bool = True, disk_defconfig: str = 'modd') -> int:
-    """Capture all the modd theme's screenshots using fm1-live.
+    """Capture all the modd shell's screenshots using fm1-live.
     FILES and DISK use `disk_defconfig`'s firmware."""
     idx = 0
 
@@ -325,11 +325,11 @@ def _capture_live(fm1_live: Path, fwsc: Path, out_dir: Path,
 
 
 # ---------------------------------------------------------------------------
-# fm1-live backend (modd theme): capture entry point
+# fm1-live backend (modd shell): capture entry point
 # ---------------------------------------------------------------------------
 
 def capture_modd(build: bool = True) -> Path:
-    """Capture the modd theme's pages using fm1-live."""
+    """Capture the modd shell's pages using fm1-live."""
     fm1_live = _find_fm1_live()
     if fm1_live is None:
         print('fm1-live not found. Set FM1_EMU_DIR or build fm1-live from '
@@ -337,7 +337,7 @@ def capture_modd(build: bool = True) -> Path:
         raise SystemExit(1)
     print(f'  Using fm1-live: {fm1_live}')
 
-    defconfig = THEME_DEFCONFIG['modd']
+    defconfig = SHELL_DEFCONFIG['modd']
     if build:
         fwsc = _build_firmware('modd')
     else:
@@ -346,7 +346,7 @@ def capture_modd(build: bool = True) -> Path:
             print(f'Firmware not built ({fwsc}).', file=sys.stderr)
             raise SystemExit(1)
 
-    out_dir = ROOT / 'docs' / 'ui' / 'themes' / 'modd' / 'screenshots'
+    out_dir = ROOT / 'docs' / 'ui' / 'shells' / 'modd' / 'screenshots'
     out_dir.mkdir(parents=True, exist_ok=True)
     for f in out_dir.glob('*.png'):
         f.unlink()
@@ -361,15 +361,15 @@ def capture_modd(build: bool = True) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Playwright backend (felucca, other themes without network features)
+# Playwright backend (felucca, other shells without network features)
 # ---------------------------------------------------------------------------
 
 def _default_emu_dir() -> Path:
     return Path(os.environ.get('FM1_WEB_DIR', fm1_paths.EMU_ROOT / '_site'))
 
 
-def capture_theme_playwright(theme: str, build: bool = True) -> Path:
-    """Capture screenshots for a theme without network features via the WASM emulator."""
+def capture_theme_playwright(shell: str, build: bool = True) -> Path:
+    """Capture screenshots for a shell without network features via the WASM emulator."""
     import http.server
     import socket
     import threading
@@ -383,14 +383,14 @@ def capture_theme_playwright(theme: str, build: bool = True) -> Path:
               'Set FM1_WEB_DIR or run "task fm1-emulator:download".', file=sys.stderr)
         raise SystemExit(1)
 
-    nav_map = load_nav_map(theme, root=ROOT)
-    defconfig = THEME_DEFCONFIG.get(theme, theme)
+    nav_map = load_nav_map(shell, root=ROOT)
+    defconfig = SHELL_DEFCONFIG.get(shell, shell)
     config = load_defconfig(defconfig, root=ROOT)
     steps = control_path(nav_map, config=config if config else None)
-    out_dir = ROOT / 'docs' / 'ui' / 'themes' / theme / 'screenshots'
+    out_dir = ROOT / 'docs' / 'ui' / 'shells' / shell / 'screenshots'
 
     if build:
-        fwsc = _build_firmware(theme)
+        fwsc = _build_firmware(shell)
     else:
         fwsc = _fwsc_path(defconfig)
         if not fwsc.is_file():
@@ -649,16 +649,16 @@ def main() -> None:
     args = [a for a in args if a != '--no-build']
 
     if args[0] == '--all':
-        themes = discover_themes()
+        shells = discover_shells()
     else:
-        themes = args
+        shells = args
 
-    for theme in themes:
-        print(f'[{theme}]')
-        if theme == 'modd':
+    for shell in shells:
+        print(f'[{shell}]')
+        if shell == 'modd':
             capture_modd(build=build)
         else:
-            capture_theme_playwright(theme, build=build)
+            capture_theme_playwright(shell, build=build)
 
 
 if __name__ == '__main__':

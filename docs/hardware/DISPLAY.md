@@ -61,7 +61,7 @@ ST7789V has built-in brightness registers (WRDISBV 0x51, WRCTRLD 0x53) for 0-255
 
 ## Init sequence
 
-From `firmware/src/ui/themes/melodee/lcd.c`:
+From `firmware/src/ui/shells/melodee/lcd.c`:
 
 | Step | Command | Arg | Purpose |
 |------|---------|-----|---------|
@@ -96,6 +96,6 @@ At 12 MHz SPI, a full 240x240 RGB565 frame = 240 x 240 x 2 bytes = 115,200 bytes
 
 - ST7789V datasheet (Sitronix)
 - `firmware/hal/fm1_lcd_hw.h` (pin mapping, SPI registers)
-- `firmware/src/ui/themes/melodee/lcd.c` (protocol driver)
+- `firmware/src/ui/shells/melodee/lcd.c` (protocol driver)
 - `docs/hardware/board/fm1_Connectors.kicad_sch` (FPC connector)
 - `docs/hardware/board/fm1_SoC.kicad_sch` (SPI1 pin mapping)

@@ -30,7 +30,8 @@ static const char *mod_dst_name(uint32_t dst)
 static const char *mod_src_icon(uint32_t src) { (void)src; return ""; }
 static const char *mod_dst_icon(uint32_t dst) { (void)dst; return ""; }
 
-static void mod_begin(track_t *t) { (void)t; }
+static int mod_begin(track_t *t) { (void)t; return 0; }
 static void mod_end(track_t *t) { (void)t; }
-static void mod_voice(voice_t *v) { (void)v; }
+static void mod_voice(track_t *t, voice_t *v, vmod_t *m, int32_t fine) { (void)t; (void)v; (void)m; (void)fine; }
+static uint32_t mod_note(track_t *t, uint32_t note, uint32_t vel) { (void)t; (void)note; return vel; }
 static void mod_init(void) {}

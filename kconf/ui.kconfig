@@ -13,11 +13,11 @@ config INPUT
 
 # kc2mm:label "Shell"
 choice
-    prompt "UI theme"
-    default UI_THEME_FELUCCA_UPSTREAM if INPUT
-    default UI_THEME_MODD
+    prompt "UI shell"
+    default UI_SHELL_FELUCCA_UPSTREAM if INPUT
+    default UI_SHELL_MODD
 
-config UI_THEME_FELUCCA_UPSTREAM
+config UI_SHELL_FELUCCA_UPSTREAM
     bool "Felucca (upstream canvas)"
     depends on INPUT
     select GEN_FELUCCA_UI
@@ -25,44 +25,58 @@ config UI_THEME_FELUCCA_UPSTREAM
       Upstream Felucca UI: SURF cards, Inter Tight font, anti-aliased
       icons, knob arcs, Felucca's pages and button map rendered through
       Felucca's own canvas (gfx.c), not LVGL. Source:
-      firmware/src/ui/themes/felucca/.
+      firmware/src/ui/shells/felucca/.
 
-# Not yet selectable: no SLOOP theme exists (firmware/src/ui/themes/sloop/).
+# Not yet selectable: no SLOOP shell exists (firmware/src/ui/shells/sloop/).
 # Remove the 'depends on n' guard when it does.
-config UI_THEME_SLOOP
+config UI_SHELL_SLOOP
     bool "SLOOP"
     depends on n
 
 # Not yet selectable: no melodee shell implementation exists.
-# Remove the 'depends on n' guard when themes/melodee/shell.c is ready.
-config UI_THEME_MELODEE
+# Remove the 'depends on n' guard when shells/melodee/shell.c is ready.
+config UI_SHELL_MELODEE
     bool "Melodee"
     depends on n
     select GEN_MELODEE_UI
 
-config UI_THEME_MODD
+config UI_SHELL_MODD
     bool "modd"
     help
-      The main theme (defconfigs modd and modd_emu). Pages built from LVGL 9.6
-      widgets (firmware/vendor/lvgl, MIT) on LVGL's default theme, coloured by the
-      modd palettes (10, CLAY by default; the THEME colour follows the
-      selected track), drawn through two 240x24 buffers. Pages and controls:
-      HOME, Settings (HOME hold), weather and DEMO (FX hold), the USB disk's
-      files and info (SAVE hold, with UDISK), the log (GLO hold), page hints
-      (GLO tap). Generates no font headers: the type is LVGL's built-in
-      Montserrat. LVGL is compiled as a library next to the unity build
-      (tools/build/build.py).
+      The modd LVGL shell (defconfigs modd and modd_emu). Pages built from
+      LVGL 9.6 widgets (firmware/vendor/lvgl, MIT), coloured by the active
+      skin's palettes (10 per skin, CLAY by default for SKIN_MODD; the
+      primary colour follows the selected track), drawn through two 240x24
+      buffers. Pages: HOME, Settings (HOME hold), weather and DEMO (FX hold),
+      the USB disk's files and info (SAVE hold, with UDISK), the log (GLO
+      hold), page hints (GLO tap). Generates no font headers: the type is
+      LVGL's built-in Montserrat. LVGL is compiled as a library next to the
+      unity build (tools/build/build.py).
       Manual for the vendored version: docs/lvgl/. Source:
-      firmware/src/ui/themes/modd/.
+      firmware/src/ui/shells/modd/.
 
-config UI_THEME_FELUCCA
-    bool "Felucca (LVGL)"
+endchoice
+
+# kc2mm:label "Skin"
+choice
+    prompt "UI skin"
+    default UI_SKIN_MODD
+    depends on UI_SHELL_MODD
+
+config UI_SKIN_MODD
+    bool "modd"
     help
-      The Felucca palettes (GREY default, 10 total) on LVGL 9.6 widgets.
-      Same shared page code as the modd theme, different palette. Dark by
-      default; upstream Felucca pages (SONG, STEP, etc.) are added as they
-      are ported. Source: firmware/src/ui/themes/felucca/lvgl_*.c, shared
-      page code from firmware/src/ui/themes/modd/page_*.c.
+      The default skin on the modd LVGL shell: modd palettes (10, CLAY by
+      default) and modd controls. Source: firmware/src/ui/shells/modd/.
+
+config UI_SKIN_FELUCCA
+    bool "Felucca"
+    help
+      Felucca palettes (GREY default, 10 total) and Felucca controls on the
+      modd LVGL shell. Dark by default; upstream Felucca pages (SONG, STEP,
+      etc.) are added as they are ported. Source:
+      firmware/src/ui/shells/felucca/lvgl_*.c, shared page code from
+      firmware/src/ui/shells/modd/page_*.c.
 
 endchoice
 
@@ -70,7 +84,7 @@ endchoice
 choice
     prompt "Control model"
     default CONTROLS_FELUCCA
-    depends on !UI_THEME_MODD && !UI_THEME_FELUCCA
+    depends on !UI_SHELL_MODD
 
 config CONTROLS_FELUCCA
     bool "Felucca"
@@ -120,13 +134,13 @@ config PAGE_DEMO
 config GEN_FELUCCA_UI
     bool
     help
-      Hidden. Selected by UI_THEME_FELUCCA_UPSTREAM. Tells the build system to run
+      Hidden. Selected by UI_SHELL_FELUCCA_UPSTREAM. Tells the build system to run
       Felucca font/icon/keycap/palette generators before compiling.
 
 config GEN_MELODEE_UI
     bool
     help
-      Hidden. Selected by UI_THEME_MELODEE. Tells the build system to run
+      Hidden. Selected by UI_SHELL_MELODEE. Tells the build system to run
       Melodee's font and keycap generators and modd's palette list into
       build/gen/melodee/ before compiling.
 

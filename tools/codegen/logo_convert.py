@@ -11,7 +11,7 @@ Colors come from the SVG fill attributes; the background is the FM-1
 body cream (#E8E4DF). The SVG is the single source of truth.
 
 BOOT_BG must stay in step with the splash fill colour in
-firmware/src/ui/themes/felucca/shell.c (fsh_splash_render).
+firmware/src/ui/shells/felucca/shell.c (fsh_splash_render).
 
 RLE format: pairs of (count, rgb565_be). Count is 1 byte (1-255 repeats);
 a zero count byte means end-of-row. One row = 240 pixels.

@@ -17,7 +17,7 @@ interpreter; uv creates `.venv` and installs dependencies from
 No separate Python installation is needed.
 
 The browser is needed only by `tools/codegen/gen_ui_screenshots.py`, which
-captures the Felucca theme's screenshots in the WASM emulator. Use an installed
+captures the Felucca shell's screenshots in the WASM emulator. Use an installed
 `chromium`, set `CHROMIUM_PATH`, or install Playwright's browser:
 
 ```sh
@@ -93,7 +93,7 @@ One run has one `RUN_STAMP`: a module's screenshots, fm1-live logs and `debug.lo
 A test that logs its own events calls `io_log.log(kind, detail, seconds, count=False)`;
 `count=True` (the default) adds it to the test's IO totals.
 
-## Direct-API tests (`tests/**/api_*_test.py`, `tests/ui/themes/modd/api/`)
+## Direct-API tests (`tests/**/api_*_test.py`, `tests/ui/shells/modd/api/`)
 
 Python drives the firmware over HTTP; no browser. `ApiTestCase`
 (`tests/api_fixtures.py`) boots one fm1-live per test class with the
@@ -140,7 +140,7 @@ defconfig: `WIFI_SSID` and `WIFI_PASSWORD` from `.env` reach hardware builds onl
 | `usb/usb_otg_presence_safety_test.py` | Every defconfig enables USB; the UBOOT SysEx key (the `task flash` path) is in the modd, modd_emu and felucca binaries that `task test:api` builds first in parallel; melodee and sloop config-only. Live (fm1-live, about 3 s): production `modd` with a computer on the port enumerates as USB-MIDI, stays on the bus (the OTG port keeps device mode while a computer drives it), and reboots into the updater on the UBOOT key. Also runs in `test:unit` (a binary not built skips) |
 | `net/api_weather_test.py` | Weather from open-meteo, PLAY refresh, revisit |
 | `wifi/api_wifi_need_test.py` | The radio follows the WIFI setting and the network need: WIFI off then on with WiFi as the only link (the panel is pressed through `fm1-live --cdp`, because the API travels over WiFi), WiFi stepping aside while USB ethernet has an address, and a boot with WIFI saved as off (fm1-live restarted on the same `--flash` image; needs `xdotool`). Off means powered down: the log shows `wifi: deinit done`, on again a second `wifi: init done`, and the WiFi task stack keeps 512 bytes free. Each class boots fm1-live with its own flags; `task modd:test:modd_emu:api:wifi` runs the API tests with WiFi as the only link |
-| `ui/themes/modd/api/modd_api_test.py`, `modd_ui_walkthrough_test.py` | Pages, page data, every control, palettes, hints, DEMO, audio; OCR and colours on every page |
+| `ui/shells/modd/api/modd_api_test.py`, `modd_ui_walkthrough_test.py` | Pages, page data, every control, palettes, hints, DEMO, audio; OCR and colours on every page |
 
 **Connection budget.** Each request is one TCP connection (`Connection:
 close`), and fm1-emu's NAT holds at most 32 connections, each for 30 s after
@@ -242,7 +242,7 @@ covers the reading and, for each kind of problem, that its fix works.
 
 | Area | Covered by |
 |------|-----------|
-| Boot, panel input, pages | `boot/api_boot_test.py`, `ui/themes/modd/api/` |
+| Boot, panel input, pages | `boot/api_boot_test.py`, `ui/shells/modd/api/` |
 | Engine audio output | `api_audio_engines_test.py` |
 | Master volume | `api_audio_engines_test.py::TestMasterVolume` |
 | Cross-engine level balance | `api_audio_engines_test.py::TestAudioLevelNormalization` |
@@ -250,7 +250,7 @@ covers the reading and, for each kind of problem, that its fix works.
 | USB safety, OTG presence | `usb/usb_otg_presence_safety_test.py` |
 | Weather display | `net/api_weather_test.py::TestWeatherPage` |
 | WiFi power management | `wifi/api_wifi_need_test.py` (TestWifiOffOn, TestWifiEthernet, TestWifiOffAtBoot) |
-| modd theme pages, controls, palettes | `ui/themes/modd/api/` |
+| modd shell pages, controls, palettes | `ui/shells/modd/api/` |
 
 ## Audio testing
 

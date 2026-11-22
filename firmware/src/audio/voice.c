@@ -36,6 +36,7 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
     if (!v)
         return;
 
+    vel = mod_note(t, note, vel);
     __builtin_memset(v, 0, sizeof(*v));
     v->note = (uint8_t)note;
     v->vel = (uint8_t)vel;
@@ -43,6 +44,9 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
     v->active = 1;
     v->age = ++voice_age;
     v->pitch16 = (int32_t)note * 16;
+    v->mvel = (uint8_t)vel;
+    v->mrnd = t->m_rnd;
+    t->m_vi = (uint8_t)(v - t->v);
 
     eng->note_on(t, v);
 }
@@ -114,6 +118,7 @@ static uint32_t track_render(track_t *t, int32_t *buf, uint32_t n)
         m.inc = pitch_inc((uint32_t)clamp(m.pitch16, 0, 2047));
         m.amp0 = AUDIO_AMP_ONE;
         m.amp1 = AUDIO_AMP_ONE;
+        mod_voice(t, v, &m, 0);
         eng->render(t, v, buf, n, &m);
         nr++;
     }
@@ -144,6 +149,7 @@ static void engine_block(track_t *t, int32_t *buf_l, int32_t *buf_r, uint32_t n)
         m.inc = pitch_inc((uint32_t)clamp(m.pitch16, 0, 2047));
         m.amp0 = AUDIO_AMP_ONE;
         m.amp1 = AUDIO_AMP_ONE;
+        mod_voice(t, v, &m, 0);
         eng->render(t, v, voice_buf, n, &m);
     }
 

@@ -1,6 +1,6 @@
 # UI Architecture
 
-modd has a cross-theme UI framework that separates navigation, content, and rendering. The framework defines three layers:
+modd has a cross-shell UI framework that separates navigation, content, and rendering. The framework defines three layers:
 
 ```
 View ──button──> Page ──encoder──> Element
@@ -10,11 +10,11 @@ View ──button──> Page ──encoder──> Element
 - **Page**: an individual screen within a view (e.g. Filter, Delay, Reverb pages within the FX View)
 - **Element**: a rendering primitive used to build page content (e.g. header, grid, list, cards)
 
-Each shell (Felucca, Melodee, SLOOP) provides a theme that renders elements with its own visual language. The navigation model and page structure are universal.
+Each shell (Felucca, Melodee, SLOOP) provides a skin that renders elements with its own visual language. The navigation model and page structure are universal.
 
-For event flow and page card layouts, see [COMPONENTS.md](COMPONENTS.md#ui). Per-theme navigation maps and page controls are in each theme's [UI.md](themes/).
+For event flow and page card layouts, see [COMPONENTS.md](COMPONENTS.md#ui). Per-shell navigation maps and page controls are in each shell's [UI.md](themes/).
 
-The modd theme does not use the element system below: LVGL draws it from its own widgets. See [LVGL.md](LVGL.md).
+The modd shell does not use the element system below: LVGL draws it from its own widgets. See [LVGL.md](LVGL.md).
 
 <!-- ui-hw-controls:start -->
 ## Physical controls
@@ -85,13 +85,13 @@ firmware/adapters/
 
 firmware/src/ui/
   ui_view.h              # VIEW_* constants
-  ui_theme.h             # ui_theme_t struct (metrics, fonts, renderers)
+  ui_layout.h             # ui_layout_t struct (metrics, fonts, renderers)
   ui_nav.c               # view navigation, modal state (nav_modal_open/close)
 
   themes/
     felucca/             # Felucca shell (active)
       ui.c               # unity root: includes gfx, draw, theme, shell, pages
-      theme.c            # ui_theme_t instance: metrics, palette, fonts, renderers
+      theme.c            # ui_layout_t instance: metrics, palette, fonts, renderers
       shell.c            # input routing, button/encoder dispatch, modal intercepts
       draw.c             # Felucca-specific drawing helpers (header, cards, footer)
       gfx.c              # shim to upstream canvas renderer
@@ -108,12 +108,12 @@ firmware/src/ui/
 
   themes/felucca/        # port of Felucca's UI (full page set)
   themes/melodee/        # Melodee's renderer and LCD driver; its shell is still a stub
-  themes/modd/           # the default theme, drawn with LVGL 9.6 widgets: Home, Settings, Weather, Files, Disk, Debug, Demo (LVGL.md)
+  themes/modd/           # the default shell, drawn with LVGL 9.6 widgets: Home, Settings, Weather, Files, Disk, Debug, Demo (LVGL.md)
 ```
 
 The split:
 - **Universal** (`ui_*.h`, `ui_*.c`, `modd_*.h`): view model, navigation rules, page/modal contracts, element API. Shared by all shells.
-- **Shell-specific** (`felucca/`, `melodee/`, etc.): theme rendering, input routing, modal implementations, page implementations.
+- **Shell-specific** (`felucca/`, `melodee/`, etc.): skin rendering, input routing, modal implementations, page implementations.
 
 ## Views
 
@@ -269,7 +269,7 @@ Pages can hide dynamically. Examples: FM6 operator pages hidden when engine is A
 
 ## Element System
 
-Pages are built from universal elements. The element API is theme-agnostic: it describes *what* to draw, not *how*. Each shell's theme implements the rendering.
+Pages are built from universal elements. The element API is shell-agnostic: it describes *what* to draw, not *how*. Each shell's skin implements the rendering.
 
 ### Elements
 
@@ -320,10 +320,10 @@ void ui_toast(const char *msg, uint16_t duration_ms);
 
 ### Theme Contract
 
-Each shell registers a theme that implements the visual rendering of elements.
+Each shell registers a skin that implements the visual rendering of elements.
 
 ```c
-typedef struct ui_theme {
+typedef struct ui_layout {
     /* screen metrics */
     uint16_t screen_w, screen_h;
     uint16_t header_h, footer_h;
@@ -350,7 +350,7 @@ typedef struct ui_theme {
                               int32_t bar_pct);
     void (*render_modal)(const char *title, const char *body);
     void (*render_toast)(const char *msg);
-} ui_theme_t;
+} ui_layout_t;
 ```
 
 ## Page Catalog
@@ -438,7 +438,7 @@ Grouped by view. For encoder/button mappings and card parameter details, see [CO
 
 | Page | Elements | Description |
 |---|---|---|
-| Display | header, grid, footer | Color theme, font, brightness |
+| Display | header, grid, footer | Color palette, font, brightness |
 | Audio | header, grid, footer | Lowcut, buffer size |
 | System | header, grid, footer | USB mode, MIDI channel |
 | About | header, text, footer | Firmware version, MAC, build info |
@@ -448,7 +448,7 @@ Grouped by view. For encoder/button mappings and card parameter details, see [CO
 
 Kitchen-sink UI showcase. SELECT cycles 6 screens, K1-K4 adjust card values per screen.
 
-**Felucca theme** (uses `fui_*` helpers, modals, `kbd_piano`):
+**Felucca skin** (uses `fui_*` helpers, modals, `kbd_piano`):
 
 | Screen | Cards | Graph area | K1 special |
 |---|---|---|---|
@@ -461,7 +461,7 @@ Kitchen-sink UI showcase. SELECT cycles 6 screens, K1-K4 adjust card values per 
 
 On the EDIT screen, pressing OCT+ opens the [piano keyboard modal](#piano-keyboard-modal) to edit the text field. The MODALS screen opens real dialogs (`dlg_confirm`, `dlg_ok`, `kbd_piano`).
 
-**modd theme** (LVGL widgets, no modal system; screens in `firmware/src/ui/themes/modd/page_demo.c`):
+**modd shell** (LVGL widgets, no modal system; screens in `firmware/src/ui/shells/modd/page_demo.c`):
 
 | Screen | Panel area | K1 special | K2 special |
 |---|---|---|---|

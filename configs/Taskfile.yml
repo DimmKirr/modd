@@ -62,7 +62,7 @@ tasks:
       FWSC: 'build/{{.DEFCONFIG}}{{._SUFFIX}}/modd.fwsc'
       # Each test class boots its own fm1-live with a port forward (tests/api_fixtures.py), waits
       # for /api/info and stops it afterwards: no emulator process is left behind.
-      TESTS: '{{.TESTS | default "tests/ui/themes/modd/api/"}}'
+      TESTS: '{{.TESTS | default "tests/ui/shells/modd/api/"}}'
     # OPEN and TC_SUFFIX_OVERRIDE come as a pair: the package built is the package tested.
     deps:
       - task: _build
@@ -152,6 +152,21 @@ tasks:
     cmds:
       - uv run --quiet --group ui-test python -m pytest tests/usb/usb_otg_presence_safety_test.py -v {{.CLI_ARGS}}
 
+  # --- modd_felucca (hardware) ---------------------------------------------
+  build:modd_felucca:
+    desc: "Build modd_felucca defconfig (-> build/modd_felucca/modd.fwsc)"
+    cmds:
+      - task: _build
+        vars: { DEFCONFIG: modd_felucca }
+
+  flash:modd_felucca:
+    desc: "Build + flash modd_felucca defconfig"
+    deps:
+      - task: build:modd_felucca
+    cmds:
+      - task: _flash
+        vars: { DEFCONFIG: modd_felucca, CLI_ARGS: '{{.CLI_ARGS}}' }
+
   # --- modd_felucca_emu ---------------------------------------------------
   build:modd_felucca_emu:
     desc: "Build modd_felucca_emu defconfig (-> build/modd_felucca_emu-open/modd.fwsc)"
@@ -163,7 +178,7 @@ tasks:
         vars: { DEFCONFIG: modd_felucca_emu, OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}' }
 
   test:modd_felucca_emu:api:
-    desc: "Build modd_felucca_emu + run the modd theme API tests against the Felucca audio stack"
+    desc: "Build modd_felucca_emu + run the modd shell API tests against the Felucca audio stack"
     dotenv: ['.env.emu']
     env:
       USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
@@ -175,33 +190,7 @@ tasks:
           DEFCONFIG: modd_felucca_emu
           OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
           TC_SUFFIX_OVERRIDE: '{{._EMU_SUFFIX}}'
-          TESTS: 'tests/ui/themes/modd/api/'
-          CLI_ARGS: '{{.CLI_ARGS}}'
-
-  # --- modd_felucca_lvgl_emu -----------------------------------------------
-  build:modd_felucca_lvgl_emu:
-    desc: "Build modd_felucca_lvgl_emu defconfig (-> build/modd_felucca_lvgl_emu-open/modd.fwsc)"
-    dotenv: ['.env.emu']
-    env:
-      USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
-    cmds:
-      - task: _build
-        vars: { DEFCONFIG: modd_felucca_lvgl_emu, OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}' }
-
-  test:modd_felucca_lvgl_emu:api:
-    desc: "Build modd_felucca_lvgl_emu + run the modd theme API tests with the Felucca LVGL palette"
-    dotenv: ['.env.emu']
-    env:
-      USE_OPEN_TOOLCHAIN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
-    vars:
-      _EMU_SUFFIX: '{{if eq (env "USE_OPEN_TOOLCHAIN" | default "1") "1"}}-open{{end}}'
-    cmds:
-      - task: _test:api
-        vars:
-          DEFCONFIG: modd_felucca_lvgl_emu
-          OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}'
-          TC_SUFFIX_OVERRIDE: '{{._EMU_SUFFIX}}'
-          TESTS: 'tests/ui/themes/modd/api/'
+          TESTS: 'tests/ui/shells/modd/api/'
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:modd_emu:api:wifi:
@@ -220,7 +209,7 @@ tasks:
           EMU_FLAGS: '--wifi oss --net internet'
           # api_wifi_need_test.py: TestWifiOffOn runs, TestWifiEthernet skips (it needs --usb ethernet)
           TESTS: >-
-            tests/ui/themes/modd/api/
+            tests/ui/shells/modd/api/
             tests/net/api_weather_test.py
             tests/wifi/api_wifi_need_test.py
           CLI_ARGS: '{{.CLI_ARGS}}'

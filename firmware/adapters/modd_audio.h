@@ -62,11 +62,41 @@ enum {
     P_ARP, P_ARTM, P_ARNG, P_AGATE,
     P_OCT, P_ROOT, P_SCALE, P_QUANT, P_TRANS,
     P_MONO, P_HOLD, P_VELO,
+    /* envelope destination (Felucca) */
+    P_ED_FLT, P_ED_PIT, P_ED_SHP, P_ED_FX,
+    /* LFO destination (Felucca) */
+    P_LD_PIT, P_LD_FLT, P_LD_SHP, P_LD_AMP,
+    /* LFO 2: sync, trigger, polarity (Felucca 1.2) */
+    P_LSYNC, P_LTRIG, P_LPOL,
+    /* arp 2 (Felucca 1.2) */
+    P_ASWING, P_APROB, P_AHOLD, P_AORDER,
+    /* sequencer per-track (Felucca) */
+    P_SLEN, P_SDIV, P_SSWING, P_SGATE,
+    /* voice (Felucca) */
+    P_VOICE, P_GLIDE, P_GLMODE, P_PRIO,
+    P_ALLOC, P_DETUNE, P_MUTE,
+    /* slicer (Felucca) */
+    P_SLCR, P_SLPAT, P_SLRATE, P_SLDEPTH,
     /* modulation matrix */
     P_M1SRC, P_M1DST, P_M1AMT,
     P_M2SRC, P_M2DST, P_M2AMT,
     P_M3SRC, P_M3DST, P_M3AMT,
     P_M4SRC, P_M4DST, P_M4AMT,
+    /* FM6 operator envelopes + levels (Felucca) */
+    P_FM1_ATK, P_FM1_DEC, P_FM1_SUS, P_FM1_REL, P_FM1_LEVEL,
+    P_FM2_ATK, P_FM2_DEC, P_FM2_SUS, P_FM2_REL, P_FM2_LEVEL,
+    P_FM3_ATK, P_FM3_DEC, P_FM3_SUS, P_FM3_REL, P_FM3_LEVEL,
+    P_FM4_ATK, P_FM4_DEC, P_FM4_SUS, P_FM4_REL, P_FM4_LEVEL,
+    /* chord keys (Felucca chord.c) */
+    P_CHRD, P_VOIC,
+    /* drum lane levels (Felucca eng_drum.c) */
+    P_LN0, P_LN1, P_LN2, P_LN3, P_LN4, P_LN5, P_LN6, P_LN7,
+    /* ENV sync (Felucca 1.5) */
+    P_ESYNC,
+    /* step quantise (Felucca 1.2) */
+    P_SQNT,
+    /* aftertouch (Felucca 1.8) */
+    P_ATSNS, P_ATDST, P_ATAMT,
     /* FX sends (common across upstreams) */
     P_DIST, P_CHOR, P_DLY, P_REV,
     /* Felucca INSERT effect per-track params (1.5) */
@@ -83,10 +113,13 @@ enum {
 /* --- global (song-level) effect parameters (Felucca) --- */
 
 enum {
-    G_BPM, G_CLOCK,
+    G_BPM, G_SWING, G_CLOCK,
     G_RTYPE, G_RSIZE, G_RDAMP,
     G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX,
     G_CDEPTH, G_CRATE,
+    /* project/tools (Felucca) */
+    G_SLOT, G_LOAD, G_SAVE,
+    G_CLRSEQ, G_INITSND,
     G_COUNT
 };
 
@@ -114,6 +147,10 @@ typedef struct track {
     int32_t lfo_fade;
     uint32_t lfo_rnd;
     int16_t lfo_prev;
+    /* modulation matrix state (Felucca mod.c) */
+    int32_t m_env;
+    int16_t m_rnd;
+    uint8_t m_vel, m_key, m_vi, mw, at, ex_off;
     /* effects state (Felucca fx.c) */
     int32_t dist_hp, dist_lp1, dist_lp2;
     int32_t peak;
