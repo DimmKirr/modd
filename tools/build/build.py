@@ -35,9 +35,11 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import check_colors
+import flashmap
 import fm1pkg_make
 import lz4blk
 import mem_report
+import patches
 from fm1_paths import open_toolchain
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -433,12 +435,13 @@ def loader_wrap(image):
     return header(fm1pkg_make.crc16(body), 0x20, len(body), 0x41) + body
 
 
-def build_support(name, entry):
+def build_support(name, entry, layout):
     """Compile the standalone boot stub or RAM update loader."""
     src, out = FW / name, OUT / name
     out.mkdir(parents=True, exist_ok=True)
     tc('cc', f'-I{src}', '-c', src / entry, '-o', out / 'crt0.o')
-    tc('cc', *CFLAGS, '-Ifirmware/hal', '-Ifirmware/src', f'-I{src}',
+    # no -include config.h here (it would change the code): hal/fm1_flash_map.h gets the layout as -D
+    tc('cc', *CFLAGS, *layout.defines(), '-Ifirmware/hal', '-Ifirmware/src', f'-I{src}',
        '-c', src / f'{name}.c', '-o', out / f'{name}.o')
     elf = out / f'{name}.elf'
     tc('pi32v2/bin/ld', '--gc-sections', '-e', '_start', '-T', src / f'{name}.ld',
@@ -449,13 +452,13 @@ def build_support(name, entry):
     return binary.read_bytes()
 
 
-def package(version):
-    stub = build_support('stub', 'crt0_stub.S')
+def package(version, layout):
+    stub = build_support('stub', 'crt0_stub.S', layout)
     if not fm1pkg_make.has_stub(stub + bytes(fm1pkg_make.STUB_LEN)):
         raise SystemExit('boot stub: missing CRSTUB signature')
     if not stub or len(stub) > fm1pkg_make.STUB_LEN - 256:
         raise SystemExit('boot stub exceeds its reserved slot')
-    image = build_support('loader', 'crt0_ldr.S')
+    image = build_support('loader', 'crt0_ldr.S', layout)
     if not image or len(image) > 0x14000:
         raise SystemExit('loader: image empty or too big')
     ota = loader_wrap(image)
@@ -463,11 +466,11 @@ def package(version):
         raise SystemExit('loader overlaps the update-record sector')
     (OUT / 'loader' / 'ota.bin').write_bytes(ota)
     body = (OUT / 'body.bin').read_bytes()
-    if not body or len(body) > fm1pkg_make.BODY_MAX:
+    if not body or len(body) > layout.body_max:
         raise SystemExit('application body empty or too big')
     app = stub.ljust(fm1pkg_make.STUB_LEN, b'\xff') + body
     (OUT / 'modd.bin').write_bytes(app)
-    fwsc = fm1pkg_make.ufw(fm1pkg_make.flash_image(app, fm1pkg_make.KEY), ota, 'FM-1_900')
+    fwsc = fm1pkg_make.ufw(fm1pkg_make.flash_image(app, fm1pkg_make.KEY, layout), ota, 'FM-1_900')
     path = OUT / 'modd.fwsc'
     path.write_bytes(fwsc)
     (OUT / 'modd.version').write_text(version)
@@ -546,11 +549,37 @@ def gen_melodee_ui():
     print(f'gen_melodee_ui: {len(cmds)} headers -> {out.relative_to(ROOT)}/')
 
 
+def gen_samples():
+    """Generate IMA ADPCM sample data header for SAMPLE/GRAIN/SLICE engines."""
+    GEN.mkdir(parents=True, exist_ok=True)
+    dst = GEN / 'felucca_samples.h'
+    if not dst.exists():
+        subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'gen_samples.py'),
+                        str(dst)], check=True, cwd=str(ROOT))
+
+
+def gen_adpcm():
+    """Generate BRR wave data header for the ADPCM engine."""
+    GEN.mkdir(parents=True, exist_ok=True)
+    dst = GEN / 'felucca_adpcm.h'
+    if not dst.exists():
+        subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'gen_adpcm.py'),
+                        str(dst)], check=True, cwd=str(ROOT))
+
+
 def gen_engine_tables():
     """Generate fixed-point lookup tables for Felucca-derived engines."""
     GEN.mkdir(parents=True, exist_ok=True)
     dst = GEN / 'fe_tables.h'
     subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'gen_engine_tables.py'),
+                    str(dst)], check=True, cwd=str(ROOT))
+
+
+def gen_felucca_tables():
+    """Run upstream Felucca's own tools/gen_tables.py in place; the output stays outside the upstream tree."""
+    GEN.mkdir(parents=True, exist_ok=True)
+    dst = GEN / 'felucca_tables.h'
+    subprocess.run([sys.executable, str(FW / 'upstream' / 'felucca' / 'tools' / 'gen_tables.py'),
                     str(dst)], check=True, cwd=str(ROOT))
 
 
@@ -677,6 +706,20 @@ def build(dry_run=False):
 
     enabled = set(re.findall(r'^#define CONFIG_(\w+) 1$', config_h.read_text(), re.M))
 
+    # Upstream patch series (patches/<upstream>/, docs/PORTING.md "Patches"): `task vendor:patch` copies
+    # the patched files to GEN/patched/upstream/<name>/. That directory goes first on the include path, so
+    # #include "upstream/<name>/..." finds the patched copy; the files a patch does not touch (fx.c includes
+    # perform.c by bare name) are found in the vendored directory, searched last. A missing or stale copy
+    # stops the build: an unpatched build would be a different firmware.
+    patched = GEN / 'patched'
+    stale = [] if dry_run else patches.verify(patched)   # a dry run compiles nothing
+    if stale:
+        raise SystemExit('build: the patched upstream tree is not current:\n  ' + '\n  '.join(stale) +
+                         "\nRun 'task vendor:patch' (task build does), or: task vendor:patch -- --defconfig <name>")
+    if patches.series() and not dry_run:
+        flags.insert(len(CFLAGS), f'-I{patched}')
+        flags += [f'-I{d}' for d in patches.include_dirs(patched)]
+
     if 'GEN_FELUCCA_UI' in enabled:
         if not (GEN / 'ui_fonts.h').exists():
             gen_felucca_ui()
@@ -699,6 +742,12 @@ def build(dry_run=False):
         flags.insert(0, f'-I{GEN / "modd"}')
     if 'ENGINES' in enabled:
         gen_engine_tables()
+    if 'AUDIO_FELUCCA_STACK_INCLUDED' in enabled:
+        gen_felucca_tables()
+    if enabled & {'ENGINE_SAMPLE', 'ENGINE_GRANULAR', 'ENGINE_SLICE'}:
+        gen_samples()
+    if 'ENGINE_ADPCM' in enabled:
+        gen_adpcm()
     if 'WIFI' in enabled and not (GEN / 'ble_rf_tables.h').exists():
         src = FW / 'upstream' / 'optimist' / 'firmware' / 'hal' / 'ble_rf_tables_v15.h'
         if src.exists():
@@ -903,7 +952,10 @@ def build(dry_run=False):
                           '--plugin-opt=mcpu=r3',
                           '--plugin-opt=-pi32v2-large-program=true']
     ld_script = FW / linker_script(enabled)
-    link_args = [*lto_plugin, '--gc-sections', '-T', str(ld_script), *objs]
+    # the flash layout (kconf/flash.kconfig) sizes the XIP region: app*.ld say LENGTH = FLASH_BODY_MAX
+    layout = flashmap.from_config_h(config_h.read_text())
+    link_args = [*lto_plugin, '--gc-sections', f'--defsym=FLASH_BODY_MAX={layout.body_max:#x}',
+                 '-T', str(ld_script), *objs]
     if vendor_libs:
         link_args += ['--allow-multiple-definition',
                       '--start-group', *vendor_libs, '--end-group']
@@ -927,12 +979,12 @@ def build(dry_run=False):
         if not match:
             raise SystemExit(f'missing linker symbol: {symbol}')
         offset = int(match.group(1), 16) - 0x02001000
-        if offset < len(body) or offset % 4 or offset + len(blob) > fm1pkg_make.BODY_MAX:
+        if offset < len(body) or offset % 4 or offset + len(blob) > layout.body_max:
             raise SystemExit(f'invalid application load address: {symbol}')
         body += b'\xff' * (offset - len(body)) + blob
     body += b'\xff' * (-len(body) % 4)
     (OUT / 'body.bin').write_bytes(body)
-    package(version)
+    package(version, layout)
     # Regions, budgets, stacks and the largest objects (tools/build/mem_report.py). The linker
     # script's regions and ASSERTs fail the link; a report error never fails a build, but too
     # little free RAM does (mem_report.RAM_MIN_FREE).

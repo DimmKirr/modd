@@ -10,6 +10,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools' / 'build'))
+import flashmap
 import fm1pkg_make
 import lz4blk
 
@@ -173,10 +174,12 @@ def test_stub_commit_contains_body_checksum():
     stub = bytearray(b'\xff' * fm1pkg_make.STUB_LEN)
     stub[8:14] = b'CRSTUB'
     body = b'firmware body!!!' * 4
-    app = fm1pkg_make.commit(stub + body)
-    magic, version, length, crc, marker_crc = struct.unpack_from('<IIIII', app, fm1pkg_make.MARK_OFF)
+    layout = flashmap.Layout(0x100000, 0x93000)
+    mark_off = layout.mark_off - fm1pkg_make.STUB_FLASH_OFF
+    app = fm1pkg_make.commit(stub + body, layout)
+    magic, version, length, crc, marker_crc = struct.unpack_from('<IIIII', app, mark_off)
     assert (magic, version, length, crc) == (fm1pkg_make.MARK_MAGIC, 1, len(body), zlib.crc32(body))
-    assert marker_crc == zlib.crc32(app[fm1pkg_make.MARK_OFF:fm1pkg_make.MARK_OFF+16])
+    assert marker_crc == zlib.crc32(app[mark_off:mark_off+16])
     assert fm1pkg_make.crc16(app) == fm1pkg_make.APP_CRC_FIXED
 
 

@@ -6,7 +6,7 @@
 #define MODD_MOD_H
 #include <stdint.h>
 
-#ifndef CONFIG_MODULATION
+#if !defined(CONFIG_MODULATION) && !defined(CONFIG_AUDIO_FELUCCA_STACK_INCLUDED)
 static const char *mod_dst_name(uint32_t dst) { (void)dst; return "---"; }
 static const char *mod_dst_icon(uint32_t dst) { (void)dst; return ""; }
 static const char *mod_src_icon(uint32_t src) { (void)src; return ""; }

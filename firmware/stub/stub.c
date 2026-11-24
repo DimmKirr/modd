@@ -8,7 +8,7 @@
  * crt0_stub.S on every boot; stub_main returns to it for "boot the app" and never returns otherwise.
  *
  * Self-contained on purpose: every register access below is a copy of code that runs on the unit in the app or the
- * loader (the source function is named at each), not an include of firmware/hal, so a change in the HAL cannot change
+ * loader (the source function is named at each), not an include of firmware/hal (but fm1_flash_map.h, the layout), so a change in the HAL cannot change
  * the stub's bytes: sector 0x4000 stays identical from build to build and the loader never rewrites it
  * (tools/build.py compares the stub with firmware/stub/stub.lock). No .data, no .bss, no libcalls, no division; the
  * stacks are the app's (app.ld _ustack_top / _sstack_top); interrupts stay off; the second core is never started.
@@ -26,6 +26,7 @@
  * Not read: the reset-reason registers (P3_RST_SRC, RST_SRC: the app's boot guard reads them after us, untouched),
  * the settings, any flash data, the app's .noinit. */
 #include <stdint.h>
+#include "fm1_flash_map.h"   /* the layout (from the build's config.h) */
 
 #define R32(a) (*(volatile uint32_t *)(a))
 #define SHW_TICKS_PER_US 24u
@@ -198,13 +199,13 @@ static void shw_blink(uint32_t n, uint32_t ms)
 #define SHW_CACHE_CON R32(0x1EEE008u)
 #define SHW_XIP(off) (0x02000000u + (uint32_t)(off) - 0x4000u)   /* hal/fm1_xip.h FM1_XIP */
 
-/* fl_plain_window_init with its fl_inval: flash from 0x93000 reads undecrypted (the staged loader is stored
+/* fl_plain_window_init with its fl_inval: flash from FLASH_APP_END reads undecrypted (the staged loader is stored
  * plain). Interrupts are off already and stay off (no cli / sti here) */
 static void shw_plain_window(void)
 {
-    uint32_t a = SHW_XIP(0x93000u) & ~31u, e = SHW_XIP(0x93000u) + (0x100000u - 0x93000u);
+    uint32_t a = SHW_XIP(FLASH_APP_END) & ~31u, e = SHW_XIP(FLASH_APP_END) + (FLASH_TOTAL - FLASH_APP_END);
     SHW_SFCENC_CON &= (uint8_t)~2u;
-    SHW_SFCENC_UNENC_L = SHW_XIP(0x93000u);
+    SHW_SFCENC_UNENC_L = SHW_XIP(FLASH_APP_END);
     SHW_SFCENC_UNENC_H = 0x07FFFFFFu;
     SHW_SFCENC_CON |= 2u;
     while (!(SHW_CACHE_CON & 0x4000u))

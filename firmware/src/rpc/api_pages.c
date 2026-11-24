@@ -12,6 +12,15 @@
  *   HOME     tracks, transport, the selected track's sound, palette
  *   MENU     the settings of the tab showing (NETWORK: the link)
  *   WX       the weather report
+ *   In test builds with the modd shell (CONFIG_RPC_INPUT, CONFIG_AUDIO) every page but HOME has
+ *   "track", "engine", "title" and "cards":[{"label","value"} x4], the card labels as drawn
+ *   (lvt_card, the one place the cards are set, so the data and the screen agree). A page
+ *   with no entry in the table has just those; the pages below add their own state:
+ *   SEQ STEP DETAIL AUTO (the steps, LEN/DIV/SWING/GATE, playing, the step), MIXER, SONG,
+ *   CLOCK, USER, PRESETS, PHRASES, PROJECT. The cards belong to the page on screen: in the
+ *   reply of GET /modd/<page> they are not there yet (the UI task enters the page on its next
+ *   frame), which says "ready":false; GET /api/page has them. HOME has selected_track and
+ *   tracks[].engine instead of "track" and "engine".
  *
  * api_page_goto() is the one page lookup: GET /modd/<page>[/<sub>] (api_ctl.c)
  * and FM1.navigate (rpc_fm1.c) both call it. */
@@ -24,6 +33,13 @@ typedef struct {
 } api_page_json_entry_t;
 
 #ifdef UI_SHELL
+#ifdef CONFIG_UI_SHELL_MODD
+#ifdef CONFIG_RPC_INPUT
+#ifdef CONFIG_AUDIO
+static void api_page_common(struct rpc_tx *tx);    /* below: used by MENU and WX too */
+#endif
+#endif
+#endif
 static void api_fmt_ip(char *buf, uint32_t ip)    /* "a.b.c.d", buf of 16 or more */
 {
     uint32_t i, n = 0;
@@ -144,6 +160,14 @@ static void api_items_json(struct rpc_tx *tx, uint32_t tab)
 #ifdef CONFIG_SYS_MENU
 static void api_page_settings_json(struct rpc_tx *tx)
 {
+#ifdef CONFIG_UI_SHELL_MODD
+#ifdef CONFIG_RPC_INPUT
+#ifdef CONFIG_AUDIO
+    api_page_common(tx);
+    rpc_tx_char(tx, ',');
+#endif
+#endif
+#endif
     rpc_tx_key_str(tx, "tab", SMTAB_NAME[mset.tab]);
 #ifdef CONFIG_SYS_MENU_NETWORK
     if (mset.tab == SMTAB_NETWORK) {
@@ -164,6 +188,14 @@ static void api_page_weather_json(struct rpc_tx *tx)
 {
     wx_data_t d;
     wx_read(&d);
+#ifdef CONFIG_UI_SHELL_MODD
+#ifdef CONFIG_RPC_INPUT
+#ifdef CONFIG_AUDIO
+    api_page_common(tx);
+    rpc_tx_char(tx, ',');
+#endif
+#endif
+#endif
     rpc_tx_key_bool(tx, "valid", d.w->valid);
     rpc_tx_char(tx, ',');
     rpc_tx_key_bool(tx, "fetching", d.fetching);
@@ -188,6 +220,284 @@ static void api_page_weather_json(struct rpc_tx *tx)
     rpc_tx_key_uint(tx, "updated_ms", d.w->updated_ms);
 }
 #endif
+
+/* ── what a page shows (test builds, modd shell) ────────────────── */
+
+#ifdef CONFIG_UI_SHELL_MODD
+#ifdef CONFIG_RPC_INPUT
+#ifdef CONFIG_AUDIO
+static uint32_t api_page_idx;      /* the page being described */
+
+/* "track", "engine", "title", "cards" (or "ready":false when the page is not on screen yet);
+ * no leading or trailing comma */
+static void api_page_common(struct rpc_tx *tx)
+{
+    uint32_t s = song.sel < NTRK ? song.sel : 0, k;
+    uint8_t e = modd_engine_of(&trk[s]);
+    const modd_page_t *p = nav_pages[api_page_idx];
+    rpc_tx_key_uint(tx, "track", s);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_str(tx, "engine", (e < NENGINES && ENGINES[e]->name) ? ENGINES[e]->name : "---");
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_str(tx, "title", p->title ? p->title : p->name);
+    if (api_page_idx != nav_cur) {
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_bool(tx, "ready", 0);       /* the UI task has not entered the page yet: GET /api/page has the cards */
+        return;
+    }
+    {
+        modd_card_t c[4];                /* the effect page: its cards come from the build's own data (modd_pages.h) */
+        uint32_t n = rpc_streq_nocase(p->name, "INSERT") ? modd_fx_page_read(c, 4u) : 0;
+        if (n) {
+            rpc_tx_char(tx, ',');
+            rpc_tx_raw(tx, "\"cards\":[");
+            for (k = 0; k < n; k++) {
+                if (k) rpc_tx_char(tx, ',');
+                rpc_tx_raw(tx, "{");
+                rpc_tx_key_str(tx, "label", c[k].label);
+                rpc_tx_char(tx, ',');
+                rpc_tx_key_int(tx, "value", c[k].value);
+                rpc_tx_char(tx, ',');
+                rpc_tx_key_str(tx, "text", c[k].text);
+                rpc_tx_char(tx, ',');
+                rpc_tx_key_int(tx, "min", c[k].min);
+                rpc_tx_char(tx, ',');
+                rpc_tx_key_int(tx, "max", c[k].max);
+                rpc_tx_raw(tx, "}");
+            }
+            rpc_tx_char(tx, ']');
+            return;
+        }
+    }
+    if (!lvt_card[0].label)         /* a page without cards (lvt_page_begin clears them) */
+        return;
+    rpc_tx_char(tx, ',');
+    rpc_tx_raw(tx, "\"cards\":[");
+    for (k = 0; k < 4u; k++) {
+        if (k) rpc_tx_char(tx, ',');
+        rpc_tx_raw(tx, "{");
+        rpc_tx_key_str(tx, "label", lv_label_get_text(lvt_card[k].label));
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_str(tx, "value", lv_label_get_text(lvt_card[k].value));
+        rpc_tx_raw(tx, "}");
+    }
+    rpc_tx_char(tx, ']');
+}
+
+/* a page with no serializer of its own */
+static void api_page_generic_json(struct rpc_tx *tx)
+{
+    api_page_common(tx);
+}
+
+/* the selected track's sequencer, each field after a comma: "steps" has one '1' (a note) or
+ * '0' per step, "playhead" is the step the transport is on */
+static void api_seq_fields(struct rpc_tx *tx)
+{
+    const track_t *t = &trk[song.sel < NTRK ? song.sel : 0];
+    char s[NSTEP + 1];
+    uint32_t k;
+    for (k = 0; k < NSTEP; k++)
+        s[k] = t->step[k].note[0] ? '1' : '0';
+    s[NSTEP] = 0;
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_bool(tx, "playing", song.playing != 0);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "len", t->p[P_SLEN]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "div", t->p[P_SDIV]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "swing", t->p[P_SSWING]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "gate", t->p[P_SGATE]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "playhead", t->seq_idx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_str(tx, "steps", s);
+}
+
+static void api_page_seq_json(struct rpc_tx *tx)       /* SEQ */
+{
+    api_page_common(tx);
+    api_seq_fields(tx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "cursor", lvt_seq.pos);
+}
+
+static void api_page_step_json(struct rpc_tx *tx)      /* STEP */
+{
+    api_page_common(tx);
+    api_seq_fields(tx);
+}
+
+static void api_page_detail_json(struct rpc_tx *tx)    /* DETAIL: the step the page is on */
+{
+    const step_t *st = &trk[song.sel < NTRK ? song.sel : 0].step[lvt_detail_idx];
+    uint32_t k;
+    api_page_common(tx);
+    api_seq_fields(tx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "step", (uint32_t)lvt_detail_idx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "note", st->note[0]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_raw(tx, "\"notes\":[");
+    for (k = 0; k < 4u && st->note[k]; k++) {
+        if (k) rpc_tx_char(tx, ',');
+        rpc_tx_uint(tx, st->note[k]);
+    }
+    rpc_tx_raw(tx, "]");
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "vel", st->vel);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "len", modd_step_len(st));
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "flags", st->flags);
+#ifdef CONFIG_SEQ_FELUCCA      /* step_t.hit CHANCE (0 = always), flags: bit 0 accent, bits 1..2 RATCH; len is NUDGE */
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "chance", st->hit);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "ratch", (st->flags >> 1) & 3u);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_bool(tx, "accent", st->flags & 1u);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "nudge", modd_step_nudge(st));
+#endif
+}
+
+#ifdef CONFIG_SEQ_FELUCCA
+static void api_page_auto_json(struct rpc_tx *tx)      /* AUTO: the locks of one step */
+{
+    uint32_t tr = song.sel < NTRK ? song.sel : 0, k;
+    uint8_t lv;
+    auto_ensure_init();
+    lv = auto_locks[tr][auto_step][auto_pidx];
+    api_page_common(tx);
+    api_seq_fields(tx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "step", auto_step);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "param_index", auto_pidx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_str(tx, "param", auto_pnames[auto_pidx]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_bool(tx, "locked", lv != 0xFFu);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "value", lv != 0xFFu ? (int32_t)lv : -1);
+    rpc_tx_char(tx, ',');
+    rpc_tx_raw(tx, "\"locks\":[");       /* every parameter of the step, -1: not locked */
+    for (k = 0; k < AUTO_NPARAMS; k++) {
+        uint8_t v = auto_locks[tr][auto_step][k];
+        if (k) rpc_tx_char(tx, ',');
+        rpc_tx_int(tx, v != 0xFFu ? (int32_t)v : -1);
+    }
+    rpc_tx_raw(tx, "]");
+}
+#endif
+
+static void api_page_mixer_json(struct rpc_tx *tx)
+{
+    mixer_data_t d;
+    uint32_t k;
+    mixer_read(&d);
+    api_page_common(tx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_raw(tx, "\"tracks\":[");
+    for (k = 0; k < NTRK; k++) {
+        if (k) rpc_tx_char(tx, ',');
+        rpc_tx_raw(tx, "{");
+        rpc_tx_key_uint(tx, "index", k);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "level", d.level[k]);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "pan", d.pan[k]);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "mute", trk[k].p[P_MUTE]);
+        rpc_tx_raw(tx, "}");
+    }
+    rpc_tx_raw(tx, "]");
+}
+
+static void api_page_song_json(struct rpc_tx *tx)
+{
+    api_page_common(tx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "bpm", song.g[G_BPM]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_bool(tx, "playing", song.playing != 0);
+}
+
+static void api_page_clock_json(struct rpc_tx *tx)
+{
+    api_page_common(tx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "bpm", song.g[G_BPM]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "swing", song.g[G_SWING]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "clock", song.g[G_CLOCK]);
+}
+
+/* the text of card k of the page being described when it is on screen, else 0. The storage pages
+ * take what they show from here: the flash is read by the UI task only (this task would read it
+ * while the UI task is inside a flash read: the scheduler switches tasks in there) */
+static const char *api_card_text(uint32_t k)
+{
+    if (api_page_idx != nav_cur || !lvt_card[0].label)
+        return 0;
+    return lv_label_get_text(lvt_card[k].value);
+}
+
+static void api_page_user_json(struct rpc_tx *tx)      /* a slot of the user presets */
+{
+    const char *v = api_card_text(1);       /* LOAD: USED or FREE */
+    api_page_common(tx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "slot", (uint32_t)song.g[G_SLOT]);
+    if (v) {
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_bool(tx, "used", v[0] == 'U');
+    }
+}
+
+static void api_page_presets_json(struct rpc_tx *tx)
+{
+    const engine_t *e = lvt_cur_engine();
+    api_page_common(tx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "preset", trk[song.sel < NTRK ? song.sel : 0].preset);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "count", e ? e->npresets : 0u);
+}
+
+static void api_page_phrases_json(struct rpc_tx *tx)
+{
+    const char *v = api_card_text(1);       /* LOAD: OK or EMPTY */
+    api_page_common(tx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "pattern", (uint32_t)lvt_phrases_idx);
+    if (v) {
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_bool(tx, "loadable", v[0] == 'O');
+    }
+}
+
+static void api_page_project_json(struct rpc_tx *tx)
+{
+    const char *n = api_card_text(1);       /* NAME: the name, EMPTY, or --- for no name */
+    api_page_common(tx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "slot", (uint32_t)song.g[G_SLOT]);
+    if (n) {
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_bool(tx, "used", !(n[0] == 'E' && n[1] == 'M' && n[2] == 'P' && n[3] == 'T' && n[4] == 'Y' && !n[5]));
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_str(tx, "name", n);
+    }
+}
+#endif /* CONFIG_AUDIO */
+#endif /* CONFIG_RPC_INPUT */
+#endif /* CONFIG_UI_SHELL_MODD */
 #endif /* UI_SHELL */
 
 /* ── Lookup table ───────────────────────────────────────────────── */
@@ -200,6 +510,25 @@ static const api_page_json_entry_t api_page_json_table[] = {
 #endif
 #ifdef CONFIG_LWIP
     { "WX",     api_page_weather_json },
+#endif
+#ifdef CONFIG_UI_SHELL_MODD
+#ifdef CONFIG_RPC_INPUT
+#ifdef CONFIG_AUDIO
+    { "SEQ",     api_page_seq_json },
+    { "STEP",    api_page_step_json },
+    { "DETAIL",  api_page_detail_json },
+#ifdef CONFIG_SEQ_FELUCCA
+    { "AUTO",    api_page_auto_json },
+#endif
+    { "MIXER",   api_page_mixer_json },
+    { "SONG",    api_page_song_json },
+    { "CLOCK",   api_page_clock_json },
+    { "USER",    api_page_user_json },
+    { "PRESETS", api_page_presets_json },
+    { "PHRASES", api_page_phrases_json },
+    { "PROJECT", api_page_project_json },
+#endif
+#endif
 #endif
 #endif
     { 0, 0 }
@@ -265,6 +594,15 @@ static void api_page_fields_json(struct rpc_tx *tx, uint32_t idx)
     rpc_tx_key_str(tx, "page", nav_pages[idx]->name);
     rpc_tx_char(tx, ',');
     rpc_tx_key_uint(tx, "index", idx);
+#ifdef CONFIG_UI_SHELL_MODD
+#ifdef CONFIG_RPC_INPUT
+#ifdef CONFIG_AUDIO
+    api_page_idx = idx;
+    if (!jfn)
+        jfn = api_page_generic_json;      /* "track", "engine", "title", "cards" */
+#endif
+#endif
+#endif
     if (jfn) {
         rpc_tx_char(tx, ',');
         rpc_tx_raw(tx, "\"data\":{");

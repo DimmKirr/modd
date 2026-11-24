@@ -28,6 +28,67 @@ config AUDIO_CORE_MELODEE
 endchoice
 
 # kc2mm:hide
+config AUDIO_FELUCCA_STACK_INCLUDED
+    bool "Felucca stack included from upstream (params, mod, voice, slicer, fx, audio)"
+    depends on AUDIO_CORE_FELUCCA
+    default n
+    help
+      Includes upstream Felucca's audio stack unchanged (core.h, params.c,
+      mod.c, voice.c, slicer.c, fx.c, audio.c) through the adapter instead
+      of modd's copies. The stack owns the audio interrupt, the mixer and
+      the effects. Upstream's buffers are fixed-size: the hardware memory
+      map does not hold them yet, so only the emulator defconfig sets this.
+
+# kc2mm:hide
+config FELUCCA_DLY_LEN
+    int "Felucca delay line length (int16 samples, power of two)"
+    depends on AUDIO_FELUCCA_STACK_INCLUDED
+    range 4096 65536
+    default 65536
+    help
+      DLY_LEN of upstream's fx.c, set through patches/felucca/0001. The
+      delay line is DLY_LEN * 2 bytes of the pool (65536 = 128 KB, 1.49 s
+      at 44.1 kHz). Must be a power of two: the code masks with LEN - 1.
+      Halving it halves the longest delay time and frees half of the bytes
+      (32768 = 64 KB, 0.74 s). The default is upstream's value.
+
+# kc2mm:hide
+config FELUCCA_CHO_LEN
+    int "Felucca chorus line length (int16 samples, power of two)"
+    depends on AUDIO_FELUCCA_STACK_INCLUDED
+    range 512 8192
+    default 2048
+    help
+      CHO_LEN of upstream's fx.c (patches/felucca/0001). 2048 = 4 KB.
+      Power of two. A shorter line limits the chorus depth and rate.
+      The default is upstream's value.
+
+# kc2mm:hide
+config FELUCCA_SL_LEN
+    int "Felucca slicer recording length (22.05 kHz samples a track, power of two)"
+    depends on AUDIO_FELUCCA_STACK_INCLUDED
+    range 2048 16384
+    default 4096
+    help
+      SL_LEN of upstream's slicer.c (patches/felucca/0001). The slicer
+      keeps SL_LEN samples for each of the 4 tracks (4096 = 8 KB a
+      track, 186 ms); the FX hold layer's loop buffer (perform.c) is the
+      same memory. Power of two, at least 2048 (the OCT UP / DN delay
+      uses 4096 stereo frames of it). The default is upstream's value.
+
+# kc2mm:hide
+config ARENA_MIN_LEFT
+    int "Bytes the build must leave free for the audio arena"
+    depends on AUDIO
+    default 0 if AUDIO_FELUCCA_STACK_INCLUDED
+    default 16384
+    help
+      Checked by tools/build/mem_report.py after the link for linker scripts
+      without _resource_minimum (the emulator map). 0 for a build in which
+      nothing borrows from the arena: the included Felucca stack uses fixed
+      buffers only.
+
+# kc2mm:hide
 config AUDIO_24BIT
     bool "24-bit internal pipeline (Q23)"
     default n

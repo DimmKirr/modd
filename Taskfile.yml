@@ -63,6 +63,10 @@ tasks:
       - fm1-platform:download:sdk
       - fm1-platform:download:toolchain
       - vendor:ensure
+      # Applies patches/<upstream>/*.patch to a copy in this build's gen/ dir (runs after vendor:ensure:
+      # vendor:patch depends on it). One copy per defconfig and toolchain, like the checksum below.
+      - task: vendor:patch
+        vars: { DEFCONFIG: '{{.DEFCONFIG}}', OUT: 'build/{{.DEFCONFIG}}{{._TC}}' }
       - task: toolchain:open:ensure
         vars: { OPEN: '{{.OPEN}}' }
     vars:
@@ -83,6 +87,8 @@ tasks:
     sources:
       - firmware/**/*
       - tools/build/build.py
+      - tools/build/patches.py
+      - patches/**/*.patch
       - tools/build/genconfig.py
       - tools/codegen/logo_convert.py
       - tools/codegen/gen_engine_tables.py
@@ -527,7 +533,7 @@ tasks:
     desc: Regenerate UI navigation diagrams and controls tables for all themes
     vars:
       THEMES:
-        sh: uv run --quiet python tools/codegen/gen_ui_map.py list-themes
+        sh: uv run --quiet python tools/codegen/gen_ui_map.py list-shells
     cmds:
       - for: { var: THEMES }
         cmd: uv run --quiet python tools/codegen/gen_ui_map.py inject docs/ui/shells/{{.ITEM}}/UI.md {{.ITEM}}
@@ -541,7 +547,7 @@ tasks:
     desc: Verify generated docs match their sources (for CI)
     vars:
       THEMES:
-        sh: uv run --quiet python tools/codegen/gen_ui_map.py list-themes
+        sh: uv run --quiet python tools/codegen/gen_ui_map.py list-shells
     cmds:
       - uv run --quiet kc2mm inject --check docs/COMPONENTS.md --kconf-dir kconf
       - uv run --quiet python tools/codegen/gen_ui_map.py hw-controls --check docs/ui/README.md

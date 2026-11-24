@@ -72,7 +72,7 @@ Implement three render hooks (`render_header`, `render_footer`, `render_card`),
 map buttons to views with a declarative controls struct, add pages with toast
 notifications and scrolling lists. Auto-generated docs with emulator screenshots
 verify your shell in CI. Two shells ship: modd (the default, drawn with LVGL v9.6
-widgets) and Felucca (ported from hugelton's firmware). Melodee provides the
+widgets) and Felucca (modd's own LVGL pages in the Felucca layout, with hugelton's engines and several of its files included from the upstream source; docs/UPSTREAM_ORIGINS.md lists which files are copies). Melodee provides the
 LCD driver the modd shell draws through.
 
 - Layout vtable: [`firmware/src/ui/ui_layout.h`](firmware/src/ui/ui_layout.h)

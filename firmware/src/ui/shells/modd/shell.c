@@ -68,12 +68,12 @@ static void shell_knob(uint32_t id, int32_t clicks)
         uint32_t i;
         for (i = 0; i < p->knob_count; i++) {
             const param_slot_t *s = &p->knob_map[i];
-            if (s->enc_id != (uint8_t)id || s->pid >= P_COUNT)
+            if (s->enc_id != (uint8_t)id || !MODD_P_VALID(s->pid))
                 continue;
             track_t *t = (s->flags & SLOT_TRACK)
                 ? &trk[i < NTRK ? i : 0]
                 : &trk[song.sel];
-            int16_t v = t->p[s->pid] + (int16_t)(clicks * s->step);
+            int16_t v = modd_tp(t, s->pid) + (int16_t)(clicks * s->step);
             if (s->flags & SLOT_WRAP) {
                 if (v < s->min) v = s->max;
                 if (v > s->max) v = s->min;
@@ -81,7 +81,7 @@ static void shell_knob(uint32_t id, int32_t clicks)
                 if (v < s->min) v = s->min;
                 if (v > s->max) v = s->max;
             }
-            t->p[s->pid] = v;
+            modd_tp_set(t, s->pid, v);
             nav_dirty = 1;
             return;
         }

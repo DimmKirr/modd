@@ -37,11 +37,11 @@ static void lvt_simple_show(const lvt_simple_t *s, const char *const *labels)
     for (k = 0; k < 4u; k++) {
         int32_t v, span, ratio;
         const char *lab = (labels && labels[k]) ? labels[k] : s[k].label;
-        if (s[k].pid >= P_COUNT) {
+        if (!MODD_P_VALID(s[k].pid)) {
             lvt_card_set(k, "", "", "", lvt_pal.dim, -1);
             continue;
         }
-        v = trk[song.sel].p[s[k].pid];
+        v = modd_tp(&trk[song.sel], s[k].pid);
         span = s[k].max - s[k].min;
         ratio = span > 0 ? (v - s[k].min) * 1000 / span : 0;
         if (s[k].min < 0) lv_snprintf(b, sizeof b, "%+d", (int)v);

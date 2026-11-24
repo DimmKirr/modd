@@ -16,7 +16,7 @@
  * 0x01C7FD50.. is reserved: boot_info, boot-state mailbox, vector table. */
 MEMORY
 {
-    XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = 0x8C000   /* body ends before commit-marker sector 0x91000 */
+    XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = FLASH_BODY_MAX   /* body ends before the commit-marker sector (hal/fm1_flash_map.h); build.py passes --defsym */
     RAMTEXT (rwx): ORIGIN = 0x01C00000, LENGTH = 0x7F00
     RAM    (rwx) : ORIGIN = 0x01C08000, LENGTH = 96K
     POOL   (rwx) : ORIGIN = 0x01C20000, LENGTH = 0x54000

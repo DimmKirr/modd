@@ -29,7 +29,9 @@
 #include "ui/shells/modd/page_tools.c"
 #include "ui/shells/modd/page_step.c"
 #include "ui/shells/modd/page_detail.c"
+#ifdef CONFIG_SEQ_FELUCCA                /* the step locks it edits are the Felucca sequencer's (seq/seq.c) */
 #include "ui/shells/modd/page_automation.c"
+#endif
 #include "ui/shells/modd/page_lfo2.c"
 #include "ui/shells/modd/page_lfo_dest.c"
 #include "ui/shells/modd/page_mod.c"
@@ -128,7 +130,9 @@ static void shell_register_pages(void)
     nav_register(&PAGE_SEQ);
     nav_register(&PAGE_STEP);
     nav_register(&PAGE_DETAIL);
+#ifdef CONFIG_SEQ_FELUCCA
     nav_register(&PAGE_AUTOMATION);
+#endif
     nav_register(&PAGE_USER);
     nav_register(&PAGE_PRESETS);
     nav_register(&PAGE_PHRASES);

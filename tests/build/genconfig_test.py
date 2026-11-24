@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """Unit tests for Kconfig loading and genconfig output.
 
-Results are written to tests/results/<timestamp>-test_genconfig/<subtest>/.
+Results are written to tests/results/<timestamp>-<run>/test_genconfig/<subtest>/.
 """
 import os
 import subprocess

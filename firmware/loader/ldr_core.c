@@ -40,13 +40,13 @@
  *   ldr_record_clear()    forget the RAM update record
  *   ldr_progress(done, total)
  * plus the ota.c hooks (frames, time, idle). */
-#define LDR_APP_LO 0x4000u
-#define LDR_APP_HI 0x93000u
-#define LDR_REC_LO 0x93000u                     /* update records live above the app ... */
-#define LDR_REC_HI 0xFC000u                     /* ... and below Melodee's globals */
-#define LDR_STUB_SEC 0x4000u                    /* the directory and the boot stub */
-#define LDR_MARK_SEC 0x91000u                   /* stub_core.h STUB_MARK_SEC, STUB_MARK_OFF */
-#define LDR_MARK_OFF 0x91FE0u
+#define LDR_APP_LO FLASH_APP_LO
+#define LDR_APP_HI FLASH_APP_END
+#define LDR_REC_LO FLASH_APP_END                     /* update records live above the app ... */
+#define LDR_REC_HI FLASH_GLOB_LO                     /* ... and below Melodee's globals */
+#define LDR_STUB_SEC FLASH_APP_LO                    /* the directory and the boot stub */
+#define LDR_MARK_SEC FLASH_MARK_SEC                /* stub_core.h STUB_MARK_SEC, STUB_MARK_OFF */
+#define LDR_MARK_OFF FLASH_MARK_OFF
 
 static int ldr_fread(uint32_t off, void *p, uint32_t n);
 static int ldr_erase(uint32_t off);
@@ -119,7 +119,7 @@ static int ldr_pkg_marker(uint32_t fl_off, uint8_t *b, uint32_t key, uint32_t st
     ldr_sfc(b, 512, (LDR_MARK_OFF & ~0x1FFu) - LDR_APP_LO, key);
     uint32_t len = ota_rd32(m + 8);
     int valid = ota_rd32(m) == 0x4D425243u && ota_rd32(m + 4) == 1u &&
-                len && !(len & 3u) && len <= 0x8C000u && ota_rd32(m + 16) == ldr_crc32(m, 16);
+                len && !(len & 3u) && len <= FLASH_BODY_MAX && ota_rd32(m + 16) == ldr_crc32(m, 16);
     /* A damaged marker must not silently select the legacy write order for
      * an image whose entry is the recovery stub. Reject before any erase. */
     return stub && !valid ? -15 : valid;

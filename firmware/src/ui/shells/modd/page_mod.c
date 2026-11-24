@@ -2,7 +2,9 @@
 /* Copyright (C) 2026 Dmitry Kireev (@DimmKirr) */
 /* MOD: 4-slot modulation matrix. K1 picks the slot, K2/K3/K4 edit SRC/DST/AMT. */
 
+#ifndef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED   /* the stack's params.c owns mod_ui_slot */
 static uint32_t mod_ui_slot;
+#endif
 
 static void lvt_mod_show(void)
 {
@@ -12,8 +14,8 @@ static void lvt_mod_show(void)
     s[0] = (char)('A' + mod_ui_slot);
     s[1] = 0;
     lvt_card_set(0, "SLOT", s, "", lvt_pal.primary, -1);
-    lvt_card_set(1, "SRC", mod_src_name((uint32_t)t->p[P_M1SRC + base]), "", lvt_pal.primary, -1);
-    lvt_card_set(2, "DST", mod_dst_name((uint32_t)t->p[P_M1DST + base]), "", lvt_pal.primary, -1);
+    lvt_card_set(1, "SRC", modd_mod_src_name((uint32_t)t->p[P_M1SRC + base]), "", lvt_pal.primary, -1);
+    lvt_card_set(2, "DST", modd_mod_dst_name(t, (uint32_t)t->p[P_M1DST + base]), "", lvt_pal.primary, -1);
     lv_snprintf(b, sizeof b, "%+d", (int)t->p[P_M1AMT + base]);
     lvt_card_set(3, "AMT", b, "", lvt_pal.primary, (t->p[P_M1AMT + base] + 64) * 1000 / 127);
 }

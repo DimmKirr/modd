@@ -1,0 +1,41 @@
+Description: DLY_LEN, CHO_LEN and SL_LEN can be set by the build
+ Guards the three buffer-size defines with #ifndef so the including build
+ (CONFIG_FELUCCA_DLY_LEN, CONFIG_FELUCCA_CHO_LEN, CONFIG_FELUCCA_SL_LEN) can
+ give them a smaller value: the delay line is 128 KB of the 512 KB pool
+ and the hardware memory map does not hold it yet. Hook only: with nothing
+ defined, the sources are the same as upstream's.
+Approved-by: Dmitry Kireev, 2026-11-23
+Forwarded: no
+Applies-to: hugelton/Felucca v1.8.2 (6162de864075ad9edb8cd35e0e45ba75faa5d0db)
+---
+diff --git a/firmware/src/fx.c b/firmware/src/fx.c
+index d2bcf92..bfd3d2f 100644
+--- a/firmware/src/fx.c
++++ b/firmware/src/fx.c
+@@ -2,8 +2,12 @@
+  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ /* Effects: per-track DIST and INSERT (1.5), then sends into three
+  * shared buses (chorus, tempo delay, reverb). Mono buses, stereo dry mix. */
++#ifndef DLY_LEN
+ #define DLY_LEN 65536u           /* 1.49 s: 1/4 fits from 41 BPM, 1/4D from 61, 1/2 from 81 */
++#endif
++#ifndef CHO_LEN
+ #define CHO_LEN 2048u
++#endif
+ static int16_t dly_buf[DLY_LEN] __attribute__((section(".pool")));
+ static int16_t cho_buf[CHO_LEN] __attribute__((section(".pool")));
+ static const uint16_t REV_COMB[4] = {1116, 1188, 1277, 1356};
+diff --git a/firmware/src/slicer.c b/firmware/src/slicer.c
+index b3ad1f9..6fa9934 100644
+--- a/firmware/src/slicer.c
++++ b/firmware/src/slicer.c
+@@ -18,7 +18,9 @@
+  * sequencer's step 0), BPM and the track's + the global SWING as the sequencer has them (seq.c
+  * step_samples); sample exact. With the SLICER OFF and no ramp left, the signal is not touched. */
+ #define SL_NPAT 16
++#ifndef SL_LEN
+ #define SL_LEN 4096u                    /* recording, 22.05 kHz samples a track: 186 ms, 8 KB */
++#endif
+ #define SL_RAMP_LOG2 7
+ #define SL_RAMP (1 << SL_RAMP_LOG2)     /* 128 samples, 2.9 ms */
+ #define SL_SLOPE (32768 / SL_RAMP)

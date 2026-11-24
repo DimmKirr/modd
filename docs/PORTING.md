@@ -2,7 +2,197 @@
 
 How upstream code gets ported to modd, module by module.
 
-## Strategy: mock first, wire later
+## The rule: upstream code, through an adapter, into modd
+
+**Never copy or rewrite upstream code unless duplication / forking is approved by the user.**
+
+**The work of porting is writing the adapter, and nothing else.** If a port step produces anything other than adapter code, a thin wrapper, a Kconfig symbol and an `#include`, it is not a port step: stop and ask.
+
+A component is *ported* when the upstream source file is compiled as it is, from `firmware/upstream/<name>/`, and everything modd-specific lives in an adapter (`firmware/adapters/modd_*.h`) or in a thin wrapper file next to the include.
+
+```
+firmware/upstream/felucca/firmware/src/eng_adpcm.c     upstream, never edited (vendir)
+        |  #include
+firmware/src/audio/engines/eng_adpcm_modd.c            wrapper: renames, one signature, the vtable
+        |  conforms to
+firmware/adapters/modd_engine.h                        adapter contract (engine_t)
+```
+
+### Classes
+
+Every layer of a build is in one of six classes. Say the class in the ticket, the commit message and the report.
+
+| Class | Meaning | Counts as ported |
+|-------|---------|------------------|
+| INCLUDED | the upstream file is `#include`d unchanged; glue is in an adapter or wrapper | yes |
+| PATCHED | the upstream file is `#include`d through a build-time copy with an approved patch from `patches/<upstream>/` applied (a hook only); `firmware/upstream/` is unchanged | yes, with the patch named |
+| COPIED | a copy of the upstream file lives in `firmware/src/` and is edited there | no: needs the user's approval |
+| REDUCED | a copy with features removed to fit modd's types | no: needs the user's approval |
+| REWRITTEN | the behaviour is re-created by hand in new modd code | no: needs the user's approval |
+| OTHER UPSTREAM | the slot is filled by another firmware's code (Melodee storage in a Felucca build) | no |
+
+State on 2026-11-24 for the Felucca build (`modd_felucca_emu`, `CONFIG_AUDIO_FELUCCA_STACK_INCLUDED`): the ten engines are INCLUDED; the audio stack (core, params, mod matrix, slicer, effects, mixer) is INCLUDED, with `fx.c` and `slicer.c` PATCHED for their buffer sizes; the sequencer is REDUCED; the 52 shell pages are REWRITTEN; storage and FM6 are OTHER UPSTREAM. Hardware `modd_felucca` still builds the older copies (effects and mod matrix COPIED). Whether the modd shell's pages may stay a rewrite is an open decision of the user's (`.scratch/tasks/todo/2026-11-23T13-10-felucca-port-upstream-through-adapter-not-rewrite.md`).
+
+### Do
+
+The model is `firmware/src/audio/engines/eng_adpcm_modd.c`. The whole wrapper is the difference between upstream and modd, and nothing else:
+
+```c
+/* Origin: hugelton/Felucca firmware/src/eng_adpcm.c @ v1.6.1 (a53ecf42)
+ * Wrapper: adapts adp_post signature (Felucca: 3-arg uint32_t return;
+ * modd engine_t: 4-arg void) and rebuilds the ENG_ADPCM vtable. */
+#define adp_post  _felucca_adp_post          /* rename what clashes */
+#define ENG_ADPCM _FELUCCA_ENG_ADPCM
+#include "upstream/felucca/firmware/src/eng_adpcm.c"   /* upstream, unchanged */
+#undef adp_post
+#undef ENG_ADPCM
+
+static void adp_post(track_t *t, int32_t *out, uint32_t n, uint32_t nr)
+{
+    (void)nr;
+    _felucca_adp_post(t, out, n);            /* adapt one signature */
+}
+
+static const engine_t ENG_ADPCM = { .name = "ADPCM", /* ... modd's vtable ... */ };
+```
+
+1. `#include` the upstream file from `firmware/upstream/`.
+2. Put renames, signature shims and the modd vtable in `<name>_modd.c`, with an `Origin:` line pinned to the upstream commit.
+3. When upstream needs a type, field or function modd lacks, add it to the adapter (`modd_*.h`), so the next upstream file gets it too.
+4. Guard the include with its `CONFIG_*` symbol.
+
+### Do not
+
+- Do not copy an upstream `.c` into `firmware/src/` and edit it there.
+- Do not trim an upstream file to the fields modd has today ("reduced to modd's `track_t`"): extend the adapter types.
+- Do not re-create upstream behaviour in new code (a page that "replicates" a layout, a sequencer that "implements the interface").
+- Do not carry a private copy of an upstream table or constant in a wrapper (`eng_slice_modd.c` has its own `ENV_EXP`, built for the wrong control tick: a defect of exactly this kind).
+- Do not edit anything under `firmware/upstream/` or `firmware/vendor/`.
+
+### What to try, in order
+
+Go down this list and stop at the first step that works. Each step is tried only after the one above it has failed, and the failure is written in the ticket (the symbol and the error).
+
+| # | Step | Where the code goes | Class | Example in the tree |
+|---|------|---------------------|-------|---------------------|
+| 1 | `#include` the upstream file as it is | wrapper `<name>_modd.c` | INCLUDED | `firmware/src/audio/core/felucca/stack_modd.c` |
+| 2 | Rename what clashes, for the span of the include (`#define x up_x` ... `#undef x`) | wrapper | INCLUDED | `eng_adpcm_modd.c` above |
+| 3 | Supply what the file expects from its includer: a macro, a switch, a type with the fields it reads, a function it calls | wrapper, or `firmware/adapters/modd_*.h` when a second file will need it | INCLUDED | `fx_unit_sloop_insert_modd.c` (the parameter record, the ids, the dry-copy arrays) |
+| 4 | The file needs a helper from its own upstream that clashes with one modd already has: include that upstream's helper file too, every shared name renamed for the span of the include | a wrapper of its own | INCLUDED | `firmware/src/audio/effects/host/dsp_optimist_modd.c` (Optimist's `dsp.c` beside Felucca-Engines' `dsp.c`, 17 names renamed) |
+| 5 | A constant or a hook the file fixes with a plain `#define`: a patch | `patches/<upstream>/` | PATCHED | `patches/felucca/0001-buffer-sizes-from-config.patch` |
+| 6 | Stop and report the blocker; ask for a fork by file name | the ticket | none | see the stop rule below |
+
+Never between 4 and 6: a few lines copied "because it is only a helper". A 3-line copy of Optimist's `glide_next` was made that way on 2026-11-23 and removed again with step 4.
+
+### Patches: a hook in an upstream file
+
+A patch is for what no adapter can reach: a size or a switch that upstream writes as a plain `#define` (no `#ifndef`), so that a `#define` before the include does nothing. The user approved the mechanism on 2026-11-23 as a fallback, and approves each patch by upstream file name. Class PATCHED: the file is still included from its upstream path, through a patched copy.
+
+How it works: `firmware/upstream/` is never edited. `task build` runs `task vendor:patch` after `task vendor:ensure`. It copies the files a patch touches to `build/<defconfig>[-open]/gen/patched/upstream/<name>/`, applies `patches/<name>/NNNN-*.patch` there in file-name order with `git apply` (strict: a hunk that does not fit stops the build), and the build puts that directory first on the include path. The wrapper's `#include "upstream/felucca/firmware/src/fx.c"` does not change. The series is applied to pristine files on every run; there is no "already applied" state.
+
+What a patch may contain:
+
+- Allowed: `#ifndef` / `#endif` around a constant, or a hook of that kind. The value comes from Kconfig and is set in the wrapper. With no value set, the image is byte-identical to the unpatched build.
+- Not allowed without a new approval by file name: a change of behaviour (audio code, control flow), a file nobody approved, a new or deleted file.
+
+#### Add a patch, step by step
+
+The first patch is the worked example: Felucca's delay, chorus and slicer buffer sizes.
+
+1. Show that steps 1 to 4 above cannot do it. Quote the upstream line (`#define DLY_LEN 65536u`, `fx.c:5`) and why a `#define` before the include fails (upstream redefines it).
+2. Ask the user for the patch by file name and by what it changes: "may I patch Felucca `firmware/src/fx.c` and `slicer.c`: `#ifndef` around `DLY_LEN`, `CHO_LEN`, `SL_LEN`, nothing else?". No approval, no patch.
+3. Write the diff on a copy outside the vendored tree and add the header (`Description`, `Approved-by`, `Forwarded`, `Applies-to` with the commit from `vendir.lock.yml`). Commands and the header format: [patches/README.md](../patches/README.md). Save as `patches/<upstream>/NNNN-<what>.patch`; the number is the order.
+4. Add the Kconfig symbols that carry the values, defaults equal to upstream's (`FELUCCA_DLY_LEN`, `FELUCCA_CHO_LEN`, `FELUCCA_SL_LEN` in `kconf/audio.kconfig`). Put limits upstream relies on into `range` and the help text.
+5. In the wrapper, define the constants from Kconfig before the include, and assert what upstream assumes about them (`stack_modd.c`: `#define DLY_LEN (CONFIG_FELUCCA_DLY_LEN + 0u)` and a `_Static_assert` that it is a power of two, because upstream masks with `DLY_LEN - 1u`).
+6. Add the PATCHED row to `docs/UPSTREAM_ORIGINS.md` (the patch file, the upstream files, who approved, when).
+7. Check it:
+   - `task vendor:patches:check`: header complete, commit matches the lock, the series applies.
+   - Byte identity: build once with the patch and default values and once with `patches/` moved away, both with a fixed `FIRMWARE_VERSION` (the default version string holds the build time); the two `body.bin` must be equal.
+   - The hook: one build with a changed value, read the memory report (`DLY_LEN` 32768: `dly_buf` 128.0K to 64.0K), run the routine test, then put the defconfig back.
+   - `task test:unit` (`tests/build/patches_test.py`, `tests/build/upstream_origin_test.py`).
+8. Report the class as PATCHED and paste the patch text into the ticket.
+
+#### Keeping patches working
+
+- After `task vendor:sync` moved a pin, run `task vendor:patches:check`. It fails when `Applies-to` names another commit than `vendir.lock.yml`, or when a hunk no longer fits. Read the patch against the new upstream file, regenerate the diff, update `Applies-to`. Do not edit hunks by hand to make them fit.
+- If upstream took the hook, delete the patch, its row and nothing else: the Kconfig symbols and the wrapper lines keep working.
+- CI runs the check in the `test` job. The build stops with "the patched upstream tree is not current" when the copy is missing or stale; `task build` repairs it, `python tools/build/patches.py` by hand is for experiments only.
+- `vendor:patch` reruns when `patches/**/*.patch` or `vendir.lock.yml` changed (one cache entry per defconfig and toolchain). Every build applies every upstream's series, also for upstreams it does not include.
+
+### When the include does not compile: stop rule
+
+1. Name the blocker exactly: the symbol that clashes, the field `track_t` lacks, the function upstream calls that modd does not have.
+2. Fix it in the adapter or the wrapper (rename, shim, new field, a small glue function).
+3. If that is not possible, **stop and report** the blocker and what the adapter would need. Do not fall back to a copy or a rewrite: that needs the user's approval, asked for by name ("may I fork `seq.c` into `firmware/src/seq/`?").
+
+An approved fork is recorded where it lives: the `Origin:` line, one sentence saying who approved it and why, and the class in the ticket.
+
+### Done
+
+A port step is done when the layer is INCLUDED, the routine test below passes on its checks, and the ticket names the class. "The test passes" on a COPIED, REDUCED or REWRITTEN layer is not "ported": say which it is.
+
+### Wording for tasks and prompts
+
+"Port" alone is ambiguous: it has been read as include, as copy and as rewrite. Write the class into the request.
+
+| Instead of | Write |
+|------------|-------|
+| "Port the Felucca sequencer" | "Make upstream `firmware/upstream/felucca/firmware/src/seq.c` compile unchanged behind `modd_seq.h`. Add what it needs to the adapter. If it cannot be included, stop and name the blocker; do not copy or cut it down." |
+| "Implement SPREAD per-voice pan" | "SPREAD is upstream's, in its voice render. Find what stops that file from being included and report it. Do not write a new pan." |
+| "Add the MENU page" | "The modd shell pages are REWRITTEN (approved or pending: see the ticket). Take the MENU rows and their order from upstream `ui_menu.c`; do not invent rows." |
+| "Wire the DRUM engine" | "Include upstream `eng_drum.c` behind a wrapper `eng_drum_modd.c` like `eng_adpcm_modd.c`. Class must be INCLUDED." |
+
+Every such request ends with: "Report the class of what you delivered (INCLUDED / COPIED / REDUCED / REWRITTEN / OTHER UPSTREAM) and any upstream line you changed or left out."
+
+### Paste this into any porting task
+
+```
+Porting rule (the owner's words):
+  "Never copy or rewrite upstream code unless duplication / forking is approved by the user."
+  "The work of porting is writing the adapter, and nothing else."
+
+A port step may produce: adapter code (firmware/adapters/modd_*.h), a thin
+<name>_modd.c wrapper, a Kconfig symbol, and an #include of the upstream file.
+Nothing else.
+
+Stop rule: if the include does not compile, name the blocker (the exact symbol,
+field or function), fix it in the adapter or wrapper, or stop and report. A fork
+needs the user's approval, asked for by file name.
+
+Do not copy an upstream file into firmware/src. Do not trim it. Do not re-create
+its behaviour in new code.
+Order of attempts: include as is; rename what clashes around the include; supply
+what the file expects in the wrapper or adapter; include the upstream's own helper
+file renamed beside modd's; only then a patch (patches/<upstream>/NNNN-*.patch: a
+hook such as #ifndef around a constant, value from Kconfig, approved by the user by
+file name, class PATCHED; steps in docs/PORTING.md "Add a patch, step by step").
+Never edit firmware/upstream/. Never copy "just a helper".
+List the file in docs/UPSTREAM_ORIGINS.md (tests/build/upstream_origin_test.py
+checks it).
+Test only modd_<upstream>_emu with the routine command from docs/PORTING.md.
+End your report with the class of what you delivered (INCLUDED / PATCHED / COPIED /
+REDUCED / REWRITTEN / OTHER UPSTREAM) and every upstream line you changed or left out.
+```
+
+### Before you start a port step
+
+1. Which upstream file is it (`firmware/upstream/<name>/...`)?
+2. Which adapter contract does it plug into (`firmware/adapters/modd_*.h`)?
+3. What does the include fail on? Compile it and quote the first errors.
+4. Has the user approved a fork of this file? The default answer is no.
+5. Does `patches/<upstream>/` already hold a series for this upstream? Read it: the hook you need may exist, and your include gets the patched copy.
+
+### Forks in the tree today
+
+`docs/UPSTREAM_ORIGINS.md` lists every file with an `Origin:` line and its class. On 2026-11-23 it has:
+
+- WRAPPER: 2 (`eng_adpcm_modd.c`, `eng_slice_modd.c`), included unchanged.
+- HEADER-DERIVED: 39 adapter and HAL headers derived from upstream headers.
+- FORK: 33, none approved (`not approved: to be replaced by an include`).
+
+## Bringing a shell up without modules: mock first, wire later
+
+This is how the shell is developed before the real modules are in, not a way to port. Mock data stands in for a module; it never replaces upstream code.
 
 Every module follows the same three-phase approach:
 
@@ -11,6 +201,43 @@ Every module follows the same three-phase approach:
 3. **Wire real components** - enable the Kconfig symbol, mock stubs get skipped, real implementations populate the same globals
 
 Code ported in phase 2 never changes in phase 3. It only reads from adapter-defined types.
+
+## Testing a port: one emulator defconfig
+
+Porting an upstream builds and tests one firmware: that upstream's emulator defconfig, `modd_<upstream>_emu`. No other defconfig is built or tested while the port is in progress.
+
+| Porting | Build and test only | Task |
+|---------|---------------------|------|
+| Felucca | `modd_felucca_emu` | `task modd:test:modd_felucca_emu:api` |
+| Melodee | `modd_melodee_emu` | `task modd:test:modd_melodee_emu:api` (defconfig and task not created yet) |
+| SLOOP | `modd_sloop_emu` | `task modd:test:modd_sloop_emu:api` (defconfig and task not created yet) |
+| any other upstream | `modd_<upstream>_emu` | `task modd:test:modd_<upstream>_emu:api` |
+
+The first step of a port whose row says "not created yet" is to add the two: `configs/modd_<upstream>_emu_defconfig`, and `build:modd_<upstream>_emu` plus `test:modd_<upstream>_emu:api` in `configs/Taskfile.yml`, copied from the `modd_felucca_emu` pair.
+
+The routine test is one command, about five minutes. For Felucca:
+
+```
+task modd:test:modd_felucca_emu:api -- tests/boot/api_boot_test.py tests/audio/api_audio_test.py tests/audio/api_audio_engines_test.py
+```
+
+For another upstream, the same command with its name in the task.
+
+It builds `modd_<upstream>_emu` once (open toolchain, `build/modd_<upstream>_emu-open/`; skipped when nothing changed) and runs against that package:
+
+| Tests | What they check |
+|-------|-----------------|
+| `tests/ui/shells/modd/api/` (the task's own list) | the modd shell: pages, page data, panel controls, palettes, the walkthrough with OCR |
+| `tests/boot/api_boot_test.py` | boot, and every panel control reaches the firmware |
+| `tests/audio/api_audio_test.py` | capture follows the output; Analog plays at pitch through the effects chain |
+| `tests/audio/api_audio_engines_test.py` | each engine sounds, master volume, balance, engine round trips, and the Felucca sample engines |
+
+Rules:
+
+- Do not run `task test:api`, `task build`, another upstream's emulator defconfig or a hardware defconfig as part of the routine. `task test:api` tests `modd_emu` and then builds `modd` and `felucca` for the USB safety scan. Run the wider set once, before committing: `task test:unit`, then the builds of the defconfigs that share the changed files (for Felucca: `modd_emu`, `modd_felucca`, `modd`).
+- The paths after `--` are added to the task's test list. To run one file or one class, call pytest with the same environment: `USE_OPEN_TOOLCHAIN=1 MODD_API_DEFCONFIG=modd_<upstream>_emu uv run --group ui-test pytest <path> -k <class>`. Without `USE_OPEN_TOOLCHAIN=1` pytest looks in `build/modd_<upstream>_emu/`, the JieLi build.
+- A class that names its own `DEFCONFIG` (`TestFeluccaSampleEngines`) boots that build whatever the task says. A class without one boots the task's defconfig.
+- The shell tests are behind the shell (2026-11-23). They expect 17 pages (`PAGES` in `modd_api_test.py`) with FILES, DISK, ABOUT and LOG, a THEME row in Settings, and the CLAY palette. The shell now has about 50 pages, none of those four, and a PALETTE row, so the page-list, page-hold and walkthrough tests fail on `modd_emu` as well. `modd_felucca_emu` also has no DEMO page and starts on the GREY palette, which fails the colour tests: 22 shell tests fail on it in all, none of them a reset. The pages the list does not name (STEP, DETAIL, AUTO and the rest) are not visited. Until the page list comes from `/api/pages`, read a shell failure against this list before treating it as a defect of the port.
 
 ## Adapter layer
 
@@ -87,6 +314,8 @@ New splash styles can be added as Kconfig options (e.g. animated splash).
 
 ### Felucca UI port (worked example)
 
+This example describes the upstream-renderer Felucca shell (`firmware/src/ui/shells/felucca/`), written before the rule above. By class: step 1 is INCLUDED; steps 2 to 5 are COPIED or REWRITTEN ("extracted", "replicate", pages written for modd) and are not a pattern to repeat without the user's approval. The modd shell (`CONFIG_UI_SHELL_MODD`, the shell of `modd_felucca_emu`) has its own pages in `firmware/src/ui/shells/modd/page_*.c`, all REWRITTEN.
+
 #### 1. Upstream renderer (gfx.c)
 
 The Felucca canvas renderer was included as-is from the vendored upstream tree
@@ -130,7 +359,7 @@ Each page is a `modd_page_t` with `.draw`, `.knob`, `.button`, `.key` callbacks:
 
 #### 6. Build configuration
 
-`configs/felucca_mock_defconfig`:
+`configs/felucca_mock_defconfig` (no longer in `configs/`; shown for the idea):
 ```
 CONFIG_INPUT=y
 CONFIG_UI_SHELL_FELUCCA_UPSTREAM=y
@@ -141,9 +370,9 @@ To wire real audio, enable `CONFIG_AUDIO=y`. The `#ifndef CONFIG_AUDIO` guard in
 
 ### Porting a different UI upstream
 
-1. Include their renderer (gfx equivalent)
+1. Include their renderer (gfx equivalent) unchanged
 2. Create adapter stubs with realistic mock data
-3. Write pages that read from the adapter types
+3. Include their pages and input code behind the page adapter (`modd_page.h`). Writing new pages is a rewrite: ask the user first (see [the rule](#the-rule-upstream-code-through-an-adapter-into-modd))
 4. Build with the upstream's UI Kconfig + mocked modules
 5. Wire real modules one at a time
 
@@ -169,18 +398,19 @@ Engines implement the `engine_t` vtable (defined in `modd_engine.h`, MIT license
 
 Engine cost is measured in VBUDGET units (Prophet: 2-3, FM6: 2, CZ-1: 1).
 
-Engines compile independently of the full audio core via `CONFIG_ENGINES` (auto-selected). Build-time table generator (`tools/gen_engine_tables.py`) produces `fe_tables.h` with SINE, PITCH_OCT, SVF_G, and TANH_Q15 lookup tables. DSP helpers (`dsp.c`) provide fixed-point math.
+Engines compile independently of the full audio core via `CONFIG_ENGINES` (auto-selected). Build-time table generator (`tools/codegen/gen_engine_tables.py`) produces `fe_tables.h` with SINE, PITCH_OCT, SVF_G, and TANH_Q15 lookup tables. DSP helpers (`dsp.c`) provide fixed-point math.
 
-Porting an engine:
-1. Copy the engine source to `firmware/src/audio/engines/`
-2. Copy `dsp.c` if not already present (shared DSP helpers, MIT)
-3. Add Kconfig symbol `CONFIG_ENGINE_<NAME>` in `kconf/engines.kconfig` with `select ENGINES`
-4. Add conditional `#include` in `engines.c`
-5. Register in the `ENGINES[]` array
+Porting an engine (class INCLUDED):
+1. Leave the source where vendir put it (`firmware/upstream/felucca-engines/src/`, `firmware/upstream/felucca/firmware/src/`, ...). Do not copy it.
+2. If it compiles against `modd_engine.h` as it is, `#include` it from `engines.c` under its `CONFIG_ENGINE_<NAME>` guard (`eng_analog.c`, `eng_noise.c` are included this way).
+3. If a name or a signature differs, add a wrapper `firmware/src/audio/engines/eng_<name>_modd.c` that renames, includes and adapts (`eng_adpcm_modd.c`), and include the wrapper.
+4. Add the Kconfig symbol in `kconf/engines.kconfig` with `select ENGINES`.
+5. Register in the `ENGINES[]` array.
+6. Shared DSP helpers come from `firmware/upstream/felucca-engines/src/dsp.c`, included unchanged by `modd.c`; a helper another upstream needs and that file lacks goes into the adapter, not into a private copy.
 
 ### NOISE engine (worked example)
 
-The NOISE engine was ported from Felucca (MIT, 271 lines). It compiles against `modd_engine.h` / `modd_audio.h` without modification: `voice_t`, `vmod_t`, `engine_t`, and `track_t` are type-compatible.
+The NOISE engine is Felucca's (MIT, 271 lines), class INCLUDED: `engines.c` includes `upstream/felucca-engines/src/eng_noise.c`. It compiles against `modd_engine.h` / `modd_audio.h` without modification: `voice_t`, `vmod_t`, `engine_t`, and `track_t` are type-compatible.
 
 Dependencies: `fe_tables.h` (generated), `dsp.c` (MIT helpers: `clamp`, `mulq15`, `noise32`, `softclip`, `soft_knee`, `voice_amp`), and the SVF_G cutoff table.
 
@@ -188,7 +418,7 @@ Config: `CONFIG_ENGINE_NOISE=y` in the defconfig. No `CONFIG_AUDIO` required: th
 
 ### ANALOG engine (worked example)
 
-The ANALOG engine was ported from Felucca (MIT, ~500 lines). Same process as NOISE: copy source to `firmware/src/audio/engines/eng_analog.c`, add `CONFIG_ENGINE_ANALOG` in `kconf/engines.kconfig`, add conditional `#include` in `engines.c`, register in `ENGINES[]`.
+The ANALOG engine is Felucca's (MIT, ~500 lines), class INCLUDED. Same process as NOISE: `engines.c` includes `upstream/felucca-engines/src/eng_analog.c` under `CONFIG_ENGINE_ANALOG` (`kconf/engines.kconfig`) and registers it in `ENGINES[]`. There is no copy in `firmware/src/`.
 
 Dependencies: same as NOISE (`fe_tables.h`, `dsp.c`, SVF_G table). ANALOG also uses `PITCH_OCT[]` and `SINE[]` from the generated tables for its oscillator.
 
@@ -301,7 +531,7 @@ ISR (fires every 128 samples @ 44.1kHz):
 - **TestAnalogEngine**, **TestFM6Engine**: audio on each note, at its pitch (the bin at the note's frequency at least 4x the bin two semitones up)
 - **TestNoiseEngine**: audio on each note (no pitch check)
 
-Silence before the notes is RMS 0. WAV files and screenshots are saved to `tests/results/<timestamp>-api_audio_engines_test/`.
+Silence before the notes is RMS 0. WAV files and screenshots are saved to `tests/results/<timestamp>-<run>/api_audio_engines_test/`.
 
 #### Emulator encoder timing
 
@@ -347,10 +577,12 @@ Kconfig: `CONFIG_SEQ_FELUCCA`, `CONFIG_SEQ_SLOOP`, `CONFIG_SEQ_MELODEE`.
 
 The sequencer adapter (`modd_seq.h`) defines `seq_steps()` and `seq_counting()`. The UI reads step data through the audio adapter's `step_t` type.
 
-Porting a sequencer:
-1. Implement the `modd_seq.h` interface
-2. Add Kconfig choice under `kconf/sequencer.kconfig`
-3. Conditionally include in `modd.c`
+Porting a sequencer (class INCLUDED):
+1. Include the upstream sequencer source behind `modd_seq.h`. Do not write a new sequencer against the interface.
+2. Where it needs fields `track_t` / `step_t` lack (step conditions, nudge, motion locks), add them to the adapter types.
+3. Add the Kconfig choice under `kconf/sequencer.kconfig` and the conditional include in `modd.c`.
+
+The Felucca sequencer in the tree today (`firmware/src/seq/seq.c`, 323 lines from upstream's 1,500) is REDUCED: count-in, metronome, song chain, motion automation, step conditions, NUDGE timing and external MIDI clock were cut because the adapter types had no fields for them. Do not add them back by hand; make upstream's `seq.c` includable.
 
 ---
 

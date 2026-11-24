@@ -76,7 +76,7 @@ static int lvt_automation_knob(uint32_t id, int32_t clicks)
     if (id == ENC_K4 && clicks != 0) {
         uint8_t lv = auto_locks[t][auto_step][auto_pidx];
         if (lv == 0xFF)
-            auto_locks[t][auto_step][auto_pidx] = (uint8_t)trk[t].p[auto_params[auto_pidx]];
+            auto_locks[t][auto_step][auto_pidx] = (uint8_t)modd_tp(&trk[t], auto_params[auto_pidx]);
         else
             auto_locks[t][auto_step][auto_pidx] = 0xFF;
         nav_dirty = 1;

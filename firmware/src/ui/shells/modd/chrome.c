@@ -625,6 +625,9 @@ static lv_obj_t *lvt_page_begin(void)
     const modd_page_t *p = nav_active();
     lv_obj_t *old = lvt_scr, *body;
 
+#ifdef CONFIG_RPC_INPUT
+    lv_memzero(lvt_card, sizeof lvt_card);      /* the REST API (test builds) reads the cards of the page on screen */
+#endif
     lvt_scr = lv_obj_create(NULL);
     lv_obj_remove_style_all(lvt_scr);
     lv_obj_add_style(lvt_scr, &lvt_st_scr, 0);

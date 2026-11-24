@@ -45,9 +45,12 @@ void fm1_alnk0_irq(void)
         uint32_t half = fm1_audio_free_half();
         int32_t *o = &abuf[half * HALF_WORDS];
 #ifdef CONFIG_EFFECTS_FELUCCA
-        mix_block(o, BLOCK);
         {
-            uint32_t j;
+            /* Felucca's mix, its buffers and its engines work one control tick (CTL frames) at a time */
+            uint32_t b, j;
+            _Static_assert(HALF_FRAMES % CTL == 0u, "the half-buffer is a whole number of control ticks");
+            for (b = 0; b < HALF_FRAMES; b += CTL)
+                mix_block(o + 2u * b, CTL);
             for (j = 0; j < 2u * HALF_FRAMES; j++)
                 o[j] <<= AUDIO_OUT_SHIFT;
         }
@@ -56,6 +59,9 @@ void fm1_alnk0_irq(void)
             uint32_t i;
             int32_t mv;
             mix_block();
+#ifdef CONFIG_FX_HOST
+            fx_host_run(mix_buf_l, mix_buf_r, HALF_FRAMES);   /* the master slot: after the mix, before the master volume */
+#endif
             mv = (int32_t)song.master_q12;
             for (i = 0; i < HALF_FRAMES; i++) {
 #ifdef CONFIG_AUDIO_24BIT

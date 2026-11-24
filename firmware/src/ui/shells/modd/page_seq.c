@@ -2,8 +2,14 @@
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* SEQ: 16-step sequencer view — velocity bars and step cursor. */
 
+/* 16 bars show the 16 steps around the cursor: one bar per step (NSTEP is 64) takes ~19 KB of the 32 KB
+ * LVGL heap (the old screen is deleted only after the new one is built). With 64 bars the firmware hung
+ * within a few visits of SEQ (REST gotos); with 16, 400 page changes in a row run clean. The cause is
+ * inferred from that, not read from a log. */
+#define LVT_SEQ_BARS 16u
+
 static struct {
-    lv_obj_t *bar[NSTEP];
+    lv_obj_t *bar[LVT_SEQ_BARS];
     lv_obj_t *cursor;
     uint32_t pos;
 } lvt_seq;
@@ -23,12 +29,13 @@ static void lvt_seq_show(void)
         lvt_text(lvt_card[k].value, b);
     }
 
-    for (k = 0; k < NSTEP; k++) {
-        int32_t v = t->step[k].vel;
+    for (k = 0; k < LVT_SEQ_BARS; k++) {
+        uint32_t si = lvt_seq.pos / LVT_SEQ_BARS * LVT_SEQ_BARS + k;
+        int32_t v = si < NSTEP ? t->step[si].vel : 0;
         if (v > 127) v = 127;
         lv_bar_set_value(lvt_seq.bar[k], v, LV_ANIM_OFF);
         lvt_bg_color(lvt_seq.bar[k],
-                     k == t->seq_pos ? lvt_pal.accent : lvt_pal.primary,
+                     si == t->seq_idx ? lvt_pal.accent : lvt_pal.primary,
                      LV_PART_INDICATOR);
     }
 }
@@ -47,7 +54,7 @@ static void lvt_seq_enter(void)
     lv_obj_set_style_pad_column(row, 2, 0);
     lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END);
 
-    for (k = 0; k < NSTEP; k++) {
+    for (k = 0; k < LVT_SEQ_BARS; k++) {
         lvt_seq.bar[k] = lv_bar_create(row);
         lv_obj_set_size(lvt_seq.bar[k], 10, 70);
         lv_obj_set_style_radius(lvt_seq.bar[k], 2, 0);

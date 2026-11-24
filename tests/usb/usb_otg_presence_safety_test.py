@@ -23,12 +23,12 @@ so a defconfig that forgets it builds such a firmware. Four checks:
      mode, enumerates the adapter and sends it Ethernet frames.
 
 Every USB event of the live runs is in the session's IO log
-(tests/results/<RUN_STAMP>-usb_otg_presence_safety_test/debug.log, tests/io_log.py) with the
+(tests/results/<RUN_STAMP>-<run>/usb_otg_presence_safety_test/debug.log, tests/io_log.py) with the
 emulator's time.
 
 The test builds nothing. `task test:api` builds those firmwares first, in parallel
 (configs/Taskfile.yml, test:modd_emu:api); under `task test:unit` a binary that is not
-built skips its check. Results: tests/results/<timestamp>-usb_otg_presence_safety_test/.
+built skips its check. Results: tests/results/<timestamp>-<run>/usb_otg_presence_safety_test/.
 """
 import json
 import os

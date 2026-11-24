@@ -15,6 +15,7 @@
 #pragma once
 #include <stdint.h>
 #include "fm1_xip.h"
+#include "fm1_flash_map.h"   /* the layout: every region bound below comes from it */
 
 #define RAMFN  __attribute__((section(".ram_text"), noinline, used))
 #define RAMINL static inline __attribute__((always_inline))
@@ -38,20 +39,20 @@ static inline void *fl_far(void *p) { void *volatile q = p; return q; }
 #define T4_CNT          REG32(0x10804u)            /* TIMER4, 24 MHz free-running */
 
 #define FL_XIP(off)     FM1_XIP(off)              /* fm1_xip.h */
-#define FL_DATA_LO      0x00097000u                /* Melodee main store */
-#define FL_DATA_HI      0x000E0000u
-#define FL_GLOB_LO      0x000FC000u                /* Melodee superblock / globals */
-#define FL_GLOB_HI      0x000FF000u
-#define FL_BANK_EXT_LO  0x000E5000u                /* expanded presets and project extension copies; after OTA staging */
-#define FL_BANK_EXT_HI  0x000FB000u
-#define FL_OTA_LO       0x000E0000u                /* M-UPGRADE loader staging, ota.c */
-#define FL_OTA_HI       0x000E5000u
+#define FL_DATA_LO      FLASH_DATA_LO                    /* Melodee main store */
+#define FL_DATA_HI      FLASH_DATA_HI
+#define FL_GLOB_LO      FLASH_GLOB_LO                /* Melodee superblock / globals */
+#define FL_GLOB_HI      FLASH_GLOB_HI
+#define FL_BANK_EXT_LO  FLASH_BANK_EXT_LO                /* expanded presets and project extension copies; after OTA staging */
+#define FL_BANK_EXT_HI  FLASH_BANK_EXT_HI
+#define FL_OTA_LO       FLASH_OTA_LO                /* M-UPGRADE loader staging, ota.c */
+#define FL_OTA_HI       FLASH_OTA_HI
 /* [off, off + n) inside [lo, hi), without wrapping: off + n can overflow, and
  * the 1 MiB part ignores the high address bits, so a wrapped range lands low. */
 #define FL_IN(off, n, lo, hi) ((uint32_t)(off) >= (lo) && (uint32_t)(off) <= (hi) && \
                                (uint32_t)(n) <= (hi) - (uint32_t)(off))
 /* Melodee's own store (projects, user samples; settings) */
-#define FL_STORE_OK(off, n) (FL_IN(off, n, 0x93000u, 0x97000u) || FL_IN(off, n, FL_DATA_LO, FL_DATA_HI) || FL_IN(off, n, FL_GLOB_LO, FL_GLOB_HI) || FL_IN(off, n, FL_BANK_EXT_LO, FL_BANK_EXT_HI))
+#define FL_STORE_OK(off, n) (FL_IN(off, n, FLASH_STORE_A_LO, FLASH_STORE_A_HI) || FL_IN(off, n, FL_DATA_LO, FL_DATA_HI) || FL_IN(off, n, FL_GLOB_LO, FL_GLOB_HI) || FL_IN(off, n, FL_BANK_EXT_LO, FL_BANK_EXT_HI))
 /* Where the RAM driver may erase / program. The app build allows only its own
  * data regions; the update loader (firmware/loader) defines its own window. */
 #ifndef FL_RANGE_OK
@@ -222,11 +223,11 @@ static RAMFN int fl_read_ram(uint32_t off, uint8_t *dst, uint32_t n)   /* 0x0B f
 static void fl_plain_window_init(void)
 {
     SFCENC_CON &= (uint8_t)~2u;
-    SFCENC_UNENC_L = FL_XIP(0x93000u);            /* (the app area ends there; the Prophet banks begin) */
+    SFCENC_UNENC_L = FL_XIP(FLASH_APP_END);           /* (the app area ends there; the Prophet banks begin) */
     SFCENC_UNENC_H = 0x07FFFFFFu;
     SFCENC_CON |= 2u;
     __asm__ volatile("cli" ::: "memory");
-    fl_inval(0x93000u, 0x100000u - 0x93000u);     /* drop any decrypted lines */
+    fl_inval(FLASH_APP_END, FLASH_TOTAL - FLASH_APP_END);    /* drop any decrypted lines */
     __asm__ volatile("csync\n\tsti" ::: "memory");
 }
 

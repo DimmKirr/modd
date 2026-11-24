@@ -10,12 +10,13 @@ flowchart TB
     BLE["<b>BLE</b><br/><small>midi · central · hid · bond · diag · file_transfer</small>"]
     BOOT["<b>Boot</b><br/><small>Loader · OTA</small>"]
     DEBUG["<b>Debug</b><br/><small>emu · log · log_buf · dap · framebuffer</small>"]
+    FLASH["<b>FLASH</b><br/><small>map_fm1</small>"]
     HAL["<b>HAL</b><br/><small>sys · irq · gpio · time · lcd · input<br/>flash · uart · usb · timer · mc<br/>cache · clock · power · eq · led_pwm · ble_rf</small>"]
     MIDI["<b>MIDI</b><br/><small>UART Transport · Routing<br/>Editor · Console</small>"]
     USB["<b>USB</b><br/><small>Device Driver · USB Audio · Host Controller · Network · UDisk</small>"]
     SCHED["<b>Scheduler</b><br/><small>stack_canary</small>"]
     STORAGE["<b>Storage</b><br/><small>Flash · Settings · Dock modules</small>"]
-    UI["<b>UI</b><br/><small>Shell · Controls · page_demo · RPC · Settings Menu</small>"]
+    UI["<b>UI</b><br/><small>Shell · Skin · Controls · page_demo · RPC · Settings Menu</small>"]
     WIFI["<b>WiFi</b><br/><small>STA · lwIP · WPA · weather · weather_unit_f · llm<br/>default_on · autojoin · MIDI · nonfree · in_shared_pool</small>"]
 
     BOOT -.-> STORAGE
@@ -33,14 +34,17 @@ flowchart TB
     UI -.-> HAL
     UI -.-> USB
     UI -.-> BLE
+    BOOT --> FLASH
     DEBUG --> USB
     MIDI --> USB
+    STORAGE --> FLASH
     WIFI --> DEBUG
     WIFI --> SCHED
     AUDIO --> HAL
     BLE --> HAL
     BOOT --> HAL
     DEBUG --> HAL
+    FLASH --> HAL
     MIDI --> HAL
     USB --> HAL
     SCHED --> HAL
@@ -65,6 +69,10 @@ Qualifiers (orthogonal to the tiers):
 |-----------|-----------------|---------|
 | **Capability** | What gates it on/off? | `CONFIG_WEATHER`, `CONFIG_BLE`, `CONFIG_ENGINE_FM6` |
 | **Contract** | What interface does it implement? | `modd_page.h`, `modd_engine.h`, `modd_fx.h` |
+
+### Provenance classes
+
+This page has no class column. The class of each layer (INCLUDED, PATCHED, COPIED, REDUCED, REWRITTEN, OTHER UPSTREAM) is defined in [docs/PORTING.md](PORTING.md#classes), and each file derived from an upstream is listed with its class and approval status in [docs/UPSTREAM_ORIGINS.md](UPSTREAM_ORIGINS.md). Surveyed for the Felucca build `modd_felucca_emu` on 2026-11-23: the engines Analog, Noise, LoFi, Trio, Phase, Wheel, Grain, Sample, Slice and ADPCM are INCLUDED; the audio stack (core, params, mod matrix, slicer, effects, mixer) is INCLUDED with `CONFIG_AUDIO_FELUCCA_STACK_INCLUDED` (2026-11-24; `fx.c` and `slicer.c` PATCHED for buffer sizes; hardware `modd_felucca` still builds the older copies); the sequencer is REDUCED; the modd shell pages are REWRITTEN (the owner has not decided whether they may stay so). Other components are not surveyed.
 
 **Module boundary rule:** a module has its own Kconfig top-level menu AND its own directory under `firmware/src/`.
 

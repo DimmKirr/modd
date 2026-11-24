@@ -20,8 +20,9 @@
 
 /* OTA area constants (must match ota.c, but defined here so hooks can use them) */
 #ifndef OTA_AREA
-#define OTA_AREA      0x000E0000u
-#define OTA_AREA_LEN  0x5000u
+#include "fm1_flash_map.h"
+#define OTA_AREA      FLASH_OTA_LO
+#define OTA_AREA_LEN  FLASH_OTA_LEN
 #endif
 
 static uint8_t modd_flash_ok;

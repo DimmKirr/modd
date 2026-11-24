@@ -8,7 +8,7 @@ in the page (and tested that tap with a JS oscillator). Here the firmware
 keeps its last 8192 output samples (CONFIG_RPC_AUDIO_TAP, after the master
 volume, as the DAC gets them) and /api/audio/capture returns them; notes are
 played on the panel's note keys through /api/input. WAV files are saved in
-tests/results/<timestamp>-api_audio_test/.
+tests/results/<timestamp>-<run>/api_audio_test/.
 """
 import sys
 import unittest

@@ -159,6 +159,7 @@ def _shot(fm1_live: Path, fwsc: Path, keys: str, ms: int,
     run_dir = Path(tempfile.mkdtemp(dir=work_dir))
     (run_dir / 'work').mkdir()
     cmd = [str(fm1_live), '--fwsc', str(fwsc.resolve()), '--lcd-only', '--shot', str(ms)]
+    cmd += fm1_paths.flash_size_args(fwsc)   # the build's flash map may need a larger chip
     usb_parts = []
     if net and not wifi:
         usb_parts.append('ethernet')

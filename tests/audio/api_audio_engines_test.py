@@ -10,7 +10,7 @@ driven over HTTP: the engine of the selected track is set with
 its SELECT picks the track), notes are played on the note keys and the master
 pot through /api/input, and the firmware's own output is recorded with
 /api/audio/capture. WAV files are saved in
-tests/results/<timestamp>-api_audio_engines_test/.
+tests/results/<timestamp>-<run>/api_audio_engines_test/.
 """
 import sys
 import unittest
@@ -43,14 +43,14 @@ class EngineAudioCase(ApiTestCase):
         self.save_wav(f'{label}.wav', s)
         return rms(s)
 
-    def engine_produces_audio(self, name, pitched=True):
+    def engine_produces_audio(self, name, pitched=True, hold_ms=300):
         self.use_engine(name)
         self.set_volume(1023)
         silence = self.api.capture()
         self.save_wav(f'{name.lower()}-silence.wav', silence)
         results = {'silence_rms': rms(silence)}
         for note in NOTES:
-            s = self.api.record_note(note)
+            s = self.api.record_note(note, hold_ms)
             self.save_wav(f'{name.lower()}-{note}.wav', s)
             f0 = note_hz(note)
             results[note] = {'rms': rms(s), 'f0': tone_power(s, f0),
@@ -84,6 +84,29 @@ class TestFM6Engine(EngineAudioCase):
     def test_fm6_engine_produces_audio(self):
         """C4, E4, G4 on the FM6 engine produce audio at their pitch."""
         self.engine_produces_audio('FM6')
+
+
+class TestFeluccaSampleEngines(EngineAudioCase):
+    """Felucca sample-based engines: SAMPLE, GRAIN, SLICE, ADPCM (one boot)."""
+    DEFCONFIG = 'modd_felucca_emu'
+
+    def test_sample_engine_produces_audio(self):
+        """C4, E4, G4 on the Sample engine produce audio at their pitch."""
+        self.engine_produces_audio('SAMPLE')
+
+    def test_granular_engine_produces_audio(self):
+        """C4, E4, G4 on the Granular engine produce audio."""
+        self.engine_produces_audio('GRAIN', pitched=False)
+
+    def test_slice_engine_produces_audio(self):
+        """C4, E4, G4 on the Slice engine each play their slice of the built-in break."""
+        # a default slice is a 125 ms one-shot (a 16th at 120 BPM): hold for one capture (186 ms), so
+        # the capture starts with the key and holds the whole slice, not only its tail
+        self.engine_produces_audio('SLICE', pitched=False, hold_ms=190)
+
+    def test_adpcm_engine_produces_audio(self):
+        """C4, E4, G4 on the ADPCM engine produce audio at their pitch."""
+        self.engine_produces_audio('ADPCM')
 
 
 class TestMasterVolume(EngineAudioCase):

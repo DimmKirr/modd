@@ -5,7 +5,7 @@
 
 Two phases:
   Phase 1: go to every page over the REST API (/modd/<page>), save the screenshot
-           (screenshots/NN_<name>.png) and the page's /api/page reply (data/NN_<name>.json).
+           (screenshots/lcd/<seq>-...-NN_<name>.png) and the page's /api/page reply (data/NN_<name>.json).
   Phase 2: RapidOCR on the screenshots (data/ocr_<name>.txt), colour checks of the modd
            shell in the default palette (CLAY: cream background, ink text, the selected
            track's colour), structure of the page data.
@@ -15,7 +15,7 @@ page (and the tab, for /modd/menu/<tab>); WX is captured once it holds a weather
 OCR and colour helpers: tests/ui/lcd_checks.py.
 
 Boots fm1-live with modd_emu (tests/api_fixtures.py). Results:
-tests/results/<datetimeISO>-modd_ui_walkthrough_test/.
+tests/results/<datetimeISO>-<run>/modd_ui_walkthrough_test/.
 
 Usage:
     task modd:test:modd_emu:api
@@ -88,8 +88,7 @@ class ModdUIWalkthrough(ApiTestCase):
     @classmethod
     def _results_dir(cls):
         d = cls.results_dir()
-        (d / 'screenshots').mkdir(parents=True, exist_ok=True)
-        (d / 'data').mkdir(exist_ok=True)
+        (d / 'data').mkdir(parents=True, exist_ok=True)
         return d
 
     @classmethod
@@ -122,9 +121,8 @@ class ModdUIWalkthrough(ApiTestCase):
                 json_path = self._results_dir() / 'data' / f'{i:02d}_{pg["name"]}.json'
                 json_path.write_text(json.dumps({'goto': resp, 'page': page}, indent=2))
 
-                png_path = self._results_dir() / 'screenshots' / f'{i:02d}_{pg["name"]}.png'
-                img = api.screenshot()
-                img.save(png_path)
+                img = self.screenshot(f'{i:02d}_{pg["name"]}')     # screenshots/lcd/, the one folder for pictures
+                png_path = self.last_shot_path
                 self.__class__._captures[pg['name']] = {'img': img, 'resp': page, 'png': png_path}
                 print(f'\n    [{i:02d}] {pg["name"]}: page={page["page"]} screenshot=OK', flush=True)
         self.assertAlive()
@@ -246,7 +244,7 @@ class ModdUIWalkthrough(ApiTestCase):
     def test_99_summary(self):
         """Print results summary."""
         d = self._results_dir()
-        screenshots = sorted((d / 'screenshots').glob('*.png'))
+        screenshots = sorted((d / 'screenshots' / 'lcd').glob('*.png'))
         data_files = list((d / 'data').glob('*'))
         print('\n    === modd UI Walkthrough Results ===')
         print(f'    results:      {d}/')

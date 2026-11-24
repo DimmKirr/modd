@@ -55,8 +55,11 @@ records the resolved SHA. The trees themselves are not committed: `task build`
 and `task test:unit` run `task vendor:ensure`, which fetches them at the locked
 commits when missing; `task vendor:sync` re-resolves the pins. The release
 workflow packs the fetched trees into `modd-source.tar.gz` so the corresponding
-source is complete. Vendored files are never patched: modd adapts them through
-`firmware/adapters/` and project-owned config headers.
+source is complete. Vendored files are never edited: modd adapts them through
+`firmware/adapters/` and project-owned config headers. The one exception is
+the approved patch series in `patches/` (hooks only, listed in
+`docs/UPSTREAM_ORIGINS.md`): `task build` applies it to a copy under
+`build/<defconfig>/gen/patched/`, not to the vendored tree.
 
 | Path | Source | Pin | License | Use |
 |------|--------|-----|---------|-----|
@@ -117,6 +120,8 @@ Kconfig symbols. See [docs/PORTING.md](docs/PORTING.md) for the adapter pattern.
 
 ## Derived files
 
+Rule: "Never copy or rewrite upstream code unless duplication / forking is approved by the user." "The work of porting is writing the adapter, and nothing else." A file below that is a copy or an adaptation is a fork or a derived header. [docs/UPSTREAM_ORIGINS.md](docs/UPSTREAM_ORIGINS.md) gives the class and approval status of each file, and `tests/build/upstream_origin_test.py` fails when a file with an `Origin:` line is not listed there.
+
 Files modd carries that were copied or adapted from an upstream tree or from fm1-dock.
 Each file header has `Origin:` lines with the same pinned links (the commits in
 `vendir.lock.yml`; for fm1-dock, the commit the files were taken from), the upstream
@@ -169,7 +174,6 @@ the added Origin lines. Generated from the headers by
 | `firmware/loader/loader.c` | [keremimo/melodee firmware/loader/loader.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/loader.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/loader/loader.ld` | [keremimo/melodee firmware/loader/loader.ld](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/loader.ld) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/audio/core/audio.c` | [keremimo/melodee firmware/src/audio.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/audio.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/src/audio/engines/dsp.c` | [hugelton/Felucca-Engines src/dsp.c](https://github.com/hugelton/Felucca-Engines/blob/c46e0086f69bdc26df1cd144dca9e683cc4531dd/src/dsp.c) @ (c46e0086) (unchanged) | MIT | MIT |
 | `firmware/src/audio/voice.c` | [isod89/sloop-fm1 firmware/src/voice.c](https://github.com/isod89/sloop-fm1/blob/b77bf55e3bf804665b8f5dffb5955bd8443311f0/firmware/src/voice.c) @ v2.8 (b77bf55e) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ble/ble_att_ft.c` | [w0ts/optimist firmware/src/ble/ble_att.c](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_att.c) @ v0.1 (a4104fcd) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ble/ble_scan.c` | [w0ts/optimist firmware/src/ble/ble_scan.c](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_scan.c) @ v0.1 (a4104fcd) | GPL-3.0-only | GPL-3.0-only |
@@ -217,7 +221,7 @@ upstream trees are not committed: `LICENSES/MIT-Felucca-Engines.txt` (for `dsp.c
 `wifi/arch/cc.h`, `wifi/lwipopts.h`), `LICENSES/FatFs.txt` (for the FatFs
 configuration in `firmware/src/udisk/`) and `LICENSES/MPL-2.0.txt` (for the two
 `wifi/nonfree/` files adapted from fm1-base, which stay MPL-2.0 and join the GPL-3.0-only
-firmware under MPL-2.0 §3.3; they compile only with `CONFIG_WIFI_NONFREE`). `dsp.c` is an unchanged copy and keeps its
+firmware under MPL-2.0 §3.3; they compile only with `CONFIG_WIFI_NONFREE`). `dsp.c` is included unchanged from the vendored tree and keeps its
 MIT header; `modd_engine.h` and `gen_engine_tables.py` are modified and are GPL-3.0-only
 with the MIT copyright notice kept. The release source archive excludes Melodee's
 Casio CZ-1 and Sequential Prophet-5 factory preset `.syx` assets, which Melodee's

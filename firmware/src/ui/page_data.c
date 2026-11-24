@@ -51,15 +51,15 @@ static void home_read(home_data_t *d)
     d->selected = song.sel < NTRK ? song.sel : 0;
     d->playing  = song.playing != 0;
     d->rec      = song.rec != 0;
-    d->bpm      = song.bpm;
+    d->bpm      = (uint32_t)modd_bpm();
     for (k = 0; k < NTRK; k++) {
-        uint8_t eng = trk[k].engine;
+        uint8_t eng = modd_engine_of(&trk[k]);
         d->engine_id[k]   = eng;
         d->engine_name[k] = (eng < NENGINES && ENGINES[eng]->name) ? ENGINES[eng]->name : "---";
         d->preset[k]      = trk[k].preset;
     }
     t = &trk[d->selected];
-    d->oct   = t->p[P_OCT];
+    d->oct   = modd_tp(t, P_OCT);
     d->root  = (uint8_t)((t->p[P_ROOT] % 12 + 12) % 12);
     d->scale = (uint8_t)t->p[P_SCALE];
     d->level = t->p[P_LEVEL];
@@ -130,10 +130,10 @@ typedef struct {
 static void lfo_read(lfo_data_t *d)
 {
     const track_t *t = &trk[song.sel];
-    d->rate  = t->p[P_LFRT];
-    d->depth = t->p[P_LFO];
-    d->shape = t->p[P_LFSH];
-    d->delay = t->p[P_LFDL];
+    d->rate  = modd_tp(t, P_LFRT);
+    d->depth = modd_tp(t, P_LFO);
+    d->shape = modd_tp(t, P_LFSH);
+    d->delay = modd_tp(t, P_LFDL);
 }
 
 /* ------------------------------------------------------------------ fx --- */
@@ -158,10 +158,10 @@ typedef struct {
 static void voice_read(voice_data_t *d)
 {
     const track_t *t = &trk[song.sel];
-    d->voices = t->p[P_MONO];
-    d->hold   = t->p[P_HOLD];
-    d->glide  = t->p[P_GLI];
-    d->unison = t->p[P_UNI];
+    d->voices = modd_tp(t, P_MONO);
+    d->hold   = modd_tp(t, P_HOLD);
+    d->glide  = modd_tp(t, P_GLI);
+    d->unison = modd_tp(t, P_UNI);
 }
 
 /* --------------------------------------------------------------- mixer --- */
@@ -189,9 +189,9 @@ typedef struct {
 static void arp_read(arp_data_t *d)
 {
     const track_t *t = &trk[song.sel];
-    d->mode  = t->p[P_ARP];
-    d->tempo = t->p[P_ARTM];
-    d->range = t->p[P_ARNG];
+    d->mode  = modd_tp(t, P_ARP);
+    d->tempo = modd_tp(t, P_ARTM);
+    d->range = modd_tp(t, P_ARNG);
     d->gate  = t->p[P_AGATE];
 }
 
@@ -205,7 +205,7 @@ static void scl_read(scl_data_t *d)
     const track_t *t = &trk[song.sel];
     d->root      = t->p[P_ROOT];
     d->scale     = t->p[P_SCALE];
-    d->octave    = t->p[P_OCT];
+    d->octave    = modd_tp(t, P_OCT);
     d->transpose = t->p[P_TRANS];
 }
 
@@ -223,9 +223,9 @@ static void edit_read(edit_data_t *d)
     uint32_t k;
     for (k = 0; k < 8u; k++)
         d->e[k] = t->p[P_E0 + k];
-    d->engine_id = t->engine;
-    d->engine_name = (t->engine < NENGINES && ENGINES[t->engine]->name)
-                     ? ENGINES[t->engine]->name : "---";
+    d->engine_id = modd_engine_of(t);
+    d->engine_name = (modd_engine_of(t) < NENGINES && ENGINES[modd_engine_of(t)]->name)
+                     ? ENGINES[modd_engine_of(t)]->name : "---";
     d->preset = t->preset;
 }
 

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """pytest hooks for every test: a per-test trace (tests/io_log.py), subprocess.run tracing,
-slow-test lines, the "test times" summary and tests/results/<stamp>-timings.tsv."""
+slow-test lines, the "test times" summary and tests/results/<stamp>/timings.tsv."""
 import fnmatch
 import subprocess
 import time
@@ -42,15 +42,28 @@ def pytest_ignore_collect(collection_path, config):
 
 
 # Tracing and timing, for every test (tests/io_log.py):
-#   tests/results/<RUN_STAMP>-<module>/debug.log   every event of the module's tests, timestamped:
+#   tests/results/<RUN_STAMP>-<RUN_NAME>/<module>/debug.log   every event of the module's tests, timestamped:
 #       each test's start, setup / call / teardown with outcome and seconds, end; every
 #       subprocess.run (command, exit code, seconds); the API client's HTTP requests; fm1-live's
 #       output; the tests' own events
 #   a line per test of 0.5 s or more: start time (UTC), seconds (setup, call and teardown
 #       together, so a test class's emulator boot counts on its first test), its counted IO
 #   the session's end: every test of 0.5 s or more, slowest first, also written to
-#       tests/results/<RUN_STAMP>-timings.tsv
-_TIMINGS_TSV = io_log.RESULTS / f'{io_log.RUN_STAMP}-timings.tsv'
+#       tests/results/<RUN_STAMP>-<RUN_NAME>/timings.tsv (the same folder: one per session)
+def _timings_tsv():
+    return io_log.run_dir() / 'timings.tsv'
+
+
+def _run_name(config):
+    """The session's name in its results folder: the one test file it runs, else the tier, else "tests"."""
+    files = {Path(str(a).split('::', 1)[0]) for a in config.args}
+    files = {f for f in files if f.suffix == '.py'}
+    if len(files) == 1:
+        return files.pop().stem
+    tier = config.getoption('--tier')
+    return tier if tier in ('unit', 'api') else 'tests'
+
+
 _SHOW_S = 0.5
 _began = {}                                     # nodeid -> start time
 _outcome = {}                                   # nodeid -> passed / failed / skipped / error
@@ -85,6 +98,7 @@ def _traced_run(*args, **kwargs):
 def pytest_configure(config):
     global _config
     _config = config                            # the terminal reporter registers after this
+    io_log.set_run_name(_run_name(config))
     io_log.enabled = True
     subprocess.run = _traced_run
 
@@ -124,9 +138,10 @@ def pytest_runtest_logfinish(nodeid, location):
     io_log.current = '-'
     _timings.append((secs, start, nodeid, outcome, ios, io_s, wait_s))
     try:
-        _TIMINGS_TSV.parent.mkdir(parents=True, exist_ok=True)
-        new = not _TIMINGS_TSV.exists()
-        with _TIMINGS_TSV.open('a') as f:
+        tsv = _timings_tsv()
+        tsv.parent.mkdir(parents=True, exist_ok=True)
+        new = not tsv.exists()
+        with tsv.open('a') as f:
             if new:
                 f.write('start_utc\tseconds\toutcome\tios\tio_seconds\tthrottle_seconds\ttest\n')
             f.write(f'{_hms(start)}\t{secs:.1f}\t{outcome}\t{ios}\t{io_s:.1f}\t{wait_s:.1f}\t{nodeid}\n')
@@ -150,8 +165,8 @@ def pytest_terminal_summary(terminalreporter):
         return
     total = sum(t[0] for t in _timings)
     terminalreporter.section(f'test times (>= {_SHOW_S} s; {total:.0f} s in all; '
-                             f'tests/results/{_TIMINGS_TSV.name}; traces: tests/results/'
-                             f'{io_log.RUN_STAMP}-<module>/debug.log)')
+                             f'tests/results/{io_log.run_dir().name}/timings.tsv; traces: tests/results/'
+                             f'{io_log.run_dir().name}/<module>/debug.log)')
     for secs, start, nodeid, outcome, ios, io_s, wait_s in slow:
         terminalreporter.write_line(f'{secs:7.1f}s {100 * secs / total:5.1f}%  {_hms(start)}  {outcome:7s} '
                                     f'{_io_text(ios, io_s, wait_s)}{nodeid}')

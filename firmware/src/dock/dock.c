@@ -15,10 +15,10 @@
  * is the same region: the running module is stopped first. Only render / note / cc are bridged;
  * screen, LEDs, banks and settings records are stubs (audio only). */
 
-#define DOCK_TABLE_A 0x97000u
-#define DOCK_TABLE_B 0x98000u
-#define DOCK_LO      0x99000u
-#define DOCK_HI      0xE0000u
+#define DOCK_TABLE_A FLASH_DATA_LO              /* hal/fm1_flash_map.h: the start of the main store */
+#define DOCK_TABLE_B (FLASH_DATA_LO + 0x1000u)
+#define DOCK_LO      (FLASH_DATA_LO + 0x2000u)
+#define DOCK_HI      FLASH_DATA_HI
 #define DOCK_DT_MAGIC 0x54444248u               /* "HBDT", as fm1-dock's */
 #define DOCK_SLOTS   CONFIG_DOCK_SLOTS
 #define DOCK_NONE    0xFFFFFFFFu

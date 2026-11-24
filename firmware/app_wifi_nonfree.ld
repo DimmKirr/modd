@@ -8,7 +8,7 @@
  * Layout matches fm1-base/device/app_wifi.ld. */
 MEMORY
 {
-    XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = 0x8C000
+    XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = FLASH_BODY_MAX
     RAMTEXT (rwx): ORIGIN = 0x01C00000, LENGTH = 0x7F00
     RAM    (rwx) : ORIGIN = 0x01C08000, LENGTH = 152K
     POOL   (rwx) : ORIGIN = 0x01C2E000, LENGTH = 0x46000

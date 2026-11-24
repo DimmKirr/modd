@@ -100,7 +100,7 @@ static void rpc_fm1_get_engine_state(int32_t id, struct rpc_tx *tx)
 {
     rpc_response_begin(tx, id);
 #ifdef CONFIG_AUDIO
-    rpc_tx_key_int(tx, "engine_index", (int32_t)trk[song.sel].engine);
+    rpc_tx_key_int(tx, "engine_index", (int32_t)modd_engine_of(&trk[song.sel]));
     rpc_tx_char(tx, ',');
     rpc_tx_key_int(tx, "voice_count", (int32_t)NVOICE);
 #else

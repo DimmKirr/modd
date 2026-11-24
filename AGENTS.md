@@ -6,6 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 modd is a modular firmware framework for the M-VAVE FM-1 synthesizer (JieLi AC791N SoC, pi32v2 architecture). It brings modules from any FM-1 firmware into one configurable source tree. Nine community firmwares are vendored today — **Felucca** (hugelton), **Melodee** (keremimo), **SLOOP** (isod89), FMLab, fm1-dock, Skiff, Optimist, JIANT and fm1-base. Any FM-1 firmware that builds with the JieLi toolchain can be added the same way (see [Adding Upstream Firmware](#adding-upstream-firmware)). Everything in modd is GPL-3.0-only; the upstream Felucca-Engines interface (`felucca_engine.h`) and engines are MIT.
 
+## Porting rule
+
+"Never copy or rewrite upstream code unless duplication / forking is approved by the user."
+"The work of porting is writing the adapter, and nothing else."
+
+- A port step produces adapter code (`firmware/adapters/modd_*.h`), a thin `<name>_modd.c` wrapper, a Kconfig symbol and an `#include` of the upstream file from `firmware/upstream/`. Anything else is not a port step.
+- Stop rule: if the include does not compile, name the blocker and fix the adapter, or stop and report. A fork needs the user's approval, asked for by file name.
+- Only INCLUDED and PATCHED count as ported. The other classes (COPIED, REDUCED, REWRITTEN, OTHER UPSTREAM) are named in every ticket and report.
+- When an adapter cannot reach it (a size upstream fixes with a plain `#define`), the next step is a patch, not a copy: `patches/<upstream>/NNNN-*.patch`, a hook only, value from Kconfig, approved by the user by file name, applied by the build to a copy (class PATCHED). Order of attempts and the steps: [docs/PORTING.md](docs/PORTING.md#what-to-try-in-order).
+- `tests/build/upstream_origin_test.py` fails when a file with an `Origin:` line is not listed in `docs/UPSTREAM_ORIGINS.md` as a wrapper, a derived header or a fork with a recorded status.
+- Details, wording for tasks and the paste-in block: [docs/PORTING.md](docs/PORTING.md#the-rule-upstream-code-through-an-adapter-into-modd).
+
 ## Build System
 
 Kconfiglib-based configuration. All commands go through [Taskfile](https://taskfile.dev), which wraps the JieLi toolchain env vars (`JIELI_TOOLCHAIN`, `AC79_SDK`) automatically:
@@ -26,6 +38,8 @@ task dock:modules -- /path/to/disk      # copy fm1-dock's prebuilt .dock modules
 task test                               # run all tests (unit, then direct-API)
 task test:unit                          # Python unit tests only
 task test:api                           # build modd_emu, drive it over HTTP in fm1-live
+task vendor:patch                       # copy the patched upstream files to build/<defconfig>/gen/patched/ (task build runs it; -- --defconfig <name>)
+task vendor:patches:check               # every patch has its header and applies to the commit in vendir.lock.yml (CI, after vendor:sync)
 task vendor:build                       # (testing) build all upstream firmwares
 task vendor:build:felucca               # (testing) build clean upstream Felucca
 task vendor:flash:melodee               # (testing) flash pre-built upstream Melodee
@@ -79,7 +93,8 @@ See [docs/COMPONENTS.md](docs/COMPONENTS.md) for full component map with diagram
 
 - **Module**: domain grouping (Audio, UI, MIDI, USB, WiFi, BLE, HAL, Storage, Boot, Debug)
 - **Component**: a specific thing within a module (FM6, Shell, Weather, Effects, OTA)
-- **Upstream**: whose code a component was ported from (Felucca, Melodee, SLOOP, Optimist, FMLab; omit if native to modd)
+- **Upstream**: whose source file a component includes (or, for the forks listed in `docs/UPSTREAM_ORIGINS.md`, was copied from): Felucca, Melodee, SLOOP, Optimist, FMLab; omit if native to modd
+- **Class**: how a layer relates to upstream code. INCLUDED (upstream file `#include`d unchanged), PATCHED (included through a build-time copy with an approved hook patch from `patches/`), COPIED (an edited copy in `firmware/src`), REDUCED (a copy with features removed), REWRITTEN (behaviour re-created by hand), OTHER UPSTREAM (another firmware's code fills the slot). Only INCLUDED and PATCHED count as ported
 
 ### Modules (bottom to top)
 
@@ -119,15 +134,16 @@ Each firmware defines different parameter counts and IDs. modd defines a `P_*` s
 Kconfig                     # root Kconfig (sources kconf/*.kconfig)
 kconf/                      # per-module Kconfig menus (not kconfig/ due to macOS case-insensitive FS)
 configs/                    # saved defconfigs per upstream preset
+patches/                    # patches/<upstream>/NNNN-*.patch: approved hooks in upstream files, applied by the build to a copy (patches/README.md)
 vendir.yml                  # pins for firmware/upstream/*, firmware/vendor/* and docs/lvgl (vendir.lock.yml = resolved SHAs)
 firmware/
   hal/                      # HAL headers (common + per-variant)
-  src/                      # source tree (future: populated from reference firmwares)
+  src/                      # modd's own code and the wrappers around upstream files; upstream source stays in firmware/upstream/
     modd.c              # unity root with CONFIG_* conditional includes
     engines.c               # engine registry (conditional includes)
     net/                    # Network module: lwip_core.c (lwIP source list), lwipopts.h, net.c (init, tick, net_on_up), http.c
     dock/                   # fm1-dock module host: dock.c (slots, flash install, start/stop, ISR hook), dock_disk.c (USB disk source)
-  upstream/                 # vendored community firmwares, never patched (see vendir.yml)
+  upstream/                 # vendored community firmwares, never edited (see vendir.yml); a hook is a patch in patches/, applied to a copy
   vendor/                   # vendored libraries: lwIP, FatFs (see vendir.yml)
 tools/
   build/                    # build pipeline
@@ -200,7 +216,7 @@ The registry is `firmware/src/audio/engines/engines.c`: each engine `#include`s 
 | Noise | `firmware/upstream/felucca-engines/src/eng_noise.c` | `ENG_NOISE` | MIT |
 | Stub | `firmware/src/audio/engines/eng_stub.c` | `ENG_STUB` | Silent, UI testing |
 
-**In upstream repos (need porting/wiring):**
+**In upstream repos (need an adapter or wrapper; the source stays where it is):**
 
 | Engine | Source | Vtable | Blockers |
 |--------|--------|--------|----------|
@@ -220,7 +236,7 @@ The registry is `firmware/src/audio/engines/engines.c`: each engine `#include`s 
 
 **Melodee upstream** (`firmware/upstream/melodee/firmware/src/eng_*.c`): GPL engines that live inside Melodee's unity build. They often depend on Melodee-specific globals (`eng_idx()`, `drum_track()`, Melodee `dsp.c`). Each needs dependency analysis before wiring.
 
-**DSP helpers**: `firmware/src/audio/engines/dsp.c` (modd's shared DSP: `tsvf_t`, `clamp`, `pitch_inc`, polyBLEP). Felucca-engines share a compatible `dsp.c` in their repo. Melodee's `dsp.c` is a superset with FPU paths.
+**DSP helpers**: `firmware/upstream/felucca-engines/src/dsp.c`, included unchanged by `modd.c` (the shared DSP: `tsvf_t`, `clamp`, `pitch_inc`, polyBLEP). Melodee's `dsp.c` is a superset with FPU paths.
 
 ## Reference Firmwares
 
@@ -272,6 +288,29 @@ task test:api                           # builds modd_emu, runs tests/**/api_*_t
 
 `ApiTestCase` (`tests/api_fixtures.py`) boots fm1-live per test class with a port forward to the firmware's REST API and drives everything over HTTP GET: pages (`/modd/<page>`, `/api/page`), panel input ORed into the key scan (`/api/input/...`, `CONFIG_RPC_INPUT`), the audio output (`/api/audio/capture`, `CONFIG_RPC_AUDIO_TAP`), memory (`/api/mem/...`, `CONFIG_RPC_MEM`), LCD and log. Routes live in `API_ROUTES[]` (`firmware/src/rpc/api_ctl.c`); `task build` generates the OpenAPI 3.1 document from the C (`tools/codegen/gen_openapi.py`, prose from `docs/api/openapi.overlay.yaml`) into `build/<defconfig>/openapi.json`, served at `GET /openapi.json` (`CONFIG_RPC_OPENAPI`). The generator stops the build on a handler it cannot read and says what to change; rules in docs/TESTING.md, "Writing a REST handler". Boot, audio, engine, USB-safety and weather tests live here; `test:unit` skips them (except `tests/usb/usb_otg_presence_safety_test.py`, which runs under both). fm1-emu's NAT allows ~24 connections per 30 s, so the client spaces its requests (see docs/TESTING.md, "Direct-API tests").
 
+**Routine test of a port: that upstream's emulator defconfig only, `modd_<upstream>_emu`** (Felucca: `modd_felucca_emu`; Melodee: `modd_melodee_emu`; SLOOP: `modd_sloop_emu`; the last two are not created yet, and creating them is the first step of that port). One command builds that one defconfig once and runs the shell, boot, audio and engine tests against it; do not build or run `task test:api`, another upstream's emulator defconfig or a hardware defconfig for it. For Felucca: Command, rules and the shell tests that are known to fail there: [docs/PORTING.md](docs/PORTING.md#testing-a-port-one-emulator-defconfig).
+
+```
+task modd:test:modd_felucca_emu:api -- tests/boot/api_boot_test.py tests/audio/api_audio_test.py tests/audio/api_audio_engines_test.py
+```
+
+One class against one build takes about 20 seconds: `uv run pytest tests/audio/api_audio_engines_test.py -k TestFeluccaSampleEngines`. `MODD_API_DEFCONFIG=<defconfig>` points the classes that use the default build at another one.
+
+### A build that does not boot or stops answering
+
+Look at what the CPU does before editing code or bisecting a defconfig. Each check is one headless `fm1-live --shot` run of 10 to 20 seconds and needs no REST API; commands and how to read them: [docs/TESTING.md](docs/TESTING.md#a-build-that-does-not-boot-or-stops-answering).
+
+- `--shot MS` prints `ie`, the share of instructions in interrupt handlers, the LEDs and the audio peak. `ie false` is not proof of a boot hang, and `100% in ISRs` is not proof of slow DSP: a CPU that jumped to a wild address from an interrupt shows both.
+- `FM1_DUMPRAM=FILE` plus `strings` gives the firmware log (`modd_log`) when the API is down: it shows how far the boot got.
+- `FM1_TPROF=PATH,FROM,TO` plus `llvm-nm -n modd.elf` gives the functions the time goes to. PCs below `0x02001000` only: the boot stub refused the image. PCs at garbage addresses: a wild jump, memory was overwritten.
+- `FM1_DUMP=01C7C000` prints the boot stub's decision when the application never started.
+- `uptime_ms` going backwards between two `/api/info` replies means the firmware reset; a single request that times out is how a reset looks to a test.
+- A defconfig bisection names the option that crosses a size or layout threshold, not the cause. Compare `body.bin` sizes and the memory reports first.
+
+Two limits hold in the emulator as on an FM-1 (the first is larger there), and a linker script alone cannot lift them: the application body is at most `0x8C000` bytes on hardware and `0x5F9000` in an emulator build, which has an 8 MiB chip and needs fm1-live's `--flash-size 8M` (the test fixtures and the screenshot tool add it from the build's config; the flash map, `kconf/flash.kconfig` choice `FLASH_MAP`, is the one place for it: `firmware/hal/fm1_flash_map.h` derives the layout for the app, the boot stub and the loader, `tools/build/flashmap.py` for the package and the link; a larger `XIP` region in an `.ld` alone gives a package that never boots), and `0x01C7FD50..0x01C7FFFF` holds the chip's boot info, mailbox and interrupt vectors (`app_emu.ld` asserts that pool statics end below it and keeps the shadow framebuffer in `FBUF`).
+
+Code ported from Felucca works one control tick at a time (`CTL`, 32 frames): its mix, its buffers and the engines that set `.block` or check `n == CTL`. The audio interrupt calls the Felucca mix once per tick, and `track_render` calls `eng->block` before the voices and `eng->post` after them.
+
 ### CI
 
 GitHub Actions (`.github/workflows/ci.yml`) has two jobs. The `test` job installs the tools
@@ -316,7 +355,7 @@ Environment: set `FM1_EMU_ROOT` (in `devcell.toml [env]` or shell) to the fm1-em
 - HAL is header-only: register macros, no `.c` files.
 - Kconfig symbols use `CONFIG_` prefix. Engine symbols: `CONFIG_ENGINE_*`. HAL upstream variants: `CONFIG_HAL_*_FELUCCA/SLOOP/MELODEE`.
 - Voice budget is a shared resource pool. Engine cost is measured in VBUDGET units (Prophet: 2-3, FM6: 2, CZ-1: 1, etc.).
-- License: all modd code is GPL-3.0-only. Upstream `felucca_engine.h` and Felucca-Engines are MIT; `modd_engine.h` derives from it under GPL-3.0-only with the MIT notice kept. Every file copied or adapted from an upstream carries an `Origin:` line pinned to the upstream commit; the list is in `THIRD_PARTY.md`.
+- License: all modd code is GPL-3.0-only. Upstream `felucca_engine.h` and Felucca-Engines are MIT; `modd_engine.h` derives from it under GPL-3.0-only with the MIT notice kept. Every file copied or adapted from an upstream carries an `Origin:` line pinned to the upstream commit; the list is in `THIRD_PARTY.md`. Such a file must be listed in `docs/UPSTREAM_ORIGINS.md` as a wrapper, a derived header or an approved fork, and `tests/build/upstream_origin_test.py` enforces it.
 
 ## Moving Modules Around
 
@@ -352,18 +391,20 @@ To swap: change the Kconfig radio choice, rebuild. The adapter contract guarante
 
 ### 3. Add your own module
 
+This section is for a new modd-native module, where you write the code. An upstream component is not written: it needs an adapter and a wrapper only (see the [Porting rule](#porting-rule)).
+
 1. Write a `.c` file that conforms to the relevant `modd_*.h` contract. For engines, implement `engine_t` (required: `note_on`, `render`; see [Working with Engines](#working-with-engines)).
 2. Add a `CONFIG_*` Kconfig symbol in the appropriate `kconf/*.kconfig` file.
 3. Add a `#include` guarded by that symbol in `modd.c` (or `engines.c` for engines).
 4. Build and test: `task build && task test:api`.
 
-For the mock-first porting strategy (start with stub data, wire real components later), see [docs/PORTING.md](docs/PORTING.md).
+For the mock-first porting strategy (start with stub data, wire real components later) and the rule for testing a port on one emulator defconfig, see [docs/PORTING.md](docs/PORTING.md).
 
 ### Combining modules from multiple firmwares
 
 If you want modules from multiple firmwares in one build (e.g. one engine from Felucca, one engine from Melodee, a UI shell from SLOOP), the recommended path is to add them as modules via adapters to modd. Each module conforms to its adapter contract independently, so modules from different upstreams coexist as long as they fit the voice budget and satisfy Kconfig dependencies.
 
-Upstream firmwares are vendored under `firmware/upstream/` via vendir and are never modified. To port a component, copy or adapt it into `firmware/src/` (or `firmware/adapters/`), wire it through the relevant contract, and add its `CONFIG_*` guard. The [Engine source locations](#engine-source-locations) tables show what is ready and what needs porting.
+Upstream firmwares are vendored under `firmware/upstream/` via vendir and are never modified. **Never copy or rewrite upstream code unless duplication / forking is approved by the user.** To port a component, `#include` its upstream source unchanged behind the relevant contract, put modd-specific glue in the adapter (`firmware/adapters/`) or a thin wrapper (`eng_adpcm_modd.c` is the model), and add its `CONFIG_*` guard. If the include does not compile, name the blocker and fix the adapter, or stop and report; do not fall back to a copy. Classes (INCLUDED / COPIED / REDUCED / REWRITTEN / OTHER UPSTREAM), the stop rule and task wording: [docs/PORTING.md](docs/PORTING.md#the-rule-upstream-code-through-an-adapter-into-modd). The [Engine source locations](#engine-source-locations) tables show what is ready and what needs porting.
 
 ## Adding Upstream Firmware
 

@@ -9,6 +9,9 @@
  * Portions Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments (Felucca, via SLOOP) */
 
 #define SETTINGS_MAGIC  0x53455401u   /* "SET\x01" */
+#include "fm1_flash_map.h"
+/* CONFIG_SETTINGS_AT is the FM-1 address (Melodee's globals); another flash map moves it with the stores above the app area */
+#define SETTINGS_AT_ADDR FLASH_ABOVE_APP(CONFIG_SETTINGS_AT)
 
 static uint32_t settings_crc32(const uint8_t *p, uint32_t n)
 {
@@ -41,13 +44,13 @@ static int sys_fl_load(void *p, uint32_t n)
     uint32_t h[3];
     if (n > sizeof buf)
         return -1;
-    if (settings_fl_read(CONFIG_SETTINGS_AT, h, sizeof h))
+    if (settings_fl_read(SETTINGS_AT_ADDR, h, sizeof h))
         return -1;
     if (h[0] != SETTINGS_MAGIC)
         return -1;
     if (h[1] == 0u || h[1] > n)
         return -1;
-    if (settings_fl_read(CONFIG_SETTINGS_AT + sizeof h, buf, h[1]))
+    if (settings_fl_read(SETTINGS_AT_ADDR + sizeof h, buf, h[1]))
         return -1;
     if (settings_crc32(buf, h[1]) != h[2])
         return -1;
@@ -62,9 +65,9 @@ static int sys_fl_save(const void *p, uint32_t n)
     if (n > 256u)
         return -1;
     h[2] = settings_crc32((const uint8_t *)p, n);
-    if ((rc = fl_erase4k(CONFIG_SETTINGS_AT, &took)) != 0)
+    if ((rc = fl_erase4k(SETTINGS_AT_ADDR, &took)) != 0)
         return rc;
-    if ((rc = fl_write(CONFIG_SETTINGS_AT + sizeof h, (const uint8_t *)p, n)) != 0)
+    if ((rc = fl_write(SETTINGS_AT_ADDR + sizeof h, (const uint8_t *)p, n)) != 0)
         return rc;
-    return fl_write(CONFIG_SETTINGS_AT, (const uint8_t *)h, sizeof h);
+    return fl_write(SETTINGS_AT_ADDR, (const uint8_t *)h, sizeof h);
 }

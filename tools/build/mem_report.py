@@ -15,8 +15,9 @@ are what fail a build.
 
 Budgets (firmware/app*.ld):
   audio arena   _resource_start.._resource_end, at least _resource_minimum (139 KiB; 48 KiB
-                with AUDIO_RESIDENT). app_emu.ld has no minimum: its shadow framebuffer
-                (CONFIG_DEBUG_FRAMEBUFFER) lies inside the arena.
+                with AUDIO_RESIDENT). app_emu.ld has no minimum; a shadow framebuffer
+                (CONFIG_DEBUG_FRAMEBUFFER) placed inside the arena is counted against it
+                (app_emu.ld keeps it in its own region, FBUF).
   tails         RAM code end to STATUS (_resource_low_*), .bss end to RAM end
                 (_resource_data_*), NOINIT end to the boot records (_resource_retained_*).
   stacks        CPU0 user and system stacks (_ustack_*, _sstack_*: fixed, outside the regions),
@@ -45,6 +46,8 @@ _SYMBOL = re.compile(r'^\s+0x([0-9a-f]+)\s+([A-Za-z_]\w*)(\s*=.*)?$')
 RAM_MIN_FREE = int(os.environ.get('MODD_RAM_MIN_FREE', '1024'))
 
 # Guard for linker scripts without _resource_minimum (app_emu.ld), not a measured audio budget.
+# The floor of a build is CONFIG_ARENA_MIN_LEFT (kconf/audio.kconfig; 0 when nothing in the build
+# borrows from the arena); this is the value when no config is given.
 ARENA_MIN_LEFT = 16 * 1024
 
 # what each region holds, for the report's last column
@@ -93,21 +96,25 @@ def parse_lld_inputs(text):
     return out
 
 
-def _ld_number(text):
-    m = _LD_NUMBER.match(text.strip())
+def _ld_number(text, symbols=None):
+    text = text.strip()
+    if symbols and text in symbols:     # a value the build passes with --defsym (FLASH_BODY_MAX)
+        return symbols[text]
+    m = _LD_NUMBER.match(text)
     if not m:
         raise ValueError(f'linker script region value {text.strip()!r} is not a plain number')
     return int(m.group(1), 0) * {'': 1, 'K': 1024, 'M': 1 << 20}[m.group(2)]
 
 
-def parse_ld_regions(script):
+def parse_ld_regions(script, symbols=None):
     """{name: (origin, length)} from the MEMORY block of a linker script. Only literal numbers
-    (0x.., 96K) are understood: anything else raises ValueError rather than guessing."""
+    (0x.., 96K) and the --defsym symbols in `symbols` (the ELF's, e.g. FLASH_BODY_MAX) are
+    understood: anything else raises ValueError rather than guessing."""
     script = re.sub(r'/\*.*?\*/', '', script, flags=re.S)
     block = re.search(r'\bMEMORY\s*\{(.*?)\}', script, re.S)
     if not block:
         raise ValueError('no MEMORY block in the linker script')
-    regions = {m.group(1): (_ld_number(m.group(2)), _ld_number(m.group(3)))
+    regions = {m.group(1): (_ld_number(m.group(2), symbols), _ld_number(m.group(3), symbols))
                for m in _LD_REGION.finditer(block.group(1))}
     if not regions:
         raise ValueError('no regions in the linker script MEMORY block')
@@ -154,8 +161,9 @@ def load_map(build_dir):
     if not is_lld(text):
         return parse_map(text)
     elf = build_dir / 'modd.elf'
-    regions = parse_ld_regions(linker_script_for(build_dir).read_text())
-    m = parse_map(text, regions, elf_symbols(elf.read_bytes()) if elf.exists() else {})
+    symbols = elf_symbols(elf.read_bytes()) if elf.exists() else {}
+    regions = parse_ld_regions(linker_script_for(build_dir).read_text(), symbols)
+    m = parse_map(text, regions, symbols)
     for name, addr, size in m['sections']:   # a wrong script would leave placed sections outside
         if size and addr and not name.startswith('.debug') and region_of(regions, addr) is None:
             raise ValueError(f'section {name} at 0x{addr:x} is in no region of {linker_script_for(build_dir).name}')
@@ -233,7 +241,7 @@ def kib(n):
     return f'{n}B' if abs(n) < 1024 else f'{n / 1024:.1f}K'
 
 
-def analyse(m, objects=(), body_size=None):
+def analyse(m, objects=(), body_size=None, arena_min_left=None):
     """The report's figures: regions with their sections, budgets, stacks, objects per region."""
     regions, symbols = m['regions'], m['symbols']
     out = {'regions': [], 'budgets': [], 'stacks': [], 'top': {}, 'warnings': [], 'errors': []}
@@ -261,7 +269,8 @@ def analyse(m, objects=(), body_size=None):
 
     arena = span('_resource_start', '_resource_end')
     if arena is not None:
-        fb = next((size for name, _a, size in m['sections'] if name == '.framebuffer'), 0)
+        fb = next((size for name, addr, size in m['sections'] if name == '.framebuffer'
+                   and symbols['_resource_start'] <= addr < symbols['_resource_end']), 0)
         need = symbols.get('_resource_minimum')
         b = {'name': 'audio arena', 'size': arena, 'need': need, 'borrowed': fb}
         out['budgets'].append(b)
@@ -269,13 +278,14 @@ def analyse(m, objects=(), body_size=None):
             out['warnings'].append(f'audio arena {kib(arena - need)} above its minimum')
         if need is None:
             left = arena - fb
-            if left < ARENA_MIN_LEFT:
+            floor = ARENA_MIN_LEFT if arena_min_left is None else arena_min_left
+            if left < floor:
                 out['errors'].append(f'audio arena has {kib(left)} left of {kib(arena)}, below the '
-                                     f'{kib(ARENA_MIN_LEFT)} floor (no _resource_minimum in this linker '
-                                     f'script): shrink the framebuffer or the statics')
-            elif left < ARENA_MIN_LEFT + WARN_MARGIN:
+                                     f'{kib(floor)} floor (CONFIG_ARENA_MIN_LEFT; no _resource_minimum in this '
+                                     f'linker script): shrink the framebuffer or the statics')
+            elif left < floor + WARN_MARGIN:
                 out['warnings'].append(f'audio arena has {kib(left)} left of {kib(arena)}, within '
-                                       f'{kib(WARN_MARGIN)} of the {kib(ARENA_MIN_LEFT)} floor')
+                                       f'{kib(WARN_MARGIN)} of the {kib(floor)} floor')
     for label, lo, hi in (('RAM code tail', '_resource_low_start', '_resource_low_end'),
                           ('RAM tail', '_resource_data_start', '_resource_data_end'),
                           ('NOINIT tail', '_resource_retained_start', '_resource_retained_end')):
@@ -356,7 +366,10 @@ def analyse_build(build_dir):
     elf = build_dir / 'modd.elf'
     body = build_dir / 'body.bin'
     objects = elf_objects(elf.read_bytes()) if elf.exists() else []
-    return analyse(m, objects, body.stat().st_size if body.exists() else None)
+    config = build_dir / 'gen' / 'config.h'
+    floor = re.search(r'^#define CONFIG_ARENA_MIN_LEFT (\d+)', config.read_text(), re.M) if config.exists() else None
+    return analyse(m, objects, body.stat().st_size if body.exists() else None,
+                   arena_min_left=int(floor.group(1)) if floor else None)
 
 
 def report(build_dir, n=8):

@@ -25,3 +25,25 @@ def build_dir(defconfig):
 
 def fwsc_path(defconfig):
     return build_dir(defconfig) / 'modd.fwsc'
+
+
+def flash_size(fwsc):
+    """The flash chip size (bytes) of the build that produced `fwsc`: CONFIG_FLASH_CHIP_SIZE in its
+    gen/config.h (kconf/flash.kconfig; 1 MiB on an FM-1). 1 MiB when the build has no config.h."""
+    import re
+    cfg = Path(fwsc).resolve().parent / 'gen' / 'config.h'
+    try:
+        m = re.search(r'^#define CONFIG_FLASH_CHIP_SIZE (\w+)$', cfg.read_text(), re.M)
+    except OSError:
+        return 1 << 20
+    return int(m.group(1), 0) if m else 1 << 20
+
+
+def flash_size_args(fwsc, flags=()):
+    """fm1-live's `--flash-size` for the build of `fwsc`: [] for the FM-1's 1 MiB (its default) or when
+    `flags` already name a size, else ['--flash-size', '8M']. Every tool that boots a package uses this,
+    so nobody has to remember the flag."""
+    size = flash_size(fwsc)
+    if size == 1 << 20 or '--flash-size' in flags:
+        return []
+    return ['--flash-size', f'{size >> 20}M']

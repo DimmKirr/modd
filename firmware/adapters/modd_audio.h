@@ -11,10 +11,12 @@
 
 /* --- core constants --- */
 
+#ifndef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED   /* the included stack's core.h defines these */
 #define NVOICE 8
 #define NPART  4
 #define NTRK   NPART
 #define NSTEP  64
+#endif
 #define CTL    32          /* samples per control tick */
 #ifdef CONFIG_DOCK
 #define BLOCK  256         /* DMA half-buffer: fm1-dock's HALF_FRAMES (its modules render 256-frame blocks; FM-106 renders nothing else) */
@@ -50,6 +52,23 @@ static inline int32_t audio_sat(int32_t x)
 
 /* engine params are always the last 8 in the P_* enum */
 #include "modd_engine.h"
+
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+/* The included Felucca stack: upstream core.h is the one source of P_*, G_*, step_t, track_t, song_t, trk[]
+ * and song. The engines it indexes are the ones the build has (engines.c keeps upstream's engine numbers). */
+#ifdef CONFIG_ENGINE_SLICE
+#define FELUCCA_SLICE 1
+#else
+#define FELUCCA_SLICE 0
+#endif
+#ifdef CONFIG_ENGINE_ADPCM
+#define FELUCCA_ADPCM 1
+#else
+#define FELUCCA_ADPCM 0
+#endif
+#define FELUCCA_CPU2 0          /* no second core in this build */
+#include "upstream/felucca/firmware/src/core.h"
+#else /* !CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */
 
 /* --- parameter IDs (superset of all upstreams) --- */
 
@@ -179,12 +198,15 @@ typedef struct {
     uint8_t rec;
     uint8_t sel;
     int16_t g[G_COUNT];
+    int8_t octave;
 } song_t;
 
 /* --- globals (the audio core owns these) --- */
 
 static track_t trk[NTRK];
 static song_t song;
+
+#endif /* CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */
 
 /* --- engine registry --- */
 /* When CONFIG_AUDIO is enabled, engines.c defines ENGINES[] and NENGINES.
@@ -316,10 +338,16 @@ static void modd_mock_init(void)
 /* Song and track defaults: called by audio_init() (real) and modd_mock_init()
  * (UI-only). Sets engine assignments, BPM, selected track, per-track presets.
  * Runs after tracks are zeroed and params_init() has applied engine defaults. */
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+/* defined by audio/core/felucca/stack_modd.c, after the engine registry it reads */
+static void modd_song_init(void);
+#else
 static void modd_song_init(void)
 {
     uint32_t k;
+#ifndef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
     song.bpm = 128;
+#endif
     song.sel = 1;
     song.g[G_BPM]    = 128;
     song.g[G_RTYPE]  = 0;      /* ROOM */
@@ -346,5 +374,50 @@ static void modd_song_init(void)
         trk[1].engine  = 4;
     }
 }
+#endif
+
+/* --- accessors: the shell, the REST API and the pages read tracks and the song through these, never through the
+ * fields that differ between the type sources (modd's own types, or upstream core.h with CONFIG_AUDIO_FELUCCA_STACK_INCLUDED) --- */
+
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+/* Parameter ids modd's pages use that core.h has no field for. They are stored, not heard ("stored but ignored"):
+ * a side array owned by the adapter, ids past P_COUNT (P_COUNT itself stays the empty slot), reached only through
+ * modd_tp() and modd_tp_set(). */
+enum {
+    MODD_XP_BASE = P_COUNT,
+    P_TUNE, P_FINE, P_FLT, P_RES, P_FENV, P_SHP, P_LFO, P_LFRT, P_LFSH, P_LFDL,
+    P_GLI, P_UNI, P_UDTN, P_USPRD, P_ARP, P_ARTM, P_ARNG, P_OCT, P_MONO, P_HOLD, P_VELO,
+    MODD_XP_END
+};
+#define MODD_XP_N (MODD_XP_END - MODD_XP_BASE - 1)
+static int16_t modd_xp[NTRK][MODD_XP_N];
+#define MODD_P_VALID(id) ((id) < P_COUNT || ((id) > MODD_XP_BASE && (id) < MODD_XP_END))
+static inline int16_t modd_tp(const track_t *t, uint32_t id)
+{
+    if (id < P_COUNT)
+        return t->p[id];
+    return id > MODD_XP_BASE && id < MODD_XP_END ? modd_xp[(uint32_t)(t - trk) % NTRK][id - MODD_XP_BASE - 1u] : 0;
+}
+static int16_t modd_tp_fit(const track_t *t, uint32_t id, int32_t v);   /* stack_modd.c: upstream's own range for the parameter */
+static inline void modd_tp_set(track_t *t, uint32_t id, int16_t v)
+{
+    if (id < P_COUNT)
+        t->p[id] = modd_tp_fit(t, id, v);       /* a page's own range is not upstream's (SLCR is 0..2, INSRT 0..8) */
+    else if (id > MODD_XP_BASE && id < MODD_XP_END)
+        modd_xp[(uint32_t)(t - trk) % NTRK][id - MODD_XP_BASE - 1u] = v;
+}
+static inline uint32_t modd_engine_of(const track_t *t) { return t->eng_req; }   /* what the panel asked for: engine follows at the next block */
+static inline int32_t modd_bpm(void) { return song.g[G_BPM]; }
+static inline uint32_t modd_step_len(const step_t *s) { return (uint32_t)(uint8_t)step_nudge(s); }
+static inline int32_t modd_step_nudge(const step_t *s) { return step_nudge(s); }
+#else
+#define MODD_P_VALID(id) ((id) < P_COUNT)
+static inline int16_t modd_tp(const track_t *t, uint32_t id) { return t->p[id]; }
+static inline void modd_tp_set(track_t *t, uint32_t id, int16_t v) { t->p[id] = v; }
+static inline uint32_t modd_engine_of(const track_t *t) { return t->engine; }
+static inline int32_t modd_bpm(void) { return (int32_t)song.bpm; }
+static inline uint32_t modd_step_len(const step_t *s) { return s->len; }
+static inline int32_t modd_step_nudge(const step_t *s) { return (int8_t)s->len; }
+#endif
 
 #endif /* MODD_AUDIO_H */

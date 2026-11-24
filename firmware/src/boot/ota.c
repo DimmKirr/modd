@@ -27,8 +27,11 @@
  *   ota_show(step, code)       progress / result for the screen
  *   ota_commit(parm)           write RAM record + reset (never returns on hardware)
  */
-#define OTA_AREA 0x000E0000u                     /* staged loader, 5 x 4 KiB */
-#define OTA_AREA_LEN 0x5000u
+#include "fm1_flash_map.h"                /* FLASH_OTA_LO / FLASH_OTA_LEN */
+#ifndef OTA_AREA                                 /* (adapters/modd_ota.h defines the same) */
+#define OTA_AREA FLASH_OTA_LO                     /* staged loader, 5 x 4 KiB */
+#define OTA_AREA_LEN FLASH_OTA_LEN
+#endif
 #define OTA_RES (OTA_AREA + OTA_AREA_LEN - 0x100u)  /* 0xE4F00 = 4K boundary - 256: SPL scan */
 #define OTA_LDR_HCRC 0xEBAAu                     /* official update loader (usb_hid_ota.bin) */
 #define OTA_LDR_DCRC 0x5881u
@@ -274,7 +277,7 @@ static int ota_stage(void)                       /* steps 1..6; 0 = host said su
     if ((rc = ota_ufw(hdr, &fl_off, &fl_len, &ota_off, &ota_len)) != 0)
         return rc;
     /* Any partition installs here: the package's own loader decides (ldr_core.c: this Melodee's moves the
-     * Prophet banks up before its app area, 0x93000, is written; an older one's ends at 0x89000). */
+     * Prophet banks up before its app area, FLASH_APP_END, is written; an older one's ends at 0x89000). */
     (void)fl_len;
     if (!fl_off || !ota_off)
         return -3;

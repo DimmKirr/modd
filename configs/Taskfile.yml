@@ -115,6 +115,10 @@ tasks:
     # Step 1 needs only the modd_emu build (_test:api builds it). Step 2 builds modd and felucca,
     # so it runs after the tests: a concurrent build stalls the emulator on the 2-CPU quota.
     cmds:
+      # Classes that pin DEFCONFIG = 'modd_felucca_emu' test that build: build it first (cached, one
+      # at a time: two builds at once stall on the 2-CPU quota), or they would skip or run a stale image.
+      - task: _build
+        vars: { DEFCONFIG: modd_felucca_emu, OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}' }
       - task: _test:api
         vars:
           DEFCONFIG: modd_emu
@@ -201,6 +205,10 @@ tasks:
     vars:
       _EMU_SUFFIX: '{{if eq (env "USE_OPEN_TOOLCHAIN" | default "1") "1"}}-open{{end}}'
     cmds:
+      # Classes that pin DEFCONFIG = 'modd_felucca_emu' test that build: build it first (cached, one
+      # at a time: two builds at once stall on the 2-CPU quota), or they would skip or run a stale image.
+      - task: _build
+        vars: { DEFCONFIG: modd_felucca_emu, OPEN: '{{env "USE_OPEN_TOOLCHAIN" | default "1"}}' }
       - task: _test:api
         vars:
           DEFCONFIG: modd_emu

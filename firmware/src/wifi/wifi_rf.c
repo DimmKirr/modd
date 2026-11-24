@@ -41,7 +41,7 @@ static struct {
 
 #define WIFI_VM_HW       0x0E8000u   /* stock V15's VM on hardware */
 #define WIFI_VM_HW_SIZE  0x1000u
-#define WIFI_VM_EMU_A    0x093000u   /* emulator area A */
+#define WIFI_VM_EMU_A    FLASH_APP_END   /* emulator area A: the package's "VM" region starts at the app area's end */
 #define WIFI_VM_EMU_SIZE 0x2000u
 #define WIFI_VM_MAGIC_0  0x55u
 #define WIFI_VM_MAGIC_1  0xAAu

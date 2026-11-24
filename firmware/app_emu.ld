@@ -1,16 +1,20 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Emulator-only memory map: same regions as app.ld plus a .pool_fb
- * section after .cpu1_stacks for the shadow framebuffer (112 KB).
- * Arena budget assert is removed: the framebuffer borrows from the
- * arena, but the emulator does not run real-time audio.
+ * Emulator-only memory map: app.ld's regions with a larger POOL, the stacks
+ * and NOINIT moved up by 0x20000, and FBUF for the shadow framebuffer in the
+ * RAM only fm1-live has (1 MiB; an FM-1 ends at 0x01C80000).
+ * The chip's boot info, mailbox and interrupt vectors stay where they are on
+ * an FM-1, 0x01C7FD50..0x01C7FFFF (hal/fm1_irq.h FM1_VEC, hal/fm1_sys.h), in
+ * the middle of this POOL: nothing may be placed over them (the ASSERT below).
+ * No arena budget assert: the emulator does not run real-time audio.
  * Based on app.ld (Melodee memory map). */
 MEMORY
 {
-    XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = 0x8C000
+    XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = FLASH_BODY_MAX
     RAMTEXT (rwx): ORIGIN = 0x01C00000, LENGTH = 0x7F00
     RAM    (rwx) : ORIGIN = 0x01C08000, LENGTH = 96K
     POOL   (rwx) : ORIGIN = 0x01C20000, LENGTH = 0x74000  /* 464 KiB (HW is 336 KiB) */
     NOINIT (rw)  : ORIGIN = 0x01C9C020, LENGTH = 0x3D30
+    FBUF   (rw)  : ORIGIN = 0x01CA0000, LENGTH = 0x40000  /* 256 KiB, emulator only */
     CACHE  (rw)  : ORIGIN = 0x01F28000, LENGTH = 28K
 }
 SECTIONS
@@ -40,10 +44,9 @@ SECTIONS
     } > POOL
     _cpu1_ustack_top = _cpu1_stacks_lo + 4096;
     _cpu1_sstack_top = _cpu1_stacks_lo + 8192;
-    .framebuffer (NOLOAD) : { *(.framebuffer*) . = ALIGN(4); } > POOL
-    _resource_end = ORIGIN(POOL) + LENGTH(POOL);
-    /* No arena budget assert: the framebuffer borrows from the arena,
-     * but the emulator does not run real-time audio. */
+    .framebuffer (NOLOAD) : { *(.framebuffer*) . = ALIGN(4); } > FBUF
+    _resource_end = 0x01C7FD50;    /* the arena stops below the chip's boot info, mailbox and vectors (not at the end of POOL, which spans them) */
+    ASSERT(_resource_start <= 0x01C7FD50, "POOL statics reach the boot info, mailbox and vectors at 0x01C7FD50")
     .noinit (NOLOAD) : { *(.noinit*) . = ALIGN(4); _noinit_end = .; } > NOINIT
     .audio_scratch (NOLOAD) : { . = ALIGN(32); *(.audio_scratch*) . = ALIGN(4); _audio_scratch_end = .; } > NOINIT
     _resource_retained_start = _audio_scratch_end;

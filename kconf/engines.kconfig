@@ -96,6 +96,18 @@ config ENGINE_SAMPLE
 config ENGINE_GRANULAR
     bool "Granular"
     select ENGINES
+    select ENGINE_SAMPLE
+    default n
+
+config ENGINE_SLICE
+    bool "Slice"
+    select ENGINES
+    select ENGINE_SAMPLE
+    default n
+
+config ENGINE_ADPCM
+    bool "ADPCM (BRR/SPC)"
+    select ENGINES
     default n
 
 config ENGINE_LOFI

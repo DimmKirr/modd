@@ -150,7 +150,12 @@ class FirmwareApi:
             self.throttled_s += max(0.0, wait)
             io_log.log('throttle', f'reserve {n} connections', 0.0, max(0.0, wait))
 
+    _shot_dirty = True
+    _shot_data = None
+
     def raw(self, path, timeout=30):
+        if path.split('?', 1)[0] not in self._READ_ONLY:
+            self._shot_dirty = True                  # this request may change what the page shows
         wait = self._spend_connection()
         self.requests += 1
         req = Request(self.base + path, headers={'Accept': 'application/json'})
@@ -168,12 +173,38 @@ class FirmwareApi:
             io_log.log('http', f'GET {path} -> {type(e).__name__}', time.monotonic() - t0, wait)
             raise
 
+    record = None            # ApiTestCase sets a list for the running test: every reply goes into its JSON dump
+
+    @staticmethod
+    def _shrink(v, limit=2000):
+        """A reply for the dump: long strings (a screenshot, a capture, a memory read) cut to their length."""
+        if isinstance(v, str) and len(v) > limit:
+            return f'<{len(v)} characters>'
+        if isinstance(v, dict):
+            return {k: FirmwareApi._shrink(x, limit) for k, x in v.items()}
+        if isinstance(v, list):
+            return [FirmwareApi._shrink(x, limit) for x in v[:500]] + ([f'<{len(v) - 500} more>'] if len(v) > 500 else [])
+        return v
+
+    def _record(self, path, reply=None, error=None):
+        if self.record is not None:
+            e = {'t': datetime.now(timezone.utc).strftime('%H:%M:%S.%f')[:-3], 'path': path}
+            e.update({'error': error} if error else {'reply': self._shrink(reply)})
+            self.record.append(e)
+
     def get(self, path, timeout=30):
-        body = self.raw(path, timeout)
         try:
-            return json.loads(body)
+            body = self.raw(path, timeout)
+        except Exception as e:  # noqa: BLE001  recorded, then raised as it was
+            self._record(path, error=f'{type(e).__name__}: {e}')
+            raise
+        try:
+            r = json.loads(body)
         except json.JSONDecodeError as e:
+            self._record(path, error=f'not JSON: {body[:200]!r}')
             raise ApiError(f'GET {path}: not JSON ({e}): {body[:200]!r}') from None
+        self._record(path, r)
+        return r
 
     def alive(self, timeout=3):
         try:
@@ -190,13 +221,51 @@ class FirmwareApi:
     def pages(self):
         return self.get('/api/pages')['pages']
 
+    # Page screenshots: every page a test opens or reads is saved as a picture, with no code in the test.
+    # page_hook(name, reply) is set by ApiTestCase (it saves the LCD into screenshots/lcd/); a shot is taken when the page showing
+    # (name, index, modal) is another than at the last shot, or its data changed after a request that can
+    # change it (input, a set route, a goto). A poll loop on one unchanged page takes one shot, not one a poll.
+    # MODD_API_PAGE_SHOTS=0 turns it off.
+    page_hook = None
+    _READ_ONLY = ('/api/screenshot', '/api/page', '/api/pages', '/api/info', '/api/log', '/openapi.json')
+
+    def _page_shot(self, r):
+        if self.page_hook is None or not isinstance(r, dict) or 'page' not in r:
+            return False
+        key = (r.get('page'), r.get('index'), r.get('modal'))
+        data = json.dumps(r.get('data'), sort_keys=True, default=str)
+        if key == getattr(self, '_shot_key', None) and not (self._shot_dirty and data != self._shot_data):
+            return False
+        self._shot_key, self._shot_data, self._shot_dirty = key, data, False
+        try:
+            self.page_hook(str(r.get('page')) + (f"-{r['modal']}" if r.get('modal') else ''), r)
+        except Exception as e:  # noqa: BLE001  a picture that cannot be saved never fails a test
+            io_log.log('shot', f'page screenshot failed: {type(e).__name__}: {e}', count=False)
+        return True
+
     def page(self):
         """The page showing, without navigating: {page, index, modal, data?}."""
-        return self.get('/api/page')
+        r = self.get('/api/page')
+        self._page_shot(r)
+        return r
 
     def goto(self, page, sub=None):
-        """Jump to a page by name (GET /modd/<page>[/<sub>]); returns the reply."""
-        return self.get(f'/modd/{page}' + (f'/{sub}' if sub else ''))
+        """Jump to a page by name (GET /modd/<page>[/<sub>]); returns the reply. With page screenshots
+        on, waits (up to 3 s) until the UI shows the page and saves a picture of it."""
+        r = self.get(f'/modd/{page}' + (f'/{sub}' if sub else ''))
+        if self.page_hook is not None and isinstance(r, dict) and r.get('ok', True) and r.get('page'):
+            end = time.monotonic() + 3.0
+            while True:
+                try:
+                    now = self.get('/api/page')
+                except (ApiError, URLError, OSError, TimeoutError):
+                    break
+                if now.get('page') == r['page'] or time.monotonic() >= end:
+                    self._shot_dirty = True
+                    self._page_shot(now)
+                    break
+                time.sleep(0.25)
+        return r
 
     def log(self):
         return self.get('/api/log', timeout=60)['entries']
@@ -606,6 +675,7 @@ class ApiTestCase(unittest.TestCase):
             cls.api = FirmwareApi(host)
             if not cls.api.alive(timeout=10):
                 raise unittest.SkipTest(f'RPC_HOST={host} does not answer /api/info')
+            cls._install_page_shots()
             return
         fwsc = api_fwsc(cls.DEFCONFIG)
         if not fwsc.is_file():
@@ -614,6 +684,7 @@ class ApiTestCase(unittest.TestCase):
             raise unittest.SkipTest(f'fm1-live not found ({FM1_LIVE}): build fm1-emu or set FM1_LIVE')
         # FM1_API_EMU_FLAGS (the task's EMU_FLAGS, e.g. "--wifi oss --net internet") replaces the default
         flags = os.environ.get('FM1_API_EMU_FLAGS', '').split() or list(cls.EMU_FLAGS)
+        flags += fm1_paths.flash_size_args(fwsc, flags)    # an emulator flash map needs a larger chip
         if cls.CDP:
             cls.cdp_port = _free_port()
             flags += ['--cdp', str(cls.cdp_port)]
@@ -625,6 +696,7 @@ class ApiTestCase(unittest.TestCase):
         cls._boots = 1
         cls.emu = Fm1Live(fwsc, flags, cls.results_dir() / f'fm1-live-{cls.__name__}.log')
         cls.api = cls.emu.start()
+        cls._install_page_shots()
 
     @classmethod
     def restart_emu(cls, timeout=90, wait_api=True, add_flags=()):
@@ -647,6 +719,7 @@ class ApiTestCase(unittest.TestCase):
         cls._boots += 1
         cls.emu = Fm1Live(fwsc, flags, cls.results_dir() / f'fm1-live-{cls.__name__}-boot{cls._boots}.log')
         cls.api = cls.emu.start(timeout=timeout, wait_api=wait_api)
+        cls._install_page_shots()
         return cls.api
 
     @classmethod
@@ -677,13 +750,133 @@ class ApiTestCase(unittest.TestCase):
     def save_wav(self, name, samples):
         return write_wav(self.results_dir() / name, samples)
 
+    # screenshots/lcd/ is the one folder for pictures. One sequence per test module,
+    # screenshots/lcd/NNN-<Class>-<test>-<PAGE>[-<label>].png (pictures only), and one pages.json in the
+    # module's folder with a row per picture and the /api/page reply it shows:
+    #   - every page a test opens or reads (FirmwareApi.page_hook), no code in the test;
+    #   - what a test saves itself, self.screenshot(label);
+    #   - the LCD at the end of a test, label "end", when it shows something no picture of the test has.
+    # A picture equal to the one before it in the test is not saved twice. MODD_API_PAGE_SHOTS=0 leaves only
+    # the pictures the tests ask for.
+    _shot_seq = 0            # per class: the sequence number
+    _test_shots = 0          # pictures of the running test
+    _last_shot = None        # the last picture's bytes (to skip a repeat)
+
+    _last_path = None        # the last picture's file, and whether a test asked for it by label
+    _last_labelled = False
+    last_shot_path = None    # the file of the picture screenshot() saved last (for a test that reads it back)
+
+    @classmethod
+    def _shot_stem(cls, seq, page, label):
+        test = io_log.current.rsplit('::', 1)[-1] if io_log.current not in ('', '-') else 'class'
+        if label and page and str(label).upper().startswith(str(page).upper()):
+            page = None                                  # "FX" + "FX-before" is "FX-before"
+        name = '-'.join(str(x) for x in (test, page, label) if x)
+        safe = ''.join(c if c.isalnum() or c in '-_' else '_' for c in name)
+        return cls.results_dir() / 'screenshots' / 'lcd' / f'{seq:03d}-{cls.__name__}-{safe}'
+
+    @classmethod
+    def _save_shot(cls, img, page, label=None, reply=None):
+        """Save one picture of the sequence and return its path. A picture equal to the one before it in the
+        test is not saved again: without a label it is skipped (None); with a label the one before takes the
+        label, unless a test labelled that one too."""
+        raw = img.tobytes()
+        if cls._test_shots and raw == cls._last_shot and cls._last_path is not None:
+            if label is None:
+                return None
+            if not cls._last_labelled:
+                stem = cls._shot_stem(cls._shot_seq, page, label)
+                cls._last_path.rename(stem.with_suffix('.png'))
+                cls._last_path, cls._last_labelled = stem.with_suffix('.png'), True
+                cls._pages_index(lambda rows: rows[-1].update(file=cls._last_path.name, label=str(label)))
+                return cls._last_path
+        cls._shot_seq += 1
+        cls._test_shots += 1
+        cls._last_shot = raw
+        stem = cls._shot_stem(cls._shot_seq, page, label)
+        stem.parent.mkdir(parents=True, exist_ok=True)
+        img.save(stem.with_suffix('.png'))
+        cls._last_path, cls._last_labelled = stem.with_suffix('.png'), label is not None
+        row = {'file': cls._last_path.name, 'class': cls.__name__,
+               'test': io_log.current.rsplit('::', 1)[-1] if io_log.current not in ('', '-') else None,
+               'page': page, 'label': None if label is None else str(label),
+               'time_utc': datetime.now(timezone.utc).strftime('%H:%M:%S.%f')[:-3], 'reply': reply}
+        cls._pages_index(lambda rows: rows.append(row))
+        return cls._last_path
+
+    @classmethod
+    def _pages_index(cls, change):
+        """pages.json in the module's folder: one row per picture of screenshots/lcd/, in order, with the
+        /api/page reply the picture shows (file, class, test, page, label, time_utc, reply)."""
+        path = cls.results_dir() / 'pages.json'
+        try:
+            rows = json.loads(path.read_text()) if path.exists() else []
+            change(rows)
+            path.write_text(json.dumps(rows, indent=1, default=str) + '\n')
+        except (OSError, ValueError, IndexError):
+            pass
+
+    @classmethod
+    def _install_page_shots(cls):
+        if os.environ.get('MODD_API_PAGE_SHOTS', '1') == '0' or cls.api is None:
+            return
+        api = cls.api
+        api.page_hook = lambda page, reply: cls._save_shot(api.screenshot(), page, None, reply)
+
+    def run(self, result=None):
+        """Every API test leaves its data and at least one picture, whatever the test does itself:
+            data/<Class>-<test>.json   every API reply of the test, in order, and the page at its end
+            screenshots/lcd/           the pictures (see above)."""
+        cls = type(self)
+        on = os.environ.get('MODD_API_PAGE_SHOTS', '1') != '0'
+        rec = [] if on else None
+        cls._test_shots = 0
+        if cls.api is not None:
+            cls.api.record = rec
+        try:
+            return super().run(result)
+        finally:
+            if on:
+                self._save_test_outputs(rec)
+
+    def _save_test_outputs(self, rec):
+        cls = type(self)
+        api = cls.api
+        name = ''.join(c if c.isalnum() or c in '-_' else '_' for c in f'{cls.__name__}-{self._testMethodName}')
+        out = {'test': self.id(), 'requests': rec}
+        try:
+            if api is not None:
+                api.record = None                       # the requests below are not the test's
+                if api.alive(timeout=3):
+                    out['page_at_end'] = end = api.get('/api/page', timeout=10)
+                    if cls._test_shots == 0 or api._shot_dirty:      # something no picture of the test shows
+                        cls._save_shot(api.screenshot(), end.get('page'), 'end', end)
+                        api._shot_dirty = False
+                else:
+                    out['page_at_end'] = None           # the firmware is not answering (a test may end that way)
+        except Exception as e:  # noqa: BLE001  saving the outputs never fails a test
+            out['save_error'] = f'{type(e).__name__}: {e}'
+            io_log.log('shot', f'end-of-test outputs: {type(e).__name__}: {e}', count=False)
+        try:
+            d = self.results_dir() / 'data'
+            d.mkdir(parents=True, exist_ok=True)
+            (d / f'{name}.json').write_text(json.dumps(out, indent=2, default=str) + '\n')
+        except OSError:
+            pass
+
     def screenshot(self, name):
-        """Save the LCD to screenshots/lcd/<ts>-<name>.png; returns the PIL image."""
+        """Save the LCD in the module's picture sequence with the label `name`; returns the PIL image."""
         img = self.api.screenshot()
-        d = self.results_dir() / 'screenshots' / 'lcd'
-        d.mkdir(parents=True, exist_ok=True)
-        ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H%M%S.%f')[:-3] + 'Z'
-        img.save(d / f'{ts}-{name}.png')
+        api = self.api
+        try:
+            reply = api.get('/api/page', timeout=10) if api.page_hook is not None else None
+        except Exception:  # noqa: BLE001
+            reply = None
+        self.last_shot_path = type(self)._save_shot(img, (reply or {}).get('page'), name, reply)
+        if reply is not None:                           # this state is pictured: page() does not take it again
+            api._shot_key = (reply.get('page'), reply.get('index'), reply.get('modal'))
+            api._shot_data = json.dumps(reply.get('data'), sort_keys=True, default=str)
+            api._shot_dirty = False
         return img
 
     @staticmethod

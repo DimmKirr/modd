@@ -405,6 +405,9 @@ static void fm1_fault(const fm1_crash_t *c)
 #include "modd_audio.h"
 #include "modd_seq.h"
 #include "modd_fx.h"
+#ifdef CONFIG_FX_HOST
+#include "modd_arena.h"
+#endif
 #include "modd_midi.h"
 #include "modd_storage.h"
 #include "modd_mod.h"
@@ -517,8 +520,12 @@ static uint8_t *usb_host_rxbuf;
 /* --- engine plugins (compile independently of the audio core) --- */
 
 #ifdef CONFIG_ENGINES
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+#include "felucca_tables.h"     /* upstream's tools/gen_tables.py: the superset of fe_tables.h */
+#else
 #include "fe_tables.h"
-#include "audio/engines/dsp.c"
+#endif
+#include "upstream/felucca-engines/src/dsp.c"   /* Felucca-Engines DSP helpers, INCLUDED unchanged */
 #include "audio/engines/engines.c"
 #endif
 
@@ -885,6 +892,10 @@ static void wifi_cmd_poll(void);
 static int32_t master_iir;
 
 #ifdef CONFIG_AUDIO
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+/* the upstream Felucca stack: params, mod, voice, slicer, fx (mixer, effects) and the audio interrupt */
+#include "audio/core/felucca/stack_modd.c"
+#else /* !CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */
 #include "audio/params.c"
 #ifndef CONFIG_ENGINES
 #include "audio/engines/engines.c"
@@ -909,6 +920,24 @@ static int32_t master_iir;
 #include "audio/mix/mix.c"
 #endif
 
+#ifdef CONFIG_ARENA_MELODEE
+#include "mem/arena_melodee_modd.c"
+#endif
+
+#ifdef CONFIG_FX_HOST
+/* --- effects host (modd-native): units after dsp.c, host before the audio core that calls it --- */
+#ifdef CONFIG_FX_UNIT_SLOOP_INSERT
+#include "audio/effects/host/fx_unit_sloop_insert_modd.c"
+#endif
+#ifdef CONFIG_DSP_OPTIMIST
+#include "audio/effects/host/dsp_optimist_modd.c"   /* Optimist dsp/dsp.c INCLUDED unchanged (names renamed inside) */
+#endif
+#ifdef CONFIG_FX_UNIT_EXGAIN
+#include "audio/effects/host/fx_unit_exgain_modd.c"
+#endif
+#include "audio/effects/host/fx_host.c"
+#endif
+
 #include "audio/core/audio.c"
 
 /* --- effects chain --- */
@@ -917,7 +946,10 @@ static int32_t master_iir;
 #elif defined(CONFIG_EFFECTS_MELODEE)
 #include "audio/effects/melodee/fx.c"
 #endif
+#endif /* !CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */
 #endif
+
+#include "modd_pages.h"
 
 /* --- scales --- */
 #if defined(CONFIG_SCALES_MELODEE)
@@ -928,7 +960,7 @@ static int32_t master_iir;
 #include "scales/scales.c"
 #endif
 
-#if defined(CONFIG_MOD_FELUCCA)
+#if defined(CONFIG_MOD_FELUCCA) && !defined(CONFIG_AUDIO_FELUCCA_STACK_INCLUDED)
 #include "audio/chord.c"   /* after scales: chord_tones reads scale_mask */
 #endif
 
@@ -1269,6 +1301,9 @@ static void ui_task(void)
             master_iir += (a - master_iir) >> 3;
             song.master_q12 = (uint32_t)((master_iir * master_iir) >> 8);
         }
+#ifdef CONFIG_FX_HOST
+        fx_host_poll();
+#endif
 #endif
 #ifdef CONFIG_INPUT
         sched_mark(2);          /* input: button and knob handlers */
@@ -1701,6 +1736,9 @@ static void fm1_main(void)
             master_iir += (a - master_iir) >> 3;
             song.master_q12 = (uint32_t)((master_iir * master_iir) >> 8);
         }
+#ifdef CONFIG_FX_HOST
+        fx_host_poll();
+#endif
 #endif
 #ifdef CONFIG_EDITOR
         editor_poll();

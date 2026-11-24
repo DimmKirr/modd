@@ -40,4 +40,31 @@ config MIX
     depends on AUDIO
     default n
 
+config FX_HOST
+    bool "modd effects host (one master slot after the mix, units from any firmware)"
+    depends on AUDIO && !EFFECTS_FELUCCA
+    default n
+
+config FX_UNIT_SLOOP_INSERT
+    bool "Unit: Melodee SLOOP insert (drives, crush, flanger, phaser, chorus)"
+    depends on FX_HOST
+    default y
+
+config FX_UNIT_EXGAIN
+    bool "Unit: Optimist EXGN insert (a gain in dB)"
+    depends on FX_HOST && ENGINES
+    select DSP_OPTIMIST
+    default n
+
+config DSP_OPTIMIST
+    bool
+    help
+      Optimist dsp/dsp.c, included unchanged beside the Felucca-Engines DSP (names renamed in
+      firmware/src/audio/effects/host/dsp_optimist_modd.c). Selected by the Optimist units.
+
+config ARENA_MELODEE
+    bool "Arena: Melodee resources.c as the one memory area (fx host, Melodee- and SLOOP-style requests)"
+    depends on FX_HOST
+    default n
+
 endmenu

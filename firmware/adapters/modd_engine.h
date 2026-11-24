@@ -15,6 +15,18 @@
 #define MODD_ENGINE_H
 #include <stdint.h>
 
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+/* The included Felucca stack (stack_modd.c) uses upstream's own engine interface: one definition of
+ * voice_t, vmod_t, preset_t and engine_t for the stack and for the engines. */
+#ifndef NVOICE
+#define NVOICE 8
+#endif
+#ifndef NPART
+#define NPART 4
+#endif
+#include "upstream/felucca/firmware/engines/src/felucca_engine.h"
+#else /* !CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */
+
 #ifndef NVOICE
 #error "modd_engine.h: the host defines NVOICE before including this header"
 #endif
@@ -125,5 +137,8 @@ typedef struct {
     uint32_t (*units)(const struct track *t);
     void (*preset_make)(uint32_t k, preset_t *p, char *name);
 } engine_t;
+
+
+#endif /* CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */
 
 #endif /* MODD_ENGINE_H */

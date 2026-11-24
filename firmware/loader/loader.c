@@ -21,7 +21,7 @@
 #include "fm1_time.h"
 #include "fm1_sys.h"
 /* the loader writes the app area and erases update records; never the head */
-#define FL_RANGE_OK(off, n) (FL_IN(off, n, 0x4000u, 0x93000u) || FL_IN(off, n, 0x93000u, 0xFC000u))
+#define FL_RANGE_OK(off, n) (FL_IN(off, n, FLASH_APP_LO, FLASH_APP_END) || FL_IN(off, n, FLASH_APP_END, FLASH_GLOB_LO))
 #include "fm1_flash.h"
 #include "../src/libc.c"
 #include "../src/midi/usb.c"
@@ -69,7 +69,7 @@ static int ldr_erase(uint32_t off)
 static int ldr_prog(uint32_t off, const void *p, uint32_t n)
 {
     uint32_t took;
-    if (!FL_IN(off, n, 0x4000u, 0x93000u))
+    if (!FL_IN(off, n, FLASH_APP_LO, FLASH_APP_END))
         return -1;
     return fl_prog_ram(off, p, n, &took);
 }

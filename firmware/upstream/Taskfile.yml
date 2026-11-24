@@ -26,6 +26,31 @@ tasks:
     cmds:
       - vendir sync --locked
 
+  patch:
+    desc: "Apply patches/<upstream>/*.patch to a copy under build/<defconfig>[-open]/gen/patched/ (the vendored trees stay pristine; -- --defconfig <name>)"
+    # One copy and one checksum per defconfig and toolchain: the copy lives in that build's gen/ dir,
+    # which is where build.py looks, and a fresh or deleted build dir has no copy to skip.
+    # build:live passes DEFCONFIG and OUT; run alone, the arguments and USE_OPEN_TOOLCHAIN decide.
+    label: 'vendor:patch:{{.OUT}}'
+    deps: [ensure]
+    vars:
+      DEFCONFIG: '{{.DEFCONFIG | default (regexReplaceAll "^--defconfig[= ]+" (regexFind "--defconfig[= ]+[A-Za-z0-9_.-]+" .CLI_ARGS) "" | default "modd")}}'
+      OUT: '{{.OUT | default (printf "build/%s%s" .DEFCONFIG (ternary "-open" "" (eq (env "USE_OPEN_TOOLCHAIN") "1")))}}'
+    sources:
+      - patches/**/*.patch
+      - vendir.lock.yml
+    generates:
+      - '{{.OUT}}/gen/patched/stamp.json'
+    method: checksum
+    cmds:
+      - uv run --quiet python tools/build/patches.py apply --out '{{.OUT}}/gen/patched'
+
+  patches:check:
+    desc: "Check that every patch has its header, names the commit in vendir.lock.yml and applies to the vendored tree (CI; run after vendor:sync)"
+    deps: [ensure]
+    cmds:
+      - uv run --quiet python tools/build/patches.py check
+
   sync:
     desc: "Re-resolve the pins in vendir.yml: rewrite the trees and vendir.lock.yml (one tree: -- --directory <path>)"
     cmds:

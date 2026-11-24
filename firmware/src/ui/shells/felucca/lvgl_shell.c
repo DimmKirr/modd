@@ -246,10 +246,10 @@ typedef struct { uint8_t pid; int16_t mn, mx; uint8_t wrap; } fsh_lk_t;
 
 static int fsh_layer_param(const fsh_lk_t *m, track_t *t, int32_t clicks)
 {
-    int16_t v = t->p[m->pid] + (int16_t)clicks;
+    int16_t v = modd_tp(t, m->pid) + (int16_t)clicks;
     if (v < m->mn) v = m->wrap ? m->mx : m->mn;
     if (v > m->mx) v = m->wrap ? m->mn : m->mx;
-    t->p[m->pid] = v;
+    modd_tp_set(t, m->pid, v);
     nav_dirty = 1;
     return 1;
 }
@@ -374,12 +374,12 @@ static void shell_knob(uint32_t id, int32_t clicks)
         uint32_t i;
         for (i = 0; i < p->knob_count; i++) {
             const param_slot_t *s = &p->knob_map[i];
-            if (s->enc_id != (uint8_t)id || s->pid >= P_COUNT)
+            if (s->enc_id != (uint8_t)id || !MODD_P_VALID(s->pid))
                 continue;
             track_t *t = (s->flags & SLOT_TRACK)
                 ? &trk[i < NTRK ? i : 0]
                 : &trk[song.sel];
-            int16_t v = t->p[s->pid] + (int16_t)(clicks * s->step);
+            int16_t v = modd_tp(t, s->pid) + (int16_t)(clicks * s->step);
             if (s->flags & SLOT_WRAP) {
                 if (v < s->min) v = s->max;
                 if (v > s->max) v = s->min;
@@ -387,7 +387,7 @@ static void shell_knob(uint32_t id, int32_t clicks)
                 if (v < s->min) v = s->min;
                 if (v > s->max) v = s->max;
             }
-            t->p[s->pid] = v;
+            modd_tp_set(t, s->pid, v);
             nav_dirty = 1;
             return;
         }
@@ -496,13 +496,13 @@ static void shell_button(uint32_t id, uint32_t down)
         int dir = (id == BTN_OCTUP) ? 1 : -1;
         if (id == BTN_OCTDN && (fsh.ly || fsh.lock) && fsh_snap_undo())
             return;
-        int16_t oct = trk[song.sel].p[P_OCT] + (int16_t)dir;
+        int16_t oct = modd_tp(&trk[song.sel], P_OCT) + (int16_t)dir;
         if (oct < -3) oct = -3;
         if (oct > 3) oct = 3;
         if ((fm1_in.buttons >> BTN_OCTDN) & 1u &&
             (fm1_in.buttons >> BTN_OCTUP) & 1u)
             oct = 0;
-        trk[song.sel].p[P_OCT] = oct;
+        modd_tp_set(&trk[song.sel], P_OCT, oct);
         nav_dirty = 1;
         return;
     }

@@ -58,9 +58,9 @@ static void auto_lock_apply(track_t *t, uint32_t step_idx)
     auto_ensure_init();
     if (step_idx >= NSTEP) return;
     for (k = 0; k < AUTO_NPARAMS; k++) {
-        auto_saved[i][k] = t->p[auto_params[k]];
+        auto_saved[i][k] = modd_tp(t, auto_params[k]);
         if (auto_locks[i][step_idx][k] != 0xFF)
-            t->p[auto_params[k]] = (int16_t)auto_locks[i][step_idx][k];
+            modd_tp_set(t, auto_params[k], (int16_t)auto_locks[i][step_idx][k]);
     }
     auto_active[i] = 1;
 }
@@ -70,7 +70,7 @@ static void auto_lock_restore(track_t *t)
     uint32_t i = seq_trk_index(t), k;
     if (!auto_active[i]) return;
     for (k = 0; k < AUTO_NPARAMS; k++)
-        t->p[auto_params[k]] = auto_saved[i][k];
+        modd_tp_set(t, auto_params[k], auto_saved[i][k]);
     auto_active[i] = 0;
 }
 
@@ -129,7 +129,7 @@ static void seq_step(track_t *t, const step_t *s, uint32_t period)
     uint32_t i = seq_trk_index(t);
     uint32_t gate_p = t->p[P_SGATE] > 0 ? (uint32_t)t->p[P_SGATE] : SEQ_GATE_DEFAULT;
     uint32_t ratch = 1u + ((s->flags >> SF_RATCH_SHIFT) & SF_RATCH_MASK);
-    int32_t nudge = (int8_t)s->len;
+    int32_t nudge = modd_step_nudge(s);
     seq_dly[i] = 0;
     seq_rleft[i] = 0;
     seq_release(t);
@@ -300,8 +300,12 @@ static void events_block(uint32_t n)
         seq_start();
     }
     transport_req = 0;
-    for (i = 0; i < NTRK; i++)
+    for (i = 0; i < NTRK; i++) {
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+        engine_block(&trk[i]);      /* the stack's engine switch (voice.c), called here as upstream's events_block does */
+#endif
         seq_tick(&trk[i], n);
+    }
     if (song.playing)
         song.tick++;
 }

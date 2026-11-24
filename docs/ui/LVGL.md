@@ -211,7 +211,7 @@ task build -- --defconfig modd          # or: task modd:build:modd
 |---------|------------------|
 | Screenshots | `docs/ui/shells/modd/screenshots/`; regenerate with `uv run python tools/codegen/gen_ui_screenshots.py modd` |
 | Native emulator | `$FM1_EMU_ROOT/target/release/fm1-live --fwsc build/modd/modd.fwsc --wifi oss --net internet` |
-| API tests, with LCD screenshots | `task test:api` (build `modd_emu`; tests in `tests/ui/shells/modd/api/`; pictures in `tests/results/<time>-modd_api_test/screenshots/lcd/`) |
+| API tests, with LCD screenshots | `task test:api` (build `modd_emu`; tests in `tests/ui/shells/modd/api/`; pictures in `tests/results/<time>-<run>/modd_api_test/screenshots/lcd/`) |
 | Browser emulator | serve `$FM1_EMU_ROOT/_site/` and load `build/modd/modd.fwsc` (not yet tried with this shell) |
 | Hardware-like timing | add `FM1_STRICT=1`: timed SPI, faults on misaligned access |
 

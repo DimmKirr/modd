@@ -351,14 +351,48 @@ static void api_page(const char *const *a)
     rpc_http_json_end(tx);
 }
 
+/* Set one card of a page by slot, without the keys or the encoders. Only the effect page (INSERT) has cards that
+ * can be set so far (modd_pages.h); its data is in GET /api/page. */
+static void api_page_set(const char *const *a)
+{
+    struct rpc_tx *tx = &rpc_tx_static;
+    const char *page = api_arg_str(a[0], "page");
+    int32_t slot, value;
+    modd_card_t c[4];
+    if (!api_arg_int(a[1], "slot", 0, 7, &slot)) return;
+    if (!api_arg_int(a[2], "value", -32768, 32767, &value)) return;
+    if (!rpc_streq_nocase(page, "INSERT") || !modd_fx_page_read(c, 4u)) {
+        rpc_http_error(404, "page has no cards that can be set");
+        return;
+    }
+    if (modd_fx_page_set((uint32_t)slot, value)) {
+        rpc_http_error(400, "slot or value out of range");
+        return;
+    }
+    rpc_http_json_ok(tx);
+    rpc_tx_key_str(tx, "page", "INSERT");
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "slot", slot);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "value", value);
+    rpc_http_json_end(tx);
+}
+
 /* /modd/{page} and /modd/{page}/{sub} */
 static void api_goto(const char *const *a)
 {
     struct rpc_tx *tx = &rpc_tx_static;
-    const char *page = api_arg_str(a[0], "page");
+    const char *src = api_arg_str(a[0], "page");
     const char *sub = a[1] ? api_arg_str(a[1], "sub") : "";
-    uint32_t i = 0;
-    int r = api_page_goto(page, sub, &i);
+    char page[24];
+    uint32_t i = 0, n = 0;
+    int r;
+    for (; *src && n < sizeof page - 1u; src++, n++) {    /* "env%20dest", "env-dest", "env_dest" */
+        if (src[0] == '%' && src[1] == '2' && src[2] == '0') { src += 2; page[n] = ' '; }
+        else page[n] = (*src == '-' || *src == '_') ? ' ' : *src;
+    }
+    page[n] = 0;
+    r = api_page_goto(page, sub, &i);
     if (r == API_GOTO_NO_PAGE) {
         rpc_http_error(404, "Unknown page");
         return;
@@ -451,13 +485,153 @@ static void api_audio(const char *const *a)
     rpc_http_json_end(tx);
 }
 
+#ifdef CONFIG_FX_HOST
+/* The effects host's one slot (audio/effects/host/fx_host.c): the main loop applies a request. */
+static void api_fx_json(void)
+{
+    struct rpc_tx *tx = &rpc_tx_static;
+    static const char *const st[4] = {"off", "placed", "gated", "refused"};
+    const fx_unit_t *u = fx_slot_unit;
+    rpc_http_json_ok(tx);
+    rpc_tx_key_str(tx, "unit", u ? u->name : "");
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "type", (int32_t)fx_slot_type);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_str(tx, "type_name", u ? u->type_name(fx_slot_type) : "");
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "amount", fx_slot_amount);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_str(tx, "state", st[fx_state_v & 3u]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "bytes", fx_slot_bytes);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "arena_used", modd_arena_used());
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_bool(tx, "refuse", modd_arena_refuse);
+    rpc_http_json_end(tx);
+}
+
+static void api_fx_slot(const char *const *a)
+{
+    (void)a;
+    api_fx_json();
+}
+
+static void api_fx_off(const char *const *a)
+{
+    (void)a;
+    fx_req_off = 1;
+    api_fx_json();
+}
+
+static void api_fx_on(const char *const *a)
+{
+    int32_t type, amount;
+    if (!api_arg_int(a[0], "type", 0, 7, &type)) return;
+    if (!api_arg_int(a[1], "amount", 0, 127, &amount)) return;
+    fx_req_unit = 0;
+    fx_req_type = (uint32_t)type;
+    fx_req_amount = amount;
+    fx_req_on = 1;
+    api_fx_json();
+}
+
+static void api_fx_unit(const char *const *a)
+{
+    int32_t unit, type, amount;
+    if (!api_arg_int(a[0], "unit", 0, 7, &unit)) return;
+    if (!api_arg_int(a[1], "type", 0, 7, &type)) return;
+    if (!api_arg_int(a[2], "amount", 0, 127, &amount)) return;
+    fx_req_unit = (uint32_t)unit;
+    fx_req_type = (uint32_t)type;
+    fx_req_amount = amount;
+    fx_req_on = 1;
+    api_fx_json();
+}
+
+static void api_fx_refuse(const char *const *a)
+{
+    int32_t v;
+    if (!api_arg_int(a[0], "value", 0, 1, &v)) return;
+    modd_arena_refuse = (uint8_t)v;
+    api_fx_json();
+}
+#endif /* CONFIG_FX_HOST */
+
+#ifdef CONFIG_ARENA_MELODEE
+/* The one arena (mem/arena_melodee_modd.c): every live block of the resource table, and the last probe's result. The
+ * handlers run in the main loop, which is the only context that mutates the table; the audio interrupt never reads it
+ * (the fx host's block is reached through a pointer the gate publishes after the get), so no interrupt guard is needed. */
+static void api_arena_json(uint32_t ok, uint32_t addr)
+{
+    struct rpc_tx *tx = &rpc_tx_static;
+    uint32_t k, n = 0;
+    rpc_http_json_ok(tx);
+    rpc_tx_key_uint(tx, "used", resource_used());
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "capacity", RESOURCE_CAPACITY);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "peak", resource_peak);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "failures", resource_failures);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_bool(tx, "ok", ok != 0);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "addr", addr);
+    rpc_tx_char(tx, ',');
+    rpc_tx_raw(tx, "\"blocks\":[");
+    for (k = 0; k < RES_COUNT; k++) {
+        if (!resource[k].size) continue;
+        if (n++) rpc_tx_char(tx, ',');
+        rpc_tx_raw(tx, "{");
+        rpc_tx_key_uint(tx, "id", k);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_uint(tx, "addr", (uint32_t)(uintptr_t)resource[k].ptr);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_uint(tx, "size", resource[k].size);
+        rpc_tx_char(tx, '}');
+    }
+    rpc_tx_char(tx, ']');
+    rpc_http_json_end(tx);
+}
+
+static void api_arena(const char *const *a)
+{
+    (void)a;
+    api_arena_json(0, 0);
+}
+
+static const char *const API_ARENA_STYLE[2] = {"melodee", "sloop"};
+
+/* a Melodee-style (resource_get(RES_ENGINE0 + part)) or SLOOP-style (eng_arena_of) request for `bytes` on a part */
+static void api_arena_probe(const char *const *a)
+{
+    int32_t style, part, bytes;
+    void *p;
+    if (!api_arg_enum(a[0], "style", API_ARENA_STYLE, 2u, &style)) return;
+    if (!api_arg_int(a[1], "part", 0, 3, &part)) return;
+    if (!api_arg_int(a[2], "bytes", 0, 4194304, &bytes)) return;
+    p = style ? modd_arena_probe_sloop((uint32_t)part, 1u, (uint32_t)bytes)
+              : modd_arena_probe_melodee((uint32_t)part, (uint32_t)bytes);
+    api_arena_json(p != 0, (uint32_t)(uintptr_t)p);
+}
+
+static void api_arena_release(const char *const *a)
+{
+    int32_t part;
+    if (!api_arg_int(a[0], "part", 0, 3, &part)) return;
+    modd_arena_probe_release((uint32_t)part);
+    api_arena_json(1, 0);
+}
+#endif /* CONFIG_ARENA_MELODEE */
+
 static void api_engine(const char *const *a)
 {
     struct rpc_tx *tx = &rpc_tx_static;
     (void)a;
     rpc_http_json_ok(tx);
 #ifdef CONFIG_AUDIO
-    rpc_tx_key_int(tx, "engine_index", (int32_t)trk[song.sel].engine);
+    rpc_tx_key_int(tx, "engine_index", (int32_t)modd_engine_of(&trk[song.sel]));
     rpc_tx_char(tx, ',');
     rpc_tx_key_int(tx, "voice_count", (int32_t)NVOICE);
 #else
@@ -703,7 +877,7 @@ static void api_pot_release(const char *const *a)
 static void api_track_json(uint32_t k)
 {
     struct rpc_tx *tx = &rpc_tx_static;
-    uint32_t e = trk[k].engine;
+    uint32_t e = modd_engine_of(&trk[k]);
     rpc_http_json_ok(tx);
     rpc_tx_key_uint(tx, "track", k);
     rpc_tx_char(tx, ',');
@@ -847,6 +1021,7 @@ static const struct {
 #endif
     { "/api/pages",                               api_pages },
     { "/api/page",                                api_page },
+    { "/api/page/{page}/set/{slot}/{value}",      api_page_set },
     { "/modd/{page}",                             api_goto },
     { "/modd/{page}/{sub}",                       api_goto },
     { "/api/log",                                 api_log },
@@ -857,6 +1032,18 @@ static const struct {
     { "/api/engine",                              api_engine },
 #ifdef CONFIG_RPC_AUDIO_TAP
     { "/api/audio/capture",                       api_audio_capture },
+#endif
+#ifdef CONFIG_FX_HOST
+    { "/api/fx/slot",                             api_fx_slot },
+    { "/api/fx/slot/off",                         api_fx_off },
+    { "/api/fx/slot/on/{type}/{amount}",          api_fx_on },
+    { "/api/fx/slot/unit/{unit}/{type}/{amount}", api_fx_unit },
+    { "/api/fx/refuse/{value}",                   api_fx_refuse },
+#endif
+#ifdef CONFIG_ARENA_MELODEE
+    { "/api/arena",                               api_arena },
+    { "/api/arena/release/{part}",                api_arena_release },
+    { "/api/arena/probe/{style}/{part}/{bytes}",  api_arena_probe },
 #endif
 #ifdef CONFIG_RPC_INPUT
     { "/api/input",                               api_input_state },

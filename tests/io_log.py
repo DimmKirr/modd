@@ -2,11 +2,14 @@
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 """The test trace: everything a test does, timestamped, in its module's results folder.
 
-    tests/results/<RUN_STAMP>-<test module>/debug.log
+    tests/results/<RUN_STAMP>-<RUN_NAME>/               one folder per pytest session
+        timings.tsv                                     every test of the session
+        <test module>/debug.log                         and the module's screenshots, fm1-live logs, WAVs
 
-One pytest session has one RUN_STAMP (UTC, 2026-11-20T070401Z); every results folder of the
-session uses it (api_fixtures, build_fixtures), so a module's screenshots, fm1-live logs and
-debug.log sit together. tests/conftest.py turns the trace on and writes each test's life
+One pytest session has one RUN_STAMP (UTC, 2026-11-20T070401Z) and one RUN_NAME (the tier, "unit"
+or "api"; the test file's name when the session runs one file; else "tests": tests/conftest.py
+sets it). Everything the session writes is under that one folder (run_dir()), so a module's
+screenshots, fm1-live logs and debug.log sit together and the session's timings.tsv is next to them. tests/conftest.py turns the trace on and writes each test's life
 (start, setup, call, teardown, end with outcome and seconds) and every subprocess.run; the API
 client (api_fixtures.FirmwareApi) adds each HTTP request with the wait for the emulator's
 connection budget; Fm1Live adds every line fm1-live prints; tests add their own events
@@ -21,6 +24,7 @@ from pathlib import Path
 
 RUN_STAMP = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H%M%SZ')
 RESULTS = Path(__file__).resolve().parent / 'results'
+RUN_NAME = 'tests'          # tests/conftest.py names the session (set_run_name) before any folder is made
 HEADER = 'time_utc\ttest\tkind\tseconds\tthrottle_wait\tdetail\n'
 
 enabled = False             # tests/conftest.py turns it on for a pytest session
@@ -37,8 +41,21 @@ def module_of(nodeid):
     return Path(nodeid.split('::', 1)[0]).stem
 
 
+def set_run_name(name):
+    """Name the session's folder. Only before the first file is written: the folder does not move."""
+    global RUN_NAME
+    if not _files:
+        RUN_NAME = ''.join(c if c.isalnum() or c in '-_.' else '_' for c in name) or 'tests'
+
+
+def run_dir():
+    """The session's one folder: tests/results/<RUN_STAMP>-<RUN_NAME>/."""
+    return RESULTS / f'{RUN_STAMP}-{RUN_NAME}'
+
+
 def results_dir(module):
-    return RESULTS / f'{RUN_STAMP}-{module}'
+    """A test module's folder inside the session's."""
+    return run_dir() / module
 
 
 def debug_log_path(nodeid=None):

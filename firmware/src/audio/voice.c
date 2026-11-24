@@ -44,6 +44,7 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
     v->active = 1;
     v->age = ++voice_age;
     v->pitch16 = (int32_t)note * 16;
+    v->pitch_cur = v->pitch16;                  /* the key's own pitch, before modulation (SLICE plays relative to it) */
     v->mvel = (uint8_t)vel;
     v->mrnd = t->m_rnd;
     t->m_vi = (uint8_t)(v - t->v);
@@ -108,6 +109,8 @@ static uint32_t track_render(track_t *t, int32_t *buf, uint32_t n)
     for (i = 0; i < n; i++)
         buf[i] = 0;
 
+    if (eng->block)                             /* the engine's per-part work, once a control tick */
+        eng->block(t);
     for (i = 0; i < NVOICE; i++) {
         voice_t *v = &t->v[i];
         vmod_t m;
@@ -122,6 +125,8 @@ static uint32_t track_render(track_t *t, int32_t *buf, uint32_t n)
         eng->render(t, v, buf, n, &m);
         nr++;
     }
+    if (eng->post)                              /* the engine's own effect over the part (ADPCM: its echo) */
+        eng->post(t, buf, n, nr);
     return nr;
 }
 

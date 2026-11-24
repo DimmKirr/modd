@@ -65,6 +65,10 @@ jobs:
           git config --global url."https://github.com/".insteadOf "git@github.com:"
           mise exec -- task --yes vendor:ensure
 
+      - name: Check the upstream patch series
+        # Every patch in patches/ applies to the commit pinned in vendir.lock.yml.
+        run: mise exec -- task --yes vendor:patches:check
+
       - name: Run unit tests
         # Fresh runners must accept the two remote Taskfiles explicitly. Tests that need a
         # build, the toolchain or fm1-live skip when those are missing.
@@ -241,7 +245,7 @@ jobs:
             echo 'No API test results were captured.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          # The API tests write tests/results/<stamp>-<module>/screenshots/<NN_name>.png
+          # The API tests write tests/results/<stamp>-<run>/<module>/screenshots/<NN_name>.png
           mapfile -d '' screenshots < <(find tests/results -type f -path '*/screenshots/*.png' -print0 | sort -z)
           if (( ${#screenshots[@]} == 0 )); then
             echo 'No API screenshots were captured; see the api-results artifact.' >> "$GITHUB_STEP_SUMMARY"

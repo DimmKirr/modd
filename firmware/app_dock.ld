@@ -16,7 +16,7 @@
  * ASSERTs below fail the link when either overflows. */
 MEMORY
 {
-    XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = 0x8C000   /* body ends before commit-marker sector 0x91000 */
+    XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = FLASH_BODY_MAX   /* body ends before the commit-marker sector (hal/fm1_flash_map.h); build.py passes --defsym */
     RAMTEXT (rwx): ORIGIN = 0x01C00000, LENGTH = 0x4000    /* below the module's .ram_text window */
     RAM    (rwx) : ORIGIN = 0x01C08000, LENGTH = 64K
     POOL   (rwx) : ORIGIN = 0x01C18000, LENGTH = 0x18000

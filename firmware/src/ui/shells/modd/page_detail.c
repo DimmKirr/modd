@@ -14,7 +14,7 @@ static void lvt_detail_show(void)
     lvt_card_set(1, "NOTE", s->note[0] ? b : "--", "", s->note[0] ? lvt_pal.primary : lvt_pal.dim, s->note[0] * 1000 / 127);
     lv_snprintf(b, sizeof b, "%d", (int)s->vel);
     lvt_card_set(2, "VEL", b, "", lvt_pal.primary, s->vel * 1000 / 127);
-    lv_snprintf(b, sizeof b, "%d", (int)s->len);
+    lv_snprintf(b, sizeof b, "%d", (int)modd_step_len(s));
     lvt_card_set(3, "LEN", b, "", lvt_pal.primary, -1);
 }
 

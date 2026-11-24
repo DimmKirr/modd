@@ -42,17 +42,18 @@
 #define STUB_VERSION 3                   /* in the stub's header (crt0_stub.S: no C suffix) and the RAM mailbox */
 #ifndef __ASSEMBLER__
 #include <stdint.h>
+#include "fm1_flash_map.h"
 
 #define STUB_LEN 0xEE0u                  /* app.bin offset of the body: flash 0x4120 + 0xEE0 = 0x5000 */
-#define STUB_BODY_OFF 0x5000u            /* flash */
-#define STUB_BODY_MAX 0x8C000u           /* the body ends below the marker's sector (flash 0x91000) */
-#define STUB_MARK_SEC 0x91000u
-#define STUB_MARK_OFF 0x91FE0u           /* the sector's last 32 bytes: in its last page, programmed last */
+#define STUB_BODY_OFF FLASH_BODY_OFF     /* flash (hal/fm1_flash_map.h: the layout, from Kconfig) */
+#define STUB_BODY_MAX FLASH_BODY_MAX     /* the body ends below the marker's sector */
+#define STUB_MARK_SEC FLASH_MARK_SEC
+#define STUB_MARK_OFF FLASH_MARK_OFF     /* the sector's last 32 bytes: in its last page, programmed last */
 #define STUB_MARK_LEN 20u
 #define STUB_MARK_MAGIC 0x4D425243u      /* "CRBM" */
 #define STUB_MARK_FORMAT 1u
-#define STUB_LDR_OFF 0xE0000u            /* the staged loader (ota.c OTA_AREA, OTA_AREA_LEN) */
-#define STUB_LDR_LEN 0x5000u
+#define STUB_LDR_OFF FLASH_OTA_LO            /* the staged loader (ota.c OTA_AREA, OTA_AREA_LEN) */
+#define STUB_LDR_LEN FLASH_OTA_LEN
 #define STUB_PARM_LEN 112u               /* the UPDATA_PARM record (hal/fm1_sys.h FM1_UPDATA_PARM_LEN) */
 
 #define STUB_RSC_MAGIC 0x52534300u       /* the rescue word: "RSC" in bits 8..31, the attempts in bits 0..7 */

@@ -84,12 +84,24 @@ and tooling.
 
 | Output | What is in it |
 |---|---|
-| `tests/results/<RUN_STAMP>-<module>/debug.log` | Every event of the module's tests, timestamped (UTC, ms): each test's start, setup / call / teardown with outcome and seconds, end with its IO totals; every `subprocess.run` (command, exit code, seconds); each HTTP request of the API client (seconds, the wait for fm1-emu's connection budget); every line fm1-live prints; the tests' own events (`io_log.log()`). Tab-separated: `time_utc test kind seconds throttle_wait detail` |
+| `tests/results/<RUN_STAMP>-<RUN_NAME>/<module>/debug.log` | Every event of the module's tests, timestamped (UTC, ms): each test's start, setup / call / teardown with outcome and seconds, end with its IO totals; every `subprocess.run` (command, exit code, seconds); each HTTP request of the API client (seconds, the wait for fm1-emu's connection budget); every line fm1-live prints; the tests' own events (`io_log.log()`). Tab-separated: `time_utc test kind seconds throttle_wait detail` |
 | a line per test of 0.5 s or more | `[start +seconds] N io S s, throttled W s  <test>` |
-| the end of the run, and `tests/results/<RUN_STAMP>-timings.tsv` | Every test of 0.5 s or more, slowest first, with its share of the run |
+| the end of the run, and `tests/results/<RUN_STAMP>-<RUN_NAME>/timings.tsv` | Every test of 0.5 s or more, slowest first, with its share of the run |
 
-One run has one `RUN_STAMP`: a module's screenshots, fm1-live logs and `debug.log` share its
-`<RUN_STAMP>-<module>/` folder (`io_log.results_dir()`; `ApiTestCase.results_dir()` uses it).
+One run (one pytest session) has one folder, `tests/results/<RUN_STAMP>-<RUN_NAME>/`
+(`io_log.run_dir()`). `RUN_STAMP` is the UTC start time; `RUN_NAME` is the test file's name when
+the run is one file, else the tier (`unit`, `api`), else `tests`. `timings.tsv` is in that folder,
+and each test module has a subfolder in it for its screenshots, fm1-live logs and `debug.log`
+(`io_log.results_dir(module)`; `ApiTestCase.results_dir()` uses it):
+
+```
+tests/results/2026-11-24T070000Z-unit/
+  timings.tsv
+  build_test/debug.log
+  vendor_test/debug.log
+  ...
+```
+
 A test that logs its own events calls `io_log.log(kind, detail, seconds, count=False)`;
 `count=True` (the default) adds it to the test's IO totals.
 
@@ -136,7 +148,7 @@ defconfig: `WIFI_SSID` and `WIFI_PASSWORD` from `.env` reach hardware builds onl
 |------|--------------|
 | `boot/api_boot_test.py` | Boot (API, IP, HOME, LCD, boot log); every button, encoder, note key and the pot reach the firmware |
 | `audio/api_audio_test.py` | The capture follows the output; Analog plays C4..G4 at pitch |
-| `audio/api_audio_engines_test.py` | Noise/Analog/FM6 sound, master volume, 12 dB balance, round trip, no bleed, LCD follows engine and track |
+| `audio/api_audio_engines_test.py` | Noise/Analog/FM6 sound, master volume, 12 dB balance, round trip, no bleed, LCD follows engine and track; SAMPLE, GRAIN, SLICE and ADPCM sound on the `modd_felucca_emu` build (built separately: `task build -- --defconfig modd_felucca_emu`) |
 | `usb/usb_otg_presence_safety_test.py` | Every defconfig enables USB; the UBOOT SysEx key (the `task flash` path) is in the modd, modd_emu and felucca binaries that `task test:api` builds first in parallel; melodee and sloop config-only. Live (fm1-live, about 3 s): production `modd` with a computer on the port enumerates as USB-MIDI, stays on the bus (the OTG port keeps device mode while a computer drives it), and reboots into the updater on the UBOOT key. Also runs in `test:unit` (a binary not built skips) |
 | `net/api_weather_test.py` | Weather from open-meteo, PLAY refresh, revisit |
 | `wifi/api_wifi_need_test.py` | The radio follows the WIFI setting and the network need: WIFI off then on with WiFi as the only link (the panel is pressed through `fm1-live --cdp`, because the API travels over WiFi), WiFi stepping aside while USB ethernet has an address, and a boot with WIFI saved as off (fm1-live restarted on the same `--flash` image; needs `xdotool`). Off means powered down: the log shows `wifi: deinit done`, on again a second `wifi: init done`, and the WiFi task stack keeps 512 bytes free. Each class boots fm1-live with its own flags; `task modd:test:modd_emu:api:wifi` runs the API tests with WiFi as the only link |
@@ -315,7 +327,9 @@ eliminates an entire module from the investigation in one test run.
 **Capture inside the note.** A capture is the last 186 ms; take it while the
 keys are held (`record_chord` does). Decaying sounds (FM6's piano) lose level
 fast, so a capture that lands late measures the tail: `record_chord` rejects
-captures more than 250 ms late and retries.
+captures more than 250 ms late and retries. A one-shot shorter than the hold has
+ended before the capture begins: SLICE's default slice is 125 ms, so its test holds
+for 190 ms (`engine_produces_audio(..., hold_ms=190)`) and the capture starts with the key.
 
 **RMS tolerance guidelines:**
 
@@ -334,6 +348,7 @@ captures more than 250 ms late and retries.
 | `TestNoiseEngine` | Noise engine produces audio |
 | `TestAnalogEngine` | Analog engine produces audio |
 | `TestFM6Engine` | FM6 engine produces audio |
+| `TestFeluccaSampleEngines` | SAMPLE, GRAIN, SLICE and ADPCM produce audio on `modd_felucca_emu`; SAMPLE and ADPCM at their pitch |
 | `TestMasterVolume` | Volume at pot 0/10/512/1023 scales monotonically |
 | `TestAudioLevelNormalization` | All engines audible, cross-engine levels within 12 dB, master volume scales output |
 | `TestEngineSelectVolumeConsistency` | Engine round trip (analog→noise→analog) keeps the level at 30% volume; no sound after a switch with no key held |
@@ -396,12 +411,96 @@ GET /api/input/pot/master/512              # master volume 0..1023
 
 ## Screenshots and logs
 
-Each run writes under `tests/results/<UTC-timestamp>-<test-module>/`:
+Each run writes under `tests/results/<UTC-timestamp>-<run-name>/<test-module>/` (see "Traces and timings" for the run folder). Every API test (`ApiTestCase`) leaves these, with no code in the test:
 
-- `*.png`: LCD screenshots the tests save (`/api/screenshot`).
-- `debug.log` and the fm1-live logs: see "Traces and timings" above.
+| Path | What |
+|---|---|
+| `screenshots/lcd/NNN-<Class>-<test>-<PAGE>[-<label>].png` | The one folder for pictures, one numbered sequence per module: every page the test opens or reads (`goto`, `page()`), what the test saves itself (`self.screenshot(label)`), and the LCD at the end of the test (label `end`) when it shows something no picture of the test has. A picture equal to the one before it in the test is not saved twice |
+| `pages.json` | One row per picture of `screenshots/lcd/`, in order: `file`, `class`, `test`, `page`, `label`, `time_utc` and `reply`, the `/api/page` reply the picture shows |
+| `data/<Class>-<test>.json` | Every API reply of the test in order (`requests`: time, path, reply or error; long strings such as a screenshot or a capture are cut to their length) and the page at its end (`page_at_end`) |
+| `debug.log`, `fm1-live-<Class>.log`, `*.wav` | See "Traces and timings" above; recordings a test keeps with `save_wav()` |
+
+`MODD_API_PAGE_SHOTS=0` turns the automatic pictures and the data dump off (only what a test saves itself is left); they add requests, about a third to a half more run time. A test that needs the file of a picture it saved reads `self.last_shot_path`.
 
 Results are gitignored.
+
+## A build that does not boot, or stops answering
+
+An API test that fails with `firmware API not reachable` says only that nothing answered. Find
+out what the CPU is doing before changing code or bisecting a defconfig: each check below takes
+10 to 20 seconds and needs no REST API. Run them from the fm1-emu checkout (`$FM1_EMU_ROOT`),
+because `--shot` writes into `work/` there.
+
+```sh
+FW=/path/to/modd/build/<defconfig>-open
+LIVE="./target/release/fm1-live --fwsc $FW/modd.fwsc --usb ethernet --net internet"
+
+# 1. The run's own summary: interrupts, time spent in interrupt handlers, LEDs, audio.
+$LIVE --shot 8000 2>&1 | tail -4
+
+# 2. The firmware log (modd_log) out of RAM, without the REST API: how far did the boot get?
+FM1_DUMPRAM=/tmp/ram.bin $LIVE --shot 8000 >/dev/null 2>&1
+strings -n 6 /tmp/ram.bin | grep -E '^[0-9]+ [A-Za-z0-9_ ]+: ' | tail -30
+
+# 3. Where the time goes: program counters from 2000 to 5000 ms, by function.
+#    The path must not contain a comma, and the window has to end 40 ms before the shot.
+FM1_TPROF=/tmp/tprof.txt,2000,5000 $LIVE --shot 6000 >/dev/null 2>&1
+~/.fm1-toolchain/open/pi32v2-*/bin/llvm-nm -n $FW/modd.elf > /tmp/syms.txt
+# lines of /tmp/tprof.txt: core, pc, weight. Match each pc to the last symbol at or below it.
+
+# 4. What the boot stub decided (its words at 0x01C7C000; only valid when the app did not start).
+FM1_DUMP=01C7C000 $LIVE --shot 3000 2>&1 | grep '^dump'
+
+# 5. The LCD alone (work/lcd.ppm); without --lcd-only that file is not written.
+$LIVE --shot 6000 --lcd-only
+```
+
+Reading the results:
+
+| What you see | What it means | Next step |
+|--------------|---------------|-----------|
+| No log lines in RAM; every PC between `0x02000120` and `0x02001000` | The boot stub refused the image and the application never started | Check 4: the second word is `0x5342vvdd`, `dd` 1 boot, 2 loader, 3 ROM USB boot; the low byte of the fourth word is the marker code (`stub_core.h` `STUB_MK_*`; 4 = body length). Compare `body.bin` with the build's limit: `0x8C000` (573,440 bytes) on hardware, `0x5F9000` (6,262,784) on an emulator build |
+| The log reaches `sched:` / `ui: task start`; then PCs at millions of addresses outside `0x01C00000..0x01CFFFFF` and the XIP | A wild jump: a return address, function pointer or interrupt vector was overwritten. The summary shows `100% of instructions in ISRs` | Profile short windows (`...,380,410` with `--shot 600`) to find the last real functions before it. Look at the value of the first wild PC: `0x0841....` was an LCD pixel, so a framebuffer had been placed over the vectors |
+| PCs in one real function | That function loops or waits | Read it |
+| One request times out, later ones answer at once, and `uptime_ms` in `/api/info` is lower than before | The firmware reset | Find the action before the reset, repeat it by hand (`--forward 19441:9222` and `curl`), read `/api/log` after the reboot |
+
+`ie false` in the summary is not a boot hang by itself: a CPU inside an interrupt handler, and the
+boot stub (which never enables interrupts), show the same. `100% of instructions in ISRs` is not
+slow DSP by itself either: a CPU that jumped to a wild address from an interrupt never leaves it.
+
+Two limits that a linker script cannot lift, because the emulator runs the same boot chain and
+the same chip addresses as an FM-1:
+
+- **The application body is at most `0x8C000` bytes on an FM-1 and `0x5F9000` (about 5.98 MiB) in
+  an emulator build.** The boot stub checks the length and so does the loader (`STUB_BODY_MAX`), and the
+  package builder too. The limit comes from the flash map (`kconf/flash.kconfig`, choice
+  `FLASH_MAP`: `FM1` or `EMU`, which `CONFIG_EMU` selects by default): `hal/fm1_flash_map.h`
+  derives it for the app, the stub and the loader, `tools/build/flashmap.py` for the package
+  and the link (`--defsym=FLASH_BODY_MAX`, the XIP length in `app*.ld`). A larger region in an
+  `app*.ld` alone gives a package that builds and never boots. The emulator map describes an
+  8 MiB chip: the app area ends at `0x600000` and every store above it keeps its FM-1 size and
+  order, shifted up (`CONFIG_SETTINGS_AT` moves with them). Such a package is about 6 MiB (the
+  app slot is padded with `0xFF`, not compressed) and does not install on an FM-1. fm1-live
+  needs `--flash-size 8M` for it; `ApiTestCase` and `gen_ui_screenshots.py` add it from the
+  build's `CONFIG_FLASH_CHIP_SIZE` (`fm1_paths.flash_size_args`), so nobody passes it by hand
+  (for a manual `fm1-live` run, add it yourself). When an emulator build is over its limit, drop
+  something from its defconfig (the OpenAPI document is 24.7K: `# CONFIG_RPC_OPENAPI is not set`).
+- **`0x01C7FD50..0x01C7FFFF` is the chip's boot info, mailbox and interrupt vectors**
+  (`FM1_VEC`), in the emulator too. `app_emu.ld` has a larger POOL that runs across that
+  window; it asserts that the pool's statics end below it and keeps the shadow framebuffer in
+  its own region (`FBUF`, RAM only fm1-live has).
+
+A defconfig bisection finds the option that crosses such a threshold, not the cause: in
+November 2026 it named the Felucca skin, which only added the last 36K to an image already near
+the body limit. Compare `body.bin` sizes and the memory report of a working and a failing build
+before bisecting.
+
+To run one class of API tests against one build (about 20 seconds, no `task test:api`):
+
+```sh
+uv run pytest tests/audio/api_audio_engines_test.py -k TestFeluccaSampleEngines
+MODD_API_DEFCONFIG=modd_felucca_emu uv run pytest tests/boot/api_boot_test.py   # classes that use the default build
+```
 
 ## CI results
 

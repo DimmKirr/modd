@@ -108,6 +108,20 @@ paths:
       modal: A modal (dialog, menu) is open over the page
       data: The page's own state; only pages with a serializer (api_page_json_table) have it
 
+  /api/page/{page}/set/{slot}/{value}:
+    summary: Set one card of a page by slot, with no key or encoder
+    description: |
+      Only the effect page (INSERT) has cards that can be set. The value must be inside the card's min..max
+      (from GET /api/page, data.cards); a slot or value outside it is a 400, any other page a 404. The change is
+      applied as the panel would apply it (upstream parameter store, or a request to the effects host's main loop);
+      read the card back with GET /api/page.
+    tags: [pages]
+    operationId: setPageCard
+    fields:
+      page: The page set
+      slot: The card's slot
+      value: The value stored
+
   /modd/{page}:
     summary: Go to a page by name
     description: |
@@ -158,6 +172,71 @@ paths:
       rms: RMS of the last 8192 output samples (int16 scale)
       tap_pos: Samples written to the tap since boot
       master_q12: 'Master volume after smoothing, 4096 = 1.0'
+
+  /api/fx/slot:
+    summary: The effects host's master slot
+    description: One stereo slot after the mix. Requests are applied by the main loop; read the state back.
+    tags: [audio]
+    operationId: getFxSlot
+    fields:
+      unit: Name of the unit in the slot
+      type: Type index within the unit
+      type_name: Name of that type
+      amount: Wet amount 0..127
+      state: 'off, placed (running), gated (tail after off) or refused (no memory)'
+      bytes: Bytes borrowed from the arena for this type (0 = none)
+      arena_used: Bytes lent out by the arena now
+      refuse: Test switch is on, the arena refuses every request
+
+  /api/fx/slot/off:
+    summary: Switch the slot off (tail, then the block goes back)
+    tags: [audio]
+    operationId: fxSlotOff
+
+  /api/fx/slot/on/{type}/{amount}:
+    summary: Put the unit in the slot and run it
+    description: A running slot goes off first, then on.
+    tags: [audio]
+    operationId: fxSlotOn
+
+  /api/fx/slot/unit/{unit}/{type}/{amount}:
+    summary: Put unit number {unit} (0 Melodee SLOOP insert, 1 Optimist EXGN gain) in the slot and run it
+    description: As /api/fx/slot/on, with the unit chosen. A unit or type the build does not have leaves the slot refused.
+    tags: [audio]
+    operationId: fxSlotUnit
+
+  /api/fx/refuse/{value}:
+    summary: Test switch, 1 = the arena refuses every request
+    tags: [audio]
+    operationId: fxRefuse
+
+  /api/arena:
+    summary: The one memory arena (Melodee resources.c) and every live block in it
+    description: The fx host's block (id 5, RES_FX0) and the probe blocks (ids 0..3, RES_ENGINE0 + part) come from the same area.
+    tags: [audio]
+    operationId: getArena
+    fields:
+      used: Bytes lent out now, all ids
+      capacity: Bytes the banks hold in total
+      peak: Highest used since boot
+      failures: Requests the arena could not serve (oversize or no room)
+      ok: Whether the last probe got a block
+      addr: Address of the block the last probe got (0 = none)
+      blocks: Live blocks
+      blocks[].id: Resource id (RES_ENGINE0 + part, or RES_FX0 + slot)
+      blocks[].addr: Address of the block
+      blocks[].size: Size, rounded up to 4
+
+  /api/arena/release/{part}:
+    summary: Give back the probe block of a part (Melodee's eng_state_clear)
+    tags: [audio]
+    operationId: arenaRelease
+
+  /api/arena/probe/{style}/{part}/{bytes}:
+    summary: Ask the arena for a part's engine state in an upstream's style
+    description: "melodee: resource_get(RES_ENGINE0 + part, bytes). sloop: eng_arena_of(track, engine), the adapter's fixed per-part arena of that size. A request over the capacity is refused (ok false, failures up), never a reset."
+    tags: [audio]
+    operationId: arenaProbe
 
   /api/engine:
     summary: The selected track's engine

@@ -144,6 +144,13 @@ def test_arena_without_a_minimum_fails_when_less_than_the_floor_is_left():
     assert errors == []
 
 
+def test_config_floor_of_zero_gives_no_arena_error():
+    """CONFIG_ARENA_MIN_LEFT=0 (the included Felucca stack): the arena may be filled to the last byte."""
+    m = mem_report.parse_map(_emu_map(0x34000))                  # the framebuffer takes the whole arena
+    assert [e for e in mem_report.analyse(m, arena_min_left=0)['errors'] if 'audio arena' in e] == []
+    assert any('audio arena' in e for e in mem_report.analyse(m)['errors'])   # the default floor still stops it
+
+
 def test_arena_without_a_minimum_is_quiet_with_room_to_spare():
     assert _arena_msgs(EMU_MAP)[:2] == ([], [])
 
@@ -236,7 +243,8 @@ LLD_MAP = """     VMA      LMA     Size Align Out     In      Symbol
 """
 LLD_ELF = _elf([('_resource_start', 0x1c40000, 0, 0), ('_resource_end', 0x1c74000, 0, 0),
                 ('_resource_data_start', 0x1c1f040, 0, 0), ('_resource_data_end', 0x1c20000, 0, 0),
-                ('_ustack_lo', 0x1c74100, 0, 0), ('_ustack_top', 0x1c7a000, 0, 0)])
+                ('_ustack_lo', 0x1c74100, 0, 0), ('_ustack_top', 0x1c7a000, 0, 0),
+                ('FLASH_BODY_MAX', 0x8c000, 0, 0)])   # build.py's --defsym: the XIP length in app*.ld
 
 
 def _lld_build(tmp_path, map_text=LLD_MAP, config=''):
@@ -257,8 +265,10 @@ def test_lld_map_is_detected_by_its_header():
 
 
 def test_ld_regions_come_from_the_memory_block_and_only_literals_are_accepted():
-    r = mem_report.parse_ld_regions((ROOT / 'firmware' / 'app.ld').read_text())
-    assert r['RAM'] == (0x1c08000, 96 * 1024) and r['XIP'][0] == 0x2001000
+    r = mem_report.parse_ld_regions((ROOT / 'firmware' / 'app.ld').read_text(), {'FLASH_BODY_MAX': 0x8c000})
+    assert r['RAM'] == (0x1c08000, 96 * 1024) and r['XIP'] == (0x2001000, 0x8c000)
+    with pytest.raises(ValueError):   # the XIP length is the build's --defsym: the ELF's symbol must supply it
+        mem_report.parse_ld_regions((ROOT / 'firmware' / 'app.ld').read_text())
     assert mem_report.parse_ld_regions('MEMORY { A (rw) : ORIGIN = 0x10, LENGTH = 2K /* c */ }') == {'A': (16, 2048)}
     with pytest.raises(ValueError):
         mem_report.parse_ld_regions('MEMORY { A (rw) : ORIGIN = 0x10, LENGTH = SIZE }')

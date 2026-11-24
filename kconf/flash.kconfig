@@ -1,0 +1,51 @@
+# SPI flash layout (the "partition map"). The one place the free numbers live;
+# firmware/hal/fm1_flash_map.h derives everything else from them and
+# tools/build/flashmap.py gives the package builder and the linker step the same values.
+#
+# The layout is chosen as a group: FM-1 (the shipped hardware map) or Emulator
+# (an 8 MiB chip with a large application area and the FM-1's stores above it;
+# fm1-live runs it with --flash-size, its boot stub and loader read these values).
+# The two numbers are prompt-less, so no defconfig sets them.
+
+choice FLASH_MAP
+    prompt "Flash layout"
+    default FLASH_MAP_EMU if EMU
+    default FLASH_MAP_FM1
+    help
+      Which flash map the app, the boot stub, the update loader and the package
+      builder use. A package built with the Emulator map does not install on
+      an FM-1.
+
+config FLASH_MAP_FM1
+    bool "FM-1 (hardware)"
+    help
+      The layout of the shipped firmware: application area [0x4000, 0x93000),
+      body at most 0x8C000 bytes.
+
+config FLASH_MAP_EMU
+    bool "Emulator"
+    help
+      An 8 MiB chip with an application area [0x4000, 0x600000), body at most
+      0x5F9000 bytes, for builds that run in fm1-live only. The stores above the
+      area are the FM-1's, at their full sizes, shifted up.
+
+endchoice
+
+config FLASH_CHIP_SIZE
+    hex
+    default 0x800000 if FLASH_MAP_EMU
+    default 0x100000
+    help
+      Size of the flash chip. The FM-1's part is 1 MiB; fm1-live takes any size
+      from 1 MiB to 16 MiB (--flash-size, added by the test fixtures and the
+      screenshot tool from this value).
+
+config FLASH_APP_END
+    hex
+    default 0x600000 if FLASH_MAP_EMU
+    default 0x93000
+    help
+      End of the application area [0x4000, FLASH_APP_END). The body (boot stub
+      excluded) ends two sectors below it, at the commit-marker sector. Every
+      store above it (see hal/fm1_flash_map.h) keeps its size and order and
+      follows this value.
