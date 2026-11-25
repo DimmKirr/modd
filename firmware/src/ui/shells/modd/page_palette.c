@@ -21,10 +21,10 @@ static void lvt_palette_enter(void)
     lvt_palette_show();
 }
 
-static int lvt_palette_knob(uint32_t id, int32_t clicks)
+static int lvt_palette_k1(int32_t clicks)
 {
     int32_t v;
-    if (id != ENC_K1 || !clicks) return 0;
+    if (!clicks) return 0;
     v = (int32_t)lvt_pal.idx + (clicks > 0 ? 1 : -1);
     if (v < 0) v = 9;
     if (v > 9) v = 0;
@@ -35,6 +35,10 @@ static int lvt_palette_knob(uint32_t id, int32_t clicks)
     return 1;
 }
 
+static const ctl_slot_t PALETTE_CONTROLS[] = {
+    { ENC_K1, P_COUNT, 0, 9, 1, CTLF_WRAP, "PAL", lvt_palette_k1 },
+};
+
 static const modd_page_t PAGE_PALETTE = {
     .name   = "PALETTE",
     .title  = "Palette",
@@ -42,6 +46,7 @@ static const modd_page_t PAGE_PALETTE = {
     .flags  = 0,
     .enter  = lvt_palette_enter,
     .status = lvt_palette_show,
-    .knob   = lvt_palette_knob,
+    .controls  = PALETTE_CONTROLS,
+    .ncontrols = 1,
     .help_text = "K1  Palette",
 };

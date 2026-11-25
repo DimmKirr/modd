@@ -22,24 +22,30 @@ static void lvt_phrases_enter(void)
     lvt_phrases_show();
 }
 
-static int lvt_phrases_knob(uint32_t id, int32_t clicks)
+static int phrases_idx_action(int32_t clicks)
 {
-    if (id == ENC_K1) {
-        int32_t v = lvt_phrases_idx + clicks;
-        lvt_phrases_idx = v < 0 ? 0 : (v > 127 ? 127 : v);
-        nav_dirty = 1;
-        return 1;
-    }
-    if (id == ENC_K2 && clicks > 0) {
-        up_load((uint32_t)lvt_phrases_idx);
-        nav_dirty = 1;
-        return 1;
-    }
-    return 0;
+    int32_t v = lvt_phrases_idx + clicks;
+    lvt_phrases_idx = v < 0 ? 0 : (v > 127 ? 127 : v);
+    nav_dirty = 1;
+    return 1;
 }
+
+static int phrases_load_action(int32_t clicks)
+{
+    if (clicks <= 0) return 0;
+    up_load((uint32_t)lvt_phrases_idx);
+    nav_dirty = 1;
+    return 1;
+}
+
+static const ctl_slot_t PHRASES_CONTROLS[] = {
+    { ENC_K1, 0, 0, 127, 1, 0, "PAT",  phrases_idx_action },
+    { ENC_K2, 0, 0,   0, 0, 0, "LOAD", phrases_load_action },
+};
 
 static const modd_page_t PAGE_PHRASES = {
     .name = "PHRASES", .title = "Phrases", .view = VIEW_SAVE, .flags = 0,
-    .enter = lvt_phrases_enter, .status = lvt_phrases_show, .knob = lvt_phrases_knob,
+    .enter = lvt_phrases_enter, .status = lvt_phrases_show,
+    .controls = PHRASES_CONTROLS, .ncontrols = 2,
     .help_text = "K1  Pattern\nK2  Load",
 };

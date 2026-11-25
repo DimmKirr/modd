@@ -103,44 +103,52 @@ static int pg_knob_knob(uint32_t up_idx, uint32_t id, int32_t clicks)
 
 /* --- page instances (macro generates trampolines) --- */
 
-#define PG_KNOB(TAG, UP_IDX, NAME, TITLE, VIEW, FOOT, VIS)                \
-    static void pg_##TAG##_enter(void)  { pg_knob_enter(UP_IDX, FOOT); }   \
-    static void pg_##TAG##_show(void)   { pg_knob_show(UP_IDX); }          \
-    static int  pg_##TAG##_knob(uint32_t id, int32_t c)                    \
-        { return pg_knob_knob(UP_IDX, id, c); }                           \
-    static const modd_page_t PAGE_##TAG = {                                \
-        .name = NAME, .title = TITLE, .view = VIEW, .flags = 0,           \
-        .visible = VIS,                                                    \
-        .enter = pg_##TAG##_enter, .status = pg_##TAG##_show,              \
-        .knob = pg_##TAG##_knob,                                           \
+#define PG_KNOB_CTL(TAG, UP_IDX, NAME, TITLE, VIEW, FOOT, VIS, L1, L2, L3, L4) \
+    static void pg_##TAG##_enter(void)  { pg_knob_enter(UP_IDX, FOOT); }        \
+    static void pg_##TAG##_show(void)   { pg_knob_show(UP_IDX); }               \
+    static int  pg_##TAG##_k1(int32_t c) { return pg_knob_knob(UP_IDX, ENC_K1, c); } \
+    static int  pg_##TAG##_k2(int32_t c) { return pg_knob_knob(UP_IDX, ENC_K2, c); } \
+    static int  pg_##TAG##_k3(int32_t c) { return pg_knob_knob(UP_IDX, ENC_K3, c); } \
+    static int  pg_##TAG##_k4(int32_t c) { return pg_knob_knob(UP_IDX, ENC_K4, c); } \
+    static const ctl_slot_t TAG##_CONTROLS[] = {                                \
+        { ENC_K1, 0, 0, 0, 0, 0, L1, pg_##TAG##_k1 },                           \
+        { ENC_K2, 0, 0, 0, 0, 0, L2, pg_##TAG##_k2 },                           \
+        { ENC_K3, 0, 0, 0, 0, 0, L3, pg_##TAG##_k3 },                           \
+        { ENC_K4, 0, 0, 0, 0, 0, L4, pg_##TAG##_k4 },                           \
+    };                                                                          \
+    static const modd_page_t PAGE_##TAG = {                                     \
+        .name = NAME, .title = TITLE, .view = VIEW, .flags = 0,                 \
+        .visible = VIS,                                                         \
+        .enter = pg_##TAG##_enter, .status = pg_##TAG##_show,                   \
+        .controls = TAG##_CONTROLS, .ncontrols = 4,                             \
     }
 
 /* Pure 4-card pages: upstream PAGES[] index → modd PAGE_* struct.
  * Pages with custom LVGL widgets (ENV curve, LFO wave, SCL wheel, ARP pattern)
  * keep their own files and read data through the adapter separately.           */
 /*           TAG            UP  NAME          TITLE              VIEW         FOOT          VIS               */
-PG_KNOB(ENV_DEST,       1,  "ENV DEST",   "Env Dest",        VIEW_ENV,    "ENV DEST",   0);
-PG_KNOB(LFO2,           3,  "LFO 2",      "LFO 2",           VIEW_LFO,    "LFO 2",      0);
-PG_KNOB(LFO_DEST,       4,  "LFO DEST",   "LFO Dest",        VIEW_LFO,    "LFO DEST",   0);
-PG_KNOB(SLICER,         7,  "SLICER",     "Slicer",          VIEW_FX,     "SLICER",     0);
-PG_KNOB(INSERT,         8,  "INSERT",     "Insert",          VIEW_FX,     "INSERT",     0);
-PG_KNOB(INSERT2,        9,  "INSERT 2",   "Insert 2",        VIEW_FX,     "INSERT 2",   0);
-PG_KNOB(DLY,           10,  "DLY",        "Delay",           VIEW_FX,     "DLY",        0);
-PG_KNOB(REVERB,        11,  "REVERB",     "Reverb",          VIEW_FX,     "REVERB",     0);
-PG_KNOB(CHORUS,        12,  "CHORUS",     "Chorus",          VIEW_FX,     "CHORUS",     0);
-PG_KNOB(CHORD,         14,  "CHORD",      "Chord",           VIEW_SCL,    "CHORD",      0);
-PG_KNOB(EDIT2,         16,  "EDIT 2",     "Edit 2",          VIEW_EDIT,   "EDIT 2",     0);
-PG_KNOB(FILTER,        17,  "FILTER",     "Filter",          VIEW_EDIT,   "FILTER",     lvt_filter_visible);
-PG_KNOB(LANES,         18,  "LANES",      "Lanes",           VIEW_EDIT,   "LANES",      lvt_lanes_visible);
-PG_KNOB(LANES2,        19,  "LANES 2",    "Lanes 2",         VIEW_EDIT,   "LANES 2",    lvt_lanes_visible);
-PG_KNOB(VOICE2,        30,  "VOICE 2",    "Voice 2",         VIEW_EDIT,   "VOICE 2",    0);
-PG_KNOB(VOICE3,        31,  "VOICE 3",    "Voice 3",         VIEW_EDIT,   "VOICE 3",    0);
-PG_KNOB(FM6_OP1_ENV,   24,  "OP1 ENV",    "Operator 1 Env",  VIEW_EDIT,   "OP1 ENV",    lvt_fm6_visible);
-PG_KNOB(FM6_OP2_ENV,   25,  "OP2 ENV",    "Operator 2 Env",  VIEW_EDIT,   "OP2 ENV",    lvt_fm6_visible);
-PG_KNOB(FM6_OP3_ENV,   26,  "OP3 ENV",    "Operator 3 Env",  VIEW_EDIT,   "OP3 ENV",    lvt_fm6_visible);
-PG_KNOB(FM6_OP4_ENV,   27,  "OP4 ENV",    "Operator 4 Env",  VIEW_EDIT,   "OP4 ENV",    lvt_fm6_visible);
-PG_KNOB(FM6_OP_LEVEL,  28,  "OP LEVEL",   "Operator Levels",  VIEW_EDIT,  "OP LEVEL",   lvt_fm6_visible);
-PG_KNOB(ARP2,          39,  "ARP 2",      "Arp 2",           VIEW_ARP,    "ARP 2",      0);
-PG_KNOB(CLOCK,         44,  "CLOCK",      "Clock",           VIEW_HOME,   "CLOCK",      0);
+PG_KNOB_CTL(ENV_DEST,       1,  "ENV DEST",   "Env Dest",        VIEW_ENV,    "ENV DEST",   0, "ED_FLT", "ED_PIT", "ED_SHP", "ESYNC");
+PG_KNOB_CTL(LFO2,           3,  "LFO 2",      "LFO 2",           VIEW_LFO,    "LFO 2",      0, "LSYNC", "LTRIG", "LPOL", "");
+PG_KNOB_CTL(LFO_DEST,       4,  "LFO DEST",   "LFO Dest",        VIEW_LFO,    "LFO DEST",   0, "LD_PIT", "LD_FLT", "LD_SHP", "LD_AMP");
+PG_KNOB_CTL(SLICER,         7,  "SLICER",     "Slicer",          VIEW_FX,     "SLICER",     0, "SLCR", "SLPAT", "SLRATE", "SLDEPTH");
+PG_KNOB_CTL(INSERT,         8,  "INSERT",     "Insert",          VIEW_FX,     "INSERT",     0, "ITYPE", "IA", "IB", "IC");
+PG_KNOB_CTL(INSERT2,        9,  "INSERT 2",   "Insert 2",        VIEW_FX,     "INSERT 2",   0, "IMIX", "", "", "");
+PG_KNOB_CTL(DLY,           10,  "DLY",        "Delay",           VIEW_FX,     "DLY",        0, "DTIME", "DFDBK", "DCOLOR", "DMIX");
+PG_KNOB_CTL(REVERB,        11,  "REVERB",     "Reverb",          VIEW_FX,     "REVERB",     0, "RTYPE", "RSIZE", "RDAMP", "");
+PG_KNOB_CTL(CHORUS,        12,  "CHORUS",     "Chorus",          VIEW_FX,     "CHORUS",     0, "CRATE", "CDEPTH", "", "");
+PG_KNOB_CTL(CHORD,         14,  "CHORD",      "Chord",           VIEW_SCL,    "CHORD",      0, "CHRD", "VOIC", "", "");
+PG_KNOB_CTL(EDIT2,         16,  "EDIT 2",     "Edit 2",          VIEW_EDIT,   "EDIT 2",     0, "E4", "E5", "E6", "E7");
+PG_KNOB_CTL(FILTER,        17,  "FILTER",     "Filter",          VIEW_EDIT,   "FILTER",     lvt_filter_visible, "FTYPE", "E4", "E5", "E7");
+PG_KNOB_CTL(LANES,         18,  "LANES",      "Lanes",           VIEW_EDIT,   "LANES",      lvt_lanes_visible, "LN0", "LN1", "LN2", "LN3");
+PG_KNOB_CTL(LANES2,        19,  "LANES 2",    "Lanes 2",         VIEW_EDIT,   "LANES 2",    lvt_lanes_visible, "LN4", "LN5", "LN6", "LN7");
+PG_KNOB_CTL(VOICE2,        30,  "VOICE 2",    "Voice 2",         VIEW_EDIT,   "VOICE 2",    0, "ALLOC", "DETUNE", "PAN", "MUTE");
+PG_KNOB_CTL(VOICE3,        31,  "VOICE 3",    "Voice 3",         VIEW_EDIT,   "VOICE 3",    0, "SPRD", "ATSNS", "ATDST", "ATAMT");
+PG_KNOB_CTL(FM6_OP1_ENV,   24,  "OP1 ENV",    "Operator 1 Env",  VIEW_EDIT,   "OP1 ENV",    lvt_fm6_visible, "FM1_ATK", "FM1_DEC", "FM1_SUS", "FM1_REL");
+PG_KNOB_CTL(FM6_OP2_ENV,   25,  "OP2 ENV",    "Operator 2 Env",  VIEW_EDIT,   "OP2 ENV",    lvt_fm6_visible, "FM2_ATK", "FM2_DEC", "FM2_SUS", "FM2_REL");
+PG_KNOB_CTL(FM6_OP3_ENV,   26,  "OP3 ENV",    "Operator 3 Env",  VIEW_EDIT,   "OP3 ENV",    lvt_fm6_visible, "FM3_ATK", "FM3_DEC", "FM3_SUS", "FM3_REL");
+PG_KNOB_CTL(FM6_OP4_ENV,   27,  "OP4 ENV",    "Operator 4 Env",  VIEW_EDIT,   "OP4 ENV",    lvt_fm6_visible, "FM4_ATK", "FM4_DEC", "FM4_SUS", "FM4_REL");
+PG_KNOB_CTL(FM6_OP_LEVEL,  28,  "OP LEVEL",   "Operator Levels",  VIEW_EDIT,  "OP LEVEL",   lvt_fm6_visible, "FM1_LVL", "FM2_LVL", "FM3_LVL", "FM4_LVL");
+PG_KNOB_CTL(ARP2,          39,  "ARP 2",      "Arp 2",           VIEW_ARP,    "ARP 2",      0, "ASWING", "APROB", "AHOLD", "AORDER");
+PG_KNOB_CTL(CLOCK,         44,  "CLOCK",      "Clock",           VIEW_HOME,   "CLOCK",      0, "BPM", "SWING", "CLOCK", "");
 
 #endif /* CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */

@@ -2,17 +2,6 @@
 /* Copyright (C) 2026 Dmitry Kireev (@DimmKirr) */
 /* USER: user preset slots (slot scroll, load, erase, save). */
 
-/* clamp-add `clicks` to a global param; returns 1 */
-static int lvt_gadd(uint32_t g, int32_t clicks, int32_t mn, int32_t mx)
-{
-    int32_t v = modd_gp(g) + clicks;
-    if (v < mn) v = mn;
-    if (v > mx) v = mx;
-    modd_gp_set(g, (int16_t)v);
-    nav_dirty = 1;
-    return 1;
-}
-
 static void lvt_user_show(void)
 {
     char b[8];
@@ -32,19 +21,37 @@ static void lvt_user_enter(void)
     lvt_user_show();
 }
 
-static int lvt_user_knob(uint32_t id, int32_t clicks)
+static int user_load_action(int32_t clicks)
 {
-    uint32_t s = (uint32_t)modd_gp(G_SLOT);
-    if (id == ENC_K1) return lvt_gadd(G_SLOT, clicks, 0, 127);
     if (clicks <= 0) return 0;
-    if (id == ENC_K2) { (void)up_load(s); return 1; }
-    if (id == ENC_K3) { up_ui(1, s); return 1; }
-    if (id == ENC_K4) { up_ui(2, s); return 1; }
-    return 0;
+    (void)up_load((uint32_t)modd_gp(G_SLOT));
+    return 1;
 }
+
+static int user_erase_action(int32_t clicks)
+{
+    if (clicks <= 0) return 0;
+    up_ui(1, (uint32_t)modd_gp(G_SLOT));
+    return 1;
+}
+
+static int user_save_action(int32_t clicks)
+{
+    if (clicks <= 0) return 0;
+    up_ui(2, (uint32_t)modd_gp(G_SLOT));
+    return 1;
+}
+
+static const ctl_slot_t USER_CONTROLS[] = {
+    { ENC_K1, G_SLOT, 0, 127, 1, CTLF_GLOBAL, "SLOT",  NULL },
+    { ENC_K2, 0,      0,   0, 0, 0,           "LOAD",  user_load_action },
+    { ENC_K3, 0,      0,   0, 0, 0,           "ERASE", user_erase_action },
+    { ENC_K4, 0,      0,   0, 0, 0,           "SAVE",  user_save_action },
+};
 
 static const modd_page_t PAGE_USER = {
     .name = "USER", .title = "User", .view = VIEW_SAVE, .flags = 0,
-    .enter = lvt_user_enter, .status = lvt_user_show, .knob = lvt_user_knob,
+    .enter = lvt_user_enter, .status = lvt_user_show,
+    .controls = USER_CONTROLS, .ncontrols = 4,
     .help_text = "K1  Slot\nK2  Load\nK3  Erase\nK4  Save",
 };

@@ -65,7 +65,7 @@ static void lvt_edit_enter(void)
     lvt_edit_show();
 }
 
-static const param_slot_t EDIT_KNOB_MAP[] = {
+static const ctl_slot_t EDIT_CONTROLS[] = {
     { ENC_K1, P_E0, -128, 127, 1, 0, "E0" },
     { ENC_K2, P_E1, -128, 127, 1, 0, "E1" },
     { ENC_K3, P_E2, -128, 127, 1, 0, "E2" },
@@ -79,7 +79,7 @@ static const modd_page_t PAGE_EDIT = {
     .flags     = 0,
     .enter     = lvt_edit_enter,
     .status    = lvt_edit_show,
-    .knob_map  = EDIT_KNOB_MAP,
-    .knob_count = 4,
+    .controls  = EDIT_CONTROLS,
+    .ncontrols = 4,
     .help_text = "K1-K4  Engine params E0-E3",
 };

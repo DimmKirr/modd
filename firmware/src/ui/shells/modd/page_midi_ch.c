@@ -22,10 +22,10 @@ static void lvt_midi_ch_enter(void)
     lvt_midi_ch_show();
 }
 
-static int lvt_midi_ch_knob(uint32_t id, int32_t clicks)
+static int lvt_midi_ch_k1(int32_t clicks)
 {
     int32_t v;
-    if (id != ENC_K1 || !clicks) return 0;
+    if (!clicks) return 0;
     v = lvt_midi_ch + clicks;
     if (v < 1) v = 1;
     if (v > 16) v = 16;
@@ -34,6 +34,10 @@ static int lvt_midi_ch_knob(uint32_t id, int32_t clicks)
     return 1;
 }
 
+static const ctl_slot_t MIDI_CH_CONTROLS[] = {
+    { ENC_K1, P_COUNT, 1, 16, 1, 0, "CH", lvt_midi_ch_k1 },
+};
+
 static const modd_page_t PAGE_MIDI_CH = {
     .name   = "MIDI CH",
     .title  = "MIDI channel",
@@ -41,6 +45,7 @@ static const modd_page_t PAGE_MIDI_CH = {
     .flags  = 0,
     .enter  = lvt_midi_ch_enter,
     .status = lvt_midi_ch_show,
-    .knob   = lvt_midi_ch_knob,
+    .controls  = MIDI_CH_CONTROLS,
+    .ncontrols = 1,
     .help_text = "K1  MIDI channel",
 };

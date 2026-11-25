@@ -21,25 +21,18 @@ static void lvt_song_enter(void)
     lvt_song_show();
 }
 
-static int lvt_song_knob(uint32_t id, int32_t clicks)
-{
-    int32_t v;
-    if (id != ENC_K1) return 0;
-    v = modd_gp(G_BPM) + clicks;
-    if (v < 20) v = 20;
-    if (v > 300) v = 300;
-    modd_gp_set(G_BPM, (int16_t)v);
-    nav_dirty = 1;
-    return 1;
-}
+static const ctl_slot_t SONG_CONTROLS[] = {
+    { ENC_K1, G_BPM, 20, 300, 1, CTLF_GLOBAL, "BPM" },
+};
 
 static const modd_page_t PAGE_SONG = {
-    .name   = "SONG",
-    .title  = "Song",
-    .view   = VIEW_GLO,
-    .flags  = 0,
-    .enter  = lvt_song_enter,
-    .status = lvt_song_show,
-    .knob   = lvt_song_knob,
+    .name      = "SONG",
+    .title     = "Song",
+    .view      = VIEW_GLO,
+    .flags     = 0,
+    .enter     = lvt_song_enter,
+    .status    = lvt_song_show,
+    .controls  = SONG_CONTROLS,
+    .ncontrols = 1,
     .help_text = "K1  BPM",
 };

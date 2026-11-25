@@ -27,7 +27,7 @@ static void lvt_fx_enter(void)
     lvt_fx_show();
 }
 
-static const param_slot_t FX_KNOB_MAP[] = {
+static const ctl_slot_t FX_CONTROLS[] = {
     { ENC_K1, P_DIST, 0, 100, 1, 0, "DST" },
     { ENC_K2, P_CHOR, 0, 100, 1, 0, "CHO" },
     { ENC_K3, P_DLY,  0, 100, 1, 0, "DLY" },
@@ -41,7 +41,7 @@ static const modd_page_t PAGE_FX = {
     .flags     = 0,
     .enter     = lvt_fx_enter,
     .status    = lvt_fx_show,
-    .knob_map  = FX_KNOB_MAP,
-    .knob_count = 4,
+    .controls  = FX_CONTROLS,
+    .ncontrols = 4,
     .help_text = "K1  Distortion\nK2  Chorus\nK3  Delay\nK4  Reverb",
 };

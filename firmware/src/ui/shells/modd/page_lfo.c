@@ -47,10 +47,10 @@ static void lvt_lfo_enter(void)
     lvt_lfo_show();
 }
 
-static const param_slot_t LFO_KNOB_MAP[] = {
+static const ctl_slot_t LFO_CONTROLS[] = {
     { ENC_K1, P_LFRT, 0, 100, 1, 0, "RATE" },
     { ENC_K2, P_LFO,  0, 100, 1, 0, "DEPTH" },
-    { ENC_K3, P_LFSH, 0, 5, 1, SLOT_WRAP, "SHAPE" },
+    { ENC_K3, P_LFSH, 0, 5, 1, CTLF_WRAP, "SHAPE" },
     { ENC_K4, P_LFDL, 0, 100, 1, 0, "DELAY" },
 };
 
@@ -61,7 +61,7 @@ static const modd_page_t PAGE_LFO = {
     .flags     = 0,
     .enter     = lvt_lfo_enter,
     .status    = lvt_lfo_show,
-    .knob_map  = LFO_KNOB_MAP,
-    .knob_count = 4,
+    .controls  = LFO_CONTROLS,
+    .ncontrols = 4,
     .help_text = "K1  Rate\nK2  Depth\nK3  Shape\nK4  Delay",
 };

@@ -18,26 +18,33 @@ static void lvt_tools_enter(void)
     lvt_tools_show();
 }
 
-static int lvt_tools_knob(uint32_t id, int32_t clicks)
+static int tools_clrseq_action(int32_t clicks)
 {
     uint32_t i;
     if (clicks <= 0) return 0;
-    if (id == ENC_K1) {
-        for (i = 0; i < NTRK; i++) seq_pattern_clear(modd_trk(i));
-        nav_dirty = 1;
-        return 1;
-    }
-    if (id == ENC_K2) {
-        track_t *t = modd_trk(modd_sel());
-        t->preset = 0;
-        nav_dirty = 1;
-        return 1;
-    }
-    return 0;
+    for (i = 0; i < NTRK; i++) seq_pattern_clear(modd_trk(i));
+    nav_dirty = 1;
+    return 1;
 }
+
+static int tools_initsnd_action(int32_t clicks)
+{
+    track_t *t;
+    if (clicks <= 0) return 0;
+    t = modd_trk(modd_sel());
+    t->preset = 0;
+    nav_dirty = 1;
+    return 1;
+}
+
+static const ctl_slot_t TOOLS_CONTROLS[] = {
+    { ENC_K1, 0, 0, 0, 0, 0, "CLRSEQ",  tools_clrseq_action },
+    { ENC_K2, 0, 0, 0, 0, 0, "INITSND", tools_initsnd_action },
+};
 
 static const modd_page_t PAGE_TOOLS = {
     .name = "TOOLS", .title = "Tools", .view = VIEW_SAVE, .flags = 0,
-    .enter = lvt_tools_enter, .status = lvt_tools_show, .knob = lvt_tools_knob,
+    .enter = lvt_tools_enter, .status = lvt_tools_show,
+    .controls = TOOLS_CONTROLS, .ncontrols = 2,
     .help_text = "K1  Clear sequences\nK2  Init sound",
 };

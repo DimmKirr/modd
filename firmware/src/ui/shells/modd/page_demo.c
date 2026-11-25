@@ -428,47 +428,61 @@ static void mdemo_toast_set(uint32_t idx)
 
 static int32_t mdemo_clamp(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : v > hi ? hi : v; }
 
-static int mdemo_knob(uint32_t id, int32_t clicks)
+static int mdemo_select(int32_t clicks)
 {
-    if (id == ENC_SELECT) {
-        int32_t s = (int32_t)mdemo.screen + clicks;
-        if (s < 0 || s >= (int32_t)MDEMO_SCREENS)
-            return 0;                   /* past the ends: the shell goes to the next page */
-        mdemo.screen = (uint8_t)s;
-        mdemo.val[0] = mdemo.val[1] = mdemo.val[2] = mdemo.val[3] = 0;
-        mdemo_build();
-        return 1;
+    int32_t s = (int32_t)mdemo.screen + clicks;
+    if (s < 0 || s >= (int32_t)MDEMO_SCREENS) {
+        if (clicks)                     /* past the ends: the next page */
+            nav_cycle(clicks > 0 ? 1 : -1);
+        return 0;
     }
-    if (id >= ENC_K1 && id <= ENC_K4) {
-        uint32_t ki = id - ENC_K1;
-        if (mdemo.screen == 1 && ki == 0) {
-            mdemo.val[0] = (uint8_t)mdemo_clamp((int32_t)mdemo.val[0] + clicks, 0, MDEMO_LIST_N - 1);
-        } else if (mdemo.screen == 4 && ki == 0) {
-            mdemo.edit_cursor = (uint8_t)mdemo_clamp((int32_t)mdemo.edit_cursor + clicks, 0,
-                                                     (int32_t)lv_strlen(mdemo_text));
-        } else if (mdemo.screen == 4 && ki == 1) {
-            uint32_t tl = lv_strlen(mdemo_text);
-            if (mdemo.edit_cursor < tl)
-                mdemo_text[mdemo.edit_cursor] =
-                    (char)mdemo_clamp((int32_t)mdemo_text[mdemo.edit_cursor] + clicks, 32, 126);
-            else if (mdemo.edit_cursor == tl && tl < MDEMO_TEXT_MAX && clicks > 0) {
-                mdemo_text[tl] = 'A';
-                mdemo_text[tl + 1u] = 0;
-            }
-        } else if (mdemo.screen == 5 && ki == 0) {
-            mdemo.modal_sel = (uint8_t)mdemo_clamp((int32_t)mdemo.modal_sel + clicks, 0, MDEMO_MODAL_N - 1);
-            mdemo_modal_show();
-        } else if (mdemo.screen == 6 && ki == 0) {
-            mdemo.val[0] = (uint8_t)mdemo_clamp((int32_t)mdemo.val[0] + clicks, 0, MDEMO_TOAST_N - 1);
-            mdemo_toast_set(mdemo.val[0]);
-        } else {
-            mdemo.val[ki] = (uint8_t)mdemo_clamp((int32_t)mdemo.val[ki] + clicks, 0, 99);
-        }
-        mdemo.dirty = 1;
-        return 1;
-    }
-    return 0;
+    mdemo.screen = (uint8_t)s;
+    mdemo.val[0] = mdemo.val[1] = mdemo.val[2] = mdemo.val[3] = 0;
+    mdemo_build();
+    return 1;
 }
+
+static int mdemo_kn(uint32_t ki, int32_t clicks)
+{
+    if (mdemo.screen == 1 && ki == 0) {
+        mdemo.val[0] = (uint8_t)mdemo_clamp((int32_t)mdemo.val[0] + clicks, 0, MDEMO_LIST_N - 1);
+    } else if (mdemo.screen == 4 && ki == 0) {
+        mdemo.edit_cursor = (uint8_t)mdemo_clamp((int32_t)mdemo.edit_cursor + clicks, 0,
+                                                 (int32_t)lv_strlen(mdemo_text));
+    } else if (mdemo.screen == 4 && ki == 1) {
+        uint32_t tl = lv_strlen(mdemo_text);
+        if (mdemo.edit_cursor < tl)
+            mdemo_text[mdemo.edit_cursor] =
+                (char)mdemo_clamp((int32_t)mdemo_text[mdemo.edit_cursor] + clicks, 32, 126);
+        else if (mdemo.edit_cursor == tl && tl < MDEMO_TEXT_MAX && clicks > 0) {
+            mdemo_text[tl] = 'A';
+            mdemo_text[tl + 1u] = 0;
+        }
+    } else if (mdemo.screen == 5 && ki == 0) {
+        mdemo.modal_sel = (uint8_t)mdemo_clamp((int32_t)mdemo.modal_sel + clicks, 0, MDEMO_MODAL_N - 1);
+        mdemo_modal_show();
+    } else if (mdemo.screen == 6 && ki == 0) {
+        mdemo.val[0] = (uint8_t)mdemo_clamp((int32_t)mdemo.val[0] + clicks, 0, MDEMO_TOAST_N - 1);
+        mdemo_toast_set(mdemo.val[0]);
+    } else {
+        mdemo.val[ki] = (uint8_t)mdemo_clamp((int32_t)mdemo.val[ki] + clicks, 0, 99);
+    }
+    mdemo.dirty = 1;
+    return 1;
+}
+
+static int mdemo_k1(int32_t clicks) { return mdemo_kn(0, clicks); }
+static int mdemo_k2(int32_t clicks) { return mdemo_kn(1, clicks); }
+static int mdemo_k3(int32_t clicks) { return mdemo_kn(2, clicks); }
+static int mdemo_k4(int32_t clicks) { return mdemo_kn(3, clicks); }
+
+static const ctl_slot_t DEMO_CONTROLS[] = {
+    { ENC_SELECT, P_COUNT, 0, MDEMO_SCREENS - 1, 1, 0, "SCREEN", mdemo_select },
+    { ENC_K1,     P_COUNT, 0, 99, 1, 0, "K1", mdemo_k1 },
+    { ENC_K2,     P_COUNT, 0, 99, 1, 0, "K2", mdemo_k2 },
+    { ENC_K3,     P_COUNT, 0, 99, 1, 0, "K3", mdemo_k3 },
+    { ENC_K4,     P_COUNT, 0, 99, 1, 0, "K4", mdemo_k4 },
+};
 
 static int mdemo_key(uint32_t note, uint32_t vel)
 {
@@ -500,7 +514,8 @@ static const modd_page_t PAGE_DEMO = {
     .flags  = PAGEF_SYSTEM,
     .enter  = mdemo_enter,
     .status = mdemo_status,
-    .knob   = mdemo_knob,
+    .controls  = DEMO_CONTROLS,
+    .ncontrols = 5,
     .key    = mdemo_key,
     .help_text =
         "SELECT  Next screen\n"

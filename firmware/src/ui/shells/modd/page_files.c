@@ -104,12 +104,25 @@ static void lvt_files_status(void)
     lvt_list_poll(&lvt_files.list);
 }
 
-static int lvt_files_knob(uint32_t id, int32_t clicks)
+static int lvt_files_algo(int32_t clicks)
 {
     if (!udisk_is_mounted())
-        return 0;                       /* SELECT, or no disk: the shell's (next page) */
-    return lvt_list_input(&lvt_files.list, id, clicks);
+        return 0;
+    return lvt_list_input(&lvt_files.list, ENC_ALGO, clicks);
 }
+
+/* SELECT goes on to the next page (what the shell does for an unclaimed SELECT) */
+static int lvt_files_select(int32_t clicks)
+{
+    if (clicks)
+        nav_cycle(clicks > 0 ? 1 : -1);
+    return 0;
+}
+
+static const ctl_slot_t FILES_CONTROLS[] = {
+    { ENC_SELECT, P_COUNT, 0, 0, 1, 0, "PAGE", lvt_files_select },
+    { ENC_ALGO,   P_COUNT, 0, 0, 1, 0, "LIST", lvt_files_algo },
+};
 
 static int lvt_files_button(uint32_t id, uint32_t down)
 {
@@ -135,7 +148,8 @@ static const modd_page_t PAGE_FILES = {
     .enter  = lvt_files_enter,
     .leave  = lvt_files_leave,
     .status = lvt_files_status,
-    .knob   = lvt_files_knob,
+    .controls  = FILES_CONTROLS,
+    .ncontrols = 2,
     .button = lvt_files_button,
     .help_text =
         "ALGO    Scroll list\n"

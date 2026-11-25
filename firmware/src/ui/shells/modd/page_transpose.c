@@ -22,25 +22,18 @@ static void lvt_transpose_enter(void)
     lvt_transpose_show();
 }
 
-static int lvt_transpose_knob(uint32_t id, int32_t clicks)
-{
-    int32_t v;
-    if (id != ENC_K1 || !clicks) return 0;
-    v = modd_tpi(modd_sel(), P_TRANS) + clicks;
-    if (v < -24) v = -24;
-    if (v > 24) v = 24;
-    modd_tpi_set(modd_sel(), P_TRANS, (int16_t)v);
-    nav_dirty = 1;
-    return 1;
-}
+static const ctl_slot_t TRANSPOSE_CONTROLS[] = {
+    { ENC_K1, P_TRANS, -24, 24, 1, 0, "TRN" },
+};
 
 static const modd_page_t PAGE_TRANSPOSE = {
-    .name   = "TRANSPOSE",
-    .title  = "Transpose",
-    .view   = VIEW_SETTINGS,
-    .flags  = 0,
-    .enter  = lvt_transpose_enter,
-    .status = lvt_transpose_show,
-    .knob   = lvt_transpose_knob,
+    .name      = "TRANSPOSE",
+    .title     = "Transpose",
+    .view      = VIEW_SETTINGS,
+    .flags     = 0,
+    .enter     = lvt_transpose_enter,
+    .status    = lvt_transpose_show,
+    .controls  = TRANSPOSE_CONTROLS,
+    .ncontrols = 1,
     .help_text = "K1  Transpose",
 };

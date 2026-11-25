@@ -67,23 +67,21 @@ static void lvt_mixerer_enter(void)
     lvt_mixerer_show();
 }
 
-static int lvt_mixerer_knob(uint32_t id, int32_t clicks)
+static int lvt_mixerer_select(int32_t clicks)
 {
-    if (id == ENC_SELECT) {
-        int32_t s = (int32_t)modd_sel() + clicks;
-        if (s < 0) s = 0;
-        if (s >= (int32_t)NTRK) s = (int32_t)NTRK - 1;
-        modd_sel_set((uint32_t)s);
-        return 1;
-    }
-    return 0;
+    int32_t s = (int32_t)modd_sel() + clicks;
+    if (s < 0) s = 0;
+    if (s >= (int32_t)NTRK) s = (int32_t)NTRK - 1;
+    modd_sel_set((uint32_t)s);
+    return 1;
 }
 
-static const param_slot_t MIXER_KNOB_MAP[] = {
-    { ENC_K1, P_LEVEL, 0, 100, 1, SLOT_TRACK, "LVL1" },
-    { ENC_K2, P_LEVEL, 0, 100, 1, SLOT_TRACK, "LVL2" },
-    { ENC_K3, P_LEVEL, 0, 100, 1, SLOT_TRACK, "LVL3" },
-    { ENC_K4, P_LEVEL, 0, 100, 1, SLOT_TRACK, "LVL4" },
+static const ctl_slot_t MIXER_CONTROLS[] = {
+    { ENC_SELECT, P_COUNT, 0, NTRK - 1, 1, 0, "TRK", lvt_mixerer_select },
+    { ENC_K1, P_LEVEL, 0, 100, 1, CTLF_TRACK, "LVL1" },
+    { ENC_K2, P_LEVEL, 0, 100, 1, CTLF_TRACK, "LVL2" },
+    { ENC_K3, P_LEVEL, 0, 100, 1, CTLF_TRACK, "LVL3" },
+    { ENC_K4, P_LEVEL, 0, 100, 1, CTLF_TRACK, "LVL4" },
 };
 
 static const modd_page_t PAGE_MIXER = {
@@ -93,8 +91,7 @@ static const modd_page_t PAGE_MIXER = {
     .flags     = 0,
     .enter     = lvt_mixerer_enter,
     .status    = lvt_mixerer_show,
-    .knob      = lvt_mixerer_knob,
-    .knob_map  = MIXER_KNOB_MAP,
-    .knob_count = 4,
+    .controls  = MIXER_CONTROLS,
+    .ncontrols = 5,
     .help_text = "SELECT  Track\nK1-K4  Track 1-4 level",
 };

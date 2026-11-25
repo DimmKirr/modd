@@ -29,13 +29,12 @@ typedef struct modd_page {
     void (*status)(void);       /* draw status bar contribution (optional, NULL ok) */
 
     /* input (return 1 if handled, 0 to let shell handle) */
-    int (*knob)(uint32_t id, int32_t clicks);
     int (*button)(uint32_t id, uint32_t down);
     int (*key)(uint32_t note, uint32_t vel);   /* piano key (optional, NULL ok) */
 
-    /* declarative knob map (NULL = custom .knob only) */
-    const param_slot_t *knob_map;
-    uint8_t             knob_count;
+    /* declarative control map: encoder bindings dispatched by the shell */
+    const ctl_slot_t *controls;
+    uint8_t             ncontrols;
 
     /* page-local help: shown by GLO tap instead of the global control map.
      * one line per active control, e.g. "SELECT  Switch tab\nALGO    Scroll rows" */

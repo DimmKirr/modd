@@ -342,26 +342,30 @@ static void mset_step_value(int32_t dir)
     }
 }
 
-static int settings_knob(uint32_t id, int32_t clicks)
+static int settings_select(int32_t clicks)
 {
-    if (id == ENC_SELECT) {
-        if (clicks)
-            mset_next_tab(clicks);
-        return 1;
-    }
-    if (id == ENC_ALGO) {
-        int32_t r = (int32_t)mset.row + clicks, n = (int32_t)lvt_set.nrows;
-#ifdef CONFIG_DOCK
-        if (mset.tab == SMTAB_INSTR)
-            return lvt_list_input(&minstr_list, id, clicks);
-#endif
-        if (r < 0) r = 0;
-        if (n > 0 && r >= n) r = n - 1;
-        mset_select((uint32_t)r);
-        return 1;
-    }
-    return 0;
+    if (clicks)
+        mset_next_tab(clicks);
+    return 1;
 }
+
+static int settings_algo(int32_t clicks)
+{
+    int32_t r = (int32_t)mset.row + clicks, n = (int32_t)lvt_set.nrows;
+#ifdef CONFIG_DOCK
+    if (mset.tab == SMTAB_INSTR)
+        return lvt_list_input(&minstr_list, ENC_ALGO, clicks);
+#endif
+    if (r < 0) r = 0;
+    if (n > 0 && r >= n) r = n - 1;
+    mset_select((uint32_t)r);
+    return 1;
+}
+
+static const ctl_slot_t SETTINGS_CONTROLS[] = {
+    { ENC_SELECT, P_COUNT, 0, 0, 1, 0, "TAB", settings_select },
+    { ENC_ALGO,   P_COUNT, 0, 0, 1, 0, "ROW", settings_algo },
+};
 
 static int settings_button(uint32_t id, uint32_t down)
 {
@@ -462,7 +466,8 @@ static const modd_page_t PAGE_SETTINGS = {
     .leave  = minstr_leave,
 #endif
     .status = settings_status,
-    .knob   = settings_knob,
+    .controls  = SETTINGS_CONTROLS,
+    .ncontrols = 2,
     .button = settings_button,
     .help_text =
         "SELECT  Switch tab\n"

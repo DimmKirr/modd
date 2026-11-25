@@ -23,10 +23,10 @@ static void lvt_select_mode_enter(void)
     lvt_select_mode_show();
 }
 
-static int lvt_select_mode_knob(uint32_t id, int32_t clicks)
+static int lvt_select_mode_k1(int32_t clicks)
 {
     int32_t v;
-    if (id != ENC_K1 || !clicks) return 0;
+    if (!clicks) return 0;
     v = (int32_t)lvt_select_mode + (clicks > 0 ? 1 : -1);
     if (v < 0) v = 2;
     if (v > 2) v = 0;
@@ -35,6 +35,10 @@ static int lvt_select_mode_knob(uint32_t id, int32_t clicks)
     return 1;
 }
 
+static const ctl_slot_t SELECT_MODE_CONTROLS[] = {
+    { ENC_K1, P_COUNT, 0, 2, 1, CTLF_WRAP, "SEL", lvt_select_mode_k1 },
+};
+
 static const modd_page_t PAGE_SELECT_MODE = {
     .name   = "SELECT",
     .title  = "Select mode",
@@ -42,6 +46,7 @@ static const modd_page_t PAGE_SELECT_MODE = {
     .flags  = 0,
     .enter  = lvt_select_mode_enter,
     .status = lvt_select_mode_show,
-    .knob   = lvt_select_mode_knob,
+    .controls  = SELECT_MODE_CONTROLS,
+    .ncontrols = 1,
     .help_text = "K1  Select mode",
 };

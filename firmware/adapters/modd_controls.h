@@ -49,19 +49,21 @@ static const char *const CTL_ENC_NAME[ENC_COUNT] = {
 #define CTL_SELECT_PAGE   0   /* cycle pages within current view */
 #define CTL_SELECT_BPM    1   /* adjust tempo */
 
-/* --- Declarative knob-to-parameter slot --- */
+/* --- Declarative encoder-to-parameter slot --- */
 
-#define SLOT_WRAP    (1u << 0)  /* wrap around at boundaries */
-#define SLOT_TRACK   (1u << 1)  /* targets trk[slot_index] not trk[song.sel] */
+#define CTLF_WRAP    (1u << 0)  /* wrap around at boundaries */
+#define CTLF_TRACK   (1u << 1)  /* targets trk[slot_index] not trk[song.sel] */
+#define CTLF_GLOBAL  (1u << 2)  /* targets song.g[pid] not trk[sel].p[pid] */
 
 typedef struct {
     uint8_t     enc_id;     /* ENC_K1..ENC_K4 (or ENC_ALGO, etc.) */
     uint8_t     pid;        /* P_* parameter id, P_COUNT = none */
     int16_t     min, max;   /* value range */
     int8_t      step;       /* clicks multiplier (1 or 4 typically) */
-    uint8_t     flags;      /* SLOT_* flags */
+    uint8_t     flags;      /* CTLF_* flags */
     const char *label;      /* short label for codegen/MIDI learn */
-} param_slot_t;
+    int       (*action)(int32_t clicks); /* non-NULL: called instead of generic dispatch */
+} ctl_slot_t;
 
 /* --- Theme encoder roles --- */
 

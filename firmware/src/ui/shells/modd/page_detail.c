@@ -26,18 +26,21 @@ static void lvt_detail_enter(void)
     lvt_detail_show();
 }
 
-static int lvt_detail_knob(uint32_t id, int32_t clicks)
+static int detail_step_action(int32_t clicks)
 {
-    int32_t v;
-    if (id != ENC_K1) return 0;
-    v = lvt_detail_idx + clicks;
+    int32_t v = lvt_detail_idx + clicks;
     lvt_detail_idx = v < 0 ? 0 : (v > NSTEP - 1 ? NSTEP - 1 : v);
     nav_dirty = 1;
     return 1;
 }
 
+static const ctl_slot_t DETAIL_CONTROLS[] = {
+    { ENC_K1, 0, 0, NSTEP - 1, 1, 0, "STEP", detail_step_action },
+};
+
 static const modd_page_t PAGE_DETAIL = {
     .name = "DETAIL", .title = "Detail", .view = VIEW_SEQ, .flags = 0,
-    .enter = lvt_detail_enter, .status = lvt_detail_show, .knob = lvt_detail_knob,
+    .enter = lvt_detail_enter, .status = lvt_detail_show,
+    .controls = DETAIL_CONTROLS, .ncontrols = 1,
     .help_text = "K1  Step",
 };

@@ -9,7 +9,7 @@
  * then runs LVGL's timers (rendering, animations).
  *
  * Input:
- *   knob     the page's handler; else SELECT goes to the next/previous page of the view
+ *   knob     the page's .controls map; else SELECT goes to the next/previous page of the view
  *   button   an error toast takes the next release; a hold opens a view (controls.c), GLO
  *            held opens LOG and returns; a GLO tap shows/hides the hints; then the page's
  *            handler; then a tap opens a view
@@ -61,27 +61,41 @@ static void shell_knob(uint32_t id, int32_t clicks)
         return;
     }
 #endif
-    if (p && p->knob && p->knob(id, clicks))
-        return;
-
-    if (p && p->knob_map) {
+    if (p && p->controls) {
         uint32_t i;
-        for (i = 0; i < p->knob_count; i++) {
-            const param_slot_t *s = &p->knob_map[i];
-            if (s->enc_id != (uint8_t)id || !MODD_P_VALID(s->pid))
+        for (i = 0; i < p->ncontrols; i++) {
+            const ctl_slot_t *s = &p->controls[i];
+            if (s->enc_id != (uint8_t)id)
                 continue;
-            track_t *t = (s->flags & SLOT_TRACK)
-                ? modd_trk(i < NTRK ? i : 0)
-                : modd_trk(modd_sel());
-            int16_t v = modd_param(t, s->pid) + (int16_t)(clicks * s->step);
-            if (s->flags & SLOT_WRAP) {
+            if (s->action) {
+                if (s->action(clicks))
+                    nav_dirty = 1;
+                return;
+            }
+            if ((s->flags & CTLF_GLOBAL) ? (s->pid >= G_COUNT) : !MODD_P_VALID(s->pid))
+                continue;
+            track_t *t = NULL;
+            int16_t v;
+            if (s->flags & CTLF_GLOBAL) {
+                v = modd_gp(s->pid);
+            } else {
+                t = (s->flags & CTLF_TRACK)
+                    ? modd_trk(i < NTRK ? i : 0)
+                    : modd_trk(modd_sel());
+                v = modd_param(t, s->pid);
+            }
+            v += (int16_t)(clicks * s->step);
+            if (s->flags & CTLF_WRAP) {
                 if (v < s->min) v = s->max;
                 if (v > s->max) v = s->min;
             } else {
                 if (v < s->min) v = s->min;
                 if (v > s->max) v = s->max;
             }
-            modd_param_set(t, s->pid, v);
+            if (s->flags & CTLF_GLOBAL)
+                modd_gp_set(s->pid, v);
+            else
+                modd_param_set(t, s->pid, v);
             nav_dirty = 1;
             return;
         }

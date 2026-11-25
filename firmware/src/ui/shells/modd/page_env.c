@@ -60,7 +60,7 @@ static void lvt_env_enter(void)
     lvt_env_show();
 }
 
-static const param_slot_t ENV_KNOB_MAP[] = {
+static const ctl_slot_t ENV_CONTROLS[] = {
     { ENC_K1, P_ATK, 0, 100, 1, 0, "ATK" },
     { ENC_K2, P_DEC, 0, 100, 1, 0, "DEC" },
     { ENC_K3, P_SUS, 0, 100, 1, 0, "SUS" },
@@ -74,7 +74,7 @@ static const modd_page_t PAGE_ENV = {
     .flags     = 0,
     .enter     = lvt_env_enter,
     .status    = lvt_env_show,
-    .knob_map  = ENV_KNOB_MAP,
-    .knob_count = 4,
+    .controls  = ENV_CONTROLS,
+    .ncontrols = 4,
     .help_text = "K1  Attack\nK2  Decay\nK3  Sustain\nK4  Release",
 };

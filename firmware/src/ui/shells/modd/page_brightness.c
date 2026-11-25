@@ -22,10 +22,10 @@ static void lvt_brightness_enter(void)
     lvt_brightness_show();
 }
 
-static int lvt_brightness_knob(uint32_t id, int32_t clicks)
+static int lvt_brightness_k1(int32_t clicks)
 {
     int32_t v;
-    if (id != ENC_K1 || !clicks) return 0;
+    if (!clicks) return 0;
     v = lvt_brightness + clicks * 5;
     if (v < 0) v = 0;
     if (v > 100) v = 100;
@@ -34,6 +34,10 @@ static int lvt_brightness_knob(uint32_t id, int32_t clicks)
     return 1;
 }
 
+static const ctl_slot_t BRIGHTNESS_CONTROLS[] = {
+    { ENC_K1, P_COUNT, 0, 100, 5, 0, "BRT", lvt_brightness_k1 },
+};
+
 static const modd_page_t PAGE_BRIGHTNESS = {
     .name   = "BRIGHTNESS",
     .title  = "Brightness",
@@ -41,6 +45,7 @@ static const modd_page_t PAGE_BRIGHTNESS = {
     .flags  = 0,
     .enter  = lvt_brightness_enter,
     .status = lvt_brightness_show,
-    .knob   = lvt_brightness_knob,
+    .controls  = BRIGHTNESS_CONTROLS,
+    .ncontrols = 1,
     .help_text = "K1  Brightness",
 };

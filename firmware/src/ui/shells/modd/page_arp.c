@@ -47,8 +47,8 @@ static void lvt_arp_enter(void)
     lvt_arp_show();
 }
 
-static const param_slot_t ARP_KNOB_MAP[] = {
-    { ENC_K1, P_ARP,   0, 5, 1, SLOT_WRAP, "MODE" },
+static const ctl_slot_t ARP_CONTROLS[] = {
+    { ENC_K1, P_ARP,   0, 5, 1, CTLF_WRAP, "MODE" },
     { ENC_K2, P_ARTM,  0, 100, 1, 0, "TEMPO" },
     { ENC_K3, P_ARNG,  0, 4, 1, 0, "RANGE" },
     { ENC_K4, P_AGATE, 0, 100, 1, 0, "GATE" },
@@ -61,7 +61,7 @@ static const modd_page_t PAGE_ARP = {
     .flags     = 0,
     .enter     = lvt_arp_enter,
     .status    = lvt_arp_show,
-    .knob_map  = ARP_KNOB_MAP,
-    .knob_count = 4,
+    .controls  = ARP_CONTROLS,
+    .ncontrols = 4,
     .help_text = "K1  Mode\nK2  Tempo\nK3  Range\nK4  Gate",
 };

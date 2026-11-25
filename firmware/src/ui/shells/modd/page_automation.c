@@ -42,52 +42,69 @@ static void lvt_automation_enter(void)
     lvt_automation_show();
 }
 
-static int lvt_automation_knob(uint32_t id, int32_t clicks)
+static int auto_step_action(int32_t clicks)
 {
+    int32_t v = (int32_t)auto_step + clicks;
     auto_ensure_init();
-    uint32_t t = modd_sel() < NTRK ? modd_sel() : 0;
-
-    if (id == ENC_K1) {
-        int32_t v = (int32_t)auto_step + clicks;
-        if (v < 0) v = 0;
-        if (v > 63) v = 63;
-        auto_step = (uint32_t)v;
-        nav_dirty = 1;
-        return 1;
-    }
-    if (id == ENC_K2) {
-        int32_t v = (int32_t)auto_pidx + clicks;
-        if (v < 0) v = AUTO_NPARAMS - 1;
-        if (v >= AUTO_NPARAMS) v = 0;
-        auto_pidx = (uint32_t)v;
-        nav_dirty = 1;
-        return 1;
-    }
-    if (id == ENC_K3) {
-        uint8_t lv = auto_locks[t][auto_step][auto_pidx];
-        if (lv == 0xFF) lv = 64;
-        int32_t v = (int32_t)lv + clicks;
-        if (v < 0) v = 0;
-        if (v > 127) v = 127;
-        auto_locks[t][auto_step][auto_pidx] = (uint8_t)v;
-        nav_dirty = 1;
-        return 1;
-    }
-    if (id == ENC_K4 && clicks != 0) {
-        uint8_t lv = auto_locks[t][auto_step][auto_pidx];
-        if (lv == 0xFF)
-            auto_locks[t][auto_step][auto_pidx] = (uint8_t)modd_tpi(t, auto_params[auto_pidx]);
-        else
-            auto_locks[t][auto_step][auto_pidx] = 0xFF;
-        nav_dirty = 1;
-        return 1;
-    }
-    return 0;
+    if (v < 0) v = 0;
+    if (v > 63) v = 63;
+    auto_step = (uint32_t)v;
+    nav_dirty = 1;
+    return 1;
 }
+
+static int auto_param_action(int32_t clicks)
+{
+    int32_t v = (int32_t)auto_pidx + clicks;
+    auto_ensure_init();
+    if (v < 0) v = AUTO_NPARAMS - 1;
+    if (v >= AUTO_NPARAMS) v = 0;
+    auto_pidx = (uint32_t)v;
+    nav_dirty = 1;
+    return 1;
+}
+
+static int auto_value_action(int32_t clicks)
+{
+    uint32_t t = modd_sel() < NTRK ? modd_sel() : 0;
+    uint8_t lv;
+    int32_t v;
+    auto_ensure_init();
+    lv = auto_locks[t][auto_step][auto_pidx];
+    if (lv == 0xFF) lv = 64;
+    v = (int32_t)lv + clicks;
+    if (v < 0) v = 0;
+    if (v > 127) v = 127;
+    auto_locks[t][auto_step][auto_pidx] = (uint8_t)v;
+    nav_dirty = 1;
+    return 1;
+}
+
+static int auto_lock_action(int32_t clicks)
+{
+    uint32_t t = modd_sel() < NTRK ? modd_sel() : 0;
+    uint8_t lv;
+    if (clicks == 0) return 0;
+    auto_ensure_init();
+    lv = auto_locks[t][auto_step][auto_pidx];
+    if (lv == 0xFF)
+        auto_locks[t][auto_step][auto_pidx] = (uint8_t)modd_tpi(t, auto_params[auto_pidx]);
+    else
+        auto_locks[t][auto_step][auto_pidx] = 0xFF;
+    nav_dirty = 1;
+    return 1;
+}
+
+static const ctl_slot_t AUTOMATION_CONTROLS[] = {
+    { ENC_K1, 0, 0, 63,              1, 0,         "STEP",  auto_step_action },
+    { ENC_K2, 0, 0, AUTO_NPARAMS - 1, 1, CTLF_WRAP, "PARAM", auto_param_action },
+    { ENC_K3, 0, 0, 127,             1, 0,         "VALUE", auto_value_action },
+    { ENC_K4, 0, 0, 1,               1, 0,         "LOCK",  auto_lock_action },
+};
 
 static const modd_page_t PAGE_AUTOMATION = {
     .name = "AUTO", .title = "Automation", .view = VIEW_SEQ, .flags = 0,
     .enter = lvt_automation_enter, .status = lvt_automation_show,
-    .knob = lvt_automation_knob,
+    .controls = AUTOMATION_CONTROLS, .ncontrols = 4,
     .help_text = "K1  Step\nK2  Param\nK3  Value\nK4  Lock on/off",
 };

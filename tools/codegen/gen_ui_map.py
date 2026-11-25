@@ -223,10 +223,24 @@ def parse_page_details(shell_dir: Path) -> dict[str, dict]:
     name_pat = re.compile(r'\.name\s*=\s*"([^"]+)"')
     title_pat = re.compile(r'\.title\s*=\s*"([^"]+)"')
     view_pat = re.compile(r'\.view\s*=\s*(VIEW_\w+)')
+    pg_knob_ctl_pat = re.compile(
+        r'PG_KNOB_CTL\(\s*(\w+)\s*,'       # TAG
+        r'\s*\d+\s*,'                        # UP_IDX
+        r'\s*"([^"]*)"\s*,'                  # NAME
+        r'\s*"([^"]*)"\s*,'                  # TITLE
+        r'\s*(VIEW_\w+)\s*,',               # VIEW
+    )
 
     for d in _page_source_dirs(shell_dir):
         for f in sorted(d.glob("page_*.c")):
             text = f.read_text()
+            for pgm in pg_knob_ctl_pat.finditer(text):
+                symbol = f"PAGE_{pgm.group(1)}"
+                details[symbol] = {
+                    "name": pgm.group(2),
+                    "title": pgm.group(3),
+                    "view": pgm.group(4),
+                }
             for m in pat_ml.finditer(text):
                 symbol = m.group(1)
                 rest = text[m.end():]
@@ -278,15 +292,15 @@ def parse_page_controls(shell_dir: Path) -> dict[str, dict]:
     )
     page_knob_assign = re.compile(r'\.knob\s*=\s*(\w+)')
 
-    # param_slot_t arrays: {ENC_K1, P_ATK, 0, 127, 4, 0, "ATK"}
+    # ctl_slot_t arrays: {ENC_K1, P_ATK, 0, 127, 4, 0, "ATK"}
     slot_array_pat = re.compile(
-        r'static\s+const\s+param_slot_t\s+(\w+)\[\d*\]\s*=\s*\{(.*?)\};',
+        r'static\s+const\s+ctl_slot_t\s+(\w+)\[\d*\]\s*=\s*\{(.*?)\};',
         re.DOTALL,
     )
     slot_entry_pat = re.compile(
-        r'\{\s*ENC_(\w+),\s*P_(\w+),[^}]*"([^"]+)"\s*\}',
+        r'\{\s*ENC_(\w+)\s*,[^}]*?"([^"]+)"[^}]*\}',
     )
-    page_knob_map_assign = re.compile(r'\.knob_map\s*=\s*(\w+)')
+    page_controls_assign = re.compile(r'\.controls\s*=\s*(\w+)')
 
     for src_dir in _page_source_dirs(shell_dir):
         for f in sorted(src_dir.glob("page_*.c")):
@@ -310,10 +324,34 @@ def parse_page_controls(shell_dir: Path) -> dict[str, dict]:
                 entries = []
                 for em in slot_entry_pat.finditer(sm.group(2)):
                     enc_id = enc_name_to_id.get(em.group(1), -1)
-                    entries.append((enc_id, em.group(3)))
+                    entries.append((enc_id, em.group(2)))
                 slot_arrays[var_name] = entries
 
-            # Find modd_page_t structs and their .knob / .knob_map assignment
+            # PG_KNOB_CTL macro: extract PAGE_<TAG> with 4 knob labels
+            pg_knob_ctl_pat = re.compile(
+                r'PG_KNOB_CTL\(\s*(\w+)\s*,'       # TAG
+                r'\s*\d+\s*,'                        # UP_IDX
+                r'\s*"([^"]*)"\s*,'                  # NAME
+                r'\s*"([^"]*)"\s*,'                  # TITLE
+                r'\s*(VIEW_\w+)\s*,'                 # VIEW
+                r'\s*"[^"]*"\s*,'                    # FOOT
+                r'\s*\w+\s*,'                        # VIS
+                r'\s*"([^"]*)"\s*,'                  # L1
+                r'\s*"([^"]*)"\s*,'                  # L2
+                r'\s*"([^"]*)"\s*,'                  # L3
+                r'\s*"([^"]*)"\s*\)',                 # L4
+            )
+            for pgm in pg_knob_ctl_pat.finditer(text):
+                tag = pgm.group(1)
+                symbol = f"PAGE_{tag}"
+                knobs: dict[int, str] = {}
+                for j, lbl in enumerate([pgm.group(5), pgm.group(6), pgm.group(7), pgm.group(8)]):
+                    if lbl:
+                        knobs[j + 2] = lbl  # K1=2, K2=3, K3=4, K4=5
+                if knobs:
+                    controls[symbol] = {"knobs": knobs, "buttons": []}
+
+            # Find modd_page_t structs and their .knob / .controls assignment
             page_pat = re.compile(r"static\s+const\s+modd_page_t\s+(\w+)\s*=\s*\{")
             for pm in page_pat.finditer(text):
                 symbol = pm.group(1)
@@ -331,8 +369,8 @@ def parse_page_controls(shell_dir: Path) -> dict[str, dict]:
 
                 knobs: dict[int, str] = {}
 
-                # Declarative knob_map (param_slot_t arrays)
-                km_map = page_knob_map_assign.search(body)
+                # Declarative controls (ctl_slot_t arrays)
+                km_map = page_controls_assign.search(body)
                 if km_map:
                     slot_var = km_map.group(1)
                     if slot_var in slot_arrays:
@@ -881,10 +919,7 @@ def generate_mermaid(shell: str) -> str:
     return "\n".join(lines_final)
 
 
-# Themes whose controls are not written in the forms parse_page_controls() reads (knob
-# maps, fparams, numeric `id == N` tests): their UI.md describes the controls by hand,
-# and only the navigation diagram is generated and checked.
-DIAGRAM_ONLY_THEMES = {"modd"}
+DIAGRAM_ONLY_THEMES: set[str] = set()
 
 
 def generate_full(shell: str) -> tuple[str, str | None]:

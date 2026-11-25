@@ -23,12 +23,12 @@ static void lvt_presets_enter(void)
     lvt_presets_show();
 }
 
-static int lvt_presets_knob(uint32_t id, int32_t clicks)
+static int presets_action(int32_t clicks)
 {
     track_t *t = modd_trk(modd_sel());
     const engine_t *e = lvt_cur_engine();
     int32_t v;
-    if ((id != ENC_K1 && id != ENC_SELECT) || !e || e->npresets < 1) return 0;
+    if (!e || e->npresets < 1) return 0;
     v = t->preset + clicks;
     if (v < 0) v = 0;
     if (v > e->npresets - 1) v = e->npresets - 1;
@@ -37,8 +37,14 @@ static int lvt_presets_knob(uint32_t id, int32_t clicks)
     return 1;
 }
 
+static const ctl_slot_t PRESETS_CONTROLS[] = {
+    { ENC_K1,     0, 0, 127, 1, 0, "PRESET", presets_action },
+    { ENC_SELECT, 0, 0, 127, 1, 0, "PRESET", presets_action },
+};
+
 static const modd_page_t PAGE_PRESETS = {
     .name = "PRESETS", .title = "Presets", .view = VIEW_SAVE, .flags = 0,
-    .enter = lvt_presets_enter, .status = lvt_presets_show, .knob = lvt_presets_knob,
+    .enter = lvt_presets_enter, .status = lvt_presets_show,
+    .controls = PRESETS_CONTROLS, .ncontrols = 2,
     .help_text = "K1  Browse presets",
 };

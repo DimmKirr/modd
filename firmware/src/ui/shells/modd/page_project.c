@@ -29,30 +29,37 @@ static void lvt_project_enter(void)
     lvt_project_show();
 }
 
-static int lvt_project_knob(uint32_t id, int32_t clicks)
+static int project_load_action(int32_t clicks)
 {
-    if (id == ENC_K1) return lvt_gadd(G_SLOT, clicks, 0, 15);
-    if (id == ENC_K3 && clicks > 0) {
-        uint32_t slot = (uint32_t)modd_gp(G_SLOT);
-        if (project_used(slot)) {
-            project_load(slot);
-            toast_status("LOADED");
-        }
-        nav_dirty = 1;
-        return 1;
+    uint32_t slot;
+    if (clicks <= 0) return 0;
+    slot = (uint32_t)modd_gp(G_SLOT);
+    if (project_used(slot)) {
+        project_load(slot);
+        toast_status("LOADED");
     }
-    if (id == ENC_K4 && clicks > 0) {
-        uint32_t slot = (uint32_t)modd_gp(G_SLOT);
-        project_save(slot);
-        toast_status("SAVED");
-        nav_dirty = 1;
-        return 1;
-    }
-    return 0;
+    nav_dirty = 1;
+    return 1;
 }
+
+static int project_save_action(int32_t clicks)
+{
+    if (clicks <= 0) return 0;
+    project_save((uint32_t)modd_gp(G_SLOT));
+    toast_status("SAVED");
+    nav_dirty = 1;
+    return 1;
+}
+
+static const ctl_slot_t PROJECT_CONTROLS[] = {
+    { ENC_K1, G_SLOT, 0, 15, 1, CTLF_GLOBAL, "SLOT", NULL },
+    { ENC_K3, 0,      0,  0, 0, 0,           "LOAD", project_load_action },
+    { ENC_K4, 0,      0,  0, 0, 0,           "SAVE", project_save_action },
+};
 
 static const modd_page_t PAGE_PROJECT = {
     .name = "PROJECT", .title = "Project", .view = VIEW_SAVE, .flags = 0,
-    .enter = lvt_project_enter, .status = lvt_project_show, .knob = lvt_project_knob,
+    .enter = lvt_project_enter, .status = lvt_project_show,
+    .controls = PROJECT_CONTROLS, .ncontrols = 3,
     .help_text = "K1  Slot\nK3  Load\nK4  Save",
 };

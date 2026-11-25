@@ -27,7 +27,7 @@ static void lvt_voice_enter(void)
     lvt_voice_show();
 }
 
-static const param_slot_t VOICE_KNOB_MAP[] = {
+static const ctl_slot_t VOICE_CONTROLS[] = {
     { ENC_K1, P_MONO, 0, 1, 1, 0, "VCE" },
     { ENC_K2, P_HOLD, 0, 1, 1, 0, "HOLD" },
     { ENC_K3, P_GLI,  0, 100, 1, 0, "GLD" },
@@ -41,7 +41,7 @@ static const modd_page_t PAGE_VOICE = {
     .flags     = 0,
     .enter     = lvt_voice_enter,
     .status    = lvt_voice_show,
-    .knob_map  = VOICE_KNOB_MAP,
-    .knob_count = 4,
+    .controls  = VOICE_CONTROLS,
+    .ncontrols = 4,
     .help_text = "K1  Mono / Poly\nK2  Hold\nK3  Glide\nK4  Unison",
 };

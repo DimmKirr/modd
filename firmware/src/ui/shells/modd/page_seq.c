@@ -69,17 +69,18 @@ static void lvt_seq_enter(void)
     lvt_seq_show();
 }
 
-static int lvt_seq_knob(uint32_t id, int32_t clicks)
+static int lvt_seq_select(int32_t clicks)
 {
-    if (id == ENC_SELECT) {
-        int32_t p = (int32_t)lvt_seq.pos + clicks;
-        if (p < 0) p = 0;
-        if (p >= (int32_t)NSTEP) p = (int32_t)NSTEP - 1;
-        lvt_seq.pos = (uint32_t)p;
-        return 1;
-    }
-    return 0;
+    int32_t p = (int32_t)lvt_seq.pos + clicks;
+    if (p < 0) p = 0;
+    if (p >= (int32_t)NSTEP) p = (int32_t)NSTEP - 1;
+    lvt_seq.pos = (uint32_t)p;
+    return 1;
 }
+
+static const ctl_slot_t SEQ_CONTROLS[] = {
+    { ENC_SELECT, P_COUNT, 0, NSTEP - 1, 1, 0, "STEP", lvt_seq_select },
+};
 
 static const modd_page_t PAGE_SEQ = {
     .name      = "SEQ",
@@ -88,6 +89,7 @@ static const modd_page_t PAGE_SEQ = {
     .flags     = 0,
     .enter     = lvt_seq_enter,
     .status    = lvt_seq_show,
-    .knob      = lvt_seq_knob,
+    .controls  = SEQ_CONTROLS,
+    .ncontrols = 1,
     .help_text = "SELECT  Step cursor\nK1-K4  Step velocity",
 };

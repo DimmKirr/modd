@@ -138,17 +138,18 @@ static void lvt_home_enter(void)
     lvt_home_show();
 }
 
-static int lvt_home_knob(uint32_t id, int32_t clicks)
+static int lvt_home_select(int32_t clicks)
 {
-    if (id == ENC_SELECT) {
-        int32_t s = (int32_t)modd_sel() + clicks;
-        if (s < 0) s = 0;
-        if (s >= (int32_t)NTRK) s = (int32_t)NTRK - 1;
-        modd_sel_set((uint32_t)s);
-        return 1;
-    }
-    return 0;
+    int32_t s = (int32_t)modd_sel() + clicks;
+    if (s < 0) s = 0;
+    if (s >= (int32_t)NTRK) s = (int32_t)NTRK - 1;
+    modd_sel_set((uint32_t)s);
+    return 1;
 }
+
+static const ctl_slot_t HOME_CONTROLS[] = {
+    { ENC_SELECT, P_COUNT, 0, NTRK - 1, 1, 0, "TRK", lvt_home_select },
+};
 
 #ifdef CONFIG_AUDIO
 static int lvt_home_key(uint32_t note, uint32_t vel)
@@ -169,7 +170,8 @@ static const modd_page_t PAGE_HOME = {
     .flags  = PAGEF_HOME,
     .enter  = lvt_home_enter,
     .status = lvt_home_show,
-    .knob   = lvt_home_knob,
+    .controls  = HOME_CONTROLS,
+    .ncontrols = 1,
 #ifdef CONFIG_AUDIO
     .key    = lvt_home_key,
 #endif

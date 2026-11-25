@@ -29,31 +29,38 @@ static void lvt_mod_enter(void)
     lvt_mod_show();
 }
 
-static int lvt_mod_knob(uint32_t id, int32_t clicks)
+static int mod_edit(uint32_t pid_base, int32_t clicks, int16_t mn, int16_t mx)
 {
     uint32_t sel = modd_sel();
-    uint32_t base, pid;
-    int16_t mn = 0, mx = 127, v;
-    if (id == ENC_K1) {
-        int32_t s = (int32_t)mod_ui_slot + clicks;
-        if (s < 0) s = 3;
-        if (s > 3) s = 0;
-        mod_ui_slot = (uint32_t)s;
-        nav_dirty = 1;
-        return 1;
-    }
-    base = mod_ui_slot * 3u;
-    if (id == ENC_K2)      pid = P_M1SRC + base;
-    else if (id == ENC_K3) pid = P_M1DST + base;
-    else if (id == ENC_K4) { pid = P_M1AMT + base; mn = -64; mx = 63; }
-    else return 0;
-    v = modd_tpi(sel, pid) + (int16_t)clicks;
+    uint32_t pid = pid_base + mod_ui_slot * 3u;
+    int16_t v = modd_tpi(sel, pid) + (int16_t)clicks;
     if (v < mn) v = mn;
     if (v > mx) v = mx;
     modd_tpi_set(sel, pid, v);
     nav_dirty = 1;
     return 1;
 }
+
+static int mod_slot_action(int32_t clicks)
+{
+    int32_t s = (int32_t)mod_ui_slot + clicks;
+    if (s < 0) s = 3;
+    if (s > 3) s = 0;
+    mod_ui_slot = (uint32_t)s;
+    nav_dirty = 1;
+    return 1;
+}
+
+static int mod_src_action(int32_t clicks) { return mod_edit(P_M1SRC, clicks, 0, 127); }
+static int mod_dst_action(int32_t clicks) { return mod_edit(P_M1DST, clicks, 0, 127); }
+static int mod_amt_action(int32_t clicks) { return mod_edit(P_M1AMT, clicks, -64, 63); }
+
+static const ctl_slot_t MOD_CONTROLS[] = {
+    { ENC_K1, 0, 0,   3, 1, CTLF_WRAP, "SLOT", mod_slot_action },
+    { ENC_K2, 0, 0, 127, 1, 0,         "SRC",  mod_src_action },
+    { ENC_K3, 0, 0, 127, 1, 0,         "DST",  mod_dst_action },
+    { ENC_K4, 0, -64, 63, 1, 0,        "AMT",  mod_amt_action },
+};
 
 static const modd_page_t PAGE_MOD = {
     .name   = "MOD",
@@ -62,6 +69,7 @@ static const modd_page_t PAGE_MOD = {
     .flags  = 0,
     .enter  = lvt_mod_enter,
     .status = lvt_mod_show,
-    .knob   = lvt_mod_knob,
+    .controls  = MOD_CONTROLS,
+    .ncontrols = 4,
     .help_text = "K1  Slot\nK2  Source\nK3  Dest\nK4  Amount",
 };

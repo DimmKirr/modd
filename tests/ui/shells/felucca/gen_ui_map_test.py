@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""Unit tests for gen_ui_map.py: param_slot_t and fparams_def_t parsing.
+"""Unit tests for gen_ui_map.py: ctl_slot_t and fparams_def_t parsing.
 
 Verifies that the codegen parser extracts correct knob labels from both
-the new declarative param_slot_t arrays and the legacy fparams_def_t +
+the new declarative ctl_slot_t arrays and the legacy fparams_def_t +
 fparams_knob() pattern, so themes with different control abstractions
 produce the same controls table.
 """
@@ -28,7 +28,7 @@ def felucca_dir():
 
 
 class TestParamSlotParsing:
-    """parse_page_controls extracts labels from param_slot_t arrays."""
+    """parse_page_controls extracts labels from ctl_slot_t arrays."""
 
     def test_env_slots_parsed(self, felucca_dir):
         controls = parse_page_controls(felucca_dir)
@@ -101,7 +101,7 @@ class TestParamSlotParsing:
         assert knobs[4] == 'T4 LVL', f'K3 should be T4 LVL, got {knobs.get(4)}'
 
     def test_edit_keeps_imperative_handler(self, felucca_dir):
-        """EDIT page uses a custom .knob handler, not param_slot_t."""
+        """EDIT page uses a custom .knob handler, not ctl_slot_t."""
         controls = parse_page_controls(felucca_dir)
         edit = controls.get('FPAGE_EDIT')
         assert edit is not None
@@ -119,7 +119,7 @@ class TestParamSlotParsing:
             assert len(k14) == 4, f'{page} should have 4 knobs on K1-K4, got {k14}'
 
     def test_page_details_match_controls(self, felucca_dir):
-        """Every page with knob_map should also appear in page_details."""
+        """Every page with controls should also appear in page_details."""
         controls = parse_page_controls(felucca_dir)
         details = parse_page_details(felucca_dir)
         for sym in controls:

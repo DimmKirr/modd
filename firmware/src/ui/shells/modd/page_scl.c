@@ -55,9 +55,9 @@ static void lvt_scl_enter(void)
     lvt_scl_show();
 }
 
-static const param_slot_t SCL_KNOB_MAP[] = {
-    { ENC_K1, P_ROOT,  0, 11, 1, SLOT_WRAP, "ROOT" },
-    { ENC_K2, P_SCALE, 0, 11, 1, SLOT_WRAP, "SCALE" },
+static const ctl_slot_t SCL_CONTROLS[] = {
+    { ENC_K1, P_ROOT,  0, 11, 1, CTLF_WRAP, "ROOT" },
+    { ENC_K2, P_SCALE, 0, 11, 1, CTLF_WRAP, "SCALE" },
     { ENC_K3, P_OCT,   -4, 4, 1, 0, "OCT" },
     { ENC_K4, P_TRANS, -12, 12, 1, 0, "TRANS" },
 };
@@ -69,7 +69,7 @@ static const modd_page_t PAGE_SCL = {
     .flags     = 0,
     .enter     = lvt_scl_enter,
     .status    = lvt_scl_show,
-    .knob_map  = SCL_KNOB_MAP,
-    .knob_count = 4,
+    .controls  = SCL_CONTROLS,
+    .ncontrols = 4,
     .help_text = "K1  Root note\nK2  Scale\nK3  Octave\nK4  Transpose",
 };

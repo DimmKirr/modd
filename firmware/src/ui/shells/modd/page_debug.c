@@ -126,17 +126,19 @@ static void lvt_log_enter(void)
     lvt_log_status();
 }
 
-static int lvt_log_knob(uint32_t id, int32_t clicks)
+static int lvt_log_scroll(int32_t clicks)
 {
-    int32_t s;
-    if (id != ENC_ALGO)
-        return 0;
-    s = (int32_t)modd_log_scroll + clicks;
+    int32_t s = (int32_t)modd_log_scroll + clicks;
     if (s < 0) s = 0;
     if ((uint32_t)s > lvt_log_max()) s = (int32_t)lvt_log_max();
     modd_log_scroll = (uint32_t)s;
     return 1;
 }
+
+/* max is dynamic (lvt_log_max()); the action clamps it */
+static const ctl_slot_t LOG_CONTROLS[] = {
+    { ENC_ALGO, P_COUNT, 0, 0, 1, 0, "SCROLL", lvt_log_scroll },
+};
 
 static const modd_page_t PAGE_DEBUG = {
     .name   = "LOG",
@@ -145,7 +147,8 @@ static const modd_page_t PAGE_DEBUG = {
     .flags  = PAGEF_SYSTEM,
     .enter  = lvt_log_enter,
     .status = lvt_log_status,
-    .knob   = lvt_log_knob,
+    .controls  = LOG_CONTROLS,
+    .ncontrols = 1,
     .help_text =
         "ALGO    Scroll log",
 };
