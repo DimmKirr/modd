@@ -65,7 +65,6 @@ static void shell_register_pages(void)
 #ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
     nav_register(&PAGE_CLOCK);
 #endif
-    nav_register(&PAGE_SONG);
 #endif
 
     /* VIEW_ENV */
@@ -175,7 +174,10 @@ static void shell_register_pages(void)
     nav_register(&PAGE_DISK);
 #endif
 
-    /* VIEW_GLO (GLO hold): about + log */
+    /* VIEW_GLO: SONG (GLO tap), about + log (GLO hold toggles LOG) */
+#ifdef CONFIG_AUDIO
+    nav_register(&PAGE_SONG);
+#endif
     nav_register(&PAGE_ABOUT);
 #ifdef CONFIG_DEBUG_LOG_BUF
     lvt_dbg_idx = nav_npage;

@@ -163,6 +163,7 @@ flowchart TD
 
     %% Buttons: hold navigates to secondary views
     BTN_FX_H[/"FX hold"/] -.-> sg_CONN
+    BTN_GLO[/"GLO"/] --> sg_GLO
     BTN_GLO_H[/"GLO hold"/] -.-> sg_GLO
     BTN_HOME_H[/"HOME hold"/] -.-> sg_SETTINGS
     BTN_SAVE_H[/"SAVE hold"/] -.-> sg_DEMO
@@ -186,8 +187,10 @@ The widgets of the page on screen form the focus group.
 | OCT+ | The encoder's push: flip the focused switch, open the focused list, take the choice |
 | OCT- | Back: close an open list and keep the old value |
 | HOME | Home (hold: Config) |
-| FX (hold) | Connectivity |
+| FX (hold) | Connectivity (modd-native); no-op under Felucca (upstream: layer overlay) |
+| GLO | SONG / About / Debug (Felucca); hints toggle (modd-native) |
 | GLO (hold) | Debug; hold again to return to the page before |
+| SAVE (hold) | Files / Disk (modd-native); no-op under Felucca (upstream: undo) |
 
 A page may take a control before LVGL does:
 

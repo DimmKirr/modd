@@ -47,6 +47,26 @@ static void modd_engine_select(track_t *t, uint32_t ei)
         t->p[P_E0 + i] = ENGINES[ei]->edit[i].def;
     fm1_irq_on();
 }
+/* global encoder actions (upstream: ui_input.c EN_ALGO, EN_PRESET → track_select, preset_step) */
+static inline void modd_track_step(int32_t dir)
+{
+    int32_t s = (int32_t)song.sel + (dir > 0 ? 1 : -1);
+    if (s < 0) s = 0;
+    if (s >= (int32_t)NTRK) s = (int32_t)NTRK - 1;
+    song.sel = (uint8_t)s;
+}
+static inline void modd_preset_step(int32_t dir)
+{
+    track_t *t = &trk[song.sel];
+    uint32_t ei = t->eng_req;
+    const engine_t *e = ei < NENGINES ? ENGINES[ei] : 0;
+    if (e && e->npresets > 0) {
+        int32_t v = (int32_t)t->preset + (dir > 0 ? 1 : -1);
+        if (v < 0) v = 0;
+        if (v >= (int32_t)e->npresets) v = (int32_t)e->npresets - 1;
+        t->preset = (uint8_t)v;
+    }
+}
 static const char *modd_mod_src_name(uint32_t src) { return src < sizeof N_MSRC / sizeof N_MSRC[0] ? N_MSRC[src] : "---"; }
 static const char *modd_mod_dst_name(const track_t *t, uint32_t dst) { return mod_dst_name(t, (int32_t)dst); }
 #else

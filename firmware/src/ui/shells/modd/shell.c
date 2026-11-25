@@ -103,6 +103,17 @@ static void shell_knob(uint32_t id, int32_t clicks)
 
     if (id == ENC_SELECT && modd_controls.select_default == CTL_SELECT_PAGE && clicks)
         nav_cycle(clicks > 0 ? 1 : -1);
+
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+    if (id == ENC_ALGO && clicks) {
+        modd_track_step(clicks);
+        nav_dirty = 1;
+    }
+    if (id == ENC_PRESET && clicks) {
+        modd_preset_step(clicks);
+        nav_dirty = 1;
+    }
+#endif
 }
 
 static void shell_button(uint32_t id, uint32_t down)
@@ -137,12 +148,14 @@ static void shell_button(uint32_t id, uint32_t down)
             }
         }
     }
+#ifndef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
     /* GLO is the shell's: a tap toggles the hints, the press and a hold never reach a page */
     if (id == BTN_GLO) {
         if (!down && lvt_btn_held == 0)
             hints_visible = !hints_visible;
         return;
     }
+#endif
     p = nav_active();
 #ifdef CONFIG_DOCK
     /* on HOME the octave buttons are the module's (a panel module shifts its own octave) */
