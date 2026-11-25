@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Copyright (C) 2026 Dmitry Kireev (@DimmKirr) */
-/* SCL: scale root, type, octave and transpose. */
+/* SCL: scale root, type, octave and transpose.
+ * Under CONFIG_AUDIO_FELUCCA_STACK_INCLUDED this page is replaced by a
+ * PG_KNOB_CTL entry in page_knob.c that maps upstream P_ROOT / P_SCALE /
+ * P_QUANT / P_TRANS directly. */
+#ifndef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
 
 static const char *const SCL_NOTE_NAMES[] = {
     "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
@@ -73,3 +77,4 @@ static const modd_page_t PAGE_SCL = {
     .ncontrols = 4,
     .help_text = "K1  Root note\nK2  Scale\nK3  Octave\nK4  Transpose",
 };
+#endif /* !CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */

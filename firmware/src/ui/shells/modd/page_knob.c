@@ -124,9 +124,15 @@ static int pg_knob_knob(uint32_t up_idx, uint32_t id, int32_t clicks)
     }
 
 /* Pure 4-card pages: upstream PAGES[] index → modd PAGE_* struct.
- * Pages with custom LVGL widgets (ENV curve, LFO wave, SCL wheel, ARP pattern)
- * keep their own files and read data through the adapter separately.           */
+ * Under CONFIG_AUDIO_FELUCCA_STACK_INCLUDED the LFO, VOICE, SCL and ARP pages
+ * are also data-driven (1:1 upstream mapping); their custom-widget versions in
+ * page_lfo.c / page_voice.c / page_scl.c / page_arp.c compile only when the
+ * Felucca stack is not active.                                                 */
 /*           TAG            UP  NAME          TITLE              VIEW         FOOT          VIS               */
+PG_KNOB_CTL(LFO,            2,  "LFO",        "LFO",             VIEW_LFO,    "LFO",        0, "RATE", "WAVE", "PHS", "FADE");
+PG_KNOB_CTL(VOICE,         29,  "VOICE",      "Voice",           VIEW_EDIT,   "VOICE",      0, "VCE", "GLD", "GLMOD", "PRIO");
+PG_KNOB_CTL(SCL,           13,  "SCL",        "Scale",           VIEW_SCL,    "SCL",        0, "ROOT", "SCALE", "QNT", "TRANS");
+PG_KNOB_CTL(ARP,           38,  "ARP",        "Arpeggiator",     VIEW_ARP,    "ARP",        0, "MODE", "RATE", "OCT", "GATE");
 PG_KNOB_CTL(ENV_DEST,       1,  "ENV DEST",   "Env Dest",        VIEW_ENV,    "ENV DEST",   0, "ED_FLT", "ED_PIT", "ED_SHP", "ESYNC");
 PG_KNOB_CTL(LFO2,           3,  "LFO 2",      "LFO 2",           VIEW_LFO,    "LFO 2",      0, "LSYNC", "LTRIG", "LPOL", "");
 PG_KNOB_CTL(LFO_DEST,       4,  "LFO DEST",   "LFO Dest",        VIEW_LFO,    "LFO DEST",   0, "LD_PIT", "LD_FLT", "LD_SHP", "LD_AMP");

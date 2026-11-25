@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Copyright (C) 2026 Dmitry Kireev (@DimmKirr) */
-/* LFO: rate, depth, shape and delay as 4 cards. */
+/* LFO: rate, depth, shape and delay as 4 cards.
+ * Under CONFIG_AUDIO_FELUCCA_STACK_INCLUDED this page is replaced by a
+ * PG_KNOB_CTL entry in page_knob.c that maps upstream P_LRATE / P_LWAVE /
+ * P_LPHASE / P_LFADE directly. */
+#ifndef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
 
 static const char *const LFO_SHAPE_NAMES[] = {
     "Sine", "Triangle", "Saw Up", "Saw Down", "Square", "Random"
@@ -65,3 +69,4 @@ static const modd_page_t PAGE_LFO = {
     .ncontrols = 4,
     .help_text = "K1  Rate\nK2  Depth\nK3  Shape\nK4  Delay",
 };
+#endif /* !CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */

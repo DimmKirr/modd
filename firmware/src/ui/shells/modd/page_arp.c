@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Copyright (C) 2026 Dmitry Kireev (@DimmKirr) */
-/* ARP: arpeggiator mode, tempo, range and gate. */
+/* ARP: arpeggiator mode, tempo, range and gate.
+ * Under CONFIG_AUDIO_FELUCCA_STACK_INCLUDED this page is replaced by a
+ * PG_KNOB_CTL entry in page_knob.c that maps upstream P_AMODE / P_ARATE /
+ * P_AOCT / P_AGATE directly. */
+#ifndef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
 
 static const char *const ARP_MODE_NAMES[] = {
     "Off", "Up", "Down", "Up/Down", "Random", "Order"
@@ -65,3 +69,4 @@ static const modd_page_t PAGE_ARP = {
     .ncontrols = 4,
     .help_text = "K1  Mode\nK2  Tempo\nK3  Range\nK4  Gate",
 };
+#endif /* !CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */

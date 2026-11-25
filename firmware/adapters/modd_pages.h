@@ -16,13 +16,20 @@ static inline void modd_sel_set(uint32_t k) { song.sel = (uint8_t)k; }
 static inline int16_t modd_gp(uint32_t id) { return song.g[id]; }
 static inline void modd_gp_set(uint32_t id, int16_t v) { song.g[id] = v; }
 static inline uint8_t modd_playing(void) { return song.playing; }
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+static inline int16_t modd_tpi(uint32_t k, uint32_t id) { return modd_tp(&trk[k], id); }
+static inline void modd_tpi_set(uint32_t k, uint32_t id, int16_t v) { modd_tp_set(&trk[k], id, v); }
+static inline int16_t modd_param(const track_t *t, uint32_t id) { return modd_tp(t, id); }
+static inline void modd_param_set(track_t *t, uint32_t id, int16_t v) { modd_tp_set(t, id, v); }
+#else
 static inline int16_t modd_tpi(uint32_t k, uint32_t id) { return trk[k].p[id]; }
 static inline void modd_tpi_set(uint32_t k, uint32_t id, int16_t v) { trk[k].p[id] = v; }
+static inline int16_t modd_param(const track_t *t, uint32_t id) { return t->p[id]; }
+static inline void modd_param_set(track_t *t, uint32_t id, int16_t v) { t->p[id] = v; }
+#endif
 static inline uint32_t modd_eng(uint32_t k) { return trk[k].eng_req; }
 static inline uint32_t modd_engine_cur(uint32_t k) { return trk[k].engine; }
 static inline track_t *modd_trk(uint32_t k) { return &trk[k]; }
-static inline int16_t modd_param(const track_t *t, uint32_t id) { return t->p[id]; }
-static inline void modd_param_set(track_t *t, uint32_t id, int16_t v) { t->p[id] = v; }
 static inline uint32_t modd_eng_of(const track_t *t) { return t->eng_req; }
 
 #ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED

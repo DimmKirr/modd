@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Copyright (C) 2026 Dmitry Kireev (@DimmKirr) */
-/* VOICE: voice count, hold, glide and unison. */
+/* VOICE: voice count, hold, glide and unison.
+ * Under CONFIG_AUDIO_FELUCCA_STACK_INCLUDED this page is replaced by a
+ * PG_KNOB_CTL entry in page_knob.c that maps upstream P_VOICE / P_GLIDE /
+ * P_GLMODE / P_PRIO directly. */
+#ifndef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
 
 static void lvt_voice_show(void)
 {
@@ -45,3 +49,4 @@ static const modd_page_t PAGE_VOICE = {
     .ncontrols = 4,
     .help_text = "K1  Mono / Poly\nK2  Hold\nK3  Glide\nK4  Unison",
 };
+#endif /* !CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */
