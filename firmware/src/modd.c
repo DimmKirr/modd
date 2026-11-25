@@ -139,13 +139,7 @@ static int32_t master_pot_read(void)
 #include "debug/audio_tap.c"
 
 /* --- LCD driver (ST7789 240x240) --- */
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-#include "ui/shells/felucca/lcd.c"
-#else
-/* Melodee's ST7789 driver serves the modd shell (and the Melodee and
- * SLOOP placeholders); only Felucca styles its own. */
 #include "ui/shells/melodee/lcd.c"
-#endif
 
 /* --- minimal 5x7 bitmap font for boot screen --- */
 static const uint8_t font5x7[] = {
@@ -552,15 +546,6 @@ static uint8_t *usb_host_rxbuf;
 #include "boot/boot_work.c"
 #include "../adapters/modd_ota.h"
 
-/* --- fm1-dock modules (after usb.c: fm1_ms; after modd_ota.h: modd_flash_ok): installed from a dock_src_t, run through the audio ISR --- */
-#ifdef CONFIG_DOCK
-#include "dock/dock.c"
-#ifdef CONFIG_DOCK_DISK
-#include "dock/dock_disk.c"
-#endif
-#include "dock/dock_list.c"
-#endif
-
 #include "boot/ota.c"
 #endif
 #ifdef CONFIG_DEBUG_DAP
@@ -872,14 +857,6 @@ static void wifi_cmd_poll(void);
 #include "wifi/wifi_debug.c"
 #endif /* CONFIG_WIFI */
 
-/* --- WiFi non-free driver (vendor binary libs + fm1-base shim) --- */
-
-#ifdef CONFIG_WIFI_NONFREE
-#include "../adapters/modd_wifi.h"
-#include "wifi/nonfree/nf_main.c"
-#include "wifi/nonfree/nf_wifi_compat.c"
-#endif /* CONFIG_WIFI_NONFREE */
-
 /* --- WiFi hardware probes (cleanroom analyst instrument) --- */
 
 #ifdef CONFIG_WIFI_PROBES
@@ -892,10 +869,13 @@ static void wifi_cmd_poll(void);
 static int32_t master_iir;
 
 #ifdef CONFIG_AUDIO
-#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
-/* the upstream Felucca stack: params, mod, voice, slicer, fx (mixer, effects) and the audio interrupt */
+#ifdef CONFIG_CORE_FELUCCA
+/* the upstream Felucca core: params, mod, voice, slicer, fx, seq (with chord, motion, midi) */
+#include "core/felucca/core_modd.c"
+#elif defined(CONFIG_AUDIO_FELUCCA_STACK_INCLUDED)
+/* the Felucca audio stack without seq */
 #include "audio/core/felucca/stack_modd.c"
-#else /* !CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */
+#else /* modd-native audio path */
 #include "audio/params.c"
 #ifndef CONFIG_ENGINES
 #include "audio/engines/engines.c"
@@ -903,10 +883,7 @@ static int32_t master_iir;
 
 /* --- modulation matrix --- */
 #ifdef CONFIG_MODULATION
-#if defined(CONFIG_MOD_FELUCCA)
-#define MODD_HAS_MOD 1
-#include "audio/mod.c"
-#elif defined(CONFIG_MOD_MELODEE)
+#if defined(CONFIG_MOD_MELODEE)
 #define MODD_HAS_MOD 1
 #include "audio/mod/melodee/mod.c"
 #endif
@@ -938,20 +915,20 @@ static int32_t master_iir;
 #include "audio/effects/host/fx_host.c"
 #endif
 
-#include "audio/core/audio.c"
-
 /* --- effects chain --- */
-#ifdef CONFIG_EFFECTS_FELUCCA
-#include "audio/effects/felucca/fx.c"
-#elif defined(CONFIG_EFFECTS_MELODEE)
+#ifdef CONFIG_EFFECTS_MELODEE
 #include "audio/effects/melodee/fx.c"
 #endif
-#endif /* !CONFIG_AUDIO_FELUCCA_STACK_INCLUDED */
+#endif /* modd-native audio path */
+
+/* universal audio host: owns fm1_alnk0_irq for every upstream */
+#include "audio/core/audio.c"
 #endif
 
 #include "modd_pages.h"
 
 /* --- scales --- */
+#ifndef CONFIG_CORE_FELUCCA
 #if defined(CONFIG_SCALES_MELODEE)
 #define MODD_HAS_SCALES 1
 #include "scales/melodee/scales.c"
@@ -959,9 +936,6 @@ static int32_t master_iir;
 #define MODD_HAS_SCALES 1
 #include "scales/scales.c"
 #endif
-
-#if defined(CONFIG_MOD_FELUCCA) && !defined(CONFIG_AUDIO_FELUCCA_STACK_INCLUDED)
-#include "audio/chord.c"   /* after scales: chord_tones reads scale_mask */
 #endif
 
 /* --- MIDI routing --- */
@@ -972,9 +946,7 @@ static int32_t master_iir;
 #endif
 
 /* --- sequencer --- */
-#if defined(CONFIG_SEQ_MELODEE)
-#include "seq/melodee/seq.c"
-#elif defined(CONFIG_SEQ_FELUCCA)
+#if defined(CONFIG_SEQ_FELUCCA) && !defined(CONFIG_CORE_FELUCCA)
 #include "seq/seq.c"
 #endif
 
@@ -986,9 +958,7 @@ static int32_t master_iir;
 #endif
 
 /* --- GFX renderer --- */
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-#include "ui/shells/felucca/gfx.c"
-#elif defined(CONFIG_UI_SHELL_MELODEE)
+#if defined(CONFIG_UI_SHELL_MELODEE)
 #include "ui/shells/melodee/gfx.c"
 #endif
 
@@ -1003,9 +973,7 @@ static uint8_t hints_visible;                   /* GLO tap badge overlay (chrome
 #include "ui/page_data.c"             /* what pages show, for the shell and the REST API */
 #endif
 
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-#include "ui/shells/felucca/ui.c"
-#elif defined(CONFIG_UI_SHELL_MELODEE)
+#if defined(CONFIG_UI_SHELL_MELODEE)
 #include "ui/shells/melodee/shell.c"
 #elif defined(CONFIG_UI_SKIN_FELUCCA)
 #include "ui/shells/felucca/lvgl_ui.c"
@@ -1082,9 +1050,7 @@ static void ui_input(void)
         uint32_t i;
         for (i = 0; i < 27u; i++) {
             if (np & (1u << i)) {
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-                fsh_key(53u + i, 127);
-#elif defined(UI_SHELL)
+#if defined(UI_SHELL)
                 shell_key(53u + i, 127);
 #elif defined(CONFIG_AUDIO)
                 trk_note_on(&trk[song.sel], 53u + i, 127);
@@ -1099,9 +1065,7 @@ static void ui_input(void)
         prev_notes = fm1_in.notes;
         for (i = 0; i < 27u; i++) {
             if (released & (1u << i)) {
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-                fsh_key(53u + i, 0);
-#elif defined(UI_SHELL)
+#if defined(UI_SHELL)
                 shell_key(53u + i, 0);
 #elif defined(CONFIG_AUDIO)
                 trk_note_off(&trk[song.sel], 53u + i);
@@ -1116,16 +1080,12 @@ static void ui_input(void)
             uint32_t i;
             for (i = 0; i < 14u; i++) {
                 if (bp & (1u << i)) {
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-                    fsh_button(i, 1);
-#elif defined(UI_SHELL)
+#ifdef UI_SHELL
                     shell_button(i, 1);
 #endif
                 }
                 if (br & (1u << i)) {
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-                    fsh_button(i, 0);
-#elif defined(UI_SHELL)
+#ifdef UI_SHELL
                     shell_button(i, 0);
 #endif
                 }
@@ -1137,9 +1097,7 @@ static void ui_input(void)
         for (e = 0; e < FM1_NENC; e++) {
             int32_t s = fm1_enc_take(e);
             if (s) {
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-                fsh_knob(e, s);
-#elif defined(UI_SHELL)
+#ifdef UI_SHELL
                 shell_knob(e, s);
 #endif
             }
@@ -1319,9 +1277,7 @@ static void ui_task(void)
         }
 #endif
 #endif
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-        fsh_draw();
-#elif defined(UI_SHELL)
+#ifdef UI_SHELL
         shell_draw();           /* marks 10-17 inside */
         sched_mark(30);         /* LEDs */
         ui_leds();
@@ -1509,9 +1465,6 @@ static void fm1_main(void)
     modd_log("storage: init");
 #endif
 
-#ifdef CONFIG_DOCK
-    dock_init();
-#endif
 
     scales_init();
     midi_routing_init();
@@ -1531,11 +1484,7 @@ static void fm1_main(void)
 
     /* ---- Phase 1: boot logo, no ISR ---- */
 
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-    fsh_init();
-    fsh_splash_render();
-    modd_log("boot: splash visible");
-#elif defined(UI_SHELL)
+#ifdef UI_SHELL
     shell_init();
 #endif
 
@@ -1558,10 +1507,6 @@ static void fm1_main(void)
     if (sys_settings.wifi_on)
         wifi_init();
 #endif
-#endif
-#ifdef CONFIG_WIFI_NONFREE
-    modd_log("nf: wifi init");
-    nf_wifi_init();
 #endif
 
 #ifdef CONFIG_INPUT
@@ -1602,11 +1547,7 @@ static void fm1_main(void)
     modd_log("guard: hw guards armed");
 #endif
 
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-    fsh_register_pages();
-    modd_log_int("ui: felucca, pages=", (int32_t)nav_npage);
-    fsh_boot();
-#elif defined(UI_SHELL)
+#ifdef UI_SHELL
     shell_register_pages();
     shell_boot();
 #endif
@@ -1780,9 +1721,6 @@ static void fm1_main(void)
         wifi_cmd_poll();
         wifi_poll();
 #endif
-#ifdef CONFIG_WIFI_NONFREE
-        nf_wifi_poll();
-#endif
         net_poll();
         http_poll();
         weather_poll();
@@ -1792,9 +1730,7 @@ static void fm1_main(void)
 #endif
         usbnet_poll();
         ecm_poll();
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-        fsh_draw();
-#elif defined(UI_SHELL)
+#ifdef UI_SHELL
         shell_draw();
         ui_leds();
 #endif

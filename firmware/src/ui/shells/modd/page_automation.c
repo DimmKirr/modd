@@ -15,7 +15,7 @@ static void lvt_automation_show(void)
 {
     auto_ensure_init();
     char sb[8], vb[8];
-    uint32_t t = song.sel < NTRK ? song.sel : 0;
+    uint32_t t = modd_sel() < NTRK ? modd_sel() : 0;
     uint8_t lv = auto_locks[t][auto_step][auto_pidx];
     int locked = (lv != 0xFF);
 
@@ -45,7 +45,7 @@ static void lvt_automation_enter(void)
 static int lvt_automation_knob(uint32_t id, int32_t clicks)
 {
     auto_ensure_init();
-    uint32_t t = song.sel < NTRK ? song.sel : 0;
+    uint32_t t = modd_sel() < NTRK ? modd_sel() : 0;
 
     if (id == ENC_K1) {
         int32_t v = (int32_t)auto_step + clicks;
@@ -76,7 +76,7 @@ static int lvt_automation_knob(uint32_t id, int32_t clicks)
     if (id == ENC_K4 && clicks != 0) {
         uint8_t lv = auto_locks[t][auto_step][auto_pidx];
         if (lv == 0xFF)
-            auto_locks[t][auto_step][auto_pidx] = (uint8_t)modd_tp(&trk[t], auto_params[auto_pidx]);
+            auto_locks[t][auto_step][auto_pidx] = (uint8_t)modd_tpi(t, auto_params[auto_pidx]);
         else
             auto_locks[t][auto_step][auto_pidx] = 0xFF;
         nav_dirty = 1;

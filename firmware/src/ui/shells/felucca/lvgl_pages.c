@@ -20,8 +20,7 @@
 #include "ui/shells/modd/page_voice.c"
 #include "ui/shells/modd/page_arp.c"
 #include "ui/shells/modd/page_seq.c"
-#include "ui/shells/modd/page_simple.c"
-#include "ui/shells/modd/page_env_dest.c"
+#include "ui/shells/modd/page_knob.c"
 #include "ui/shells/modd/page_user.c"
 #include "ui/shells/modd/page_presets.c"
 #include "ui/shells/modd/page_phrases.c"
@@ -29,28 +28,10 @@
 #include "ui/shells/modd/page_tools.c"
 #include "ui/shells/modd/page_step.c"
 #include "ui/shells/modd/page_detail.c"
-#ifdef CONFIG_SEQ_FELUCCA                /* the step locks it edits are the Felucca sequencer's (seq/seq.c) */
+#if defined(CONFIG_SEQ_FELUCCA) && !defined(CONFIG_CORE_FELUCCA)
 #include "ui/shells/modd/page_automation.c"
 #endif
-#include "ui/shells/modd/page_lfo2.c"
-#include "ui/shells/modd/page_lfo_dest.c"
 #include "ui/shells/modd/page_mod.c"
-#include "ui/shells/modd/page_chord.c"
-#include "ui/shells/modd/page_arp2.c"
-#include "ui/shells/modd/page_edit2.c"
-#include "ui/shells/modd/page_filter.c"
-#include "ui/shells/modd/page_voice2.c"
-#include "ui/shells/modd/page_voice3.c"
-#include "ui/shells/modd/page_lanes.c"
-#include "ui/shells/modd/page_lanes2.c"
-#include "ui/shells/modd/page_slicer.c"
-#include "ui/shells/modd/page_insert.c"
-#include "ui/shells/modd/page_insert2.c"
-#include "ui/shells/modd/page_fm6_ops.c"
-#include "ui/shells/modd/page_dly.c"
-#include "ui/shells/modd/page_reverb.c"
-#include "ui/shells/modd/page_chorus.c"
-#include "ui/shells/modd/page_clock.c"
 #include "ui/shells/modd/page_song.c"
 #endif
 #ifdef CONFIG_SYS_MENU
@@ -78,6 +59,7 @@
 
 static void shell_register_pages(void)
 {
+    /* VIEW_HOME */
 #ifdef CONFIG_HOME_PAGE_FILES
     nav_register(&PAGE_FILES);
 #else
@@ -87,12 +69,24 @@ static void shell_register_pages(void)
     nav_register(&PAGE_MIXER);
     nav_register(&PAGE_CLOCK);
     nav_register(&PAGE_SONG);
+#endif
+
+    /* VIEW_ENV */
+#ifdef CONFIG_AUDIO
     nav_register(&PAGE_ENV);
     nav_register(&PAGE_ENV_DEST);
+#endif
+
+    /* VIEW_LFO */
+#ifdef CONFIG_AUDIO
     nav_register(&PAGE_LFO);
     nav_register(&PAGE_LFO2);
     nav_register(&PAGE_LFO_DEST);
     nav_register(&PAGE_MOD);
+#endif
+
+    /* VIEW_FX */
+#ifdef CONFIG_AUDIO
     nav_register(&PAGE_FX);
     nav_register(&PAGE_SLICER);
     nav_register(&PAGE_INSERT);
@@ -100,8 +94,16 @@ static void shell_register_pages(void)
     nav_register(&PAGE_DLY);
     nav_register(&PAGE_REVERB);
     nav_register(&PAGE_CHORUS);
+#endif
+
+    /* VIEW_SCL */
+#ifdef CONFIG_AUDIO
     nav_register(&PAGE_SCL);
     nav_register(&PAGE_CHORD);
+#endif
+
+    /* VIEW_EDIT */
+#ifdef CONFIG_AUDIO
     nav_register(&PAGE_EDIT);
     nav_register(&PAGE_VOICE);
     nav_register(&PAGE_EDIT2);
@@ -116,6 +118,8 @@ static void shell_register_pages(void)
     nav_register(&PAGE_FM6_OP4_ENV);
     nav_register(&PAGE_FM6_OP_LEVEL);
 #endif
+
+    /* VIEW_SETTINGS */
 #ifdef CONFIG_SYS_MENU
     nav_register(&PAGE_SETTINGS);
     nav_register(&PAGE_BRIGHTNESS);
@@ -124,33 +128,49 @@ static void shell_register_pages(void)
     nav_register(&PAGE_MIDI_CH);
     nav_register(&PAGE_TRANSPOSE);
 #endif
+
+    /* VIEW_ARP */
 #ifdef CONFIG_AUDIO
     nav_register(&PAGE_ARP);
     nav_register(&PAGE_ARP2);
+#endif
+
+    /* VIEW_SEQ */
+#ifdef CONFIG_AUDIO
     nav_register(&PAGE_SEQ);
     nav_register(&PAGE_STEP);
     nav_register(&PAGE_DETAIL);
-#ifdef CONFIG_SEQ_FELUCCA
+#if defined(CONFIG_SEQ_FELUCCA) && !defined(CONFIG_CORE_FELUCCA)
     nav_register(&PAGE_AUTOMATION);
 #endif
+#endif
+
+    /* VIEW_SAVE */
+#ifdef CONFIG_AUDIO
     nav_register(&PAGE_USER);
     nav_register(&PAGE_PRESETS);
     nav_register(&PAGE_PHRASES);
     nav_register(&PAGE_PROJECT);
     nav_register(&PAGE_TOOLS);
 #endif
+
+    /* VIEW_CONN */
 #ifdef CONFIG_LWIP
     nav_register(&PAGE_WEATHER);
 #endif
 #ifdef CONFIG_PAGE_DEMO
     nav_register(&PAGE_DEMO);
 #endif
+
+    /* VIEW_DEMO */
 #ifdef CONFIG_UDISK
 #ifndef CONFIG_HOME_PAGE_FILES
     nav_register(&PAGE_FILES);
 #endif
     nav_register(&PAGE_DISK);
 #endif
+
+    /* VIEW_GLO */
     nav_register(&PAGE_ABOUT);
 #ifdef CONFIG_DEBUG_LOG_BUF
     lvt_dbg_idx = nav_npage;

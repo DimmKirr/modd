@@ -29,8 +29,8 @@ static void shell_draw(void)
     nav_take_request();                 /* a page asked for by the REST API: built here, in the UI task */
     p = nav_active();
     sched_mark(10);                     /* page status, chrome, toast */
-    if (lvt_pal.trk != (song.sel & 3u)) {   /* THEME is the selected track's colour */
-        lvt_pal.trk = (uint8_t)(song.sel & 3u);
+    if (lvt_pal.trk != (modd_sel() & 3u)) {   /* THEME is the selected track's colour */
+        lvt_pal.trk = (uint8_t)(modd_sel() & 3u);
         lvt_pal.primary = lvt_pal.trk_c[lvt_pal.trk];
         lvt_pal_apply();
     }
@@ -71,9 +71,9 @@ static void shell_knob(uint32_t id, int32_t clicks)
             if (s->enc_id != (uint8_t)id || !MODD_P_VALID(s->pid))
                 continue;
             track_t *t = (s->flags & SLOT_TRACK)
-                ? &trk[i < NTRK ? i : 0]
-                : &trk[song.sel];
-            int16_t v = modd_tp(t, s->pid) + (int16_t)(clicks * s->step);
+                ? modd_trk(i < NTRK ? i : 0)
+                : modd_trk(modd_sel());
+            int16_t v = modd_param(t, s->pid) + (int16_t)(clicks * s->step);
             if (s->flags & SLOT_WRAP) {
                 if (v < s->min) v = s->max;
                 if (v > s->max) v = s->min;
@@ -81,7 +81,7 @@ static void shell_knob(uint32_t id, int32_t clicks)
                 if (v < s->min) v = s->min;
                 if (v > s->max) v = s->max;
             }
-            modd_tp_set(t, s->pid, v);
+            modd_param_set(t, s->pid, v);
             nav_dirty = 1;
             return;
         }
@@ -170,7 +170,7 @@ static void shell_init(void)
     pal = lvt_pal_from_stored(sys_settings.ui_pal);
     modd_lights = sys_settings.ui_lights < LIGHTS_N ? sys_settings.ui_lights : LIGHTS_HIGH;
 #endif
-    lvt_pal.trk = (uint8_t)(song.sel & 3u);
+    lvt_pal.trk = (uint8_t)(modd_sel() & 3u);
     lvt_pal_set(pal);
     lvt_port_init();
     lvt_styles_init();

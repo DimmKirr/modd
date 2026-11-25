@@ -5,7 +5,7 @@
 static void lvt_project_show(void)
 {
     char b[16];
-    int32_t s = song.g[G_SLOT];
+    int32_t s = modd_gp(G_SLOT);
     lv_snprintf(b, sizeof b, "%d", (int)s);
     lvt_card_set(0, "SLOT", b, "", lvt_pal.primary, s * 1000 / 15);
 
@@ -33,7 +33,7 @@ static int lvt_project_knob(uint32_t id, int32_t clicks)
 {
     if (id == ENC_K1) return lvt_gadd(G_SLOT, clicks, 0, 15);
     if (id == ENC_K3 && clicks > 0) {
-        uint32_t slot = (uint32_t)song.g[G_SLOT];
+        uint32_t slot = (uint32_t)modd_gp(G_SLOT);
         if (project_used(slot)) {
             project_load(slot);
             toast_status("LOADED");
@@ -42,7 +42,7 @@ static int lvt_project_knob(uint32_t id, int32_t clicks)
         return 1;
     }
     if (id == ENC_K4 && clicks > 0) {
-        uint32_t slot = (uint32_t)song.g[G_SLOT];
+        uint32_t slot = (uint32_t)modd_gp(G_SLOT);
         project_save(slot);
         toast_status("SAVED");
         nav_dirty = 1;

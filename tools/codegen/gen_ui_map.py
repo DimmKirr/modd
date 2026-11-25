@@ -224,28 +224,29 @@ def parse_page_details(shell_dir: Path) -> dict[str, dict]:
     title_pat = re.compile(r'\.title\s*=\s*"([^"]+)"')
     view_pat = re.compile(r'\.view\s*=\s*(VIEW_\w+)')
 
-    for f in sorted(shell_dir.glob("page_*.c")):
-        text = f.read_text()
-        for m in pat_ml.finditer(text):
-            symbol = m.group(1)
-            rest = text[m.end():]
-            brace = 0
-            for i, ch in enumerate(rest):
-                if ch == "{":
-                    brace += 1
-                elif ch == "}":
-                    if brace == 0:
-                        body = rest[:i]
-                        nm = name_pat.search(body)
-                        tt = title_pat.search(body)
-                        vw = view_pat.search(body)
-                        details[symbol] = {
-                            "name": nm.group(1) if nm else symbol,
-                            "title": tt.group(1) if tt else "",
-                            "view": vw.group(1) if vw else "",
-                        }
-                        break
-                    brace -= 1
+    for d in _page_source_dirs(shell_dir):
+        for f in sorted(d.glob("page_*.c")):
+            text = f.read_text()
+            for m in pat_ml.finditer(text):
+                symbol = m.group(1)
+                rest = text[m.end():]
+                brace = 0
+                for i, ch in enumerate(rest):
+                    if ch == "{":
+                        brace += 1
+                    elif ch == "}":
+                        if brace == 0:
+                            body = rest[:i]
+                            nm = name_pat.search(body)
+                            tt = title_pat.search(body)
+                            vw = view_pat.search(body)
+                            details[symbol] = {
+                                "name": nm.group(1) if nm else symbol,
+                                "title": tt.group(1) if tt else "",
+                                "view": vw.group(1) if vw else "",
+                            }
+                            break
+                        brace -= 1
     return details
 
 
@@ -279,129 +280,130 @@ def parse_page_controls(shell_dir: Path) -> dict[str, dict]:
 
     # param_slot_t arrays: {ENC_K1, P_ATK, 0, 127, 4, 0, "ATK"}
     slot_array_pat = re.compile(
-        r'static\s+const\s+param_slot_t\s+(\w+)\[\]\s*=\s*\{(.*?)\};',
+        r'static\s+const\s+param_slot_t\s+(\w+)\[\d*\]\s*=\s*\{(.*?)\};',
         re.DOTALL,
     )
     slot_entry_pat = re.compile(
-        r'\{ENC_(\w+),\s*P_(\w+),[^}]*"([^"]+)"\}',
+        r'\{\s*ENC_(\w+),\s*P_(\w+),[^}]*"([^"]+)"\s*\}',
     )
     page_knob_map_assign = re.compile(r'\.knob_map\s*=\s*(\w+)')
 
-    for f in sorted(shell_dir.glob("page_*.c")):
-        text = f.read_text()
+    for src_dir in _page_source_dirs(shell_dir):
+        for f in sorted(src_dir.glob("page_*.c")):
+            text = f.read_text()
 
-        # Build def_name -> knob labels
-        def_labels: dict[str, list[str]] = {}
-        for m in fparam_pat.finditer(text):
-            def_labels[m.group(1)] = [m.group(2), m.group(3), m.group(4), m.group(5)]
+            # Build def_name -> knob labels
+            def_labels: dict[str, list[str]] = {}
+            for m in fparam_pat.finditer(text):
+                def_labels[m.group(1)] = [m.group(2), m.group(3), m.group(4), m.group(5)]
 
-        # Build knob_func -> def_name
-        func_to_def: dict[str, str] = {}
-        for m in knob_delegate_pat.finditer(text):
-            func_to_def[m.group(1)] = m.group(2)
+            # Build knob_func -> def_name
+            func_to_def: dict[str, str] = {}
+            for m in knob_delegate_pat.finditer(text):
+                func_to_def[m.group(1)] = m.group(2)
 
-        # Build slot_var -> [(enc_id, label)]
-        slot_arrays: dict[str, list[tuple[int, str]]] = {}
-        enc_name_to_id = {"SELECT": 0, "ALGO": 1, "K1": 2, "K2": 3, "K3": 4, "K4": 5, "PRESET": 6}
-        for sm in slot_array_pat.finditer(text):
-            var_name = sm.group(1)
-            entries = []
-            for em in slot_entry_pat.finditer(sm.group(2)):
-                enc_id = enc_name_to_id.get(em.group(1), -1)
-                entries.append((enc_id, em.group(3)))
-            slot_arrays[var_name] = entries
+            # Build slot_var -> [(enc_id, label)]
+            slot_arrays: dict[str, list[tuple[int, str]]] = {}
+            enc_name_to_id = {"SELECT": 0, "ALGO": 1, "K1": 2, "K2": 3, "K3": 4, "K4": 5, "PRESET": 6}
+            for sm in slot_array_pat.finditer(text):
+                var_name = sm.group(1)
+                entries = []
+                for em in slot_entry_pat.finditer(sm.group(2)):
+                    enc_id = enc_name_to_id.get(em.group(1), -1)
+                    entries.append((enc_id, em.group(3)))
+                slot_arrays[var_name] = entries
 
-        # Find modd_page_t structs and their .knob / .knob_map assignment
-        page_pat = re.compile(r"static\s+const\s+modd_page_t\s+(\w+)\s*=\s*\{")
-        for pm in page_pat.finditer(text):
-            symbol = pm.group(1)
-            rest = text[pm.end():]
-            brace = 0
-            body = ""
-            for i, ch in enumerate(rest):
-                if ch == "{":
-                    brace += 1
-                elif ch == "}":
-                    if brace == 0:
-                        body = rest[:i]
-                        break
-                    brace -= 1
+            # Find modd_page_t structs and their .knob / .knob_map assignment
+            page_pat = re.compile(r"static\s+const\s+modd_page_t\s+(\w+)\s*=\s*\{")
+            for pm in page_pat.finditer(text):
+                symbol = pm.group(1)
+                rest = text[pm.end():]
+                brace = 0
+                body = ""
+                for i, ch in enumerate(rest):
+                    if ch == "{":
+                        brace += 1
+                    elif ch == "}":
+                        if brace == 0:
+                            body = rest[:i]
+                            break
+                        brace -= 1
 
-            knobs: dict[int, str] = {}
+                knobs: dict[int, str] = {}
 
-            # Declarative knob_map (param_slot_t arrays)
-            km_map = page_knob_map_assign.search(body)
-            if km_map:
-                slot_var = km_map.group(1)
-                if slot_var in slot_arrays:
-                    for enc_id, label in slot_arrays[slot_var]:
-                        if enc_id >= 0:
-                            knobs[enc_id] = label
+                # Declarative knob_map (param_slot_t arrays)
+                km_map = page_knob_map_assign.search(body)
+                if km_map:
+                    slot_var = km_map.group(1)
+                    if slot_var in slot_arrays:
+                        for enc_id, label in slot_arrays[slot_var]:
+                            if enc_id >= 0:
+                                knobs[enc_id] = label
 
-            # Legacy .knob = <func> handler
-            km = page_knob_assign.search(body)
-            if km:
-                knob_func = km.group(1)
-                # Check if it delegates to fparams_knob
-                if knob_func in func_to_def:
-                    def_name = func_to_def[knob_func]
-                    if def_name in def_labels:
-                        labels = def_labels[def_name]
-                        for j, lbl in enumerate(labels):
-                            knobs.setdefault(j + 2, lbl)  # knob1=enc2, knob2=enc3, etc.
+                # Legacy .knob = <func> handler
+                km = page_knob_assign.search(body)
+                if km:
+                    knob_func = km.group(1)
+                    # Check if it delegates to fparams_knob
+                    if knob_func in func_to_def:
+                        def_name = func_to_def[knob_func]
+                        if def_name in def_labels:
+                            labels = def_labels[def_name]
+                            for j, lbl in enumerate(labels):
+                                knobs.setdefault(j + 2, lbl)  # knob1=enc2, knob2=enc3, etc.
 
-                # Parse direct `if (id == N)` in the knob handler body
-                func_pat = re.compile(
-                    rf'static\s+int\s+{re.escape(knob_func)}\s*\([^)]*\)\s*\{{',
-                )
-                fm = func_pat.search(text)
-                if fm:
-                    fbody = text[fm.end():]
-                    depth = 1
-                    for i, ch in enumerate(fbody):
-                        if ch == "{": depth += 1
-                        elif ch == "}":
-                            depth -= 1
-                            if depth == 0:
-                                fbody = fbody[:i]
-                                break
-                    for im in re.finditer(r'if\s*\(id\s*==\s*(\d+)', fbody):
-                        enc_id = int(im.group(1))
-                        if enc_id not in knobs:
-                            knobs[enc_id] = ENC_NAMES.get(enc_id, f"enc{enc_id}")
-                    # Range: `id >= N && id <= M` (e.g. edit)
-                    for rm in re.finditer(r'id\s*>=\s*(\d+)\s*&&\s*id\s*<=\s*(\d+)', fbody):
-                        lo, hi = int(rm.group(1)), int(rm.group(2))
-                        for enc_id in range(lo, hi + 1):
+                    # Parse direct `if (id == N)` in the knob handler body
+                    func_pat = re.compile(
+                        rf'static\s+int\s+{re.escape(knob_func)}\s*\([^)]*\)\s*\{{',
+                    )
+                    fm = func_pat.search(text)
+                    if fm:
+                        fbody = text[fm.end():]
+                        depth = 1
+                        for i, ch in enumerate(fbody):
+                            if ch == "{": depth += 1
+                            elif ch == "}":
+                                depth -= 1
+                                if depth == 0:
+                                    fbody = fbody[:i]
+                                    break
+                        for im in re.finditer(r'if\s*\(id\s*==\s*(\d+)', fbody):
+                            enc_id = int(im.group(1))
                             if enc_id not in knobs:
                                 knobs[enc_id] = ENC_NAMES.get(enc_id, f"enc{enc_id}")
+                        # Range: `id >= N && id <= M` (e.g. edit)
+                        for rm in re.finditer(r'id\s*>=\s*(\d+)\s*&&\s*id\s*<=\s*(\d+)', fbody):
+                            lo, hi = int(rm.group(1)), int(rm.group(2))
+                            for enc_id in range(lo, hi + 1):
+                                if enc_id not in knobs:
+                                    knobs[enc_id] = ENC_NAMES.get(enc_id, f"enc{enc_id}")
 
-            # Parse button handler for BTN_* references
-            buttons: list[str] = []
-            btn_assign = re.search(r'\.button\s*=\s*(\w+)', body)
-            if btn_assign:
-                btn_func = btn_assign.group(1)
-                bfm = re.search(
-                    rf'static\s+(?:int|uint32_t)\s+{re.escape(btn_func)}\s*\([^)]*\)\s*\{{',
-                    text,
-                )
-                if bfm:
-                    bbody = text[bfm.end():]
-                    depth = 1
-                    for i, ch in enumerate(bbody):
-                        if ch == "{": depth += 1
-                        elif ch == "}":
-                            depth -= 1
-                            if depth == 0:
-                                bbody = bbody[:i]
-                                break
-                    for bm in re.finditer(r'BTN_(\w+)', bbody):
-                        btn_name = bm.group(1)
-                        if btn_name not in ("COUNT",) and btn_name not in buttons:
-                            buttons.append(btn_name)
+                # Parse button handler for BTN_* references
+                buttons: list[str] = []
+                btn_assign = re.search(r'\.button\s*=\s*(\w+)', body)
+                if btn_assign:
+                    btn_func = btn_assign.group(1)
+                    bfm = re.search(
+                        rf'static\s+(?:int|uint32_t)\s+{re.escape(btn_func)}\s*\([^)]*\)\s*\{{',
+                        text,
+                    )
+                    if bfm:
+                        bbody = text[bfm.end():]
+                        depth = 1
+                        for i, ch in enumerate(bbody):
+                            if ch == "{": depth += 1
+                            elif ch == "}":
+                                depth -= 1
+                                if depth == 0:
+                                    bbody = bbody[:i]
+                                    break
+                        for bm in re.finditer(r'BTN_(\w+)', bbody):
+                            btn_name = bm.group(1)
+                            if btn_name not in ("COUNT",) and btn_name not in buttons:
+                                buttons.append(btn_name)
 
-            if knobs or buttons:
-                controls[symbol] = {"knobs": knobs, "buttons": buttons}
+                if knobs or buttons:
+                    controls[symbol] = {"knobs": knobs, "buttons": buttons}
 
     return controls
 
@@ -613,8 +615,8 @@ def generate_controls_table(page_controls: dict, page_details: dict, pages: list
         knobs = c["knobs"]
         cols = []
         for enc_id in range(6):  # select(0), algo(1), knob1-4(2-5)
-            cols.append(knobs.get(enc_id, ""))
-        btns = ", ".join(c["buttons"]) if c["buttons"] else ""
+            cols.append(knobs.get(enc_id, "-"))
+        btns = ", ".join(c["buttons"]) if c["buttons"] else "-"
         line = f"| {title} | {cols[0]} | {cols[1]} | {cols[2]} | {cols[3]} | {cols[4]} | {cols[5]} | {btns} |"
         lines.append(line)
 
@@ -642,6 +644,8 @@ def load_nav_map(shell: str, root: Path | None = None) -> dict:
         raise SystemExit(f"Shell directory not found: {shell_dir}")
 
     shell_controls = shell_dir / "controls.c"
+    if not shell_controls.is_file():
+        shell_controls = shell_dir / "lvgl_controls.c"
     if shell_controls.is_file():
         tap_map, hold_map = _parse_controls_c(shell_controls)
     else:
@@ -649,7 +653,10 @@ def load_nav_map(shell: str, root: Path | None = None) -> dict:
         tap_map, hold_map = parse_controls(
             root / "firmware" / "adapters" / "modd_controls.h", controls_name
         )
-    pages = parse_pages(shell_dir / "pages.c")
+    pages_file = _find_pages_file(shell_dir)
+    if not pages_file:
+        raise SystemExit(f"No pages registration file in {shell_dir}")
+    pages = parse_pages(pages_file)
     page_details = parse_page_details(shell_dir)
 
     for p in pages:
@@ -886,7 +893,10 @@ def generate_full(shell: str) -> tuple[str, str | None]:
     if not shell_dir.is_dir():
         raise SystemExit(f"Shell directory not found: {shell_dir}")
 
-    pages = parse_pages(shell_dir / "pages.c")
+    pages_file = _find_pages_file(shell_dir)
+    if not pages_file:
+        raise SystemExit(f"No pages registration file in {shell_dir}")
+    pages = parse_pages(pages_file)
     page_details = parse_page_details(shell_dir)
     page_controls = parse_page_controls(shell_dir)
 
@@ -967,13 +977,43 @@ def inject_hw_controls(md_path: Path, check: bool = False) -> bool:
 
 # ── CLI ─────────────────────────────────────────────────────────────────────
 
+def _find_pages_file(shell_dir: Path) -> Path | None:
+    """Return the pages registration file for a shell (pages.c or lvgl_pages.c)."""
+    for name in ("pages.c", "lvgl_pages.c"):
+        p = shell_dir / name
+        if p.is_file():
+            return p
+    return None
+
+
+def _page_source_dirs(shell_dir: Path) -> list[Path]:
+    """Return directories to scan for page_*.c details.
+
+    If the shell's own pages file includes page_*.c from another shell
+    directory (e.g. Felucca includes from shells/modd/), return that
+    directory too so parse_page_details and parse_page_controls find the
+    struct definitions.
+    """
+    dirs = [shell_dir]
+    pages_file = _find_pages_file(shell_dir)
+    if pages_file:
+        inc_pat = re.compile(r'#include\s+"ui/shells/(\w+)/page_\w+\.c"')
+        for line in pages_file.read_text().splitlines():
+            m = inc_pat.search(line)
+            if m:
+                other = shell_dir.parent / m.group(1)
+                if other != shell_dir and other.is_dir() and other not in dirs:
+                    dirs.append(other)
+    return dirs
+
+
 def discover_shells(root: Path | None = None) -> list[str]:
-    """Return sorted list of shell/skin names that have a pages.c."""
+    """Return sorted list of shell/skin names that have a pages registration file."""
     root = root or ROOT
     shells_dir = root / "firmware" / "src" / "ui" / "shells"
     return sorted(
         d.name for d in shells_dir.iterdir()
-        if d.is_dir() and (d / "pages.c").exists()
+        if d.is_dir() and _find_pages_file(d) is not None
     )
 
 

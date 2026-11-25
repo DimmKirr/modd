@@ -80,8 +80,12 @@ static void ui_leds(void)
 #ifdef CONFIG_AUDIO
         if (!((c >> k) & 1u) && lights != LIGHTS_OFF) {
             uint32_t note = 53u + k;
-            uint32_t pc = ((note + 120u - (uint32_t)trk[song.sel].p[P_ROOT]) % 12u);
-            if ((scale_mask(trk[song.sel].p[P_SCALE]) >> pc) & 1u)
+            uint32_t pc = ((note + 120u - (uint32_t)modd_tpi(modd_sel(), P_ROOT)) % 12u);
+#ifdef CONFIG_CORE_FELUCCA
+            if ((scale_mask(modd_trk(modd_sel())) >> pc) & 1u)
+#else
+            if ((scale_mask(modd_tpi(modd_sel(), P_SCALE)) >> pc) & 1u)
+#endif
                 led_put(nd, 14u + k, 1);
         }
 #endif

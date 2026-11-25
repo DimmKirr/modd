@@ -1,289 +1,109 @@
-/* SPDX-License-Identifier: GPL-3.0-only */
-/* Copyright (C) 2026 Dmitry Kireev (@DimmKirr) */
-/* Felucca storage backend (CONFIG_STORAGE_FELUCCA), simplified flash layout.
- * Not Felucca's sector layout: one 4 KiB sector per slot in the shared
- * FL_BANK_EXT region (0xE5000..0xFB000, 22 sectors):
- *   sectors 0..7   projects  (ST_NPROJ)
- *   sectors 8..21  user presets (ST_NUP)
- * A slot is erased + programmed whole, so there is no read-modify-write.
- * Settings persist through the settings adapter (sys_fl_*, modd_settings.h). */
+/* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+ * Felucca storage backend: upstream storage.c, storage_hw.c, project.c,
+ * upreset.c, category.c, settings_persist.c included unchanged.
+ * Origin: hugelton/Felucca firmware/src/{storage,storage_hw,project,upreset,
+ *         category,settings_persist}.c @ v1.8.2 (6162de86) */
 
-#define ST_BASE   FL_BANK_EXT_LO
-#define ST_SECT   4096u
-#define ST_NPROJ  8u
-#define ST_NUP    14u
-#define ST_MAGIC_PROJ 0x4A525046u   /* "FPRJ" */
-#define ST_MAGIC_UP   0x50555046u   /* "FUPP" */
-#define ST_NAMELEN 12
+#define FELUCCA_FLASH 1
 
-typedef struct {
-    uint32_t magic;
-    char name[ST_NAMELEN];
-    uint32_t bpm;
-    int16_t p[NTRK][P_COUNT];
-    uint8_t engine[NTRK], preset[NTRK];
-    step_t step[NTRK][NSTEP];
-} st_proj_t;
+/* --- palette index math (from upstream's gen/ui_palettes.h; the constants
+ * only, not the array — lvgl_palette.c provides that for the UI) --- */
+#ifndef UI_NPALETTES
+#define UI_NPALETTES 10u
+#define UI_GREY_INDEX 0u
+#define UI_PAL_TAG 64u
+#endif
+#ifndef NPALETTES
+#define NPALETTES UI_NPALETTES
+#endif
+static uint32_t palette_from_stored(uint32_t v)
+{
+    return v >= UI_PAL_TAG && v - UI_PAL_TAG < NPALETTES ? v - UI_PAL_TAG : UI_GREY_INDEX;
+}
+static uint32_t palette_to_stored(uint32_t i) { return UI_PAL_TAG + i % NPALETTES; }
 
-typedef struct {
-    uint32_t magic;
-    char name[ST_NAMELEN];
-    uint8_t engine, cat, has_pat, pad;
+static void palette_apply(void) { }
+
+/* --- panel.c: panel_t, settings global, hold/leds helpers --- */
+#include "upstream/felucca/firmware/src/panel.c"
+
+/* --- UI-layer stubs: upreset.c and project.c call into the UI during
+ * load/save; modd's shell handles these differently --- */
+static uint32_t up_gen;
+static uint8_t sync_reload;
+enum { UNDO_SOUND = 1, UNDO_PAT = 2, UNDO_MOT = 4 };
+static struct {
+    uint8_t trk, keep;
+    uint32_t from_h;
     int16_t p[P_COUNT];
     step_t step[NSTEP];
-} st_up_t;
+} undo;
+static uint32_t undo_depth;
+static struct { uint8_t force, ppick, song_row; } ui;
+static uint8_t pat_from[NTRK];
+static uint32_t pat_sig[NTRK];
+static uint32_t snd_said[NTRK];
+static uint8_t drum_mute[NTRK];
+static uint8_t ui_prefs;
+#define PREF_RESTORE_OFF 128u
 
-typedef char st_proj_fits[sizeof(st_proj_t) <= ST_SECT ? 1 : -1];
-typedef char st_up_fits[sizeof(st_up_t) <= ST_SECT ? 1 : -1];
-
-static union { st_proj_t pr; st_up_t up; } st_buf;
-static char st_cur_name[ST_NAMELEN + 1];
-
-static uint32_t st_proj_off(uint32_t slot) { return ST_BASE + slot * ST_SECT; }
-static uint32_t st_up_off(uint32_t k) { return ST_BASE + (ST_NPROJ + k) * ST_SECT; }
-
-static int st_read(uint32_t off, void *dst, uint32_t n)
-{
-    return FL_FAR(fl_read_ram)(off, (uint8_t *)dst, n);
-}
-
-/* erase the slot sector and program st_buf (n bytes) */
-static int st_store(uint32_t off, uint32_t n)
-{
-    uint32_t took = 0;
-    if (fl_erase4k(off, &took)) return -1;
-    return fl_write(off, (const uint8_t *)&st_buf, n) ? -1 : 0;
-}
-
-static void st_set_name(char *dst, const char *src)
-{
-    uint32_t i = 0;
-    while (src && src[i] && i < ST_NAMELEN) { dst[i] = src[i]; i++; }
-    while (i < ST_NAMELEN) dst[i++] = 0;
-}
-
-static int st_peek(uint32_t off, uint32_t magic, char *name, uint32_t *extra)
-{
-    uint32_t hdr[1 + ST_NAMELEN / 4];
-    if (st_read(off, hdr, sizeof hdr)) return 0;
-    if (hdr[0] != magic) return 0;
-    if (name) { memcpy(name, &hdr[1], ST_NAMELEN); name[ST_NAMELEN] = 0; }
-    (void)extra;
-    return 1;
-}
-
-static void storage_init(void) { st_cur_name[0] = 0; }
-
-/* --- projects --- */
-
-static int project_used(uint32_t slot)
-{
-    return slot < ST_NPROJ && st_peek(st_proj_off(slot), ST_MAGIC_PROJ, 0, 0);
-}
-
-static int project_name(uint32_t slot, char *b)
-{
-    b[0] = 0;
-    if (slot >= ST_NPROJ || !st_peek(st_proj_off(slot), ST_MAGIC_PROJ, b, 0)) return 0;
-    return 1;
-}
-
-static const char *project_cur_name(void) { return st_cur_name; }
-
-static int project_save_as(uint32_t slot, const char *name)
-{
-    uint32_t t;
-    if (slot >= ST_NPROJ) return 0;
-    memset(&st_buf, 0, sizeof st_buf);
-    st_buf.pr.magic = ST_MAGIC_PROJ;
-    st_set_name(st_buf.pr.name, name && name[0] ? name : st_cur_name);
-    st_buf.pr.bpm = song.bpm;
-    for (t = 0; t < NTRK; t++) {
-        memcpy(st_buf.pr.p[t], trk[t].p, sizeof trk[t].p);
-        st_buf.pr.engine[t] = trk[t].engine;
-        st_buf.pr.preset[t] = trk[t].preset;
-        memcpy(st_buf.pr.step[t], trk[t].step, sizeof trk[t].step);
-    }
-    if (st_store(st_proj_off(slot), sizeof st_buf.pr)) return 0;
-    st_set_name(st_cur_name, st_buf.pr.name);
-    return 1;
-}
-
-static int project_save(uint32_t slot) { return project_save_as(slot, 0); }
-
-static void project_load(uint32_t slot)
-{
-    uint32_t t;
-    if (slot >= ST_NPROJ || st_read(st_proj_off(slot), &st_buf.pr, sizeof st_buf.pr)) return;
-    if (st_buf.pr.magic != ST_MAGIC_PROJ) return;
-    if (st_buf.pr.bpm) song.bpm = st_buf.pr.bpm;
-    for (t = 0; t < NTRK; t++) {
-        memcpy(trk[t].p, st_buf.pr.p[t], sizeof trk[t].p);
-        trk[t].engine = st_buf.pr.engine[t];
-        trk[t].eng_req = st_buf.pr.engine[t];
-        trk[t].preset = st_buf.pr.preset[t];
-        memcpy(trk[t].step, st_buf.pr.step[t], sizeof trk[t].step);
-    }
-    st_buf.pr.name[ST_NAMELEN - 1] = 0;
-    st_set_name(st_cur_name, st_buf.pr.name);
-}
-
-static void project_erase(uint32_t slot)
-{
-    uint32_t took = 0;
-    if (slot < ST_NPROJ) (void)fl_erase4k(st_proj_off(slot), &took);
-}
-
-static void project_rename(uint32_t slot, const char *name)
-{
-    if (slot >= ST_NPROJ || st_read(st_proj_off(slot), &st_buf.pr, sizeof st_buf.pr)) return;
-    if (st_buf.pr.magic != ST_MAGIC_PROJ) return;
-    st_set_name(st_buf.pr.name, name);
-    (void)st_store(st_proj_off(slot), sizeof st_buf.pr);
-}
-
-static int project_info(uint32_t slot, char *b)
-{
-    b[0] = 0;
-    if (!project_used(slot)) return 0;
-    return project_name(slot, b);
-}
-
-/* --- user presets --- */
-
-static int up_used(uint32_t k)
-{
-    return k < ST_NUP && st_peek(st_up_off(k), ST_MAGIC_UP, 0, 0);
-}
-
-static uint32_t up_count(void)
-{
-    uint32_t k, n = 0;
-    for (k = 0; k < ST_NUP; k++) n += (uint32_t)up_used(k);
-    return n;
-}
-
-static uint32_t up_nth(uint32_t n)
+static void pat_from_set(uint32_t slot)
 {
     uint32_t k;
-    for (k = 0; k < ST_NUP; k++)
-        if (up_used(k) && n-- == 0) return k;
-    return 0;
+    for (k = 0; k < NTRK; k++) pat_from[k] = (uint8_t)slot;
 }
+static void load_begin(track_t *t, uint32_t what) { (void)t; (void)what; }
+static void load_end(track_t *t) { (void)t; }
+static int param_kept(uint32_t i) { (void)i; return 0; }
+static void fm4_apply(track_t *t, int16_t *p) { (void)t; (void)p; }
+static uint32_t fm4_convert(int16_t *p, uint8_t *v) { (void)p; (void)v; return 0; }
+static void phys_legacy(int16_t *e) { (void)e; }
+static void load_pat16(track_t *t, const uint8_t *note, const uint8_t *flags) { (void)t; (void)note; (void)flags; }
+static void load_grid16(track_t *t, const uint8_t *hit, const uint8_t *acc) { (void)t; (void)hit; (void)acc; }
+static int transport_busy(void) { return 0; }
+static int slice_page_on(void) { return 0; }
+static void ui_message(const char *msg) { (void)msg; }
+static void ui_say(const char *a, const char *b) { (void)a; (void)b; }
+static int eng_ok(uint32_t e) { return e < NENGINES; }
+static uint32_t step_lanes(const step_t *s) { (void)s; return 0; }
+static uint32_t step_accents(const step_t *s) { (void)s; return 0; }
+static void step_to_grid(step_t *s) { (void)s; }
+static uint32_t track_cat(const track_t *t) { (void)t; return 0; }
+static int chain_busy(void) { return 0; }
+static void mom_back(const track_t *t) { (void)t; }
+static void apply_preset_to(track_t *t, uint32_t pi) { (void)t; (void)pi; }
+static void track_defaults_steps(track_t *t) { (void)t; }
+static uint32_t trk_def_engine(uint32_t i) { return i < NENGINES ? i : 0; }
+static uint32_t steps_sig(const track_t *t) { (void)t; return 0; }
+#define NPATTERNS 0u
+static const uint8_t TRK_DEF[NPART][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
-static uint32_t up_rank(uint32_t slot)
-{
-    uint32_t k, r = 0;
-    for (k = 0; k < slot && k < ST_NUP; k++) r += (uint32_t)up_used(k);
-    return r;
-}
+/* --- forward declarations for functions defined later in the include chain --- */
+static int project_info(uint32_t slot, char *b, uint16_t *len48, uint32_t *den, uint8_t *n);
+static int project_used(uint32_t slot);
 
-static uint32_t up_engine(uint32_t k)
-{
-    st_up_t u;
-    if (k >= ST_NUP || st_read(st_up_off(k), &u, sizeof u) || u.magic != ST_MAGIC_UP) return 0;
-    return u.engine;
-}
+/* --- flash I/O --- */
+#include "upstream/felucca/firmware/src/storage_hw.c"
+#include "upstream/felucca/firmware/src/storage.c"
 
-static uint32_t up_cat(uint32_t k)
-{
-    st_up_t u;
-    if (k >= ST_NUP || st_read(st_up_off(k), &u, sizeof u) || u.magic != ST_MAGIC_UP) return 0;
-    return u.cat;
-}
+/* --- user presets (includes category.c, up_fm6.c, fm6_vbank.c) --- */
+#include "upstream/felucca/firmware/src/upreset.c"
 
-static void up_name(uint32_t k, char *b)
-{
-    b[0] = 0;
-    if (k < ST_NUP) (void)st_peek(st_up_off(k), ST_MAGIC_UP, b, 0);
-}
+/* --- emulator: the 8 MiB flash has a different JEDEC ID than the 1 MiB parts
+ * persist_boot checks; redirect to return the stock part's ID --- */
+#ifdef CONFIG_EMU
+static RAMFN uint32_t fl_jedec_ram_emu(void) { return 0x856014u; }
+#define fl_jedec_ram fl_jedec_ram_emu
+#endif
 
-static void up_slot_label(char *b, uint32_t k)
-{
-    b[0] = (char)('0' + (k / 10) % 10);
-    b[1] = (char)('0' + k % 10);
-    b[2] = 0;
-}
+/* --- projects (includes settings_persist.c) --- */
+#include "upstream/felucca/firmware/src/project.c"
 
-static void up_auto_name(char *b, uint32_t e, uint32_t k)
-{
-    b[0] = 'U'; b[1] = (char)('0' + (e / 10) % 10); b[2] = (char)('0' + e % 10);
-    b[3] = '-'; b[4] = (char)('0' + (k / 10) % 10); b[5] = (char)('0' + k % 10);
-    b[6] = 0;
-}
+#ifdef CONFIG_EMU
+#undef fl_jedec_ram
+#endif
 
-static int up_load(uint32_t k)
-{
-    track_t *t = &trk[song.sel < NTRK ? song.sel : 0];
-    if (k >= ST_NUP || st_read(st_up_off(k), &st_buf.up, sizeof st_buf.up)) return 0;
-    if (st_buf.up.magic != ST_MAGIC_UP) return 0;
-    memcpy(t->p, st_buf.up.p, sizeof t->p);
-    t->engine = st_buf.up.engine;
-    t->eng_req = st_buf.up.engine;
-    t->user = (uint8_t)(k + 1);
-    return 1;
-}
-
-static void up_ui_named(uint32_t op, uint32_t k, const char *name, uint32_t cat)
-{
-    track_t *t = &trk[song.sel < NTRK ? song.sel : 0];
-    uint32_t took = 0;
-    if (k >= ST_NUP) return;
-    if (op == 1) { (void)fl_erase4k(st_up_off(k), &took); return; }
-    if (op != 2) return;
-    memset(&st_buf, 0, sizeof st_buf);
-    st_buf.up.magic = ST_MAGIC_UP;
-    if (name && name[0]) st_set_name(st_buf.up.name, name);
-    else { char a[8]; up_auto_name(a, t->engine, k); st_set_name(st_buf.up.name, a); }
-    st_buf.up.engine = t->engine;
-    st_buf.up.cat = (uint8_t)cat;
-    st_buf.up.has_pat = 1;
-    memcpy(st_buf.up.p, t->p, sizeof t->p);
-    memcpy(st_buf.up.step, t->step, sizeof t->step);
-    (void)st_store(st_up_off(k), sizeof st_buf.up);
-}
-
-static void up_ui(uint32_t op, uint32_t k) { up_ui_named(op, k, 0, 0); }
-
-/* --- user-preset patterns --- */
-
-static int up_has_pat(uint32_t k)
-{
-    st_up_t u;
-    if (k >= ST_NUP || st_read(st_up_off(k), &u, sizeof u) || u.magic != ST_MAGIC_UP) return 0;
-    return u.has_pat;
-}
-
-static uint32_t up_pat_count(void)
-{
-    uint32_t k, n = 0;
-    for (k = 0; k < ST_NUP; k++) n += (uint32_t)up_has_pat(k);
-    return n;
-}
-
-static uint32_t up_pat_nth(uint32_t n)
-{
-    uint32_t k;
-    for (k = 0; k < ST_NUP; k++)
-        if (up_has_pat(k) && n-- == 0) return k;
-    return 0;
-}
-
-static uint32_t up_pat_rank(uint32_t slot)
-{
-    uint32_t k, r = 0;
-    for (k = 0; k < slot && k < ST_NUP; k++) r += (uint32_t)up_has_pat(k);
-    return r;
-}
-
-static void up_pat_load(track_t *t, uint32_t k)
-{
-    if (k >= ST_NUP || st_read(st_up_off(k), &st_buf.up, sizeof st_buf.up)) return;
-    if (st_buf.up.magic != ST_MAGIC_UP || !st_buf.up.has_pat) return;
-    memcpy(t->step, st_buf.up.step, sizeof t->step);
-}
-
-/* --- settings: sys_settings persists through the settings adapter --- */
-
-static void settings_load(void) {}
-static void settings_save(void) { sys_settings_flush(); }
+/* --- modd_storage.h API: the names modd.c calls --- */
+static void storage_init(void) { persist_boot(); }
+static void settings_load(void) { panel_init(); }

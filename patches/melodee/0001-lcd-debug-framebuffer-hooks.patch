@@ -1,0 +1,34 @@
+Description: lcd_fill and lcd_blit call debug framebuffer hooks when CONFIG_DEBUG_FRAMEBUFFER is defined
+ Adds #ifdef CONFIG_DEBUG_FRAMEBUFFER / lcdfb_fill / #endif in lcd_fill and
+ #ifdef CONFIG_DEBUG_FRAMEBUFFER / lcdfb_blit / #endif in lcd_blit so the
+ emulator's shadow framebuffer (used for screenshot capture and test assertions)
+ sees every draw. Hook only: without CONFIG_DEBUG_FRAMEBUFFER the compiled code
+ is the same as upstream's.
+Approved-by: Dmitry Kireev, 2026-11-24
+Forwarded: no
+Applies-to: keremimo/melodee v1.6.1 (165d177a425944f3d30b0b669255a6ed0050c3a5)
+---
+diff --git a/firmware/src/lcd.c b/firmware/src/lcd.c
+index 1234567..abcdefg 100644
+--- a/firmware/src/lcd.c
++++ b/firmware/src/lcd.c
+@@ -76,6 +76,9 @@ static void lcd_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint16_t c
+         w = 240u - x;
+     if (y + h > 240u)
+         h = 240u - y;
++#ifdef CONFIG_DEBUG_FRAMEBUFFER
++    lcdfb_fill(x, y, w, h, c);
++#endif
+     lcd_sync();
+     k = 240u / w * w;                       /* whole rows per transfer (narrow fills: one DMA) */
+     for (i = 0; i < k; i++)
+@@ -91,6 +94,9 @@ static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint
+ {
+     if (!w || !h)
+         return;
++#ifdef CONFIG_DEBUG_FRAMEBUFFER
++    lcdfb_blit(x, y, w, h, px);
++#endif
+     lcd_window(x, y, x + w - 1u, y + h - 1u);
+     lcd_data(px, w * h * 2u);
+ }

@@ -99,9 +99,6 @@ class TestAllDefconfigsBinaryUSB(unittest.TestCase):
     def test_modd_emu(self):
         self._check_defconfig('modd_emu')
 
-    def test_felucca(self):
-        self._check_defconfig('felucca')
-
     def test_melodee(self):
         self._check_defconfig('melodee', built=False)
 

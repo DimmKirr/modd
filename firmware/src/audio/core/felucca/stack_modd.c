@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
  * Wrapper for the upstream Felucca audio stack (CONFIG_AUDIO_FELUCCA_STACK_INCLUDED).
- * Origin: hugelton/Felucca firmware/src/{params,mod,voice,slicer,fx,perform,click,audio}.c @ v1.8.2 (6162de86)
+ * Origin: hugelton/Felucca firmware/src/{params,mod,voice,slicer,fx,perform,click}.c @ v1.8.2 (6162de86)
  * The upstream files are #included unchanged from firmware/upstream/felucca/firmware/src/; this file and
- * firmware/adapters/modd_audio.h hold the adapter glue. */
+ * firmware/adapters/modd_audio.h hold the adapter glue. The audio ISR is in audio/core/audio.c (the
+ * universal host); this file provides mix_block and felucca_tracks_init for it. */
 
 /* --- glue: what upstream's engines.c / eng_drum.c / eng_fm6.c / seq.c give the stack, for the engines this
  * build does not have (ENG_DRUM and the FM6 patch list are absent engines in engines.c). Names and constants only. --- */
@@ -46,30 +47,16 @@ _Static_assert((PB_FRAMES & (PB_FRAMES - 1u)) == 0u, "PB_FRAMES (NTRK * SL_LEN /
 _Static_assert(PB_FREC <= PB_FRAMES, "CONFIG_FELUCCA_SL_LEN is too small for FREEZE (PB_FREC frames)");
 _Static_assert(HB_MASK < PB_FRAMES, "CONFIG_FELUCCA_SL_LEN is too small for the OCT UP / DN delay (HB_MASK)");
 
-/* The API audio tap (CONFIG_RPC_AUDIO_TAP) takes the finished half buffer where the ISR hands it to the DMA, as
- * modd's own audio core does: a function-like macro around the acknowledge call in upstream's audio.c. */
-#ifdef CONFIG_RPC_AUDIO_TAP
-#define fm1_audio_ack_half() (audio_tap_block(o, HALF_FRAMES), fm1_audio_ack_half())
-#endif
-/* upstream's audio_init() only starts the I2S: modd's boot calls audio_init() for the tracks as well */
-#define audio_init felucca_audio_init
-#include "upstream/felucca/firmware/src/audio.c"
-#undef audio_init
-#ifdef CONFIG_RPC_AUDIO_TAP
-#undef fm1_audio_ack_half
-#endif
-
-static void audio_init(void)
+static void felucca_tracks_init(void)
 {
     uint32_t i, k;
     for (k = 0; k < NTRK; k++) {
         __builtin_memset(&trk[k], 0, sizeof(track_t));
         for (i = 0; i < P_COUNT; i++)
-            trk[k].p[i] = TP[i].def;               /* upstream's defaults (params.c) */
+            trk[k].p[i] = TP[i].def;
     }
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
-    felucca_audio_init();
 }
 
 /* power-on sounds, as upstream's TRK_DEF (engines.c): ANALOG, FM6, LOFI and a fourth part (DRUM is absent here: PHASE) */

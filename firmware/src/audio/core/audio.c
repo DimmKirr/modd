@@ -1,27 +1,26 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Kerem Kilic (Ellic Studio)
- * Portions Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Modifications Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
- * Origin: keremimo/melodee firmware/src/audio.c @ v1.4.5 (398ada1e)
- *         https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/audio.c */
-/* Minimal audio core: I2S DMA double-buffer, mix_block, master output.
- * Pattern from Melodee audio.c, stripped to the essentials. */
+ * Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+ * Universal audio host: owns the I2S DMA double-buffer and fm1_alnk0_irq for every upstream.
+ * The upstream audio stack (Felucca, modd-native, …) provides mix_block; this file calls it. */
 
+#ifndef HALF_FRAMES
 #define HALF_FRAMES BLOCK
+#endif
 #define HALF_WORDS  (HALF_FRAMES * 2u)
 
 static int32_t abuf[2u * HALF_WORDS] __attribute__((aligned(32)));
-static int32_t mix_buf_l[BLOCK];
-static int32_t mix_buf_r[BLOCK];
 
 #ifdef CONFIG_EFFECTS_FELUCCA
 static void mix_block(int32_t *out, uint32_t n);
 #else
+static int32_t mix_buf_l[BLOCK];
+static int32_t mix_buf_r[BLOCK];
+
 static void mix_block(void)
 {
     uint32_t i;
 #ifdef CONFIG_DOCK
-    if (dock_active) {                          /* a dock module owns the block (dock.c) */
+    if (dock_active) {
         dock_render(mix_buf_l, mix_buf_r, BLOCK);
         return;
     }
@@ -46,7 +45,6 @@ void fm1_alnk0_irq(void)
         int32_t *o = &abuf[half * HALF_WORDS];
 #ifdef CONFIG_EFFECTS_FELUCCA
         {
-            /* Felucca's mix, its buffers and its engines work one control tick (CTL frames) at a time */
             uint32_t b, j;
             _Static_assert(HALF_FRAMES % CTL == 0u, "the half-buffer is a whole number of control ticks");
             for (b = 0; b < HALF_FRAMES; b += CTL)
@@ -60,7 +58,7 @@ void fm1_alnk0_irq(void)
             int32_t mv;
             mix_block();
 #ifdef CONFIG_FX_HOST
-            fx_host_run(mix_buf_l, mix_buf_r, HALF_FRAMES);   /* the master slot: after the mix, before the master volume */
+            fx_host_run(mix_buf_l, mix_buf_r, HALF_FRAMES);
 #endif
             mv = (int32_t)song.master_q12;
             for (i = 0; i < HALF_FRAMES; i++) {
@@ -84,15 +82,23 @@ void fm1_alnk0_irq(void)
 }
 extern void isr_alnk0(void);
 
+#ifdef CONFIG_EFFECTS_FELUCCA
+static void felucca_tracks_init(void);
+#endif
+
 static void audio_init(void)
 {
     uint32_t i;
     for (i = 0; i < 2u * HALF_WORDS; i++)
         abuf[i] = 0;
+#ifdef CONFIG_EFFECTS_FELUCCA
+    felucca_tracks_init();
+#else
     for (i = 0; i < NTRK; i++) {
         __builtin_memset(&trk[i], 0, sizeof(track_t));
         trk[i].engine = 0;
         params_init(&trk[i]);
     }
+#endif
     fm1_audio_init(abuf, HALF_WORDS, isr_alnk0, 3);
 }

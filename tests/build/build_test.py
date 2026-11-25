@@ -227,7 +227,6 @@ def test_linker_script_follows_the_memory_map():
     assert build.linker_script(set()) == 'app.ld'
     assert build.linker_script({'AUDIO', 'UDISK'}) == 'app.ld'
     assert build.linker_script({'DOCK', 'AUDIO'}) == 'app_dock.ld'
-    assert build.linker_script({'WIFI_NONFREE'}) == 'app_wifi_nonfree.ld'
 
 
 def _lvgl_flags(root, tc):

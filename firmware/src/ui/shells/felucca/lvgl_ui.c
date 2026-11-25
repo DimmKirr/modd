@@ -15,5 +15,5 @@
 #include "ui/shells/felucca/lvgl_controls.c"
 #include "ui/shells/modd/list.c"
 #include "ui/shells/modd/leds.c"
-#include "ui/shells/felucca/lvgl_shell.c"
+#include "ui/shells/modd/shell.c"
 #include "ui/shells/felucca/lvgl_pages.c"

@@ -168,16 +168,6 @@ config WIFI_DEBUG_WLCTL0_PROBE
       the boot no longer asserts WL_CTL0, so the plain probe is just a scan
       with extra readbacks. Bring-up aid; turn off for normal use.
 
-config WIFI_NONFREE
-    bool "WiFi (vendor binary driver)"
-    default n
-    depends on !BLE && !WIFI
-    help
-      WiFi STA using JieLi's vendor binary libraries from the AC79 SDK.
-      Links wl_wifi_sta_sfc.a, wpasupplicant.a, hsm.a, wl_rf_common.a
-      with fm1-base's MPL-2.0/Apache-2.0 cooperative scheduler shim.
-      For testing and comparison with the clean-room CONFIG_WIFI driver.
-      Requires AC79_SDK to be set.
 
 # kc2mm:hide
 config WIFI_PROBES

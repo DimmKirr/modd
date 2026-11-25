@@ -22,7 +22,7 @@ static uint32_t usb_debug_fill(uint8_t *b, uint32_t max);
 #define DBG_D_OK    0x00u
 #define DBG_D_BAD   0x0Au
 
-#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+#if defined(CONFIG_WIFI)
 static uint32_t wifi_debug_fill(uint8_t *b);
 static uint32_t wifi_debug_fill_bss(uint8_t *b, uint32_t max);
 #endif
@@ -129,7 +129,7 @@ static void modd_debug_poll(void)
         dbg_reply(cmd, seq, lb, 12u + m);
         return;
     }
-#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+#if defined(CONFIG_WIFI)
     case DBG_D_WIFI: {
         static uint8_t wb[48];
         rn = wifi_debug_fill(wb);

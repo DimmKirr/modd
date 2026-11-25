@@ -43,7 +43,7 @@ static void lvt_pal_set(uint32_t i)
     lvt_pal.text = lvt_c565(p->text);
     lvt_pal.accent = lvt_c565(p->accent);
     for (k = 0; k < 4u; k++)
-        lvt_pal.trk_c[k] = lvt_c565(p->trk[k]);
+        lvt_pal.trk_c[k] = lvt_c565(p->trkc[k]);
     lvt_pal.mid = lvt_mix(lvt_pal.bg, lvt_pal.text, UI_MID_PCT);
     lvt_pal.dim = lvt_mix(lvt_pal.bg, lvt_pal.text, UI_DIM_PCT);
     lvt_pal.line = lvt_mix(lvt_pal.bg, lvt_pal.text, UI_LINE_PCTS[lvt_pal.idx]);

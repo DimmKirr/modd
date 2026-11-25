@@ -24,7 +24,11 @@ config ENGINE_FM6_FMLAB
     bool "FM Lab (integer Q24, 20 factory voices)"
 
 config ENGINE_FM6_FELUCCA
-    bool "Felucca (integer Q24, 8 factory voices)"
+    bool "Felucca (integer Q24, 8 factory voices + 32-voice bank)"
+    help
+      Upstream eng_fm6.c included unchanged. Six-operator FM (msfa/Dexed
+      integer core), 6 voices per part. Provides fm6_pack/unpack for
+      storage and the voice bank (fm6_vbank.c).
 
 config ENGINE_FM6_MELODEE
     bool "Melodee (FPU, MARK I/MODERN/OPL)"
@@ -43,6 +47,8 @@ choice
 
 config ENGINE_DRUM_FELUCCA
     bool "Felucca (GM)"
+    help
+      Not implemented. Needs eng_drum.c included from upstream.
 
 config ENGINE_DRUM_SLOOP
     bool "SLOOP"

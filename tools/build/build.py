@@ -107,9 +107,6 @@ def _open_run(tool, args, capture=False):
     else:
         exe, argv = _OPEN_TOOLS[tool], list(args)
         if tool == 'pi32v2/bin/ld':
-            if any('--plugin' in a for a in argv):
-                raise SystemExit('the vendor-library link (WIFI_NONFREE) is not supported '
-                                 'with the open toolchain yet')
             argv += [str(root / 'lib' / 'clang' / '23' / 'lib' / 'pi32v2' / 'libclang_rt.builtins.a')]
     cmd = [str(root / 'bin' / exe), *argv]
     if capture:
@@ -441,8 +438,14 @@ def build_support(name, entry, layout):
     out.mkdir(parents=True, exist_ok=True)
     tc('cc', f'-I{src}', '-c', src / entry, '-o', out / 'crt0.o')
     # no -include config.h here (it would change the code): hal/fm1_flash_map.h gets the layout as -D
+    # -Ifirmware: libc.c and usb.c are wrappers that #include "upstream/melodee/..." (resolved from firmware/)
+    upstream_inc = ['-Ifirmware']
+    patched = GEN / 'patched'
+    if patches.series() and (patched / 'stamp.json').is_file():
+        upstream_inc.insert(0, f'-I{patched}')
+        upstream_inc += [f'-I{d}' for d in patches.include_dirs(patched)]
     tc('cc', *CFLAGS, *layout.defines(), '-Ifirmware/hal', '-Ifirmware/src', f'-I{src}',
-       '-c', src / f'{name}.c', '-o', out / f'{name}.o')
+       *upstream_inc, '-c', src / f'{name}.c', '-o', out / f'{name}.o')
     elf = out / f'{name}.elf'
     tc('pi32v2/bin/ld', '--gc-sections', '-e', '_start', '-T', src / f'{name}.ld',
        out / 'crt0.o', out / f'{name}.o', '-o', elf)
@@ -499,30 +502,6 @@ def _firmware_version():
     return 'v0.0.0'
 
 
-def gen_felucca_ui():
-    """Run Felucca's font/icon/keycap/palette generators into GEN dir."""
-    GEN.mkdir(parents=True, exist_ok=True)
-    felucca = FW / 'upstream' / 'felucca'
-    tools = felucca / 'tools'
-    cmds = [
-        [tools / 'gen_aa_font.py', GEN / 'ui_fonts.h', '--preset', 'inter-tight'],
-        [tools / 'gen_aa_icons.py', GEN / 'ui_icons.h'],
-        [tools / 'gen_aa_keycaps.py', GEN / 'ui_keycaps.h'],
-        [tools / 'gen_ui_palettes.py', GEN / 'ui_palettes.h'],
-    ]
-    procs = [subprocess.Popen([sys.executable, *map(str, c)],
-             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-             for c in cmds]
-    failed = []
-    for c, p in zip(cmds, procs):
-        sys.stdout.write(p.communicate()[0])
-        if p.returncode:
-            failed.append(c[0].name)
-    if failed:
-        raise SystemExit(f'gen_felucca_ui: {", ".join(failed)} failed')
-    print(f'gen_felucca_ui: {len(cmds)} headers -> {GEN.relative_to(ROOT)}/')
-
-
 def gen_melodee_ui():
     """Run Melodee's font/keycap generators and modd's palette list into GEN/melodee/."""
     out = GEN / 'melodee'
@@ -576,11 +555,15 @@ def gen_engine_tables():
 
 
 def gen_felucca_tables():
-    """Run upstream Felucca's own tools/gen_tables.py in place; the output stays outside the upstream tree."""
+    """Run upstream Felucca's generators; output goes to modd's GEN/, not the upstream tree."""
     GEN.mkdir(parents=True, exist_ok=True)
-    dst = GEN / 'felucca_tables.h'
-    subprocess.run([sys.executable, str(FW / 'upstream' / 'felucca' / 'tools' / 'gen_tables.py'),
-                    str(dst)], check=True, cwd=str(ROOT))
+    felucca_tools = FW / 'upstream' / 'felucca' / 'tools'
+    env = {**os.environ, 'PYTHONPATH': str(FW / 'upstream' / 'felucca-engines' / 'tools')}
+    subprocess.run([sys.executable, str(felucca_tools / 'gen_tables.py'),
+                    str(GEN / 'felucca_tables.h')], check=True, cwd=str(ROOT), env=env)
+    if not (GEN / 'felucca_ui_palettes.h').exists():
+        subprocess.run([sys.executable, str(felucca_tools / 'gen_ui_palettes.py'),
+                        str(GEN / 'felucca_ui_palettes.h')], check=True, cwd=str(ROOT))
 
 
 def extract_section(elf, section):
@@ -675,11 +658,8 @@ def build_lvgl():
 
 
 def linker_script(enabled):
-    """The memory map for a set of CONFIG_* names: app_wifi_nonfree.ld carries the
-    nonfree WiFi stack's larger RAM; app_dock.ld keeps fm1-dock's module
+    """The memory map for a set of CONFIG_* names: app_dock.ld keeps fm1-dock's module
     region (0x01C30000, 272 KiB) free. Kconfig forbids DOCK with WiFi."""
-    if 'WIFI_NONFREE' in enabled:
-        return 'app_wifi_nonfree.ld'
     if 'DOCK' in enabled:
         return 'app_dock.ld'
     if 'EMU' in enabled:
@@ -720,11 +700,6 @@ def build(dry_run=False):
         flags.insert(len(CFLAGS), f'-I{patched}')
         flags += [f'-I{d}' for d in patches.include_dirs(patched)]
 
-    if 'GEN_FELUCCA_UI' in enabled:
-        if not (GEN / 'ui_fonts.h').exists():
-            gen_felucca_ui()
-        else:
-            print(f'gen_felucca_ui: headers exist, skipping (delete {GEN}/ui_fonts.h to regenerate)')
     if 'GEN_MELODEE_UI' in enabled:
         if not (GEN / 'melodee' / 'ui_fonts.h').exists():
             gen_melodee_ui()
@@ -748,6 +723,13 @@ def build(dry_run=False):
         gen_samples()
     if 'ENGINE_ADPCM' in enabled:
         gen_adpcm()
+    if 'ENGINE_FM6_FELUCCA' in enabled:
+        dst = GEN / 'felucca_fm6.h'
+        if not dst.exists():
+            subprocess.run([sys.executable,
+                            str(FW / 'upstream' / 'felucca' / 'tools' / 'gen_fm6_patches.py'),
+                            str(dst)], check=True, cwd=str(ROOT))
+            print(f'felucca_fm6: generated {dst.relative_to(ROOT)}')
     if 'WIFI' in enabled and not (GEN / 'ble_rf_tables.h').exists():
         src = FW / 'upstream' / 'optimist' / 'firmware' / 'hal' / 'ble_rf_tables_v15.h'
         if src.exists():
@@ -790,11 +772,6 @@ def build(dry_run=False):
                         '--json', str(OUT / 'openapi.json'),
                         '--header', str(GEN / 'openapi_json.h')],
                        check=True, cwd=str(ROOT))
-
-    if 'WIFI_NONFREE' in enabled:
-        fm1b_shim = ROOT / '.scratch' / 'examples' / 'fm1-base' / 'ble' / 'shim'
-        if fm1b_shim.exists():
-            flags.append(f'-I{fm1b_shim}')
 
     wifi_pass = os.environ.get('MODD_WIFI_PASSWORD', '')
     if wifi_pass and 'WIFI' in enabled:
@@ -869,96 +846,24 @@ def build(dry_run=False):
             objs.append(str(native_obj))
             print(f'build: compiled usb_sdk.o from cpu.a bitcode')
 
-    vendor_libs = []
-
-    if 'WIFI_NONFREE' in enabled:
-        if OPEN:
-            raise SystemExit('CONFIG_WIFI_NONFREE is not supported with the open toolchain yet '
-                             '(set USE_OPEN_TOOLCHAIN=0 for JieLi).')
-        if not os.environ.get('ALLOW_NONFREE'):
-            raise SystemExit(
-                'CONFIG_WIFI_NONFREE requires ALLOW_NONFREE=1.\n'
-                'The vendor binary driver links proprietary .a libraries from\n'
-                'the JieLi SDK. The resulting binary is for personal testing only\n'
-                'and cannot be distributed under GPL-3.0.\n'
-                'To opt in: ALLOW_NONFREE=1 task build -- --defconfig wifi_nonfree')
-
-        nf_libs = ROOT / 'build' / 'nonfree' / 'libs'
-        fm1b = ROOT / '.scratch' / 'examples' / 'fm1-base'
-        nf_dir = OUT / 'nonfree'
-        nf_dir.mkdir(parents=True, exist_ok=True)
-
-        if not fm1b.exists():
-            raise SystemExit(f'fm1-base not found at {fm1b}. '
-                             'Copy fm1-base into .scratch/examples/fm1-base/')
-        if not nf_libs.exists():
-            raise SystemExit(
-                f'Vendor libs not provisioned at {nf_libs}.\n'
-                'Run: ALLOW_NONFREE=1 task nonfree:provision')
-
-        nf_cf = [
-            '-integrated-as', '-mcpu=r3', '-mfprev1',
-            '-fno-common', '-Oz', '-flto',
-            '-ffunction-sections', '-fdata-sections',
-            '-fallow-pointer-null', '-fprefer-gnu-section',
-            '-femulated-tls', '-fms-extensions', '-w',
-            '-DSUPPORT_MS_EXTENSIONS', '-DCONFIG_RELEASE_ENABLE',
-            '-DCONFIG_CPU_WL82', '-DCONFIG_FREE_RTOS_ENABLE',
-            '-DCONFIG_THREAD_ENABLE', '-D__GCC_PI32V2__',
-            '-DCONFIG_NEW_ECC_ENABLE', '-DCONFIG_SFC_ENABLE',
-            '-DCONFIG_NO_SDRAM_ENABLE', '-DCONFIG_BT_ENABLE=1',
-            '-DSHIM_WIFI=1',
-            '-DSHIM_HEAP_KB=200',
-            '-mllvm', '-pi32v2-large-program=true',
-        ]
-        tc_inc = toolchain_path() / 'pi32v2' / 'include'
-        nf_inc = [f'-I{fm1b / "ble" / "shim"}', f'-I{tc_inc}']
-
-        shim_c = [
-            fm1b / 'ble' / 'shim' / 'os.c',
-            fm1b / 'ble' / 'shim' / 'misc.c',
-            fm1b / 'ble' / 'shim' / 'systimer.c',
-            fm1b / 'ble' / 'shim' / 'rf_const.c',
-            fm1b / 'ble' / 'wifi' / 'wifi_shim.c',
-            FW / 'src' / 'wifi' / 'nonfree' / 'nf_sdk_stubs.c',
-        ]
-        for src in shim_c:
-            obj = nf_dir / f'nf_{src.stem}.o'
-            tc('cc', *nf_cf, *nf_inc, '-c', str(src), '-o', str(obj))
-            objs.append(str(obj))
-
-        ctx_obj = nf_dir / 'nf_ctx.o'
-        tc('cc', *nf_inc, '-c', str(fm1b / 'ble' / 'shim' / 'ctx.S'),
-           '-o', str(ctx_obj))
-        objs.append(str(ctx_obj))
-
-        for lib_name in ['btctrler.a', 'btstack.a', 'crypto_toolbox_Osize.a',
-                         'lib_ccm_aes.a', 'wl_rf_common.a',
-                         'wl_wifi_sta_sfc.a', 'wpasupplicant.a', 'hsm.a',
-                         'libcompiler_rt.a']:
-            p = nf_libs / lib_name
-            if p.exists():
-                vendor_libs.append(str(p))
-
-        print(f'build: nonfree WiFi: {len(shim_c)} shim files + '
-              f'{len(vendor_libs)} vendor libs')
-
     elf = OUT / 'modd.elf'
     lto_plugin = []
-    if vendor_libs:
-        gold = toolchain_path() / 'pi32v2' / 'bin' / 'LLVMgold.so'
-        if gold.exists():
-            lto_plugin = ['--plugin', str(gold),
-                          '--plugin-opt=mcpu=r3',
-                          '--plugin-opt=-pi32v2-large-program=true']
     ld_script = FW / linker_script(enabled)
     # the flash layout (kconf/flash.kconfig) sizes the XIP region: app*.ld say LENGTH = FLASH_BODY_MAX
-    layout = flashmap.from_config_h(config_h.read_text())
-    link_args = [*lto_plugin, '--gc-sections', f'--defsym=FLASH_BODY_MAX={layout.body_max:#x}',
+    cfg_text = config_h.read_text()
+    layout = flashmap.from_config_h(cfg_text)
+    def _config_hex(name):
+        m = re.search(r'^#define CONFIG_' + name + r' (\w+)$', cfg_text, re.M)
+        return int(m.group(1), 0) if m else None
+    pool_size = _config_hex('POOL_SIZE')
+    arena_min = _config_hex('ARENA_MIN')
+    defsyms = [f'--defsym=FLASH_BODY_MAX={layout.body_max:#x}']
+    if pool_size is not None:
+        defsyms.append(f'--defsym=POOL_SIZE={pool_size:#x}')
+    if arena_min is not None:
+        defsyms.append(f'--defsym=ARENA_MIN={arena_min:#x}')
+    link_args = [*lto_plugin, '--gc-sections', *defsyms,
                  '-T', str(ld_script), *objs]
-    if vendor_libs:
-        link_args += ['--allow-multiple-definition',
-                      '--start-group', *vendor_libs, '--end-group']
     tc('pi32v2/bin/ld', *link_args, '-Map', str(OUT / 'modd.map'), '-o', str(elf))
 
     text = extract_section(elf, '.text')

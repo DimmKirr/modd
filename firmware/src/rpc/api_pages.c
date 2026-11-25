@@ -232,8 +232,8 @@ static uint32_t api_page_idx;      /* the page being described */
  * no leading or trailing comma */
 static void api_page_common(struct rpc_tx *tx)
 {
-    uint32_t s = song.sel < NTRK ? song.sel : 0, k;
-    uint8_t e = modd_engine_of(&trk[s]);
+    uint32_t s = modd_sel() < NTRK ? modd_sel() : 0, k;
+    uint8_t e = modd_engine_of(modd_trk(s));
     const modd_page_t *p = nav_pages[api_page_idx];
     rpc_tx_key_uint(tx, "track", s);
     rpc_tx_char(tx, ',');
@@ -294,7 +294,7 @@ static void api_page_generic_json(struct rpc_tx *tx)
  * '0' per step, "playhead" is the step the transport is on */
 static void api_seq_fields(struct rpc_tx *tx)
 {
-    const track_t *t = &trk[song.sel < NTRK ? song.sel : 0];
+    const track_t *t = modd_trk(modd_sel() < NTRK ? modd_sel() : 0);
     char s[NSTEP + 1];
     uint32_t k;
     for (k = 0; k < NSTEP; k++)
@@ -303,13 +303,13 @@ static void api_seq_fields(struct rpc_tx *tx)
     rpc_tx_char(tx, ',');
     rpc_tx_key_bool(tx, "playing", song.playing != 0);
     rpc_tx_char(tx, ',');
-    rpc_tx_key_int(tx, "len", t->p[P_SLEN]);
+    rpc_tx_key_int(tx, "len", modd_param(t, P_SLEN));
     rpc_tx_char(tx, ',');
-    rpc_tx_key_int(tx, "div", t->p[P_SDIV]);
+    rpc_tx_key_int(tx, "div", modd_param(t, P_SDIV));
     rpc_tx_char(tx, ',');
-    rpc_tx_key_int(tx, "swing", t->p[P_SSWING]);
+    rpc_tx_key_int(tx, "swing", modd_param(t, P_SSWING));
     rpc_tx_char(tx, ',');
-    rpc_tx_key_int(tx, "gate", t->p[P_SGATE]);
+    rpc_tx_key_int(tx, "gate", modd_param(t, P_SGATE));
     rpc_tx_char(tx, ',');
     rpc_tx_key_uint(tx, "playhead", t->seq_idx);
     rpc_tx_char(tx, ',');
@@ -332,7 +332,7 @@ static void api_page_step_json(struct rpc_tx *tx)      /* STEP */
 
 static void api_page_detail_json(struct rpc_tx *tx)    /* DETAIL: the step the page is on */
 {
-    const step_t *st = &trk[song.sel < NTRK ? song.sel : 0].step[lvt_detail_idx];
+    const step_t *st = &modd_trk(modd_sel() < NTRK ? modd_sel() : 0)->step[lvt_detail_idx];
     uint32_t k;
     api_page_common(tx);
     api_seq_fields(tx);
@@ -365,10 +365,10 @@ static void api_page_detail_json(struct rpc_tx *tx)    /* DETAIL: the step the p
 #endif
 }
 
-#ifdef CONFIG_SEQ_FELUCCA
+#if defined(CONFIG_SEQ_FELUCCA) && !defined(CONFIG_CORE_FELUCCA)
 static void api_page_auto_json(struct rpc_tx *tx)      /* AUTO: the locks of one step */
 {
-    uint32_t tr = song.sel < NTRK ? song.sel : 0, k;
+    uint32_t tr = modd_sel() < NTRK ? modd_sel() : 0, k;
     uint8_t lv;
     auto_ensure_init();
     lv = auto_locks[tr][auto_step][auto_pidx];
@@ -412,7 +412,7 @@ static void api_page_mixer_json(struct rpc_tx *tx)
         rpc_tx_char(tx, ',');
         rpc_tx_key_int(tx, "pan", d.pan[k]);
         rpc_tx_char(tx, ',');
-        rpc_tx_key_int(tx, "mute", trk[k].p[P_MUTE]);
+        rpc_tx_key_int(tx, "mute", modd_tpi(k, P_MUTE));
         rpc_tx_raw(tx, "}");
     }
     rpc_tx_raw(tx, "]");
@@ -422,7 +422,7 @@ static void api_page_song_json(struct rpc_tx *tx)
 {
     api_page_common(tx);
     rpc_tx_char(tx, ',');
-    rpc_tx_key_int(tx, "bpm", song.g[G_BPM]);
+    rpc_tx_key_int(tx, "bpm", modd_gp(G_BPM));
     rpc_tx_char(tx, ',');
     rpc_tx_key_bool(tx, "playing", song.playing != 0);
 }
@@ -431,11 +431,11 @@ static void api_page_clock_json(struct rpc_tx *tx)
 {
     api_page_common(tx);
     rpc_tx_char(tx, ',');
-    rpc_tx_key_int(tx, "bpm", song.g[G_BPM]);
+    rpc_tx_key_int(tx, "bpm", modd_gp(G_BPM));
     rpc_tx_char(tx, ',');
-    rpc_tx_key_int(tx, "swing", song.g[G_SWING]);
+    rpc_tx_key_int(tx, "swing", modd_gp(G_SWING));
     rpc_tx_char(tx, ',');
-    rpc_tx_key_int(tx, "clock", song.g[G_CLOCK]);
+    rpc_tx_key_int(tx, "clock", modd_gp(G_CLOCK));
 }
 
 /* the text of card k of the page being described when it is on screen, else 0. The storage pages
@@ -453,7 +453,7 @@ static void api_page_user_json(struct rpc_tx *tx)      /* a slot of the user pre
     const char *v = api_card_text(1);       /* LOAD: USED or FREE */
     api_page_common(tx);
     rpc_tx_char(tx, ',');
-    rpc_tx_key_uint(tx, "slot", (uint32_t)song.g[G_SLOT]);
+    rpc_tx_key_uint(tx, "slot", (uint32_t)modd_gp(G_SLOT));
     if (v) {
         rpc_tx_char(tx, ',');
         rpc_tx_key_bool(tx, "used", v[0] == 'U');
@@ -465,7 +465,7 @@ static void api_page_presets_json(struct rpc_tx *tx)
     const engine_t *e = lvt_cur_engine();
     api_page_common(tx);
     rpc_tx_char(tx, ',');
-    rpc_tx_key_uint(tx, "preset", trk[song.sel < NTRK ? song.sel : 0].preset);
+    rpc_tx_key_uint(tx, "preset", modd_trk(modd_sel() < NTRK ? modd_sel() : 0)->preset);
     rpc_tx_char(tx, ',');
     rpc_tx_key_uint(tx, "count", e ? e->npresets : 0u);
 }
@@ -487,7 +487,7 @@ static void api_page_project_json(struct rpc_tx *tx)
     const char *n = api_card_text(1);       /* NAME: the name, EMPTY, or --- for no name */
     api_page_common(tx);
     rpc_tx_char(tx, ',');
-    rpc_tx_key_uint(tx, "slot", (uint32_t)song.g[G_SLOT]);
+    rpc_tx_key_uint(tx, "slot", (uint32_t)modd_gp(G_SLOT));
     if (n) {
         rpc_tx_char(tx, ',');
         rpc_tx_key_bool(tx, "used", !(n[0] == 'E' && n[1] == 'M' && n[2] == 'P' && n[3] == 'T' && n[4] == 'Y' && !n[5]));
@@ -517,7 +517,7 @@ static const api_page_json_entry_t api_page_json_table[] = {
     { "SEQ",     api_page_seq_json },
     { "STEP",    api_page_step_json },
     { "DETAIL",  api_page_detail_json },
-#ifdef CONFIG_SEQ_FELUCCA
+#if defined(CONFIG_SEQ_FELUCCA) && !defined(CONFIG_CORE_FELUCCA)
     { "AUTO",    api_page_auto_json },
 #endif
     { "MIXER",   api_page_mixer_json },

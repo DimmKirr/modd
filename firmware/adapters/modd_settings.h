@@ -66,7 +66,7 @@ static void sys_settings_defaults(void)
 #ifdef CONFIG_SYS_MENU_MIDI_CH
     sys_settings.midi_ch = 0;    /* channel 1 */
 #endif
-#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+#if defined(CONFIG_WIFI)
 #ifdef CONFIG_WIFI_DEFAULT_ON
     sys_settings.wifi_on = 1;    /* ON (CONFIG_WIFI_DEFAULT_ON) */
 #else

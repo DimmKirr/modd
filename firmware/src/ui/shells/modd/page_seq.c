@@ -16,7 +16,7 @@ static struct {
 
 static void lvt_seq_show(void)
 {
-    const track_t *t = &trk[song.sel];
+    const track_t *t = modd_trk(modd_sel());
     uint32_t k;
     char b[8];
 

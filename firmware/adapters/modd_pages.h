@@ -6,6 +6,25 @@
 #define MODD_PAGES_H
 #include <stdint.h>
 
+/* --- State accessors: UI and RPC read/write upstream data through these ---
+ * The boundary test (tests/build/data_boundary_test.py) rejects direct use
+ * of trk[], song.g[], song.sel, ->p[] and ->eng_req in firmware/src/ui/ and
+ * firmware/src/rpc/. These accessors keep the struct access inside the
+ * adapter. */
+static inline uint32_t modd_sel(void) { return song.sel; }
+static inline void modd_sel_set(uint32_t k) { song.sel = (uint8_t)k; }
+static inline int16_t modd_gp(uint32_t id) { return song.g[id]; }
+static inline void modd_gp_set(uint32_t id, int16_t v) { song.g[id] = v; }
+static inline uint8_t modd_playing(void) { return song.playing; }
+static inline int16_t modd_tpi(uint32_t k, uint32_t id) { return trk[k].p[id]; }
+static inline void modd_tpi_set(uint32_t k, uint32_t id, int16_t v) { trk[k].p[id] = v; }
+static inline uint32_t modd_eng(uint32_t k) { return trk[k].eng_req; }
+static inline uint32_t modd_engine_cur(uint32_t k) { return trk[k].engine; }
+static inline track_t *modd_trk(uint32_t k) { return &trk[k]; }
+static inline int16_t modd_param(const track_t *t, uint32_t id) { return t->p[id]; }
+static inline void modd_param_set(track_t *t, uint32_t id, int16_t v) { t->p[id] = v; }
+static inline uint32_t modd_eng_of(const track_t *t) { return t->eng_req; }
+
 #ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
 /* switch a track's engine as the panel does: eng_req and the new engine's P_E0..P_E7 together (IRQ off), the
  * stack's engine_block (voice.c) fades the old engine out and switches */
@@ -88,6 +107,97 @@ static int modd_fx_page_set(uint32_t slot, int32_t value) { return fx_host_page_
 #else
 static uint32_t modd_fx_page_read(modd_card_t *out, uint32_t max) { (void)out; (void)max; return 0; }
 static int modd_fx_page_set(uint32_t slot, int32_t value) { (void)slot; (void)value; return 1; }
+#endif
+
+/* --- Generic page data accessors (the data layer) ---
+ * The shell and the API read and drive parameters only through these.
+ * Under CONFIG_AUDIO_FELUCCA_STACK_INCLUDED they delegate to upstream's
+ * PAGES[], page_desc(), param_format(), param_turn(). */
+
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+
+static uint32_t modd_pg_count(void) { return NPAGES; }
+static const char *modd_pg_title(uint32_t idx) { return idx < NPAGES ? PAGES[idx].title : ""; }
+
+static uint32_t modd_pg_read(uint32_t idx, modd_card_t *out, uint32_t max)
+{
+    uint32_t k, n = 0;
+    if (idx >= NPAGES)
+        return 0;
+    for (k = 0; k < 4u && n < max; k++) {
+        int16_t *vp;
+        const param_desc_t *d = page_desc(&PAGES[idx], k, &vp);
+        char val[12];
+        const char *unit, *u;
+        uint32_t j = 0;
+        if (!d || !vp)
+            continue;
+        param_format(d, *vp, val, &unit);
+        out[n].label = d->label;
+        out[n].value = *vp;
+        out[n].min = d->min;
+        out[n].max = d->max;
+        for (u = val; *u && j < 11u; u++)
+            out[n].text[j++] = *u;
+        for (u = unit; *u && j < 11u; u++)
+            out[n].text[j++] = *u;
+        out[n].text[j] = 0;
+        n++;
+    }
+    return n;
+}
+
+static int modd_pg_turn(uint32_t idx, uint32_t slot, int32_t steps)
+{
+    int16_t *vp;
+    const param_desc_t *d;
+    if (idx >= NPAGES || slot >= 4u)
+        return 1;
+    d = page_desc(&PAGES[idx], slot, &vp);
+    if (!d || !vp)
+        return 1;
+    *vp = (int16_t)param_turn(d, *vp, steps);
+    return 0;
+}
+
+static int modd_pg_set(uint32_t idx, uint32_t slot, int32_t value)
+{
+    int16_t *vp;
+    const param_desc_t *d;
+    if (idx >= NPAGES || slot >= 4u)
+        return 1;
+    d = page_desc(&PAGES[idx], slot, &vp);
+    if (!d || !vp || value < d->min || value > d->max)
+        return 1;
+    *vp = (int16_t)param_fit(d, value);
+    return 0;
+}
+
+static int32_t modd_pg_slot_value(uint32_t idx, uint32_t slot)
+{
+    int16_t *vp;
+    const param_desc_t *d;
+    if (idx >= NPAGES || slot >= 4u)
+        return 0;
+    d = page_desc(&PAGES[idx], slot, &vp);
+    return (d && vp) ? *vp : 0;
+}
+
+static uint32_t modd_pg_slot_pid(uint32_t idx, uint32_t slot)
+{
+    if (idx >= NPAGES || slot >= 4u)
+        return 0xFF;
+    return PAGES[idx].id[slot];
+}
+
+#else
+static uint32_t modd_pg_count(void) { return 0; }
+static const char *modd_pg_title(uint32_t idx) { (void)idx; return ""; }
+static uint32_t modd_pg_read(uint32_t idx, modd_card_t *out, uint32_t max) { (void)idx; (void)out; (void)max; return 0; }
+static int modd_pg_turn(uint32_t idx, uint32_t slot, int32_t steps) { (void)idx; (void)slot; (void)steps; return 1; }
+static int modd_pg_set(uint32_t idx, uint32_t slot, int32_t value) { (void)idx; (void)slot; (void)value; return 1; }
+static int32_t modd_pg_slot_value(uint32_t idx, uint32_t slot) { (void)idx; (void)slot; return 0; }
+static uint32_t modd_pg_slot_pid(uint32_t idx, uint32_t slot) { (void)idx; (void)slot; return 0xFF; }
 #endif
 
 #endif /* MODD_PAGES_H */

@@ -278,7 +278,7 @@ The UI never calls audio functions, never allocates voices, never touches hardwa
 
 Screen rendering, event dispatch, menu system, splash screen.
 
-Kconfig: `CONFIG_UI_SHELL_FELUCCA_UPSTREAM`, `CONFIG_UI_SHELL_MELODEE`, `CONFIG_UI_SHELL_SLOOP`, `CONFIG_UI_SHELL_MODD`.
+Kconfig: `CONFIG_UI_SHELL_MELODEE`, `CONFIG_UI_SHELL_SLOOP`, `CONFIG_UI_SHELL_MODD`.
 
 ### Components
 
@@ -286,9 +286,6 @@ Kconfig: `CONFIG_UI_SHELL_FELUCCA_UPSTREAM`, `CONFIG_UI_SHELL_MELODEE`, `CONFIG_
 |-----------|---------|-------------|
 | Shell | `shell.c` | Page lifecycle, navigation, splash dispatch |
 | Pages | `page_*.c` | Individual screens (HOME, ENV, SEQ, ABOUT, etc.) |
-| Drawing | `draw.c` | Header/card/footer layout primitives |
-| Icons | `fui_icons.c` | Track cushions, icon font rendering |
-| Renderer | `gfx.c` | Canvas primitives (`cv_begin`, `cv_blit`, `cv_text_*`) |
 | Boot logo | `ui/boot_logo.c` | RLE-compressed logo decoder, shared across all UI upstreams |
 | Splash | Kconfig `SPLASH_LOGO` / `SPLASH_NONE` | Selectable splash screen style |
 
@@ -316,57 +313,7 @@ New splash styles can be added as Kconfig options (e.g. animated splash).
 
 This example describes the upstream-renderer Felucca shell (`firmware/src/ui/shells/felucca/`), written before the rule above. By class: step 1 is INCLUDED; steps 2 to 5 are COPIED or REWRITTEN ("extracted", "replicate", pages written for modd) and are not a pattern to repeat without the user's approval. The modd shell (`CONFIG_UI_SHELL_MODD`, the shell of `modd_felucca_emu`) has its own pages in `firmware/src/ui/shells/modd/page_*.c`, all REWRITTEN.
 
-#### 1. Upstream renderer (gfx.c)
-
-The Felucca canvas renderer was included as-is from the vendored upstream tree
-(`firmware/upstream/felucca/`, pinned in `vendir.yml`). It provides:
-
-- `cv_begin` / `cv_blit` / `cv_rrect` / `cv_text_*` - drawing primitives
-- `palette_set()` and `ux.*` theme tokens (`T_BG`, `T_SURF`, `T_THEME`, etc.)
-- Anti-aliased fonts (`AF_S` 12px, `AF_M` 15px, `AF_L` 28px)
-
-Generated headers (`ui_fonts.h`, `ui_icons.h`, `ui_keycaps.h`, `ui_palettes.h`) are built by Python generators when `GEN_FELUCCA_UI` is selected.
-
-#### 2. Icon rendering (fui_icons.c)
-
-Upstream `icons.c` has label-lookup functions (`param_icon()`, `mod_src_icon()`) that depend on the full Felucca firmware. We extracted only the rendering functions into `fui_icons.c`:
-
-- `cv_trk()` - numbered track cushion
-- `cv_icon_on()` / `cv_icon_in()` / `cv_icon_mid()` - icon font rendering
-- `trk_icon()` - icon ID for track number
-
-#### 3. Drawing primitives (draw.c)
-
-`fui_draw_head()`, `fui_draw_card()`, `fui_draw_foot()` replicate Felucca's visual layout:
-
-- **Header**: track cushion, stop/play icon, BPM (centred), battery (right)
-- **Card**: `[icon] LABEL` (S font), `VALUE unit` (M + S font, same baseline), gauge bar
-- **Footer**: engine icon + name (left), preset name (middle), page title (right)
-
-#### 4. Shell navigation (shell.c)
-
-`fsh_init()` / `fsh_register()` / `fsh_draw()` manage page lifecycle. Button-to-page mapping (HOME, FX, SCL, etc.) and long-press HOME for ABOUT. On init, `modd_mock_init()` is called when `CONFIG_AUDIO` is off.
-
-#### 5. Pages
-
-Each page is a `modd_page_t` with `.draw`, `.knob`, `.button`, `.key` callbacks:
-
-- `page_home.c` - 4 engine knob cards + waveform + track overview
-- `page_params.c` - ENV, LFO, FX, SCL, EDIT, ARP, VOICE (generic 4-card layout)
-- `page_seq.c` - step grid
-- `page_mixer.c` - 4 level cards + vertical bars
-- `page_about.c` - firmware info
-
-#### 6. Build configuration
-
-`configs/felucca_mock_defconfig` (no longer in `configs/`; shown for the idea):
-```
-CONFIG_INPUT=y
-CONFIG_UI_SHELL_FELUCCA_UPSTREAM=y
-# CONFIG_AUDIO is not set
-```
-
-To wire real audio, enable `CONFIG_AUDIO=y`. The `#ifndef CONFIG_AUDIO` guard in `modd_audio.h` removes the mock engine and init function.
+The Felucca visual style is available as an LVGL skin (`CONFIG_UI_SKIN_FELUCCA`) on the modd shell. Felucca palettes and controls are in `firmware/src/ui/shells/felucca/lvgl_*.c`.
 
 ### Porting a different UI upstream
 

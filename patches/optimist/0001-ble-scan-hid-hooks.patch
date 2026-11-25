@@ -1,0 +1,75 @@
+Description: ble_scan.c gets hook macros for HID service detection in ble_scan_add
+ Adds #ifndef hooks, each defaulting to upstream's behaviour: BLE_SCAN_HID_VARS
+ (extra variable declarations), BLE_SCAN_HID_AFTER_PARSE (called after
+ ble_ad_parse), BLE_SCAN_HID_IS_LISTED (slot-priority expression, default
+ identity), BLE_SCAN_HID_KIND (kind assignment, default direct), and
+ BLE_SCAN_HID_AFTER_LISTED (called after the MIDI sc_listed check). Hooks
+ only: with none of the macros set the compiled code is the same as upstream's.
+Approved-by: Dmitry Kireev, 2026-11-24
+Forwarded: no
+Applies-to: w0ts/optimist v0.4 (7184726b8d806506a6d0921312c0b8d6e375608b)
+---
+diff --git a/firmware/src/ble/ble_scan.c b/firmware/src/ble/ble_scan.c
+index 0d799cc..6867b62 100644
+--- a/firmware/src/ble/ble_scan.c
++++ b/firmware/src/ble/ble_scan.c
+@@ -5,6 +5,23 @@
+ #include "ble_host.h"                    /* BLE_UUID_MIDI_SVC */
+ #include "ble_util.h"
+
++/* Hooks (modd): every macro below defaults to upstream's behaviour. A build may define it first. */
++#ifndef BLE_SCAN_HID_VARS
++#define BLE_SCAN_HID_VARS                                /* extra variable declarations in ble_scan_add */
++#endif
++#ifndef BLE_SCAN_HID_AFTER_PARSE
++#define BLE_SCAN_HID_AFTER_PARSE(ad_data, ad_len)        /* called after ble_ad_parse */
++#endif
++#ifndef BLE_SCAN_HID_IS_LISTED
++#define BLE_SCAN_HID_IS_LISTED(ad_midi) (ad_midi)        /* expression for the slot-priority flag */
++#endif
++#ifndef BLE_SCAN_HID_KIND
++#define BLE_SCAN_HID_KIND(e, kind) (e)->kind = (kind)    /* kind assignment (may guard against overwrite) */
++#endif
++#ifndef BLE_SCAN_HID_AFTER_LISTED
++#define BLE_SCAN_HID_AFTER_LISTED(t, e)                  /* called after the MIDI sc_listed check */
++#endif
++
+ enum { SC_ADV_IND = 0, SC_SCAN_RSP = 4 };
+
+ BLE_API void ble_ad_parse(const uint8_t *ad, uint32_t n, struct ble_ad *out)
+@@ -122,6 +139,7 @@ BLE_API void ble_scan_add(struct ble_scan_tab *t, const uint8_t *pdu, uint32_t l
+     struct ble_found *e;
+     uint8_t type, rnd;
+     int i;
++    BLE_SCAN_HID_VARS
+     t->reports++;
+     if (len < 8u || pdu[1] < 6u || pdu[1] > 37u || len < 2u + pdu[1]) {
+         t->bad_ad++;
+@@ -134,13 +152,14 @@ BLE_API void ble_scan_add(struct ble_scan_tab *t, const uint8_t *pdu, uint32_t l
+         return;
+     }
+     ble_ad_parse(pdu + 8, pdu[1] - 6u, &ad);
++    BLE_SCAN_HID_AFTER_PARSE(pdu + 8, pdu[1] - 6u)
+     if (ad.bad)
+         t->bad_ad++;
+     i = sc_find(t, pdu + 2, rnd);
+     if (i < 0) {
+         if (type != SC_ADV_IND)
+             return;                      /* a scan response is only news about an advertiser already seen */
+-        i = sc_slot(t, ad.midi, now_ms);
++        i = sc_slot(t, BLE_SCAN_HID_IS_LISTED(ad.midi), now_ms);
+         if (i < 0) {
+             t->dropped_full++;
+             return;
+@@ -173,9 +192,10 @@ BLE_API void ble_scan_add(struct ble_scan_tab *t, const uint8_t *pdu, uint32_t l
+         }
+         e->name_type = ad.name_type;
+     }
+-    e->kind = (uint8_t)(BLE_KIND_MIDI | (ble_name_is_fm1(e->name) ? BLE_KIND_FM1 : 0u));
++    BLE_SCAN_HID_KIND(e, (uint8_t)(BLE_KIND_MIDI | (ble_name_is_fm1(e->name) ? BLE_KIND_FM1 : 0u)));
+     if (ad.midi && !e->midi)
+         sc_listed(t, e);
++    BLE_SCAN_HID_AFTER_LISTED(t, e)
+ }
+
+ /* another FM-1 by its name: "FM1-" and four hex digits (ours since 2026-10-29); "Optimist " (the builds before it) and "FM-1 "

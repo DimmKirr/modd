@@ -86,10 +86,10 @@ class TestRealSources(unittest.TestCase):
 
     def test_optional_fields(self):
         wx = FULL['components']['schemas']['WX']
-        self.assertEqual(wx['required'], ['valid', 'fetching'])        # the rest only when valid
+        self.assertEqual(wx['required'], ['track', 'engine', 'title', 'valid', 'fetching'])
         self.assertNotIn('sub', schema_200(FULL, '/modd/{page}/{sub}').get('required', []))
         menu = FULL['components']['schemas']['MENU']
-        self.assertEqual(menu['required'], ['tab'])
+        self.assertEqual(menu['required'], ['track', 'engine', 'title', 'tab'])
 
     def test_error_responses(self):
         r = FULL['paths']['/api/input/button/{button}/tap/{ms}']['get']['responses']

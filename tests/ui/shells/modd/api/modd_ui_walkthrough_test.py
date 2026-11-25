@@ -56,7 +56,7 @@ PAGES = [
     {'route': '/modd/menu',         'name': 'settings',         'page': 'MENU', 'tab': 'DISPLAY',
      'expect_text': ['Settings', 'DISPLAY']},
     {'route': '/modd/menu/display', 'name': 'settings_display', 'page': 'MENU', 'tab': 'DISPLAY',
-     'expect_text': ['THEME', 'CLAY', 'LIGHTS']},
+     'expect_text': ['PALETTE', 'CLAY', 'LIGHTS']},
     {'route': '/modd/menu/midi',    'name': 'settings_midi',    'page': 'MENU', 'tab': 'MIDI',
      'expect_text': ['MIDI CH']},
     {'route': '/modd/menu/hw',      'name': 'settings_hw',      'page': 'MENU', 'tab': 'HW',
@@ -138,7 +138,7 @@ class ModdUIWalkthrough(ApiTestCase):
         self._assert_ocr_page('settings')
 
     def test_03_ocr_settings_tabs(self):
-        """OCR: each settings tab shows its rows (THEME and LIGHTS, MIDI CH, ETHERNET, GATEWAY)."""
+        """OCR: each settings tab shows its rows (PALETTE and LIGHTS, MIDI CH, ETHERNET, GATEWAY)."""
         for name in ('settings_display', 'settings_midi', 'settings_hw', 'settings_net'):
             with self.subTest(tab=name):
                 self._assert_ocr_page(name)

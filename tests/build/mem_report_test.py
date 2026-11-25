@@ -244,7 +244,9 @@ LLD_MAP = """     VMA      LMA     Size Align Out     In      Symbol
 LLD_ELF = _elf([('_resource_start', 0x1c40000, 0, 0), ('_resource_end', 0x1c74000, 0, 0),
                 ('_resource_data_start', 0x1c1f040, 0, 0), ('_resource_data_end', 0x1c20000, 0, 0),
                 ('_ustack_lo', 0x1c74100, 0, 0), ('_ustack_top', 0x1c7a000, 0, 0),
-                ('FLASH_BODY_MAX', 0x8c000, 0, 0)])   # build.py's --defsym: the XIP length in app*.ld
+                ('FLASH_BODY_MAX', 0x8c000, 0, 0),   # build.py's --defsym: the XIP length in app*.ld
+                ('POOL_SIZE', 0x54000, 0, 0),         # kconf/memory.kconfig: the POOL region length
+                ('ARENA_MIN', 0x22c00, 0, 0)])         # kconf/memory.kconfig: audio arena floor
 
 
 def _lld_build(tmp_path, map_text=LLD_MAP, config=''):
@@ -265,8 +267,10 @@ def test_lld_map_is_detected_by_its_header():
 
 
 def test_ld_regions_come_from_the_memory_block_and_only_literals_are_accepted():
-    r = mem_report.parse_ld_regions((ROOT / 'firmware' / 'app.ld').read_text(), {'FLASH_BODY_MAX': 0x8c000})
+    syms = {'FLASH_BODY_MAX': 0x8c000, 'POOL_SIZE': 0x54000, 'ARENA_MIN': 0x22c00}
+    r = mem_report.parse_ld_regions((ROOT / 'firmware' / 'app.ld').read_text(), syms)
     assert r['RAM'] == (0x1c08000, 96 * 1024) and r['XIP'] == (0x2001000, 0x8c000)
+    assert r['POOL'] == (0x1c20000, 0x54000)
     with pytest.raises(ValueError):   # the XIP length is the build's --defsym: the ELF's symbol must supply it
         mem_report.parse_ld_regions((ROOT / 'firmware' / 'app.ld').read_text())
     assert mem_report.parse_ld_regions('MEMORY { A (rw) : ORIGIN = 0x10, LENGTH = 2K /* c */ }') == {'A': (16, 2048)}

@@ -22,8 +22,8 @@ from gen_ui_map import parse_page_controls, parse_page_details
 @pytest.fixture()
 def felucca_dir():
     d = ROOT / 'firmware' / 'src' / 'ui' / 'shells' / 'felucca'
-    if not d.is_dir():
-        pytest.skip('felucca shell not found')
+    if not (d / 'page_params.c').is_file():
+        pytest.skip('felucca canvas shell removed (now LVGL-only)')
     return d
 
 

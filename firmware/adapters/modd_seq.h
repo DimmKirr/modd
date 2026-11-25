@@ -12,9 +12,11 @@
 
 /* step_t and song_t are in modd_audio.h (shared with audio core) */
 
-/* shared helpers (always available) */
+/* shared helpers: the core defines its own (song_chain.c, seq.c) */
+#ifndef CONFIG_CORE_FELUCCA
 static const step_t *seq_steps(const track_t *t) { return t->step; }
 static int seq_counting(void) { return song.playing; }
+#endif
 static int seq_is_empty(const track_t *t)
 {
     uint32_t i;
@@ -23,7 +25,7 @@ static int seq_is_empty(const track_t *t)
     return 1;
 }
 
-#if !defined(CONFIG_SEQ_MELODEE) && !defined(CONFIG_SEQ_FELUCCA) && !defined(CONFIG_SEQ_SLOOP)
+#if !defined(CONFIG_SEQ_FELUCCA) && !defined(CONFIG_SEQ_SLOOP)
 static uint32_t seq_entry(const track_t *t) { (void)t; return 0; }
 static void seq_init(void) {}
 static void seq_tick(void) {}

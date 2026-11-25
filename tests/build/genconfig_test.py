@@ -119,7 +119,7 @@ EXPECTED_COMPONENTS = {
         'audio', 'audio-core:melodee', 'boot:melodee', 'debug-log', 'effects:melodee',
         'engine:analog', 'engine:fm6', 'engine:lofi', 'engine:noise', 'engine:trio', 'flash',
         'input', 'midi:melodee', 'mod:melodee', 'modulation', 'net:lwip', 'ota',
-        'scales:melodee', 'seq:melodee', 'storage:melodee', 'udisk', 'ui:modd', 'usb',
+        'scales:melodee', 'seq:felucca', 'storage:melodee', 'udisk', 'ui:modd', 'usb',
         'usb-audio', 'usb-host', 'usb-net',
     ]),
 }

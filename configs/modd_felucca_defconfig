@@ -1,9 +1,10 @@
 # modd_felucca: Felucca audio stack + modd LVGL shell with Felucca skin.
-# Felucca audio core, effects (dist + sends + chorus/delay/reverb ROOM), sequencer,
-# scales, MIDI. All 6 ready MIT engines (Analog, LoFi, Trio, Noise, Phase, Wheel)
-# plus FM6-FMLab. Melodee HAL, boot, storage (unchanged from modd_defconfig).
+# Felucca core (params, mod, voice, slicer, fx, seq, audio included unchanged),
+# effects, sequencer, scales, MIDI. FM6-Felucca engine, Felucca storage.
+# All MIT engines + sample/slice/ADPCM. Melodee HAL, boot.
 # modd_felucca_emu_defconfig is this plus the emulator hooks; keep the two in step.
 #
+CONFIG_CORE_FELUCCA=y
 CONFIG_FIRMWARE_NAME="modd"
 CONFIG_FIRMWARE_VERSION="v0.0.0"
 
@@ -16,8 +17,8 @@ CONFIG_ENGINES=y
 # Multi-upstream (require full audio core)
 #
 CONFIG_ENGINE_FM6=y
-CONFIG_ENGINE_FM6_FMLAB=y
-# CONFIG_ENGINE_FM6_FELUCCA is not set
+# CONFIG_ENGINE_FM6_FMLAB is not set
+CONFIG_ENGINE_FM6_FELUCCA=y
 # CONFIG_ENGINE_FM6_MELODEE is not set
 # CONFIG_ENGINE_DRUM is not set
 
@@ -34,8 +35,10 @@ CONFIG_ENGINE_FM6_FMLAB=y
 CONFIG_ENGINE_ANALOG=y
 # CONFIG_ENGINE_DIGITAL is not set
 CONFIG_ENGINE_PHASE=y
-# CONFIG_ENGINE_SAMPLE is not set
-# CONFIG_ENGINE_GRANULAR is not set
+CONFIG_ENGINE_SAMPLE=y
+CONFIG_ENGINE_GRANULAR=y
+CONFIG_ENGINE_SLICE=y
+CONFIG_ENGINE_ADPCM=y
 CONFIG_ENGINE_LOFI=y
 CONFIG_ENGINE_TRIO=y
 CONFIG_ENGINE_TONEWHEEL=y
@@ -65,7 +68,6 @@ CONFIG_MOD_FELUCCA=y
 #
 CONFIG_SEQ_FELUCCA=y
 # CONFIG_SEQ_SLOOP is not set
-# CONFIG_SEQ_MELODEE is not set
 # end of Sequencer
 
 #
@@ -135,6 +137,8 @@ CONFIG_AUDIO_CORE_FELUCCA=y
 # CONFIG_AUDIO_CORE_SLOOP is not set
 # CONFIG_AUDIO_CORE_MELODEE is not set
 # CONFIG_AUDIO_24BIT is not set
+CONFIG_FELUCCA_DLY_LEN=32768
+CONFIG_POOL_SIZE=0x52C00
 # end of Audio
 
 #
@@ -155,7 +159,6 @@ CONFIG_USB_AUDIO_HOST=y
 # UI
 #
 CONFIG_INPUT=y
-# CONFIG_UI_SHELL_FELUCCA_UPSTREAM is not set
 CONFIG_UI_SHELL_MODD=y
 CONFIG_UI_SKIN_FELUCCA=y
 CONFIG_SPLASH_LOGO=y
@@ -166,9 +169,9 @@ CONFIG_SPLASH_LOGO=y
 # Storage
 #
 CONFIG_FLASH=y
-# CONFIG_STORAGE_FELUCCA is not set
+CONFIG_STORAGE_FELUCCA=y
 # CONFIG_STORAGE_SLOOP is not set
-CONFIG_STORAGE_MELODEE=y
+# CONFIG_STORAGE_MELODEE is not set
 # end of Storage
 
 #
@@ -182,7 +185,6 @@ CONFIG_UDISK=y
 #
 # Dock modules
 #
-# CONFIG_DOCK is not set
 # end of Dock modules
 
 #

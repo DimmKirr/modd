@@ -13,7 +13,7 @@ ALLOWLIST = ROOT / "docs" / "UPSTREAM_ORIGINS.md"
 SCAN_DIRS = ("firmware/src", "firmware/adapters", "firmware/hal")
 CLASSES = {"WRAPPER", "HEADER-DERIVED", "FORK", "PATCHED"}
 PATCH_STATUS = re.compile(r"^approved: .+, .+, .+$")
-FORK_NOTE = ("COPIED", "REDUCED", "REWRITTEN")
+FORK_NOTE = ("COPIED", "REDUCED", "REWRITTEN", "EXTENDED")
 FORK_STATUS = re.compile(r"^(approved: .+, .+, .+|not approved: to be replaced by an include|pre-rule \(before 2026-11-23\): not reviewed)$")
 
 HELP = (

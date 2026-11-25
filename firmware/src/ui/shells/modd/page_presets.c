@@ -4,7 +4,7 @@
 
 static void lvt_presets_show(void)
 {
-    const track_t *t = &trk[song.sel];
+    track_t *t = modd_trk(modd_sel());
     const engine_t *e = lvt_cur_engine();
     char b[8];
     lv_snprintf(b, sizeof b, "%d", (int)t->preset);
@@ -25,7 +25,7 @@ static void lvt_presets_enter(void)
 
 static int lvt_presets_knob(uint32_t id, int32_t clicks)
 {
-    track_t *t = &trk[song.sel];
+    track_t *t = modd_trk(modd_sel());
     const engine_t *e = lvt_cur_engine();
     int32_t v;
     if ((id != ENC_K1 && id != ENC_SELECT) || !e || e->npresets < 1) return 0;

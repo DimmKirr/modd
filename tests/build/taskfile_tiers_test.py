@@ -81,6 +81,6 @@ def test_api_test_case_users_are_api_tier():
 def test_usb_safety_runs_after_the_api_tests():
     cmds = CONFIG_TASKS['test:modd_emu:api']['cmds']
     order = [c['task'] for c in cmds]
-    assert order == ['_test:api', 'test:usb_safety']
+    assert order == ['_build', '_test:api', 'test:usb_safety']
     assert 'deps' not in CONFIG_TASKS['test:modd_emu:api']
     assert CONFIG_TASKS['test:usb_safety']['desc']

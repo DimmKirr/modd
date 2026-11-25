@@ -1,0 +1,26 @@
+# SRAM memory layout. Region sizes, stack placement and the arena minimum.
+# The POOL length decides everything downstream: stacks follow it, NOINIT
+# follows the stacks. The linker scripts derive addresses from POOL_SIZE.
+
+# kc2mm:label "Memory"
+
+config POOL_SIZE
+    hex "POOL region size"
+    default 0x74000 if EMU
+    default 0x54000
+    help
+      Size of the POOL SRAM region (big zero-initialised buffers: FX delay
+      lines, LVGL heap, canvases, engine arena). FM-1 hardware has 336 KiB
+      (0x54000); the emulator exposes 464 KiB (0x74000) from fm1-live's
+      larger chip model.
+
+config ARENA_MIN
+    hex "Audio arena minimum (bytes)"
+    default 0x0 if EMU
+    default 0xC000 if CORE_FELUCCA
+    default 0x22C00
+    help
+      The linker asserts that the working arena (the POOL tail after statics
+      and code) is at least this large. Felucca uses fixed buffers (48 KiB
+      is enough for the four largest engine states); Melodee's allocator
+      needs 139 KiB. Set to 0 for emulator builds (no real-time audio).

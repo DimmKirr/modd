@@ -2,44 +2,50 @@
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Felucca palettes for the LVGL skin (CONFIG_UI_SKIN_FELUCCA).
  *
- * The same 10 palettes as the upstream Felucca firmware, converted to the
- * modd ui_pal_t format. surf is derived at 12% from bg toward accent (the
- * upstream SURF_PCT). Felucca uses one accent colour per palette; all four
- * track slots and knob colours carry it. GREY is the default.
+ * Macros (count, percentages, stored-id tag, migrate table) come from the
+ * upstream generated header via #include. The colour array uses modd's
+ * ui_pal_t layout (bg, surf, text, accent, trkc[4], knob[4][4]) mapped from
+ * upstream's 5-field entries: bg=c1, surf=12% from bg toward c2, text=c3,
+ * accent=secondary, trk/knob all=c2.
  *
- * Origin: firmware/upstream/felucca/build/gen/ui_palettes.h (Felucca v2.2) */
+ * Origin: firmware/upstream/felucca/build/gen/ui_palettes.h (Felucca v1.8.2, d0260074) */
 
 #include "ui/ui_palette.h"
 
+/* pull in ONLY the macros from upstream; redirect the array into a throwaway name
+ * so the upstream's 6-field entries don't collide with modd's ui_pal_t */
+typedef struct { const char *n_; uint16_t a_, b_, c_, d_, e_; } fe_pal_void_t;
+#define ui_pal_t fe_pal_void_t
+#define UI_PALETTES fe_pal_void_
+#include "felucca_ui_palettes.h"
+#undef UI_PALETTES
+#undef ui_pal_t
+
+/* modd-format palette array: upstream c1→bg, c2→trk/knob, c3→text, secondary→accent.
+ * surf is set at runtime (12% blend) so the surf field here is bg (overwritten). */
+#define C4(x) {(x),(x),(x),(x)}
+#define K4(x) {C4(x),C4(x),C4(x),C4(x)}
+#define P(nm,c1,c2,c3,sec) {(nm),(c1),(c1),(c3),(sec),C4(c2),K4(c2)}
 static const ui_pal_t UI_PALETTES[] = {
-    {"GREY",   0x0841, 0x18c3, 0xef5d, 0x4c7f, {0xb596, 0xb596, 0xb596, 0xb596}, {{0xb596, 0xb596, 0xb596, 0xb596}, {0xb596, 0xb596, 0xb596, 0xb596}, {0xb596, 0xb596, 0xb596, 0xb596}, {0xb596, 0xb596, 0xb596, 0xb596}}},
-    {"GREEN",  0x0081, 0x0922, 0xe7bc, 0xfeab, {0x56af, 0x56af, 0x56af, 0x56af}, {{0x56af, 0x56af, 0x56af, 0x56af}, {0x56af, 0x56af, 0x56af, 0x56af}, {0x56af, 0x56af, 0x56af, 0x56af}, {0x56af, 0x56af, 0x56af, 0x56af}}},
-    {"AMBER",  0x1061, 0x28e1, 0xf77b, 0x66bc, {0xfd45, 0xfd45, 0xfd45, 0xfd45}, {{0xfd45, 0xfd45, 0xfd45, 0xfd45}, {0xfd45, 0xfd45, 0xfd45, 0xfd45}, {0xfd45, 0xfd45, 0xfd45, 0xfd45}, {0xfd45, 0xfd45, 0xfd45, 0xfd45}}},
-    {"ICE",    0x0883, 0x0905, 0xe79f, 0xfc6c, {0x55dd, 0x55dd, 0x55dd, 0x55dd}, {{0x55dd, 0x55dd, 0x55dd, 0x55dd}, {0x55dd, 0x55dd, 0x55dd, 0x55dd}, {0x55dd, 0x55dd, 0x55dd, 0x55dd}, {0x55dd, 0x55dd, 0x55dd, 0x55dd}}},
-    {"VIOLET", 0x1063, 0x20c6, 0xf75f, 0x6f35, {0xb45e, 0xb45e, 0xb45e, 0xb45e}, {{0xb45e, 0xb45e, 0xb45e, 0xb45e}, {0xb45e, 0xb45e, 0xb45e, 0xb45e}, {0xb45e, 0xb45e, 0xb45e, 0xb45e}, {0xb45e, 0xb45e, 0xb45e, 0xb45e}}},
-    {"ROSE",   0x1842, 0x3084, 0xff5e, 0xfead, {0xf396, 0xf396, 0xf396, 0xf396}, {{0xf396, 0xf396, 0xf396, 0xf396}, {0xf396, 0xf396, 0xf396, 0xf396}, {0xf396, 0xf396, 0xf396, 0xf396}, {0xf396, 0xf396, 0xf396, 0xf396}}},
-    {"PAPER",  0xf77c, 0xd6d9, 0x20e3, 0xa9c1, {0x0aa8, 0x0aa8, 0x0aa8, 0x0aa8}, {{0x0aa8, 0x0aa8, 0x0aa8, 0x0aa8}, {0x0aa8, 0x0aa8, 0x0aa8, 0x0aa8}, {0x0aa8, 0x0aa8, 0x0aa8, 0x0aa8}, {0x0aa8, 0x0aa8, 0x0aa8, 0x0aa8}}},
-    {"HI-CON", 0x0000, 0x18c0, 0xffdf, 0x073f, {0xff40, 0xff40, 0xff40, 0xff40}, {{0xff40, 0xff40, 0xff40, 0xff40}, {0xff40, 0xff40, 0xff40, 0xff40}, {0xff40, 0xff40, 0xff40, 0xff40}, {0xff40, 0xff40, 0xff40, 0xff40}}},
-    {"NIGHT",  0x0000, 0x00c1, 0x9735, 0xffdf, {0x3eec, 0x3eec, 0x3eec, 0x3eec}, {{0x3eec, 0x3eec, 0x3eec, 0x3eec}, {0x3eec, 0x3eec, 0x3eec, 0x3eec}, {0x3eec, 0x3eec, 0x3eec, 0x3eec}, {0x3eec, 0x3eec, 0x3eec, 0x3eec}}},
-    {"MONO",   0x0000, 0x18e3, 0xffff, 0x4c7f, {0xffff, 0xffff, 0xffff, 0xffff}, {{0xffff, 0xffff, 0xffff, 0xffff}, {0xffff, 0xffff, 0xffff, 0xffff}, {0xffff, 0xffff, 0xffff, 0xffff}, {0xffff, 0xffff, 0xffff, 0xffff}}},
+    P("GREY",   0x0841, 0xb596, 0xef5d, 0x4c7f),
+    P("GREEN",  0x0081, 0x56af, 0xe7bc, 0xfeab),
+    P("AMBER",  0x1061, 0xfd45, 0xf77b, 0x66bc),
+    P("ICE",    0x0883, 0x55dd, 0xe79f, 0xfc6c),
+    P("VIOLET", 0x1063, 0xb45e, 0xf75f, 0x6f35),
+    P("ROSE",   0x1842, 0xf396, 0xff5e, 0xfead),
+    P("PAPER",  0xf77c, 0x0aa8, 0x20e3, 0xa9c1),
+    P("HI-CON", 0x0000, 0xff40, 0xffdf, 0x073f),
+    P("NIGHT",  0x0000, 0x3eec, 0x9735, 0xffdf),
+    P("MONO",   0x0000, 0xffff, 0xffff, 0x4c7f),
 };
-#define UI_NPALETTES 10u
-#define UI_DEFAULT_INDEX 0u
-#define UI_PAL_TAG 64u
-#define UI_MID_PCT 70
-#define UI_DIM_PCT 42
-#define UI_LINE_PCT 18
-#define UI_SEL_PCT 80
-#define UI_TINT_PCT 12
-#define UI_KEY_PCT 78
-#define UI_RAISE_PCT 12
+#undef P
+#undef K4
+#undef C4
+_Static_assert(sizeof UI_PALETTES / sizeof UI_PALETTES[0] == UI_NPALETTES, "palette count mismatch");
+
+#define UI_DEFAULT_INDEX UI_GREY_INDEX
+
 static const uint8_t UI_LINE_PCTS[] = {10, 18, 18, 18, 18, 18, 18, 18, 18, 18};
-#define UI_REC_DARK 0xfa49u
-#define UI_REC_LIGHT 0xb8c5u
-#define UI_QR_LIGHT 0xffdfu
-#define UI_QR_DARK 0x0000u
-#define UI_CRASH_BG 0xa000u
-#define UI_CRASH_INK 0xffdfu
 
 static struct {
     uint8_t    idx;
@@ -66,11 +72,11 @@ static void lvt_pal_set(uint32_t i)
     uint32_t k;
     lvt_pal.idx = (uint8_t)(p - UI_PALETTES);
     lvt_pal.bg = lvt_c565(p->bg);
-    lvt_pal.surf = lvt_c565(p->surf);
     lvt_pal.text = lvt_c565(p->text);
     lvt_pal.accent = lvt_c565(p->accent);
+    lvt_pal.surf = lvt_mix(lvt_pal.bg, lvt_c565(p->trkc[0]), UI_SURF_PCT);
     for (k = 0; k < 4u; k++)
-        lvt_pal.trk_c[k] = lvt_c565(p->trk[k]);
+        lvt_pal.trk_c[k] = lvt_c565(p->trkc[k]);
     lvt_pal.mid = lvt_mix(lvt_pal.bg, lvt_pal.text, UI_MID_PCT);
     lvt_pal.dim = lvt_mix(lvt_pal.bg, lvt_pal.text, UI_DIM_PCT);
     lvt_pal.line = lvt_mix(lvt_pal.bg, lvt_pal.text, UI_LINE_PCTS[lvt_pal.idx]);

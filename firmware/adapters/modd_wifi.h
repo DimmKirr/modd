@@ -5,7 +5,7 @@
 /* Shared WiFi types for UI pages.  Both the clean-room and non-free drivers
  * provide functions with these names so page_wifi.c compiles unchanged. */
 
-#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+#if defined(CONFIG_WIFI)
 
 typedef enum {
     WIFI_STATE_OFF = 0,
@@ -32,7 +32,7 @@ struct wifi_bss {
     uint8_t  in_use;
 };
 
-#endif /* CONFIG_WIFI || CONFIG_WIFI_NONFREE */
+#endif /* CONFIG_WIFI */
 
 /* Clean-room driver forward declarations */
 #ifdef CONFIG_WIFI
@@ -46,7 +46,7 @@ static uint32_t wifi_get_ip(void);
 static uint32_t wifi_get_gw(void);
 static uint32_t wifi_get_dns(void);
 
-#elif !defined(CONFIG_WIFI_NONFREE)
+#else
 
 static inline void wifi_init(void) {}
 static inline int  wifi_get_state(void) { return 0; }

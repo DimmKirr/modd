@@ -70,10 +70,10 @@ static void lvt_mixerer_enter(void)
 static int lvt_mixerer_knob(uint32_t id, int32_t clicks)
 {
     if (id == ENC_SELECT) {
-        int32_t s = (int32_t)song.sel + clicks;
+        int32_t s = (int32_t)modd_sel() + clicks;
         if (s < 0) s = 0;
         if (s >= (int32_t)NTRK) s = (int32_t)NTRK - 1;
-        song.sel = (uint8_t)s;
+        modd_sel_set((uint32_t)s);
         return 1;
     }
     return 0;

@@ -23,12 +23,12 @@ static int lvt_tools_knob(uint32_t id, int32_t clicks)
     uint32_t i;
     if (clicks <= 0) return 0;
     if (id == ENC_K1) {
-        for (i = 0; i < NTRK; i++) seq_pattern_clear(&trk[i]);
+        for (i = 0; i < NTRK; i++) seq_pattern_clear(modd_trk(i));
         nav_dirty = 1;
         return 1;
     }
     if (id == ENC_K2) {
-        track_t *t = &trk[song.sel];
+        track_t *t = modd_trk(modd_sel());
         t->preset = 0;
         nav_dirty = 1;
         return 1;

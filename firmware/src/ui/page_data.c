@@ -46,27 +46,26 @@ typedef struct {
 
 static void home_read(home_data_t *d)
 {
-    uint32_t k;
-    const track_t *t;
-    d->selected = song.sel < NTRK ? song.sel : 0;
+    uint32_t k, s;
+    d->selected = modd_sel() < NTRK ? modd_sel() : 0;
     d->playing  = song.playing != 0;
     d->rec      = song.rec != 0;
     d->bpm      = (uint32_t)modd_bpm();
     for (k = 0; k < NTRK; k++) {
-        uint8_t eng = modd_engine_of(&trk[k]);
+        uint8_t eng = modd_engine_of(modd_trk(k));
         d->engine_id[k]   = eng;
         d->engine_name[k] = (eng < NENGINES && ENGINES[eng]->name) ? ENGINES[eng]->name : "---";
-        d->preset[k]      = trk[k].preset;
+        d->preset[k]      = modd_trk(k)->preset;
     }
-    t = &trk[d->selected];
-    d->oct   = modd_tp(t, P_OCT);
-    d->root  = (uint8_t)((t->p[P_ROOT] % 12 + 12) % 12);
-    d->scale = (uint8_t)t->p[P_SCALE];
-    d->level = t->p[P_LEVEL];
-    d->atk   = t->p[P_ATK];
-    d->dec   = t->p[P_DEC];
-    d->sus   = t->p[P_SUS];
-    d->rel   = t->p[P_REL];
+    s = d->selected;
+    d->oct   = modd_tpi(s, P_OCT);
+    d->root  = (uint8_t)((modd_tpi(s, P_ROOT) % 12 + 12) % 12);
+    d->scale = (uint8_t)modd_tpi(s, P_SCALE);
+    d->level = modd_tpi(s, P_LEVEL);
+    d->atk   = modd_tpi(s, P_ATK);
+    d->dec   = modd_tpi(s, P_DEC);
+    d->sus   = modd_tpi(s, P_SUS);
+    d->rel   = modd_tpi(s, P_REL);
 }
 
 /* -------------------------------------------------------------- network --- */
@@ -81,7 +80,7 @@ static const char *net_link_name(void)
 {
     if (ecm_is_up()) return "ETH";
     if (usbnet_is_up()) return "iPHONE";
-#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+#if defined(CONFIG_WIFI)
     if (wifi_get_ip()) return "WIFI";
 #endif
     return "-";
@@ -115,11 +114,11 @@ typedef struct {
 
 static void env_read(env_data_t *d)
 {
-    const track_t *t = &trk[song.sel];
-    d->atk = t->p[P_ATK];
-    d->dec = t->p[P_DEC];
-    d->sus = t->p[P_SUS];
-    d->rel = t->p[P_REL];
+    uint32_t s = modd_sel();
+    d->atk = modd_tpi(s, P_ATK);
+    d->dec = modd_tpi(s, P_DEC);
+    d->sus = modd_tpi(s, P_SUS);
+    d->rel = modd_tpi(s, P_REL);
 }
 
 /* ----------------------------------------------------------------- lfo --- */
@@ -129,11 +128,11 @@ typedef struct {
 
 static void lfo_read(lfo_data_t *d)
 {
-    const track_t *t = &trk[song.sel];
-    d->rate  = modd_tp(t, P_LFRT);
-    d->depth = modd_tp(t, P_LFO);
-    d->shape = modd_tp(t, P_LFSH);
-    d->delay = modd_tp(t, P_LFDL);
+    const track_t *t = modd_trk(modd_sel());
+    d->rate  = modd_param(t, P_LFRT);
+    d->depth = modd_param(t, P_LFO);
+    d->shape = modd_param(t, P_LFSH);
+    d->delay = modd_param(t, P_LFDL);
 }
 
 /* ------------------------------------------------------------------ fx --- */
@@ -143,11 +142,11 @@ typedef struct {
 
 static void fx_read(fx_data_t *d)
 {
-    const track_t *t = &trk[song.sel];
-    d->dist   = t->p[P_DIST];
-    d->chorus = t->p[P_CHOR];
-    d->delay  = t->p[P_DLY];
-    d->reverb = t->p[P_REV];
+    const track_t *t = modd_trk(modd_sel());
+    d->dist   = modd_param(t, P_DIST);
+    d->chorus = modd_param(t, P_CHOR);
+    d->delay  = modd_param(t, P_DLY);
+    d->reverb = modd_param(t, P_REV);
 }
 
 /* --------------------------------------------------------------- voice --- */
@@ -157,11 +156,11 @@ typedef struct {
 
 static void voice_read(voice_data_t *d)
 {
-    const track_t *t = &trk[song.sel];
-    d->voices = modd_tp(t, P_MONO);
-    d->hold   = modd_tp(t, P_HOLD);
-    d->glide  = modd_tp(t, P_GLI);
-    d->unison = modd_tp(t, P_UNI);
+    const track_t *t = modd_trk(modd_sel());
+    d->voices = modd_param(t, P_MONO);
+    d->hold   = modd_param(t, P_HOLD);
+    d->glide  = modd_param(t, P_GLI);
+    d->unison = modd_param(t, P_UNI);
 }
 
 /* --------------------------------------------------------------- mixer --- */
@@ -174,10 +173,10 @@ typedef struct {
 static void mixer_read(mixer_data_t *d)
 {
     uint32_t k;
-    d->selected = song.sel;
+    d->selected = modd_sel();
     for (k = 0; k < NTRK; k++) {
-        d->level[k] = trk[k].p[P_LEVEL];
-        d->pan[k]   = trk[k].p[P_PAN];
+        d->level[k] = modd_tpi(k, P_LEVEL);
+        d->pan[k]   = modd_tpi(k, P_PAN);
     }
 }
 
@@ -188,11 +187,11 @@ typedef struct {
 
 static void arp_read(arp_data_t *d)
 {
-    const track_t *t = &trk[song.sel];
-    d->mode  = modd_tp(t, P_ARP);
-    d->tempo = modd_tp(t, P_ARTM);
-    d->range = modd_tp(t, P_ARNG);
-    d->gate  = t->p[P_AGATE];
+    const track_t *t = modd_trk(modd_sel());
+    d->mode  = modd_param(t, P_ARP);
+    d->tempo = modd_param(t, P_ARTM);
+    d->range = modd_param(t, P_ARNG);
+    d->gate  = modd_param(t, P_AGATE);
 }
 
 /* ----------------------------------------------------------------- scl --- */
@@ -202,11 +201,11 @@ typedef struct {
 
 static void scl_read(scl_data_t *d)
 {
-    const track_t *t = &trk[song.sel];
-    d->root      = t->p[P_ROOT];
-    d->scale     = t->p[P_SCALE];
-    d->octave    = modd_tp(t, P_OCT);
-    d->transpose = t->p[P_TRANS];
+    const track_t *t = modd_trk(modd_sel());
+    d->root      = modd_param(t, P_ROOT);
+    d->scale     = modd_param(t, P_SCALE);
+    d->octave    = modd_param(t, P_OCT);
+    d->transpose = modd_param(t, P_TRANS);
 }
 
 /* ---------------------------------------------------------------- edit --- */
@@ -219,10 +218,10 @@ typedef struct {
 
 static void edit_read(edit_data_t *d)
 {
-    const track_t *t = &trk[song.sel];
+    const track_t *t = modd_trk(modd_sel());
     uint32_t k;
     for (k = 0; k < 8u; k++)
-        d->e[k] = t->p[P_E0 + k];
+        d->e[k] = modd_param(t, P_E0 + k);
     d->engine_id = modd_engine_of(t);
     d->engine_name = (modd_engine_of(t) < NENGINES && ENGINES[modd_engine_of(t)]->name)
                      ? ENGINES[modd_engine_of(t)]->name : "---";

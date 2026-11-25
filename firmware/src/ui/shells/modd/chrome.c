@@ -295,7 +295,7 @@ static struct {
     uint32_t  sig;                      /* what the icons show, in one number */
 } lvt_head;
 
-#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+#if defined(CONFIG_WIFI)
 static uint32_t lvt_wifi_bars(void)     /* WiFi signal as 0..n bars */
 {
     int st = wifi_get_state();
@@ -316,7 +316,7 @@ static void lvt_head_poll(void)
 #ifdef CONFIG_USB_NET
     if (ecm_is_up()) sig |= net_get_ip() ? 6u : 2u;
 #endif
-#if defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE)
+#if defined(CONFIG_WIFI)
     {
         uint32_t wb = lvt_wifi_bars();
         /* no icon once WiFi is switched off in Settings, though the radio stays up until reboot */

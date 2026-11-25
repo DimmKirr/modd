@@ -19,8 +19,8 @@ MEMORY
     XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = FLASH_BODY_MAX   /* body ends before the commit-marker sector (hal/fm1_flash_map.h); build.py passes --defsym */
     RAMTEXT (rwx): ORIGIN = 0x01C00000, LENGTH = 0x7F00
     RAM    (rwx) : ORIGIN = 0x01C08000, LENGTH = 96K
-    POOL   (rwx) : ORIGIN = 0x01C20000, LENGTH = 0x54000
-    NOINIT (rw)  : ORIGIN = 0x01C7C020, LENGTH = 0x3D30
+    POOL   (rwx) : ORIGIN = 0x01C20000, LENGTH = POOL_SIZE  /* kconf/memory.kconfig; build.py passes --defsym */
+    NOINIT (rw)  : ORIGIN = 0x01C20000 + POOL_SIZE + 0x8020, LENGTH = 0x01C7FD50 - (0x01C20000 + POOL_SIZE + 0x8020)
     CACHE  (rw)  : ORIGIN = 0x01F28000, LENGTH = 28K
 }
 SECTIONS
@@ -58,7 +58,7 @@ SECTIONS
     /* Complete resident interrupt/input graph trades arena capacity for code.
      * Four largest engine states must fit 48 KiB (ram_audio_test); effect
      * delay memory has its own admission/allocation limits. */
-    _resource_minimum = DEFINED(AUDIO_RESIDENT) ? 48K : 139K;
+    _resource_minimum = ARENA_MIN;  /* kconf/memory.kconfig; build.py passes --defsym */
     ASSERT(_resource_end - _resource_start >= _resource_minimum, "audio working arena below worst-case budget")
     .noinit (NOLOAD) : { *(.noinit*) . = ALIGN(4); _noinit_end = .; } > NOINIT
     /* These transfer/job buffers are always filled before use, never retained
@@ -72,7 +72,8 @@ SECTIONS
     ASSERT(_resource_low_start <= _resource_low_end, "RAM code overlaps startup STATUS")
     ASSERT(_resource_data_start <= _resource_data_end, "data overlaps resource pool")
     ASSERT(_resource_retained_start <= _resource_retained_end, "retained state overlaps boot records")
-    _guard0 = 0x01C74000; _ustack_lo = 0x01C74100; _ustack_top = 0x01C7A000;
-    _guard1 = 0x01C7A000; _sstack_lo = 0x01C7A100; _sstack_top = 0x01C7C000;
+    _pool_top = ORIGIN(POOL) + LENGTH(POOL);
+    _guard0 = _pool_top; _ustack_lo = _pool_top + 0x100; _ustack_top = _pool_top + 0x6000;
+    _guard1 = _pool_top + 0x6000; _sstack_lo = _pool_top + 0x6100; _sstack_top = _pool_top + 0x8000;
     /DISCARD/ : { *(.comment) *(.note*) }
 }

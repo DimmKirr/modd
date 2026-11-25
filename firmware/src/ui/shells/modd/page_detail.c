@@ -6,7 +6,7 @@ static int lvt_detail_idx;
 
 static void lvt_detail_show(void)
 {
-    const step_t *s = &trk[song.sel].step[lvt_detail_idx];
+    const step_t *s = &modd_trk(modd_sel())->step[lvt_detail_idx];
     char b[8];
     lv_snprintf(b, sizeof b, "%d", lvt_detail_idx + 1);
     lvt_card_set(0, "STEP", b, "", lvt_pal.primary, lvt_detail_idx * 1000 / (NSTEP - 1));

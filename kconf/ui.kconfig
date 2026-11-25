@@ -14,18 +14,7 @@ config INPUT
 # kc2mm:label "Shell"
 choice
     prompt "UI shell"
-    default UI_SHELL_FELUCCA_UPSTREAM if INPUT
     default UI_SHELL_MODD
-
-config UI_SHELL_FELUCCA_UPSTREAM
-    bool "Felucca (upstream canvas)"
-    depends on INPUT
-    select GEN_FELUCCA_UI
-    help
-      Upstream Felucca UI: SURF cards, Inter Tight font, anti-aliased
-      icons, knob arcs, Felucca's pages and button map rendered through
-      Felucca's own canvas (gfx.c), not LVGL. Source:
-      firmware/src/ui/shells/felucca/.
 
 # Not yet selectable: no SLOOP shell exists (firmware/src/ui/shells/sloop/).
 # Remove the 'depends on n' guard when it does.
@@ -130,12 +119,6 @@ config PAGE_DEMO
     help
       The demo/test page in VIEW_CONN. Disable to remove it from
       the page cycle.
-
-config GEN_FELUCCA_UI
-    bool
-    help
-      Hidden. Selected by UI_SHELL_FELUCCA_UPSTREAM. Tells the build system to run
-      Felucca font/icon/keycap/palette generators before compiling.
 
 config GEN_MELODEE_UI
     bool

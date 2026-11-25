@@ -67,7 +67,7 @@ _ROLE = {
 _LLD_HEADER = re.compile(r'^\s*VMA\s+LMA\s+Size\s+Align\s+Out\s+In\s+Symbol\s*$')
 _LLD_SECTION = re.compile(r'^\s*([0-9a-f]+)\s+[0-9a-f]+\s+([0-9a-f]+)\s+\d+ (\.[\w.]+)\s*$')
 _LLD_INPUT = re.compile(r'^\s*([0-9a-f]+)\s+[0-9a-f]+\s+([0-9a-f]+)\s+\d+ {5,}(.+?):\((\S+)\)\s*$')
-_LD_REGION = re.compile(r'(\w+)\s*(?:\([^)]*\))?\s*:\s*ORIGIN\s*=\s*([^,]+?)\s*,\s*LENGTH\s*=\s*([^\s/}]+)')
+_LD_REGION = re.compile(r'(\w+)\s*(?:\([^)]*\))?\s*:\s*ORIGIN\s*=\s*([^,]+?)\s*,\s*LENGTH\s*=\s*([^\n/}]+?)\s*(?=/\*|\n|}|$)')
 _LD_NUMBER = re.compile(r'^(0x[0-9a-fA-F]+|\d+)([KM]?)$')
 
 
@@ -98,12 +98,40 @@ def parse_lld_inputs(text):
 
 def _ld_number(text, symbols=None):
     text = text.strip()
-    if symbols and text in symbols:     # a value the build passes with --defsym (FLASH_BODY_MAX)
+    if symbols and text in symbols:
         return symbols[text]
     m = _LD_NUMBER.match(text)
-    if not m:
-        raise ValueError(f'linker script region value {text.strip()!r} is not a plain number')
-    return int(m.group(1), 0) * {'': 1, 'K': 1024, 'M': 1 << 20}[m.group(2)]
+    if m:
+        return int(m.group(1), 0) * {'': 1, 'K': 1024, 'M': 1 << 20}[m.group(2)]
+    paren = re.fullmatch(r'\((.+)\)', text)
+    if paren:
+        return _ld_number(paren.group(1), symbols)
+    parts = _split_toplevel(text)
+    if len(parts) > 1:
+        result = _ld_number(parts[0][1], symbols)
+        for sign, term in parts[1:]:
+            v = _ld_number(term, symbols)
+            result = result + v if sign == '+' else result - v
+        return result
+    raise ValueError(f'linker script region value {text.strip()!r} is not a plain number')
+
+
+def _split_toplevel(text):
+    """Split a linker expression on top-level + and - (not inside parentheses).
+    Returns [(sign, term)] where the first sign is always '+'."""
+    parts, cur, depth, sign = [], [], 0, '+'
+    for ch in text:
+        if ch == '(':
+            depth += 1; cur.append(ch)
+        elif ch == ')':
+            depth -= 1; cur.append(ch)
+        elif depth == 0 and ch in '+-':
+            parts.append((sign, ''.join(cur).strip()))
+            sign = ch; cur = []
+        else:
+            cur.append(ch)
+    parts.append((sign, ''.join(cur).strip()))
+    return [(s, t) for s, t in parts if t]
 
 
 def parse_ld_regions(script, symbols=None):

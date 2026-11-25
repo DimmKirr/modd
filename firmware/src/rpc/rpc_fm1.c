@@ -9,9 +9,7 @@ static void rpc_fm1_get_info(int32_t id, struct rpc_tx *tx)
     rpc_tx_char(tx, ',');
     rpc_tx_key_str(tx, "version", CONFIG_FIRMWARE_VERSION);
     rpc_tx_char(tx, ',');
-#if defined(CONFIG_UI_SHELL_FELUCCA_UPSTREAM)
-    rpc_tx_key_str(tx, "lineage", "felucca");
-#elif defined(CONFIG_UI_SHELL_MELODEE)
+#if defined(CONFIG_UI_SHELL_MELODEE)
     rpc_tx_key_str(tx, "lineage", "melodee");
 #else
     rpc_tx_key_str(tx, "lineage", "core");
@@ -100,7 +98,7 @@ static void rpc_fm1_get_engine_state(int32_t id, struct rpc_tx *tx)
 {
     rpc_response_begin(tx, id);
 #ifdef CONFIG_AUDIO
-    rpc_tx_key_int(tx, "engine_index", (int32_t)modd_engine_of(&trk[song.sel]));
+    rpc_tx_key_int(tx, "engine_index", (int32_t)modd_engine_of(modd_trk(modd_sel())));
     rpc_tx_char(tx, ',');
     rpc_tx_key_int(tx, "voice_count", (int32_t)NVOICE);
 #else
@@ -146,9 +144,9 @@ static void rpc_fm1_send_midi(const char *js, int ntokens,
 #ifdef CONFIG_AUDIO
         uint8_t type = status & 0xF0;
         if (type == 0x90 && d2 > 0) {
-            trk_note_on(&trk[song.sel], d1, d2);
+            trk_note_on(modd_trk(modd_sel()), d1, d2);
         } else if (type == 0x80 || (type == 0x90 && d2 == 0)) {
-            trk_note_off(&trk[song.sel], d1);
+            trk_note_off(modd_trk(modd_sel()), d1);
         }
 #endif
         (void)d1; (void)d2; (void)status;

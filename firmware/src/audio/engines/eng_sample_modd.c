@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* Origin: hugelton/Felucca firmware/src/eng_sample.c @ v1.6.1 (a53ecf42)
+/* Origin: hugelton/Felucca firmware/src/eng_sample.c @ v1.8.2 (d0260074)
  * Wrapper: include upstream eng_sample.c with modd's fm1_xip.h already in
  * scope.  The upstream file unconditionally includes ../bsp/chip/fm1_xip.h
  * which redefines fm1_xip_ptr.  Temporarily hide the function name so the

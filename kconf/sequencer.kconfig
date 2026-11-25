@@ -5,23 +5,20 @@ choice
     prompt "Sequencer implementation"
     depends on AUDIO
     optional
-    default SEQ_MELODEE
+    default SEQ_FELUCCA
 
 config SEQ_FELUCCA
     bool "Felucca"
     help
-      64-step, chords, ties, live loop.
+      Reduced copy (modd-written): 64-step playback, live loop, per-track
+      polymeter. Missing from upstream: chords, motion, song chain, MIDI
+      clock. With CONFIG_CORE_FELUCCA the full upstream sequencer arrives
+      through the core and this choice is skipped.
 
 config SEQ_SLOOP
     bool "SLOOP"
     help
       Arranger, scenes.
-
-config SEQ_MELODEE
-    bool "Melodee"
-    help
-      64-step, 8 banks, 1024 timed notes, recording,
-      undo, motion, song.
 
 endchoice
 

@@ -6,7 +6,7 @@
 static void lvt_transpose_show(void)
 {
     char b[12];
-    int32_t t = trk[song.sel].p[P_TRANS];
+    int32_t t = modd_tpi(modd_sel(), P_TRANS);
     lv_snprintf(b, sizeof b, "%+d", (int)t);
     lvt_card_set(0, "TRN", b, "st", lvt_pal.primary, (t + 24) * 1000 / 48);
     lvt_card_set(1, "---", "---", "", lvt_pal.dim, -1);
@@ -26,10 +26,10 @@ static int lvt_transpose_knob(uint32_t id, int32_t clicks)
 {
     int32_t v;
     if (id != ENC_K1 || !clicks) return 0;
-    v = trk[song.sel].p[P_TRANS] + clicks;
+    v = modd_tpi(modd_sel(), P_TRANS) + clicks;
     if (v < -24) v = -24;
     if (v > 24) v = 24;
-    trk[song.sel].p[P_TRANS] = (int16_t)v;
+    modd_tpi_set(modd_sel(), P_TRANS, (int16_t)v);
     nav_dirty = 1;
     return 1;
 }

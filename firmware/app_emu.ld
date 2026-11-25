@@ -12,8 +12,8 @@ MEMORY
     XIP    (rx)  : ORIGIN = 0x02001000, LENGTH = FLASH_BODY_MAX
     RAMTEXT (rwx): ORIGIN = 0x01C00000, LENGTH = 0x7F00
     RAM    (rwx) : ORIGIN = 0x01C08000, LENGTH = 96K
-    POOL   (rwx) : ORIGIN = 0x01C20000, LENGTH = 0x74000  /* 464 KiB (HW is 336 KiB) */
-    NOINIT (rw)  : ORIGIN = 0x01C9C020, LENGTH = 0x3D30
+    POOL   (rwx) : ORIGIN = 0x01C20000, LENGTH = POOL_SIZE  /* kconf/memory.kconfig; build.py passes --defsym */
+    NOINIT (rw)  : ORIGIN = 0x01C20000 + POOL_SIZE + 0x8020, LENGTH = 0x01CA0000 - (0x01C20000 + POOL_SIZE + 0x8020)
     FBUF   (rw)  : ORIGIN = 0x01CA0000, LENGTH = 0x40000  /* 256 KiB, emulator only */
     CACHE  (rw)  : ORIGIN = 0x01F28000, LENGTH = 28K
 }
@@ -33,6 +33,7 @@ SECTIONS
     .bss (NOLOAD) : { _bss_start = .; *(.bss*) *(.sbss*) *(COMMON) . = ALIGN(4); _bss_end = .; } > RAM
     _resource_data_start = _bss_end;
     _resource_data_end = ORIGIN(RAM) + LENGTH(RAM);
+    .pool_lvgl (NOLOAD) : { *(.pool_lvgl*) . = ALIGN(4); } > FBUF
     .pool (NOLOAD) : { _pool_start = .; _pool_net_start = .; *(.pool_net*) . = ALIGN(4); _pool_net_end = .; *(.pool*) . = ALIGN(4); _pool_end = .; } > POOL
     .audio_text : { _audio_start = .; *(.audio_text*) . = ALIGN(4); _audio_end = .; } > POOL AT > XIP
     _audio_load = LOADADDR(.audio_text);
@@ -56,7 +57,8 @@ SECTIONS
     ASSERT(_resource_low_start <= _resource_low_end, "RAM code overlaps startup STATUS")
     ASSERT(_resource_data_start <= _resource_data_end, "data overlaps resource pool")
     ASSERT(_resource_retained_start <= _resource_retained_end, "retained state overlaps boot records")
-    _guard0 = 0x01C94000; _ustack_lo = 0x01C94100; _ustack_top = 0x01C9A000;
-    _guard1 = 0x01C9A000; _sstack_lo = 0x01C9A100; _sstack_top = 0x01C9C000;
+    _pool_top = ORIGIN(POOL) + LENGTH(POOL);
+    _guard0 = _pool_top; _ustack_lo = _pool_top + 0x100; _ustack_top = _pool_top + 0x6000;
+    _guard1 = _pool_top + 0x6000; _sstack_lo = _pool_top + 0x6100; _sstack_top = _pool_top + 0x8000;
     /DISCARD/ : { *(.comment) *(.note*) }
 }

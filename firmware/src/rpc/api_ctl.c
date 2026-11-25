@@ -378,6 +378,81 @@ static void api_page_set(const char *const *a)
     rpc_http_json_end(tx);
 }
 
+/* Read, turn or set any upstream parameter page by its PAGES[] index and slot,
+ * through modd_pages.h, without navigating or simulating encoder input. */
+#define MODD_PG_MAX_IDX 63  /* upper bound for the idx parameter; modd_pg_read bounds-checks against NPAGES */
+static void api_param_read(const char *const *a)
+{
+    struct rpc_tx *tx = &rpc_tx_static;
+    int32_t idx;
+    modd_card_t c[4];
+    uint32_t n, k;
+    if (!api_arg_int(a[0], "idx", 0, MODD_PG_MAX_IDX, &idx)) return;
+    n = modd_pg_read((uint32_t)idx, c, 4);
+    rpc_http_json_ok(tx);
+    rpc_tx_key_str(tx, "title", modd_pg_title((uint32_t)idx));
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "index", (uint32_t)idx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_raw(tx, "\"cards\":[");
+    for (k = 0; k < n; k++) {
+        if (k) rpc_tx_char(tx, ',');
+        rpc_tx_raw(tx, "{");
+        rpc_tx_key_str(tx, "label", c[k].label);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_str(tx, "text", c[k].text);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "value", c[k].value);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "min", c[k].min);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "max", c[k].max);
+        rpc_tx_raw(tx, "}");
+    }
+    rpc_tx_char(tx, ']');
+    rpc_http_json_end(tx);
+}
+
+static void api_param_turn(const char *const *a)
+{
+    struct rpc_tx *tx = &rpc_tx_static;
+    int32_t idx, slot, steps;
+    if (!api_arg_int(a[0], "idx", 0, MODD_PG_MAX_IDX, &idx)) return;
+    if (!api_arg_int(a[1], "slot", 0, 3, &slot)) return;
+    if (!api_arg_int(a[2], "steps", -1000, 1000, &steps)) return;
+    if (modd_pg_turn((uint32_t)idx, (uint32_t)slot, steps)) {
+        rpc_http_error(400, "slot out of range or empty");
+        return;
+    }
+    rpc_http_json_ok(tx);
+    rpc_tx_key_int(tx, "index", idx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "slot", slot);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "value", modd_pg_slot_value((uint32_t)idx, (uint32_t)slot));
+    rpc_http_json_end(tx);
+}
+
+static void api_param_set(const char *const *a)
+{
+    struct rpc_tx *tx = &rpc_tx_static;
+    int32_t idx, slot, value;
+    if (!api_arg_int(a[0], "idx", 0, MODD_PG_MAX_IDX, &idx)) return;
+    if (!api_arg_int(a[1], "slot", 0, 3, &slot)) return;
+    if (!api_arg_int(a[2], "value", -32768, 32767, &value)) return;
+    if (modd_pg_set((uint32_t)idx, (uint32_t)slot, value)) {
+        rpc_http_error(400, "slot, value out of range or empty");
+        return;
+    }
+    rpc_http_json_ok(tx);
+    rpc_tx_key_int(tx, "index", idx);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "slot", slot);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "value", value);
+    rpc_http_json_end(tx);
+}
+
 /* /modd/{page} and /modd/{page}/{sub} */
 static void api_goto(const char *const *a)
 {
@@ -631,7 +706,7 @@ static void api_engine(const char *const *a)
     (void)a;
     rpc_http_json_ok(tx);
 #ifdef CONFIG_AUDIO
-    rpc_tx_key_int(tx, "engine_index", (int32_t)modd_engine_of(&trk[song.sel]));
+    rpc_tx_key_int(tx, "engine_index", (int32_t)modd_engine_of(modd_trk(modd_sel())));
     rpc_tx_char(tx, ',');
     rpc_tx_key_int(tx, "voice_count", (int32_t)NVOICE);
 #else
@@ -877,17 +952,17 @@ static void api_pot_release(const char *const *a)
 static void api_track_json(uint32_t k)
 {
     struct rpc_tx *tx = &rpc_tx_static;
-    uint32_t e = modd_engine_of(&trk[k]);
+    uint32_t e = modd_engine_of(modd_trk(k));
     rpc_http_json_ok(tx);
     rpc_tx_key_uint(tx, "track", k);
     rpc_tx_char(tx, ',');
-    rpc_tx_key_bool(tx, "selected", k == song.sel);
+    rpc_tx_key_bool(tx, "selected", k == modd_sel());
     rpc_tx_char(tx, ',');
     rpc_tx_key_uint(tx, "engine_id", e);
     rpc_tx_char(tx, ',');
     rpc_tx_key_str(tx, "engine", e < NENGINES && ENGINES[e]->name ? ENGINES[e]->name : "");
     rpc_tx_char(tx, ',');
-    rpc_tx_key_uint(tx, "preset", trk[k].preset);
+    rpc_tx_key_uint(tx, "preset", modd_trk(k)->preset);
     rpc_tx_char(tx, ',');
     rpc_tx_raw(tx, "\"engines\":[");
     for (e = 0; e < NENGINES; e++) {
@@ -901,7 +976,7 @@ static void api_track_json(uint32_t k)
 static void api_track(const char *const *a)
 {
     int32_t k;
-    if (!api_arg_int_or(a[0], "track", 0, NTRK - 1, "sel", (int32_t)song.sel, &k)) return;
+    if (!api_arg_int_or(a[0], "track", 0, NTRK - 1, "sel", (int32_t)modd_sel(), &k)) return;
     api_track_json((uint32_t)k);
 }
 
@@ -911,7 +986,7 @@ static void api_track_engine(const char *const *a)
     int32_t k, e = -1;
     uint32_t i;
     const char *name;
-    if (!api_arg_int_or(a[0], "track", 0, NTRK - 1, "sel", (int32_t)song.sel, &k)) return;
+    if (!api_arg_int_or(a[0], "track", 0, NTRK - 1, "sel", (int32_t)modd_sel(), &k)) return;
     name = api_arg_str(a[1], "engine");
     for (i = 0; i < NENGINES; i++)
         if (ENGINES[i]->name && rpc_streq_nocase(ENGINES[i]->name, name)) e = (int32_t)i;
@@ -919,7 +994,7 @@ static void api_track_engine(const char *const *a)
         rpc_http_error(404, "unknown engine");
         return;
     }
-    modd_engine_select(&trk[k], (uint32_t)e);
+    modd_engine_select(modd_trk(k), (uint32_t)e);
     nav_dirty = 1;
     api_track_json((uint32_t)k);
 }
@@ -1022,6 +1097,9 @@ static const struct {
     { "/api/pages",                               api_pages },
     { "/api/page",                                api_page },
     { "/api/page/{page}/set/{slot}/{value}",      api_page_set },
+    { "/api/param/{idx}",                         api_param_read },
+    { "/api/param/{idx}/turn/{slot}/{steps}",    api_param_turn },
+    { "/api/param/{idx}/set/{slot}/{value}",     api_param_set },
     { "/modd/{page}",                             api_goto },
     { "/modd/{page}/{sub}",                       api_goto },
     { "/api/log",                                 api_log },

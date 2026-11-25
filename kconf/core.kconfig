@@ -1,0 +1,28 @@
+# kc2mm:label "Core upstream"
+choice
+    prompt "Core upstream"
+    depends on AUDIO
+    default CORE_FELUCCA if AUDIO_CORE_FELUCCA
+
+config CORE_FELUCCA
+    bool "Felucca (params, mod, voice, seq, effects, mixer)"
+    depends on AUDIO_CORE_FELUCCA
+    select AUDIO_FELUCCA_STACK_INCLUDED
+    help
+      The upstream Felucca audio stack as a single included block:
+      params.c, mod.c, voice.c, slicer.c, fx.c, perform.c, audio.c,
+      seq.c (with chord, motion, midi_control, midi_clock).
+
+config CORE_MELODEE
+    bool "Melodee (future)"
+    depends on n
+
+config CORE_SLOOP
+    bool "SLOOP (future)"
+    depends on n
+
+config CORE_OPTIMIST
+    bool "Optimist (future)"
+    depends on n
+
+endchoice

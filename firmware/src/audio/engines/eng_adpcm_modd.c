@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* Origin: hugelton/Felucca firmware/src/eng_adpcm.c @ v1.6.1 (a53ecf42)
+/* Origin: hugelton/Felucca firmware/src/eng_adpcm.c @ v1.8.2 (d0260074)
  * Wrapper: adapts adp_post signature (Felucca: 3-arg uint32_t return;
  * modd engine_t: 4-arg void) and rebuilds the ENG_ADPCM vtable. */
 

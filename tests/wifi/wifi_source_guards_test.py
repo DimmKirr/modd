@@ -76,4 +76,3 @@ def test_autoscan_is_a_debug_only_option_and_off_by_default():
     assert sym.type == BOOL
     deps = expr_str(sym.direct_dep)
     assert 'WIFI' in deps and 'DEBUG_LOG' in deps, deps
-    assert 'CONFIG_WIFI_DEBUG_AUTOSCAN=y' not in (ROOT / 'configs' / 'felucca_defconfig').read_text()

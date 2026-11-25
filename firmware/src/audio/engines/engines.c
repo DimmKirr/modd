@@ -27,6 +27,22 @@
 #include "upstream/felucca-engines/src/eng_wheel.c"
 #endif
 
+#if defined(CONFIG_ENGINE_GRANULAR) || defined(CONFIG_ENGINE_SLICE) || defined(CONFIG_ENGINE_ADPCM) || defined(CONFIG_ENGINE_FM6_FELUCCA)
+/* ENG_MEM: per-part engine state pool used by GRAIN, SLICE, ADPCM and Felucca FM6.
+ * Sized for the largest consumer (ADPCM's echo line when present). */
+#ifdef CONFIG_ENGINE_ADPCM
+#define ENG_MEM_PART 13344u
+#else
+#define ENG_MEM_PART 12888u
+#endif
+static union {
+    uint64_t align;
+    uint8_t b[ENG_MEM_PART];
+} eng_mem[NPART] __attribute__((section(".pool")));
+#define ENG_MEM(p) ((void *)eng_mem[p].b)
+#define ENG_MEM_FITS(name, size) _Static_assert((size) <= ENG_MEM_PART, name " state over ENG_MEM_PART")
+#endif
+
 #ifdef CONFIG_ENGINE_FM6
 #if defined(CONFIG_ENGINE_FM6_FMLAB)
 #include "fm6/fm6_fmlab.c"
@@ -45,22 +61,6 @@
 #define FELUCCA_SLICE 1
 #endif
 #include "eng_sample_modd.c"
-#endif
-
-#if defined(CONFIG_ENGINE_GRANULAR) || defined(CONFIG_ENGINE_SLICE) || defined(CONFIG_ENGINE_ADPCM)
-/* ENG_MEM: per-part engine state pool used by GRAIN, SLICE and ADPCM.
- * Sized for the largest consumer (ADPCM's echo line when present). */
-#ifdef CONFIG_ENGINE_ADPCM
-#define ENG_MEM_PART 13344u
-#else
-#define ENG_MEM_PART 12888u
-#endif
-static union {
-    uint64_t align;
-    uint8_t b[ENG_MEM_PART];
-} eng_mem[NPART] __attribute__((section(".pool")));
-#define ENG_MEM(p) ((void *)eng_mem[p].b)
-#define ENG_MEM_FITS(name, size) _Static_assert((size) <= ENG_MEM_PART, name " state over ENG_MEM_PART")
 #endif
 
 #ifdef CONFIG_ENGINE_GRANULAR

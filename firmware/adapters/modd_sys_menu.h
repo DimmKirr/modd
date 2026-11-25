@@ -83,7 +83,7 @@ static void    sm_midi_ch_set(uint8_t v)
 }
 #endif
 
-#if (defined(CONFIG_SYS_MENU_HARDWARE) || defined(CONFIG_SYS_MENU_NETWORK)) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
+#if (defined(CONFIG_SYS_MENU_HARDWARE) || defined(CONFIG_SYS_MENU_NETWORK)) && (defined(CONFIG_WIFI))
 #ifdef CONFIG_WIFI
 static void wifi_set_enabled(uint8_t on);   /* wifi/wifi_need.c */
 #endif
@@ -200,7 +200,7 @@ static const sys_menu_item_t SYS_MENU[] = {
 #ifdef CONFIG_SYS_MENU_MIDI_CH
     { "MIDI CH",    SMTAB_MIDI,  16,  SM_MIDI_CH,   sm_midi_ch_get,  sm_midi_ch_set },
 #endif
-#if defined(CONFIG_SYS_MENU_HARDWARE) && (defined(CONFIG_WIFI) || defined(CONFIG_WIFI_NONFREE))
+#if defined(CONFIG_SYS_MENU_HARDWARE) && (defined(CONFIG_WIFI))
     { "WIFI",         SMTAB_HARDWARE, 2, SM_ONOFF,  sm_wifi_on_get,  sm_wifi_on_set },
 #endif
 #if defined(CONFIG_SYS_MENU_HARDWARE) && defined(CONFIG_UDISK)
