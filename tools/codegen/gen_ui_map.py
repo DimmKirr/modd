@@ -20,9 +20,10 @@ Usage:
 """
 from __future__ import annotations
 
+import os
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -216,8 +217,21 @@ def parse_pages(path: Path) -> list[dict]:
 
 # ── Parse page_*.c for .name and .view fields ─────────────────────────────
 
+def _repo_rel(path: Path) -> str:
+    """Return a repo-relative POSIX path for *path*."""
+    try:
+        return str(path.resolve().relative_to(ROOT.resolve()))
+    except ValueError:
+        return str(path)
+
+
+def _line_of(text: str, pos: int) -> int:
+    """1-based line number of byte offset *pos* in *text*."""
+    return text[:pos].count("\n") + 1
+
+
 def parse_page_details(shell_dir: Path) -> dict[str, dict]:
-    """Return {SYMBOL: {name, title, view}} from modd_page_t structs in page_*.c."""
+    """Return {SYMBOL: {name, title, view, file, line}} from modd_page_t structs."""
     details: dict[str, dict] = {}
     pat_ml = re.compile(r"static\s+const\s+modd_page_t\s+(\w+)\s*=\s*\{")
     name_pat = re.compile(r'\.name\s*=\s*"([^"]+)"')
@@ -234,12 +248,15 @@ def parse_page_details(shell_dir: Path) -> dict[str, dict]:
     for d in _page_source_dirs(shell_dir):
         for f in sorted(d.glob("page_*.c")):
             text = f.read_text()
+            rel = _repo_rel(f)
             for pgm in pg_knob_ctl_pat.finditer(text):
                 symbol = f"PAGE_{pgm.group(1)}"
                 details[symbol] = {
                     "name": pgm.group(2),
                     "title": pgm.group(3),
                     "view": pgm.group(4),
+                    "file": rel,
+                    "line": _line_of(text, pgm.start()),
                 }
             for m in pat_ml.finditer(text):
                 symbol = m.group(1)
@@ -258,6 +275,8 @@ def parse_page_details(shell_dir: Path) -> dict[str, dict]:
                                 "name": nm.group(1) if nm else symbol,
                                 "title": tt.group(1) if tt else "",
                                 "view": vw.group(1) if vw else "",
+                                "file": rel,
+                                "line": _line_of(text, m.start()),
                             }
                             break
                         brace -= 1
@@ -270,10 +289,13 @@ def parse_page_details(shell_dir: Path) -> dict[str, dict]:
 ENC_NAMES = {0: "select", 1: "algorithm", 2: "knob1", 3: "knob2", 4: "knob3", 5: "knob4", 6: "presets"}
 
 def parse_page_controls(shell_dir: Path) -> dict[str, dict]:
-    """Return {SYMBOL: {knobs: {enc_id: label}, buttons: [BTN_*]}} per page.
+    """Return {SYMBOL: {knobs: {enc_id: (label, repo_rel_path, line)}, buttons: [BTN_*]}} per page.
 
-    Parses fparams_def_t for knob1-4 labels, and knob handler `id == N` for
-    select/algorithm bindings. Also collects BTN_* used in button handlers.
+    Knob values are (label, repo_relative_path, line_number) tuples so the
+    controls table can link each label to its source definition.
+
+    Parses ctl_slot_t arrays, PG_KNOB_CTL macros, and (legacy) fparams_def_t /
+    knob handler patterns.  Also collects BTN_* used in button handlers.
     """
     controls: dict[str, dict] = {}
 
@@ -316,15 +338,18 @@ def parse_page_controls(shell_dir: Path) -> dict[str, dict]:
             for m in knob_delegate_pat.finditer(text):
                 func_to_def[m.group(1)] = m.group(2)
 
-            # Build slot_var -> [(enc_id, label)]
-            slot_arrays: dict[str, list[tuple[int, str]]] = {}
+            # Build slot_var -> [(enc_id, label, file, line)]
+            slot_arrays: dict[str, list[tuple[int, str, str, int]]] = {}
             enc_name_to_id = {"SELECT": 0, "ALGO": 1, "K1": 2, "K2": 3, "K3": 4, "K4": 5, "PRESET": 6}
+            rel = _repo_rel(f)
             for sm in slot_array_pat.finditer(text):
                 var_name = sm.group(1)
                 entries = []
+                body_start = sm.start(2)
                 for em in slot_entry_pat.finditer(sm.group(2)):
                     enc_id = enc_name_to_id.get(em.group(1), -1)
-                    entries.append((enc_id, em.group(2)))
+                    line = _line_of(text, body_start + em.start())
+                    entries.append((enc_id, em.group(2), rel, line))
                 slot_arrays[var_name] = entries
 
             # PG_KNOB_CTL macro: extract PAGE_<TAG> with 4 knob labels
@@ -344,10 +369,11 @@ def parse_page_controls(shell_dir: Path) -> dict[str, dict]:
             for pgm in pg_knob_ctl_pat.finditer(text):
                 tag = pgm.group(1)
                 symbol = f"PAGE_{tag}"
-                knobs: dict[int, str] = {}
+                knobs: dict[int, tuple] = {}
+                pgm_line = _line_of(text, pgm.start())
                 for j, lbl in enumerate([pgm.group(5), pgm.group(6), pgm.group(7), pgm.group(8)]):
                     if lbl:
-                        knobs[j + 2] = lbl  # K1=2, K2=3, K3=4, K4=5
+                        knobs[j + 2] = (lbl, rel, pgm_line)
                 if knobs:
                     controls[symbol] = {"knobs": knobs, "buttons": []}
 
@@ -367,30 +393,28 @@ def parse_page_controls(shell_dir: Path) -> dict[str, dict]:
                             break
                         brace -= 1
 
-                knobs: dict[int, str] = {}
+                knobs: dict[int, tuple] = {}
 
                 # Declarative controls (ctl_slot_t arrays)
                 km_map = page_controls_assign.search(body)
                 if km_map:
                     slot_var = km_map.group(1)
                     if slot_var in slot_arrays:
-                        for enc_id, label in slot_arrays[slot_var]:
+                        for enc_id, label, sfile, sline in slot_arrays[slot_var]:
                             if enc_id >= 0:
-                                knobs[enc_id] = label
+                                knobs[enc_id] = (label, sfile, sline)
 
                 # Legacy .knob = <func> handler
                 km = page_knob_assign.search(body)
                 if km:
                     knob_func = km.group(1)
-                    # Check if it delegates to fparams_knob
                     if knob_func in func_to_def:
                         def_name = func_to_def[knob_func]
                         if def_name in def_labels:
                             labels = def_labels[def_name]
                             for j, lbl in enumerate(labels):
-                                knobs.setdefault(j + 2, lbl)  # knob1=enc2, knob2=enc3, etc.
+                                knobs.setdefault(j + 2, (lbl, rel, 0))
 
-                    # Parse direct `if (id == N)` in the knob handler body
                     func_pat = re.compile(
                         rf'static\s+int\s+{re.escape(knob_func)}\s*\([^)]*\)\s*\{{',
                     )
@@ -408,13 +432,12 @@ def parse_page_controls(shell_dir: Path) -> dict[str, dict]:
                         for im in re.finditer(r'if\s*\(id\s*==\s*(\d+)', fbody):
                             enc_id = int(im.group(1))
                             if enc_id not in knobs:
-                                knobs[enc_id] = ENC_NAMES.get(enc_id, f"enc{enc_id}")
-                        # Range: `id >= N && id <= M` (e.g. edit)
+                                knobs[enc_id] = (ENC_NAMES.get(enc_id, f"enc{enc_id}"), rel, 0)
                         for rm in re.finditer(r'id\s*>=\s*(\d+)\s*&&\s*id\s*<=\s*(\d+)', fbody):
                             lo, hi = int(rm.group(1)), int(rm.group(2))
                             for enc_id in range(lo, hi + 1):
                                 if enc_id not in knobs:
-                                    knobs[enc_id] = ENC_NAMES.get(enc_id, f"enc{enc_id}")
+                                    knobs[enc_id] = (ENC_NAMES.get(enc_id, f"enc{enc_id}"), rel, 0)
 
                 # Parse button handler for BTN_* references
                 buttons: list[str] = []
@@ -620,8 +643,44 @@ def generate_hw_controls(path: Path) -> str:
     return "\n".join(lines)
 
 
-def generate_controls_table(page_controls: dict, page_details: dict, pages: list[dict]) -> str:
-    """Generate a markdown table of per-page encoder and button bindings."""
+def generate_controls_table(page_controls: dict, page_details: dict,
+                            pages: list[dict], shell: str = "") -> str:
+    """Generate a markdown table of per-page encoder and button bindings.
+
+    When *shell* is given, control labels and page names are linked to their
+    source definitions with repo-relative paths (from the UI.md directory).
+    """
+    ui_md_dir = Path("docs") / "ui" / "shells" / shell if shell else None
+
+    def _link(label: str, src: tuple | None, from_dir: Path | None = ui_md_dir) -> str:
+        """Wrap *label* in a markdown link to its source when available."""
+        if not label or label == "-" or not from_dir or not src:
+            return label
+        _, src_file, src_line = src
+        if not src_file:
+            return label
+        try:
+            rel = PurePosixPath(os.path.relpath(src_file, from_dir))
+        except ValueError:
+            return label
+        anchor = f"#L{src_line}" if src_line else ""
+        return f"[{label}]({rel}{anchor})"
+
+    def _page_link(title: str, detail: dict, from_dir: Path | None = ui_md_dir) -> str:
+        """Wrap the page title in a link to its modd_page_t definition."""
+        if not from_dir or not detail:
+            return title
+        src_file = detail.get("file", "")
+        src_line = detail.get("line", 0)
+        if not src_file:
+            return title
+        try:
+            rel = PurePosixPath(os.path.relpath(src_file, from_dir))
+        except ValueError:
+            return title
+        anchor = f"#L{src_line}" if src_line else ""
+        return f"[{title}]({rel}{anchor})"
+
     lines = [
         "## Global controls",
         "",
@@ -649,13 +708,20 @@ def generate_controls_table(page_controls: dict, page_details: dict, pages: list
         seen.add(sym)
         d = page_details.get(sym, {})
         title = d.get("title") or d.get("name") or sym
+        title_cell = _page_link(title, d)
         c = page_controls.get(sym, {"knobs": {}, "buttons": []})
         knobs = c["knobs"]
         cols = []
         for enc_id in range(6):  # select(0), algo(1), knob1-4(2-5)
-            cols.append(knobs.get(enc_id, "-"))
+            entry = knobs.get(enc_id)
+            if entry is None:
+                cols.append("-")
+            elif isinstance(entry, tuple):
+                cols.append(_link(entry[0], entry))
+            else:
+                cols.append(entry)
         btns = ", ".join(c["buttons"]) if c["buttons"] else "-"
-        line = f"| {title} | {cols[0]} | {cols[1]} | {cols[2]} | {cols[3]} | {cols[4]} | {cols[5]} | {btns} |"
+        line = f"| {title_cell} | {cols[0]} | {cols[1]} | {cols[2]} | {cols[3]} | {cols[4]} | {cols[5]} | {btns} |"
         lines.append(line)
 
     return "\n".join(lines)
@@ -921,9 +987,87 @@ def generate_mermaid(shell: str) -> str:
 
 DIAGRAM_ONLY_THEMES: set[str] = set()
 
+# Map upstream FAM_* enum names to human-readable view names
+_FAM_VIEW = {
+    "FAM_HOME": "Home", "FAM_ENV": "Envelope", "FAM_LFO": "LFO",
+    "FAM_FX": "Effects", "FAM_SCL": "Scale", "FAM_EDIT": "Edit",
+    "FAM_GLO": "Global", "FAM_SAVE": "Save", "FAM_ARP": "Arpeggio",
+    "FAM_SEQ": "Sequencer", "FAM_TRK": "Home",
+}
+
+
+def parse_upstream_pages(params_path: Path) -> tuple[list[dict], dict[str, dict], dict[str, dict]]:
+    """Parse an upstream PAGES[] array from params.c.
+
+    Returns (pages, page_details, page_controls) in the same shape as the
+    modd shell parsers, so generate_controls_table() works unchanged.
+    """
+    text = params_path.read_text()
+    rel = _repo_rel(params_path)
+
+    # Find the PAGES[] array
+    arr_m = re.search(r'static\s+const\s+page_t\s+PAGES\[\]\s*=\s*\{', text)
+    if not arr_m:
+        return [], {}, {}
+
+    # Extract individual page entries
+    entry_pat = re.compile(
+        r'\{"([^"]+)"\s*,'          # title
+        r'\s*(FAM_\w+)\s*,'         # family
+        r'\s*(SC_\w+)\s*,'          # scope
+        r'\s*GR_\w+\s*,'            # graph (not used in table)
+        r'\s*\{([^}]*)\}\}',        # 4 param ids
+    )
+
+    pages = []
+    page_details: dict[str, dict] = {}
+    page_controls: dict[str, dict] = {}
+
+    for i, em in enumerate(entry_pat.finditer(text, arr_m.end())):
+        title = em.group(1)
+        fam = em.group(2)
+        scope = em.group(3)
+        ids_str = em.group(4)
+        line = _line_of(text, em.start())
+
+        sym = f"UP_{i}"
+        view = _FAM_VIEW.get(fam, fam)
+
+        # Parse the 4 param IDs
+        ids = [s.strip() for s in ids_str.split(",")]
+        knobs: dict[int, tuple] = {}
+        for j, pid in enumerate(ids[:4]):
+            if pid in ("0xFF", "0", "1", "2", "3"):
+                continue
+            label = pid.removeprefix("P_").removeprefix("G_")
+            knobs[j + 2] = (label, rel, line)  # K1=2..K4=5
+
+        pages.append({"symbol": sym, "view": view, "name": title, "guards": []})
+        page_details[sym] = {
+            "name": title, "title": title, "view": view,
+            "file": rel, "line": line,
+        }
+        if knobs:
+            page_controls[sym] = {"knobs": knobs, "buttons": []}
+
+    return pages, page_details, page_controls
+
 
 def generate_full(shell: str) -> tuple[str, str | None]:
     """Return (mermaid_diagram, controls_table) for a shell."""
+    # Upstream reference docs: parse the vendored firmware directly
+    upstream_params = {
+        "felucca-upstream": ROOT / "firmware" / "upstream" / "felucca" / "firmware" / "src" / "params.c",
+    }
+    if shell in upstream_params:
+        params_path = upstream_params[shell]
+        if not params_path.is_file():
+            raise SystemExit(f"Upstream params not found: {params_path}")
+        pages, page_details, page_controls = parse_upstream_pages(params_path)
+        ui_md_shell = str(Path("upstream") / shell.removesuffix("-upstream"))
+        table = generate_controls_table(page_controls, page_details, pages, shell=ui_md_shell)
+        return "", table
+
     shell_dir = ROOT / "firmware" / "src" / "ui" / "shells" / shell
     if not shell_dir.is_dir():
         raise SystemExit(f"Shell directory not found: {shell_dir}")
@@ -942,7 +1086,7 @@ def generate_full(shell: str) -> tuple[str, str | None]:
     mermaid = generate_mermaid(shell)
     if shell in DIAGRAM_ONLY_THEMES:
         return mermaid, None
-    table = generate_controls_table(page_controls, page_details, pages)
+    table = generate_controls_table(page_controls, page_details, pages, shell=shell)
     return mermaid, table
 
 

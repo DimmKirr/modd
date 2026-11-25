@@ -537,6 +537,7 @@ tasks:
     cmds:
       - for: { var: THEMES }
         cmd: uv run --quiet python tools/codegen/gen_ui_map.py inject docs/ui/shells/{{.ITEM}}/UI.md {{.ITEM}}
+      - uv run --quiet python tools/codegen/gen_ui_map.py inject docs/ui/upstream/felucca/UI.md felucca-upstream
 
   docs:themes:ui:screenshots:
     desc: Capture per-page emulator screenshots for all themes
@@ -553,6 +554,7 @@ tasks:
       - uv run --quiet python tools/codegen/gen_ui_map.py hw-controls --check docs/ui/README.md
       - for: { var: THEMES }
         cmd: uv run --quiet python tools/codegen/gen_ui_map.py inject --check docs/ui/shells/{{.ITEM}}/UI.md {{.ITEM}}
+      - uv run --quiet python tools/codegen/gen_ui_map.py inject --check docs/ui/upstream/felucca/UI.md felucca-upstream
 
   config:
     desc: "Configure the build (default: menuconfig)"
