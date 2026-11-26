@@ -196,10 +196,13 @@ def format_files(build_dir, n=8):
             continue
         for title, table in (('', comp[region]), (' files', files[region])):
             top = sorted(table.items(), key=lambda kv: -kv[1])[:n]
-            items = [f'{Path(k).name if title else k} {mem_report.kib(v)} {v * 100 / size:.1f}%'
-                     for k, v in top if v * 100 >= size / 2]       # at least half a percent
-            if items:
-                lines.append(mem_report._wrapped(f'  {region}{title}: ', items))
+            entries = [(Path(k).name if title else k, v) for k, v in top if v * 100 >= size / 2]
+            if not entries:
+                continue
+            lines.append(f'  {region}{title}:')
+            name_w = max(len(name) for name, _ in entries)
+            for name, v in entries:
+                lines.append(f'    {name:<{name_w}}  {mem_report.kib(v):>7}  {v * 100 / size:4.1f}%')
     return '\n'.join(lines)
 
 

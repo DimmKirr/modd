@@ -318,7 +318,7 @@ def _can_exec_x86(glibc, tc_path=None):
                 pass
 
 
-DOCKER_RETRIES = 2
+DOCKER_RETRIES = 5
 
 
 class _DockerRunner:
@@ -528,13 +528,19 @@ def gen_melodee_ui():
     print(f'gen_melodee_ui: {len(cmds)} headers -> {out.relative_to(ROOT)}/')
 
 
-def gen_samples():
+def gen_samples(enabled=()):
     """Generate IMA ADPCM sample data header for SAMPLE/GRAIN/SLICE engines."""
     GEN.mkdir(parents=True, exist_ok=True)
     dst = GEN / 'felucca_samples.h'
-    if not dst.exists():
-        subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'gen_samples.py'),
-                        str(dst)], check=True, cwd=str(ROOT))
+    env = dict(os.environ)
+    for kc, ev in (('FELUCCA_SAMPLE_PIANO', 'FELUCCA_SAMPLE_PIANO'),
+                   ('FELUCCA_SAMPLE_FLUTE', 'FELUCCA_SAMPLE_FLUTE'),
+                   ('FELUCCA_SAMPLE_SAX', 'FELUCCA_SAMPLE_SAX'),
+                   ('FELUCCA_SLICE_BREAK', 'FELUCCA_SLICE_BREAK'),
+                   ('FELUCCA_SLICE_PIANO', 'FELUCCA_SLICE_PIANO')):
+        env[ev] = '1' if kc in enabled else '0'
+    subprocess.run([sys.executable, str(ROOT / 'tools' / 'codegen' / 'gen_samples.py'),
+                    str(dst)], check=True, cwd=str(ROOT), env=env)
 
 
 def gen_adpcm():
@@ -720,7 +726,7 @@ def build(dry_run=False):
     if 'AUDIO_FELUCCA_STACK_INCLUDED' in enabled:
         gen_felucca_tables()
     if enabled & {'ENGINE_SAMPLE', 'ENGINE_GRANULAR', 'ENGINE_SLICE'}:
-        gen_samples()
+        gen_samples(enabled)
     if 'ENGINE_ADPCM' in enabled:
         gen_adpcm()
     if 'ENGINE_FM6_FELUCCA' in enabled:

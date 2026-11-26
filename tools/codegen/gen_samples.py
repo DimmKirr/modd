@@ -421,13 +421,26 @@ def slice_on():
     return os.environ.get("FELUCCA_SLICE", "1") != "0"
 
 
+def set_on(name):
+    """a sample set is included unless its env var says 0 (FELUCCA_SAMPLE_PIANO etc.)"""
+    return os.environ.get(f"FELUCCA_SAMPLE_{name}", "1") != "0"
+
+def slice_break_on():
+    return os.environ.get("FELUCCA_SLICE_BREAK", "1") != "0" and slice_on()
+
+def slice_piano_on():
+    return os.environ.get("FELUCCA_SLICE_PIANO", "1") != "0" and slice_on()
+
+
 def input_key(have_cc0):
     """hash of everything the header depends on"""
     h = hashlib.sha256()
     here = Path(__file__).resolve().parent
     for p in (here / "gen_samples.py", here / "sampleio.py"):
         h.update(p.read_bytes())
-    h.update(repr((sys.version_info[:2], have_cc0, slice_on())).encode())   # sum() differs across versions
+    h.update(repr((sys.version_info[:2], have_cc0, slice_on(),
+                   set_on("PIANO"), set_on("FLUTE"), set_on("SAX"),
+                   slice_break_on(), slice_piano_on())).encode())   # sum() differs across versions
     files = sorted(GENDIR.glob("*.wav"))
     if have_cc0:
         files += sorted(CC0.glob("*/*.wav"))
@@ -456,12 +469,15 @@ def main(out):
     b = Builder()
     if have_cc0:
         for name, kind in CC0_SETS:
+            if not set_on(name):
+                continue
             if kind == "alias":
                 b.alias_set(name)
             else:
                 b.cc0_set(name, kind)
-    if slice_on():                                  # SLICE's BREAK: only when that engine is built
+    if slice_break_on():                            # SLICE's BREAK: only when that engine is built
         b.slice_break()                             # last: the sets' offsets stay as they were
+    if slice_piano_on():
         b.slice_piano()                             # (no data of its own: the PIANO set's)
     text = b.header()
     Path(out).write_text(text)

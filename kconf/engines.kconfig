@@ -99,6 +99,48 @@ config ENGINE_SAMPLE
     select ENGINES
     default n
 
+if ENGINE_SAMPLE
+
+menu "Felucca sample sets"
+
+config FELUCCA_SAMPLE_PIANO
+    bool "Piano (5-zone, Versilian CC0)"
+    default y
+    help
+      Grand piano, 5 velocity-mapped zones across the keyboard.
+      About 60-70K of flash (ADPCM).
+
+config FELUCCA_SAMPLE_FLUTE
+    bool "Flute (3-zone, Versilian CC0)"
+    default n
+    help
+      Flute, 3 zones. About 20K of flash (ADPCM).
+
+config FELUCCA_SAMPLE_SAX
+    bool "Saxophone (3-zone, Versilian CC0)"
+    default n
+    help
+      Tenor sax, 3 zones. About 20K of flash (ADPCM).
+
+config FELUCCA_SLICE_BREAK
+    bool "Slice engine break loop"
+    default y
+    depends on ENGINE_SLICE
+    help
+      Baked-in one-bar breakbeat for the Slice engine.
+      Without this, Slice needs an external sample source.
+
+config FELUCCA_SLICE_PIANO
+    bool "Slice engine piano slice"
+    default y
+    depends on ENGINE_SLICE
+    help
+      Single-note piano zone used by Slice as a melodic source.
+
+endmenu
+
+endif # ENGINE_SAMPLE
+
 config ENGINE_GRANULAR
     bool "Granular"
     select ENGINES
