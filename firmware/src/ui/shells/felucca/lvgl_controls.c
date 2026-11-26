@@ -2,11 +2,10 @@
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Felucca LVGL skin control map.
  *
- *   HOME tap    HOME                 HOME hold   Settings (MENU)
- *   GLO tap     SONG (VIEW_GLO)      GLO hold    WX / DEMO (VIEW_CONN)
- *   FX hold     DEMO (VIEW_DEMO)     SELECT      next page of the view
- *
- * Matches the upstream Felucca button layout. */
+ * Taps match upstream Felucca: each button opens its family.
+ * Holds: HOME = MENU (Settings); FX/GLO/SCL/EDIT/SEQ/REC are layer overlays
+ * in upstream (held button remaps K1-K4 and keys) — not yet implemented in
+ * modd, so they are VIEW_NONE. SAVE hold = undo in upstream, also not yet. */
 
 static const modd_controls_t modd_controls = {
     .btn_tap = {
@@ -28,12 +27,12 @@ static const modd_controls_t modd_controls = {
     .btn_hold = {
         [BTN_OCTDN] = VIEW_NONE,
         [BTN_OCTUP] = VIEW_NONE,
-        [BTN_FX]    = VIEW_DEMO,
+        [BTN_FX]    = VIEW_NONE,
         [BTN_SCL]   = VIEW_NONE,
         [BTN_ENV]   = VIEW_NONE,
         [BTN_LFO]   = VIEW_NONE,
         [BTN_EDIT]  = VIEW_NONE,
-        [BTN_GLO]   = VIEW_CONN,
+        [BTN_GLO]   = VIEW_NONE,
         [BTN_HOME]  = VIEW_SETTINGS,
         [BTN_SAVE]  = VIEW_NONE,
         [BTN_ARP]   = VIEW_NONE,
@@ -42,5 +41,5 @@ static const modd_controls_t modd_controls = {
         [BTN_REC]   = VIEW_NONE,
     },
     .hold_us = 500000u,
-    .select_default = CTL_SELECT_PAGE,
+    .select_default = CTL_SELECT_BPM,
 };

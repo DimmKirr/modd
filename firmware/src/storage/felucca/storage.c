@@ -35,11 +35,39 @@ static uint8_t sync_reload;
 enum { UNDO_SOUND = 1, UNDO_PAT = 2, UNDO_MOT = 4 };
 static struct {
     uint8_t trk, keep;
+    uint8_t what;
+    uint8_t eng, preset;
     uint32_t from_h;
     int16_t p[P_COUNT];
     step_t step[NSTEP];
 } undo;
 static uint32_t undo_depth;
+
+static void undo_swap(void)
+{
+    track_t *t = modd_trk(modd_sel());
+    uint8_t eng_tmp = t->eng_req, pre_tmp = t->preset;
+    int16_t p_tmp[P_COUNT];
+    step_t  s_tmp[NSTEP];
+    uint32_t i;
+    for (i = 0; i < P_COUNT; i++) p_tmp[i] = t->p[i];
+    for (i = 0; i < NSTEP; i++)  s_tmp[i] = t->step[i];
+    for (i = 0; i < P_COUNT; i++) t->p[i] = undo.p[i];
+    for (i = 0; i < NSTEP; i++)  t->step[i] = undo.step[i];
+    if (undo.eng < NENGINES) {
+        t->eng_req = undo.eng;
+        t->preset  = undo.preset;
+    }
+    for (i = 0; i < P_COUNT; i++) undo.p[i] = p_tmp[i];
+    for (i = 0; i < NSTEP; i++)  undo.step[i] = s_tmp[i];
+    undo.eng    = eng_tmp;
+    undo.preset = pre_tmp;
+    undo.trk    = (uint8_t)modd_sel();
+}
+
+static volatile int8_t perf_k[4];
+static uint8_t rec_click, rec_countin, rec_level;
+
 static struct { uint8_t force, ppick, song_row; } ui;
 static uint8_t pat_from[NTRK];
 static uint32_t pat_sig[NTRK];

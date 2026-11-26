@@ -138,6 +138,44 @@ static void lvt_home_enter(void)
     lvt_home_show();
 }
 
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+/* upstream Felucca: HOME K1-K4 map to the current engine's knob[] params,
+ * or T1-T4 P_LEVEL when sys_settings.home_view == 1 (LEVELS mode). */
+static int lvt_home_engine_knob(uint32_t k, int32_t clicks)
+{
+    if (sys_settings.home_view == 1) {
+        track_t *t = modd_trk(k < NTRK ? k : 0);
+        int16_t v = t->p[P_LEVEL] + (int16_t)clicks;
+        if (v < 0) v = 0;
+        if (v > 127) v = 127;
+        t->p[P_LEVEL] = v;
+        return 1;
+    }
+    track_t *t = modd_trk(modd_sel());
+    const engine_t *e = ENGINES[t->eng_req % NENGINES];
+    uint32_t pid = e->knob[k & 3u];
+    if (pid >= P_COUNT) return 0;
+    const param_desc_t *d = &TP[pid];
+    int16_t v = modd_param(t, pid);
+    v += (int16_t)clicks;
+    if (v < d->min) v = d->min;
+    if (v > d->max) v = d->max;
+    modd_param_set(t, pid, v);
+    return 1;
+}
+static int lvt_home_k1(int32_t c) { return lvt_home_engine_knob(0, c); }
+static int lvt_home_k2(int32_t c) { return lvt_home_engine_knob(1, c); }
+static int lvt_home_k3(int32_t c) { return lvt_home_engine_knob(2, c); }
+static int lvt_home_k4(int32_t c) { return lvt_home_engine_knob(3, c); }
+static const ctl_slot_t HOME_CONTROLS_FEL[] = {
+    { ENC_K1, P_COUNT, 0, 0, 1, 0, "ENG1", lvt_home_k1 },
+    { ENC_K2, P_COUNT, 0, 0, 1, 0, "ENG2", lvt_home_k2 },
+    { ENC_K3, P_COUNT, 0, 0, 1, 0, "ENG3", lvt_home_k3 },
+    { ENC_K4, P_COUNT, 0, 0, 1, 0, "ENG4", lvt_home_k4 },
+};
+#define HOME_CONTROLS HOME_CONTROLS_FEL
+#define HOME_NCONTROLS 4
+#else
 static int lvt_home_select(int32_t clicks)
 {
     int32_t s = (int32_t)modd_sel() + clicks;
@@ -146,10 +184,12 @@ static int lvt_home_select(int32_t clicks)
     modd_sel_set((uint32_t)s);
     return 1;
 }
-
-static const ctl_slot_t HOME_CONTROLS[] = {
+static const ctl_slot_t HOME_CONTROLS_ARR[] = {
     { ENC_SELECT, P_COUNT, 0, NTRK - 1, 1, 0, "TRK", lvt_home_select },
 };
+#define HOME_CONTROLS HOME_CONTROLS_ARR
+#define HOME_NCONTROLS 1
+#endif
 
 #ifdef CONFIG_AUDIO
 static int lvt_home_key(uint32_t note, uint32_t vel)
@@ -171,12 +211,19 @@ static const modd_page_t PAGE_HOME = {
     .enter  = lvt_home_enter,
     .status = lvt_home_show,
     .controls  = HOME_CONTROLS,
-    .ncontrols = 1,
+    .ncontrols = HOME_NCONTROLS,
 #ifdef CONFIG_AUDIO
     .key    = lvt_home_key,
 #endif
     .help_text =
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+        "K1-K4   Engine knobs / T1-T4 levels\n"
+        "SELECT  BPM\n"
+        "ALGO    Track 1-4\n"
+        "PRESET  Sound\n"
+#else
         "SELECT  Track 1-4\n"
+#endif
         "HOME hold  Settings\n"
         "GLO hold   Log",
 };

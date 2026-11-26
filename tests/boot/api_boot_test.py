@@ -10,6 +10,7 @@ The control test presses each control through /api/input and reads the
 result back from the firmware: the debounced key state of the panel scan, the
 page or track it changed, and the master volume it set.
 """
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -73,13 +74,22 @@ class PanelControlsTest(ApiTestCase):
         api.tap('home')
         self.assertEqual(api.page()['page'], 'HOME', 'HOME tap did not return HOME')
 
-        # SELECT on HOME picks the track, both ways
-        sel = api.page()['data']['selected_track']
-        step = 1 if sel < 3 else -1
-        api.enc('select', step)
-        self.assertEqual(api.page()['data']['selected_track'], sel + step)
-        api.enc('select', -step)
-        self.assertEqual(api.page()['data']['selected_track'], sel)
+        # SELECT on HOME: modd-native picks the track; Felucca adjusts BPM
+        is_felucca = 'felucca' in (os.environ.get('MODD_API_DEFCONFIG', '') or self.DEFCONFIG)
+        if is_felucca:
+            bpm_before = api.page()['data']['bpm']
+            api.enc('select', 1)
+            bpm_after = api.page()['data']['bpm']
+            self.assertGreater(bpm_after, bpm_before, 'SELECT did not increase BPM')
+            api.enc('select', -1)
+            self.assertEqual(api.page()['data']['bpm'], bpm_before)
+        else:
+            sel = api.page()['data']['selected_track']
+            step = 1 if sel < 3 else -1
+            api.enc('select', step)
+            self.assertEqual(api.page()['data']['selected_track'], sel + step)
+            api.enc('select', -step)
+            self.assertEqual(api.page()['data']['selected_track'], sel)
 
         # every other encoder: the detents are taken by the UI (idle = none left)
         for name in FirmwareApi.ENCODERS[1:]:

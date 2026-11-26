@@ -13,7 +13,7 @@
  *   SAVE hold   none (upstream: undo)
  *   SCL/LFO/EDIT/SEQ/REC holds are layer overlays in upstream; none here.
  *
- * SELECT: on a page that does not take it, the next page of the view (CTL_SELECT_PAGE). */
+ * SELECT: upstream Felucca defaults to BPM; on a page that claims it, the page's action. */
 
 #ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
 static const modd_controls_t modd_controls = {
@@ -50,7 +50,7 @@ static const modd_controls_t modd_controls = {
         [BTN_REC]   = VIEW_NONE,
     },
     .hold_us = 500000u,
-    .select_default = CTL_SELECT_PAGE,
+    .select_default = CTL_SELECT_BPM,
 };
 #else
 static const modd_controls_t modd_controls = {

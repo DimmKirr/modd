@@ -78,9 +78,16 @@ static int lvt_seq_select(int32_t clicks)
     return 1;
 }
 
-static const ctl_slot_t SEQ_CONTROLS[] = {
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+static const ctl_slot_t *const SEQ_CONTROLS = NULL;
+#define SEQ_NCONTROLS 0
+#else
+static const ctl_slot_t SEQ_CONTROLS_ARR[] = {
     { ENC_SELECT, P_COUNT, 0, NSTEP - 1, 1, 0, "STEP", lvt_seq_select },
 };
+#define SEQ_CONTROLS SEQ_CONTROLS_ARR
+#define SEQ_NCONTROLS 1
+#endif
 
 static const modd_page_t PAGE_SEQ = {
     .name      = "SEQ",
@@ -90,6 +97,11 @@ static const modd_page_t PAGE_SEQ = {
     .enter     = lvt_seq_enter,
     .status    = lvt_seq_show,
     .controls  = SEQ_CONTROLS,
-    .ncontrols = 1,
-    .help_text = "SELECT  Step cursor\nK1-K4  Step velocity",
+    .ncontrols = SEQ_NCONTROLS,
+    .help_text =
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+        "K1-K4  Step velocity",
+#else
+        "SELECT  Step cursor\nK1-K4  Step velocity",
+#endif
 };

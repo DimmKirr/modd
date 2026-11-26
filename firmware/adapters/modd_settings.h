@@ -50,6 +50,11 @@ typedef struct {
     uint8_t udisk_off;      /* the DISK setting, inverted: 0 = ON (default), 1 = OFF. A store saved
                              * before this field existed has its _end byte (0) here and reads ON. */
 #endif
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+    uint8_t bpm_lock;      /* 0 = OFF, 1 = ON (SELECT=BPM only with GLO held) */
+    uint8_t home_view;     /* 0 = engine knobs, 1 = per-track levels */
+    uint8_t sel_mode;      /* 0=BPM, 1=PAGE, 2=MODW, 3=VEL (default: BPM) */
+#endif
     uint8_t _end;           /* always present so struct is never empty */
 } sys_settings_t;
 
@@ -87,6 +92,11 @@ static void sys_settings_defaults(void)
 #ifdef CONFIG_UDISK
     sys_settings.udisk_off = 0;  /* ON: the disk may be used when something needs it */
 #endif
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+    sys_settings.bpm_lock = 0;
+    sys_settings.home_view = 0;
+    sys_settings.sel_mode = 0;   /* BPM */
+#endif
     sys_settings._end = 0;
 }
 
@@ -109,6 +119,11 @@ static void sys_settings_init(void)
 #endif
 #ifdef CONFIG_UDISK
     if (sys_settings.udisk_off > 1u) sys_settings.udisk_off = 0;
+#endif
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+    if (sys_settings.bpm_lock > 1u) sys_settings.bpm_lock = 0;
+    if (sys_settings.home_view > 1u) sys_settings.home_view = 0;
+    if (sys_settings.sel_mode > 3u) sys_settings.sel_mode = 0;
 #endif
     sys_settings_dirty = 0;
 }

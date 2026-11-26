@@ -188,6 +188,36 @@ static uint8_t sm_demo_get(void) { return sm_demo_val; }
 static void    sm_demo_set(uint8_t v) { sm_demo_val = v; }
 #endif
 
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+static const char *const SM_HOME_VIEW[] = {"KNOBS", "LEVELS"};
+
+static uint8_t sm_bpm_lock_get(void) { return sys_settings.bpm_lock; }
+static void    sm_bpm_lock_set(uint8_t v)
+{
+    if (v > 1u) v = 1u;
+    sys_settings.bpm_lock = v;
+    sys_settings_dirty = 1;
+}
+
+static uint8_t sm_home_view_get(void) { return sys_settings.home_view; }
+static void    sm_home_view_set(uint8_t v)
+{
+    if (v > 1u) v = 1u;
+    sys_settings.home_view = v;
+    sys_settings_dirty = 1;
+}
+
+static const char *const SM_SEL_MODE[] = {"BPM", "PAGE", "MODW", "VEL"};
+
+static uint8_t sm_sel_mode_get(void) { return sys_settings.sel_mode; }
+static void    sm_sel_mode_set(uint8_t v)
+{
+    if (v > 3u) v = 3u;
+    sys_settings.sel_mode = v;
+    sys_settings_dirty = 1;
+}
+#endif
+
 /* --- Item array (static, Kconfig-gated) --- */
 
 static const sys_menu_item_t SYS_MENU[] = {
@@ -229,6 +259,11 @@ static const sys_menu_item_t SYS_MENU[] = {
     { "DEMO F",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
     { "DEMO G",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
     { "DEMO H",  SMTAB_SYSTEM, 2, SM_ONOFF, sm_demo_get, sm_demo_set },
+#endif
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+    { "BPM LOCK",   SMTAB_CONTROL, 2, SM_ONOFF, sm_bpm_lock_get, sm_bpm_lock_set },
+    { "HOME VIEW",  SMTAB_CONTROL, 2, SM_HOME_VIEW, sm_home_view_get, sm_home_view_set },
+    { "SELECT",     SMTAB_CONTROL, 4, SM_SEL_MODE, sm_sel_mode_get, sm_sel_mode_set },
 #endif
     { 0, 0, 0, 0, 0, 0 }  /* sentinel */
 };

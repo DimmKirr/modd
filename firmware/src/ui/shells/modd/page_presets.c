@@ -37,14 +37,22 @@ static int presets_action(int32_t clicks)
     return 1;
 }
 
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+static const ctl_slot_t PRESETS_CONTROLS[] = {
+    { ENC_K1, 0, 0, 127, 1, 0, "PRESET", presets_action },
+};
+#define PRESETS_NCONTROLS 1
+#else
 static const ctl_slot_t PRESETS_CONTROLS[] = {
     { ENC_K1,     0, 0, 127, 1, 0, "PRESET", presets_action },
     { ENC_SELECT, 0, 0, 127, 1, 0, "PRESET", presets_action },
 };
+#define PRESETS_NCONTROLS 2
+#endif
 
 static const modd_page_t PAGE_PRESETS = {
     .name = "PRESETS", .title = "Presets", .view = VIEW_SAVE, .flags = 0,
     .enter = lvt_presets_enter, .status = lvt_presets_show,
-    .controls = PRESETS_CONTROLS, .ncontrols = 2,
+    .controls = PRESETS_CONTROLS, .ncontrols = PRESETS_NCONTROLS,
     .help_text = "K1  Browse presets",
 };

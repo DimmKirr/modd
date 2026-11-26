@@ -47,6 +47,196 @@ Source: `firmware/upstream/felucca/firmware/src/` — `ui.c`, `ui_input.c`,
 
 The mapping is overridable by HARDWARE CALIBRATION (hold OCT- + OCT+ at boot).
 
+## Global encoders
+
+| Encoder | Default action | Modes | Source |
+|---------|---------------|-------|--------|
+| SELECT | BPM (adjust tempo 20-300) | SEL_BPM (default), SEL_PAGE, SEL_MODW, SEL_VEL — set in MENU | `ui_input.c:1805-1822` |
+| ALGO | Track select (T1-T4, clamped) | — | `ui_input.c:1803-1804` |
+| PRESET | Cycle all presets across engines | On STEP: cursor; on lists: K1 proxy | `ui_input.c:1801`, `ui.c:1664-1716` |
+| MASTER (pot) | Master volume | — | hardware pot |
+
+No page in upstream overrides SELECT or ALGO in `params.c`.
+
+## Per-page knobs (K1-K4)
+
+Every page has SELECT="-" and ALGO="-" (no page claims them).
+
+### HOME family (HOME button cycles: HOME → MIXER → CLOCK → HOME)
+
+| Page | K1 | K2 | K3 | K4 | Scope |
+|------|----|----|----|----|----|
+| HOME | engine knob 0 | engine knob 1 | engine knob 2 | engine knob 3 | TRACK |
+| MIXER | P_LEVEL | P_PAN | P_REV | P_MUTE | SC_TRK (selected track) |
+| CLOCK | G_BPM | G_SWING | G_CLOCK | - | GLOBAL |
+
+### ENV family
+
+| Page | K1 | K2 | K3 | K4 |
+|------|----|----|----|----| 
+| ENV | P_ATK | P_DEC | P_SUS | P_REL |
+| ENV DEST | P_ED_FLT | P_ED_PIT | P_ED_SHP | P_ESYNC |
+
+### LFO family
+
+| Page | K1 | K2 | K3 | K4 |
+|------|----|----|----|----| 
+| LFO | P_LRATE | P_LWAVE | P_LPHASE | P_LFADE |
+| LFO 2 | P_LSYNC | P_LTRIG | P_LPOL | - |
+| LFO DEST | P_LD_PIT | P_LD_FLT | P_LD_SHP | P_LD_AMP |
+| MOD | - (slot) | P_M1SRC | P_M1DST | P_M1AMT |
+
+### FX family
+
+| Page | K1 | K2 | K3 | K4 |
+|------|----|----|----|----| 
+| FX | P_DIST | P_CHOR | P_DLY | P_REV |
+| SLICER | P_SLCR | P_SLPAT | P_SLRATE | P_SLDEPTH |
+| INSERT | P_ITYPE | P_IA | P_IB | P_IC |
+| INSERT 2 | P_IMIX | - | - | - |
+| DLY | G_DTIME | G_DFDBK | G_DCOLOR | G_DMIX |
+| REVERB | G_RTYPE | G_RSIZE | G_RDAMP | - |
+| CHORUS | G_CRATE | G_CDEPTH | - | - |
+
+### SCL family
+
+| Page | K1 | K2 | K3 | K4 |
+|------|----|----|----|----| 
+| SCL | P_ROOT | P_SCALE | P_QUANT | P_TRANS |
+| CHORD | P_CHRD | P_VOIC | - | - |
+
+### EDIT family
+
+| Page | K1 | K2 | K3 | K4 |
+|------|----|----|----|----| 
+| EDIT 1 | P_E0 | P_E1 | P_E2 | P_E3 |
+| EDIT 2 | P_E4 | P_E5 | P_E6 | P_E7 |
+| FILTER | P_FTYPE | P_E4 | P_E5 | P_E7 |
+| VOICE | P_VOICE | P_GLIDE | P_GLMODE | P_PRIO |
+| VOICE 2 | P_ALLOC | P_DETUNE | P_PAN | P_MUTE |
+| VOICE 3 | P_SPRD | P_ATSNS | P_ATDST | P_ATAMT |
+| LANES | P_LN0 | P_LN1 | P_LN2 | P_LN3 |
+| LANES 2 | P_LN4 | P_LN5 | P_LN6 | P_LN7 |
+| OP1 ENV | P_FM1_ATK | P_FM1_DEC | P_FM1_SUS | P_FM1_REL |
+| OP2 ENV | P_FM2_ATK | P_FM2_DEC | P_FM2_SUS | P_FM2_REL |
+| OP3 ENV | P_FM3_ATK | P_FM3_DEC | P_FM3_SUS | P_FM3_REL |
+| OP4 ENV | P_FM4_ATK | P_FM4_DEC | P_FM4_SUS | P_FM4_REL |
+| OP LEVEL | P_FM1_LVL | P_FM2_LVL | P_FM3_LVL | P_FM4_LVL |
+
+### ARP family
+
+| Page | K1 | K2 | K3 | K4 |
+|------|----|----|----|----| 
+| ARP | P_AMODE | P_ARATE | P_AOCT | P_AGATE |
+| ARP 2 | P_ASWING | P_APROB | P_AHOLD | P_AORDER |
+
+### SEQ family
+
+| Page | K1 | K2 | K3 | K4 |
+|------|----|----|----|----| 
+| SEQ | - | - | - | - |
+| STEP | - | - | - | - |
+| DETAIL | - | - | - | - |
+| AUTOMATION | - | - | - | - |
+
+### SAVE family
+
+| Page | K1 | K2 | K3 | K4 |
+|------|----|----|----|----| 
+| USER | - (browse) | - | - | - |
+| PRESETS | - (browse) | - | - | - |
+| PHRASES | - | - | - | - |
+| PROJECT | P_SLOT | - | P_LOAD | P_SAVE |
+| TOOLS | P_CLRSEQ | P_INITSND | - | - |
+
+### GLO family
+
+| Page | K1 | K2 | K3 | K4 |
+|------|----|----|----|----| 
+| SONG | - | - | - | - |
+
+## Button map
+
+### Tap
+
+| Button | Action |
+|--------|--------|
+| HOME | Cycle HOME→MIXER→CLOCK→HOME; from other pages: go HOME |
+| ENV | Open ENV family |
+| LFO | Open LFO family |
+| FX | Open FX family |
+| SCL | Open SCL family |
+| EDIT | Open EDIT family |
+| GLO | Open GLO family (SONG page) |
+| SAVE | Open SAVE family |
+| ARP | Open ARP family |
+| SEQ | Open SEQ family |
+| PLAY | Play/stop transport |
+| REC | Arm/disarm recording |
+| OCT- | Octave down (min -3) |
+| OCT+ | Octave up (max +3) |
+| OCT- + OCT+ | Reset octave to 0 |
+
+### Hold (layer overlays)
+
+| Button held | K1-K4 become | Keys become | SELECT | ALGO |
+|-------------|-------------|-------------|--------|------|
+| FX | Perform macros | Effect assignment | — | consumed |
+| GLO | T1-T4 LEVEL | — | BPM (always) | consumed |
+| SCL | ROOT / SCALE / CHRD / VOIC | Root note selector | — | consumed |
+| EDIT | Engine-specific | Engine selector | — | consumed |
+| SEQ | P_SLEN / P_SDIV / P_SSWING / P_SGATE | Step tools | — | consumed |
+| REC | Recording modes | Recording controls | — | consumed |
+| HOME | Opens MENU (settings) | — | — | — |
+| SAVE | UNDO (single undo_swap) | — | — | — |
+
+## Matching status (MODD Felucca vs upstream)
+
+### Matched
+
+- SELECT = BPM globally
+- ALGO = track select globally
+- PRESET = preset cycle globally
+- All per-page K1-K4 params (via PG_KNOB_CTL macro pages and hand-coded pages)
+- MIXER: LEVEL/PAN/REV/MUTE for selected track
+- No page claims SELECT or ALGO (except modd-only pages: SETTINGS, FILES, DEMO, DEBUG)
+- Button taps match (family navigation)
+- Button holds: HOME = MENU (Settings); SAVE = undo; GLO/SCL/SEQ/EDIT layer overlays remap K1-K4 while held or double-tap locked
+- Layer overlays: GLO (T1-T4 LEVEL), SCL (ROOT/SCALE/CHRD/VOIC), SEQ (SLEN/SDIV/SSWING/SGATE), EDIT (engine/preset cycle)
+- Double-tap a layer button to lock it open; tap again to unlock (300ms window)
+- Key silencing while layer held; SCL keys set ROOT; GLO black keys toggle T1-T4 mute
+- BPM LOCK setting (Settings > CONTROL): SELECT=BPM only works with GLO held
+- HOME VIEW setting (Settings > CONTROL): KNOBS (engine knobs) or LEVELS (T1-T4 level)
+- HOME K1-K4 = engine knobs (reads engine_t.knob[4]) or T1-T4 levels (HOME VIEW)
+- SELECT mode: Settings > CONTROL > SELECT cycles BPM/PAGE/MODW/VEL (matches upstream MENU)
+- FX layer K1-K4 adjust perf_k[0-3] (stub — no perform.c DSP yet)
+- REC layer K1-K3 adjust click/count-in/level (stub — no click.c metronome yet)
+- EDIT layer white keys select engine by position; GLO layer black keys toggle mute; SEQ key clears steps
+
+### Intentional modd additions (no upstream equivalent)
+
+| Item | MODD | Upstream | Reason |
+|------|------|----------|--------|
+| MOD K1 | SLOT selector | "-" (GR_MOD internal) | modd lacks GR_MOD subsystem |
+| SONG K1 | G_BPM | "-" (GR_SONG list) | modd SONG is a different page concept |
+| SETTINGS/FILES/DEMO/DEBUG | Claim SELECT/ALGO | (don't exist in upstream) | modd-only pages need these for navigation |
+
+### Implemented via stubs (subsystem not fully ported)
+
+| Feature | Upstream | MODD status |
+|---------|----------|-------------|
+| FX layer knobs | perf_k[0-3] real-time perform effects | Stubbed: knobs adjust perf_k[0-3] but no perform.c DSP behind them yet |
+| REC layer knobs | CLICK/COUNT-IN/CLICK LEVEL | Stubbed: knobs adjust rec_click/countin/level but no click.c metronome behind them yet |
+| FX layer keys | Effect assignment | Not implemented: needs perform.c port |
+| REC layer keys | Recording controls | Not implemented: needs click.c/metronome port |
+
+### Matched (additional)
+
+- SELECT mode switching: Settings > CONTROL > SELECT = BPM / PAGE / MODW / VEL
+- EDIT layer keys: white keys select engine by position
+- GLO layer keys: black keys (54,56,58,59) toggle T1-T4 mute; F5 (65) unmute all
+- SEQ layer keys: C3 (53) clears all steps on current track
+
 <!-- ui-controls-table:start -->
 ## Global controls
 

@@ -291,10 +291,12 @@ task test:api                           # builds modd_emu, runs tests/**/api_*_t
 **Routine test of a port: that upstream's emulator defconfig only, `modd_<upstream>_emu`** (Felucca: `modd_felucca_emu`; Melodee: `modd_melodee_emu`; SLOOP: `modd_sloop_emu`; the last two are not created yet, and creating them is the first step of that port). One command builds that one defconfig once and runs the shell, boot, audio and engine tests against it; do not build or run `task test:api`, another upstream's emulator defconfig or a hardware defconfig for it. For Felucca: Command, rules and the shell tests that are known to fail there: [docs/PORTING.md](docs/PORTING.md#testing-a-port-one-emulator-defconfig).
 
 ```
-task modd:test:modd_felucca_emu:api -- tests/boot/api_boot_test.py tests/audio/api_audio_test.py tests/audio/api_audio_engines_test.py
+task modd:test:modd_felucca_emu:api -- tests/boot/api_boot_test.py tests/audio/api_audio_test.py tests/audio/api_audio_engines_test.py tests/audio/api_preset_encoder_test.py
 ```
 
 One class against one build takes about 20 seconds: `uv run pytest tests/audio/api_audio_engines_test.py -k TestFeluccaSampleEngines`. `MODD_API_DEFCONFIG=<defconfig>` points the classes that use the default build at another one.
+
+**TDD for control paths**: inject encoder/button input via the REST API, read state with `/api/track/sel`, record audio with `api.record_note()`, assert the firmware action happened. The PRESET encoder test (`tests/audio/api_preset_encoder_test.py`) is the model: it verifies that turning the PRESET encoder steps presets, crosses engine boundaries, and loads the new sound's parameters. Write the failing test first (RED), fix the firmware handler, then confirm GREEN. See [docs/TESTING.md](docs/TESTING.md#tdd-for-control-paths) for the pattern and API calls.
 
 ### A build that does not boot or stops answering
 

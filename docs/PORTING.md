@@ -218,7 +218,7 @@ The first step of a port whose row says "not created yet" is to add the two: `co
 The routine test is one command, about five minutes. For Felucca:
 
 ```
-task modd:test:modd_felucca_emu:api -- tests/boot/api_boot_test.py tests/audio/api_audio_test.py tests/audio/api_audio_engines_test.py
+task modd:test:modd_felucca_emu:api -- tests/boot/api_boot_test.py tests/audio/api_audio_test.py tests/audio/api_audio_engines_test.py tests/audio/api_preset_encoder_test.py
 ```
 
 For another upstream, the same command with its name in the task.
@@ -231,6 +231,7 @@ It builds `modd_<upstream>_emu` once (open toolchain, `build/modd_<upstream>_emu
 | `tests/boot/api_boot_test.py` | boot, and every panel control reaches the firmware |
 | `tests/audio/api_audio_test.py` | capture follows the output; Analog plays at pitch through the effects chain |
 | `tests/audio/api_audio_engines_test.py` | each engine sounds, master volume, balance, engine round trips, and the Felucca sample engines |
+| `tests/audio/api_preset_encoder_test.py` | PRESET encoder steps presets, crosses engine boundaries, loads preset params, and produces the new sound |
 
 Rules:
 

@@ -354,12 +354,54 @@ for 190 ms (`engine_produces_audio(..., hold_ms=190)`) and the capture starts wi
 | `TestEngineSelectVolumeConsistency` | Engine round trip (analog→noise→analog) keeps the level at 30% volume; no sound after a switch with no key held |
 | `TestEngineSelectDisplay` | The LCD and HOME data follow an engine switch and SELECT |
 
+### TDD for control paths
+
+A control path (encoder/button → firmware action → state change) can be tested
+end-to-end: inject input via the REST API, read state, record audio, assert.
+The pattern:
+
+1. **RED**: write a test that injects input and asserts the expected state change.
+   Run it; it fails because the firmware action is missing or incomplete.
+2. **FIX**: implement or wire the firmware handler (adapter, shell, `modd_pages.h`).
+3. **GREEN**: rebuild the defconfig, rerun the test.
+
+Example — PRESET encoder switching instruments (`tests/audio/api_preset_encoder_test.py`):
+
+```python
+class TestPresetEncoder(ApiTestCase):
+    DEFCONFIG = 'modd_felucca_emu'
+
+    def test_preset_loads_params_different_sound(self):
+        self.api.set_engine('ANALOG')
+        s0 = self.api.record_note('C4', 300)       # preset 0
+        self.api.enc('presets', 1)                   # inject PRESET encoder click
+        s1 = self.api.record_note('C4', 300)       # preset 1
+        self.assertNotEqual(s0, s1, 'params were not loaded')
+```
+
+Run one test class against one defconfig:
+
+```
+task modd:test:modd_felucca_emu:api -- tests/audio/api_preset_encoder_test.py
+```
+
+Or a single test: `uv run --group ui-test pytest tests/audio/api_preset_encoder_test.py -k TestPresetEncoder`
+(with `USE_OPEN_TOOLCHAIN=1 MODD_API_DEFCONFIG=modd_felucca_emu` for open-toolchain builds).
+
+Key API calls for control path tests:
+
+| Call | What it does |
+|------|-------------|
+| `api.enc('presets', N)` | Inject N encoder clicks (physical path) |
+| `api.track('sel')` | Read track state: engine, preset, engine_id |
+| `api.record_note('C4', ms)` | Hold a key, capture audio |
+| `api.set_engine('NAME')` | Switch engine via direct API (bypasses encoder) |
+| `api.page()` | Current page with track/engine info |
+
 ### Known gaps
 
 - **OCT+/-, PLAY, REC, SAVE** have no firmware handler. Tests verify they don't
   crash but can't verify function.
-- **PRESET encoder (ENC 6)** is tested for delivery to the UI (`api_boot_test`:
-  its detents are taken) but has no page-level handler to verify.
 
 ## Panel controls in tests
 
@@ -384,7 +426,7 @@ GET /api/input/pot/master/512              # master volume 0..1023
 | 3 | KNOB2 | `knob2` | Param knob[1] (HOME), param[1] (param pages) |
 | 4 | KNOB3 | `knob3` | Param knob[2] (HOME), param[2] (param pages) |
 | 5 | KNOB4 | `knob4` | Param knob[3] (HOME), param[3] (param pages) |
-| 6 | PRESET | `presets` | (no page handler yet) |
+| 6 | PRESET | `presets` | Cycle presets; cross engine boundary at limits (Felucca stack) |
 | — | MASTER | `master` | Analog volume pot (hardware ADC, not an encoder) |
 
 ### Button map

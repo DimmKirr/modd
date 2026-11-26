@@ -48,6 +48,8 @@ static const char *const CTL_ENC_NAME[ENC_COUNT] = {
 /* what SELECT encoder does when no page claims it */
 #define CTL_SELECT_PAGE   0   /* cycle pages within current view */
 #define CTL_SELECT_BPM    1   /* adjust tempo */
+#define CTL_SELECT_MODW   2   /* adjust mod wheel (t->mw) */
+#define CTL_SELECT_VEL    3   /* adjust key velocity */
 
 /* --- Declarative encoder-to-parameter slot --- */
 

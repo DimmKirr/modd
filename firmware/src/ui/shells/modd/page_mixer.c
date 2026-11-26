@@ -76,6 +76,15 @@ static int lvt_mixerer_select(int32_t clicks)
     return 1;
 }
 
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+static const ctl_slot_t MIXER_CONTROLS[] = {
+    { ENC_K1, P_LEVEL, 0, 127, 1, 0, "LVL" },
+    { ENC_K2, P_PAN,  -64, 63, 1, 0, "PAN" },
+    { ENC_K3, P_REV,   0, 127, 1, 0, "REV" },
+    { ENC_K4, P_MUTE,  0,   1, 1, 0, "MUTE" },
+};
+#define MIXER_NCONTROLS 4
+#else
 static const ctl_slot_t MIXER_CONTROLS[] = {
     { ENC_SELECT, P_COUNT, 0, NTRK - 1, 1, 0, "TRK", lvt_mixerer_select },
     { ENC_K1, P_LEVEL, 0, 100, 1, CTLF_TRACK, "LVL1" },
@@ -83,6 +92,8 @@ static const ctl_slot_t MIXER_CONTROLS[] = {
     { ENC_K3, P_LEVEL, 0, 100, 1, CTLF_TRACK, "LVL3" },
     { ENC_K4, P_LEVEL, 0, 100, 1, CTLF_TRACK, "LVL4" },
 };
+#define MIXER_NCONTROLS 5
+#endif
 
 static const modd_page_t PAGE_MIXER = {
     .name      = "MIXER",
@@ -92,6 +103,12 @@ static const modd_page_t PAGE_MIXER = {
     .enter     = lvt_mixerer_enter,
     .status    = lvt_mixerer_show,
     .controls  = MIXER_CONTROLS,
-    .ncontrols = 5,
-    .help_text = "SELECT  Track\nK1-K4  Track 1-4 level",
+    .ncontrols = MIXER_NCONTROLS,
+    .help_text =
+#ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
+        "ALGO    Track 1-4\n"
+        "K1 LVL  K2 PAN  K3 REV  K4 MUTE",
+#else
+        "SELECT  Track\nK1-K4  Track 1-4 level",
+#endif
 };

@@ -33,18 +33,55 @@ static inline track_t *modd_trk(uint32_t k) { return &trk[k]; }
 static inline uint32_t modd_eng_of(const track_t *t) { return t->eng_req; }
 
 #ifdef CONFIG_AUDIO_FELUCCA_STACK_INCLUDED
-/* switch a track's engine as the panel does: eng_req and the new engine's P_E0..P_E7 together (IRQ off), the
- * stack's engine_block (voice.c) fades the old engine out and switches */
+/* load a preset's parameters into the track (upstream: apply_preset_to without undo/motion) */
+static void modd_apply_preset(track_t *t, uint32_t pi)
+{
+    const engine_t *e = ENGINES[t->eng_req % NENGINES];
+    uint32_t i;
+    if (!e->npresets)
+        return;
+    pi = pi % e->npresets;
+    panic_req |= (uint8_t)(1u << trk_index(t));
+    t->preset = (uint8_t)pi;
+    /* non-engine params to their defaults (keep level, pan, mute, arp, seq, slicer, chord) */
+    for (i = 0; i < P_E0; i++) {
+        if (i == P_LEVEL || i == P_PAN || i == P_MUTE ||
+            (i >= P_AMODE && i <= P_SGATE) ||
+            (i >= P_SLCR && i <= P_SLDEPTH) ||
+            i == P_CHRD || i == P_VOIC || i == P_SQNT)
+            continue;
+        t->p[i] = TP[i].def;
+    }
+    for (i = 0; i < 8u; i++)
+        t->p[P_E0 + i] = (int16_t)e->presets[pi].e[i];
+    t->p[P_ATK] = e->presets[pi].env[0];
+    t->p[P_DEC] = e->presets[pi].env[1];
+    t->p[P_SUS] = e->presets[pi].env[2];
+    t->p[P_REL] = e->presets[pi].env[3];
+    t->p[P_ED_FLT] = e->presets[pi].fenv;
+    t->p[P_VOICE] = e->presets[pi].mono ? V_LEGATO : V_POLY;
+    {
+        static const uint8_t FX_DEF[4] = {0, 24, 28, 36};
+        const preset_t *pr = &e->presets[pi];
+        for (i = 0; i < 4u; i++)
+            t->p[P_DIST + i] = (int16_t)(pr->fx[i] ? pr->fx[i] - 1 : FX_DEF[i]);
+    }
+    fm6_track_loaded(t);
+}
+/* switch a track's engine as the panel does: eng_req, the new engine's defaults, and its first preset (IRQ off);
+ * the stack's engine_block (voice.c) fades the old engine out and switches */
 static void modd_engine_select(track_t *t, uint32_t ei)
 {
-    uint32_t i;
     if (ei >= NENGINES)
         ei = 0;
     fm1_irq_off();
     t->eng_req = (uint8_t)ei;
-    t->preset = 0;
-    for (i = 0; i < 8u; i++)
-        t->p[P_E0 + i] = ENGINES[ei]->edit[i].def;
+    {
+        uint32_t i;
+        for (i = 0; i < 8u; i++)
+            t->p[P_E0 + i] = ENGINES[ei]->edit[i].def;
+    }
+    modd_apply_preset(t, 0);
     fm1_irq_on();
 }
 /* global encoder actions (upstream: ui_input.c EN_ALGO, EN_PRESET → track_select, preset_step) */
@@ -58,13 +95,22 @@ static inline void modd_track_step(int32_t dir)
 static inline void modd_preset_step(int32_t dir)
 {
     track_t *t = &trk[song.sel];
-    uint32_t ei = t->eng_req;
-    const engine_t *e = ei < NENGINES ? ENGINES[ei] : 0;
-    if (e && e->npresets > 0) {
-        int32_t v = (int32_t)t->preset + (dir > 0 ? 1 : -1);
-        if (v < 0) v = 0;
-        if (v >= (int32_t)e->npresets) v = (int32_t)e->npresets - 1;
-        t->preset = (uint8_t)v;
+    uint32_t ei = t->eng_req % NENGINES;
+    const engine_t *e = ENGINES[ei];
+    int32_t p = (int32_t)t->preset + (dir > 0 ? 1 : -1);
+    if (p >= 0 && (!e->npresets || p < (int32_t)e->npresets)) {
+        modd_apply_preset(t, (uint32_t)p);
+        return;
+    }
+    /* crossed an engine boundary: step to the next/previous engine */
+    int32_t nei = (int32_t)ei + (dir > 0 ? 1 : -1);
+    if (nei < 0 || nei >= (int32_t)NENGINES)
+        return;
+    modd_engine_select(t, (uint32_t)nei);
+    if (dir < 0) {
+        const engine_t *ne = ENGINES[nei];
+        if (ne->npresets)
+            modd_apply_preset(t, ne->npresets - 1u);
     }
 }
 static const char *modd_mod_src_name(uint32_t src) { return src < sizeof N_MSRC / sizeof N_MSRC[0] ? N_MSRC[src] : "---"; }

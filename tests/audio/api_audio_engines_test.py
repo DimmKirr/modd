@@ -198,7 +198,7 @@ class TestEngineSelectVolumeConsistency(EngineAudioCase):
         self.use_engine('FM6')                  # modd_engine_select silences the track's voices
         self.api.key_up('C4')
         self.api.wait_idle()
-        self.api.wait_ms(300)
+        self.api.wait_ms(2000)                  # the new engine's preset envelope release must decay
         s = self.api.capture()
         self.save_wav('bleed-after-switch.wav', s)
         self.assertLess(rms(s), 0.001, f'output after an engine switch with no key held (RMS {rms(s):.5f})')
@@ -216,15 +216,15 @@ class TestEngineSelectDisplay(EngineAudioCase):
         home = self.api.page()['data']
         self.assertEqual(home['tracks'][t['track']]['engine'], 'NOISE', f'HOME data: {home}')
 
-    def test_select_encoder_changes_track(self):
-        """SELECT on HOME (the panel encoder) picks the next track; the LCD follows."""
+    def test_algo_encoder_changes_track(self):
+        """ALGO on HOME picks the next track; the LCD follows."""
         sel = self.api.page()['data']['selected_track']
         step = 1 if sel < 3 else -1
-        before = self.screenshot('HOME-select-initial')
-        self.api.enc('select', step)
-        after = self.screenshot('HOME-select-rotated')
+        before = self.screenshot('HOME-algo-initial')
+        self.api.enc('algorithm', step)
+        after = self.screenshot('HOME-algo-rotated')
         self.assertEqual(self.api.page()['data']['selected_track'], sel + step)
-        self.assertNotEqual(before.tobytes(), after.tobytes(), 'LCD did not change after SELECT')
+        self.assertNotEqual(before.tobytes(), after.tobytes(), 'LCD did not change after ALGO')
 
 
 if __name__ == '__main__':
