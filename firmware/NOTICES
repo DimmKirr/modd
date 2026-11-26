@@ -141,22 +141,10 @@ default trim values and configuration constants.
   constants cited through `docs/hardware/wifi/SPECSHEET.md`
 
 The SDK's pre-compiled radio libraries are not published source and
-are not a reference for the clean-room driver; they link only in the
-optional `CONFIG_WIFI_NONFREE` build (`firmware/src/wifi/nonfree/`),
-which is mutually exclusive with the clean-room driver.
+are not a reference for the clean-room driver.
 
 
 ## fm1-base
-
-`firmware/src/wifi/nonfree/nf_main.c` and `nf_sdk_stubs.c` (the
-non-free build only) adapt platform shim code from fm1-base's
-`device/radio.c` and `device/wifi.c`. Those files are MPL-2.0, which permits
-the combination (MPL-2.0 section 3.3, GPL as a Secondary License); the adapted
-files carry `GPL-3.0-only` headers that name the MPL-2.0 source.
-
-- Source: charlesvestal/fm1-base
-- License: MPL-2.0 (the adapted shim files)
-- Copyright: Copyright (c) Charles Vestal
 
 fm1-base's `bsp/chip/fm1_rf_cal.h` is not an accepted reference for the
 clean-room driver (see `docs/hardware/wifi/CLEAN_ROOM_METHODOLOGY.md`, "fm1-base

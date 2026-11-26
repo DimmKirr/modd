@@ -2,8 +2,7 @@
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 #pragma once
 
-/* Shared WiFi types for UI pages.  Both the clean-room and non-free drivers
- * provide functions with these names so page_wifi.c compiles unchanged. */
+/* Shared WiFi types for UI pages. */
 
 #if defined(CONFIG_WIFI)
 

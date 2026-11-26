@@ -176,7 +176,7 @@ def linker_script_for(build_dir):
     if not cfg.exists():
         raise ValueError(f'{cfg} not found: cannot tell which linker script the build used')
     enabled = set(re.findall(r'^#define CONFIG_(\w+) 1$', cfg.read_text(), re.M))
-    name = ('app_wifi_nonfree.ld' if 'WIFI_NONFREE' in enabled else 'app_dock.ld' if 'DOCK' in enabled
+    name = ('app_dock.ld' if 'DOCK' in enabled
             else 'app_emu.ld' if 'EMU' in enabled else 'app.ld')
     return Path(__file__).resolve().parents[2] / 'firmware' / name
 
