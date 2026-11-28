@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""Host-compiled test of the network needs (firmware/src/net/net_need.c, wifi/wifi_need.c).
+"""Host-compiled test of the network needs (firmware/src/net/net_need.c, wifi/need.c).
 
 Compiles tests/net/net_need_test.c with the host ``cc`` and runs it: net_need() counted
 onto wifi_need() / eth_need() by link policy, the WIFI and USB NET settings as permissions.

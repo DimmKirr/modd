@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ALLOWLIST = ROOT / "docs" / "UPSTREAM_ORIGINS.md"
-SCAN_DIRS = ("firmware/src", "firmware/adapters", "firmware/hal")
+SCAN_DIRS = ("firmware/src", "firmware/ports", "firmware/contracts", "firmware/hal")
 CLASSES = {"WRAPPER", "HEADER-DERIVED", "FORK", "PATCHED"}
 PATCH_STATUS = re.compile(r"^approved: .+, .+, .+$")
 FORK_NOTE = ("COPIED", "REDUCED", "REWRITTEN", "EXTENDED")

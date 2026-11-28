@@ -1,0 +1,120 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+14:22:45.851	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	test			start
+14:22:45.873	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	exec	0.015		xdotool search --name ^FM-1 -> exit 1
+14:22:45.874	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 52031:9222
+14:22:45.876	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.000		GET /api/info -> URLError
+14:22:45.919	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			forward: host:52031 -> guest:9222
+14:22:45.921	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+14:22:45.921	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+14:22:45.921	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+14:22:45.921	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+14:22:45.922	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+14:22:45.922	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+14:22:45.922	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+14:22:45.922	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+14:22:45.922	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+14:22:45.922	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+14:22:45.923	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+14:22:45.923	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			MIDI in: MIDI support could not be initialized
+14:22:45.940	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+14:22:45.940	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+14:22:47.925	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			[  2.1 s] 1.02x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+14:22:48.880	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	2.003		GET /api/info -> TimeoutError
+14:22:49.899	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.017		GET /api/info -> 200, 94 B
+14:22:49.900	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	emu	4.023		firmware API up on port 52031
+14:22:49.900	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	test	4.047		setup passed
+14:22:49.916	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.016		GET /modd/home -> 200, 442 B
+14:22:49.926	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+14:22:49.967	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.050		GET /api/page -> 200, 446 B
+14:22:50.914	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.947		GET /api/screenshot -> 200, 153654 B
+14:22:50.956	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.017		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+14:22:50.975	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.019		GET /api/input/pot/master/1023 -> 200, 48 B
+14:22:50.996	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.020		GET /api/input -> 200, 138 B
+14:22:51.336	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.021		GET /api/input -> 200, 138 B
+14:22:51.423	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.087		GET /api/audio/capture -> 200, 21944 B
+14:22:51.446	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.018		GET /api/input/key/60/down -> 200, 48 B
+14:22:51.786	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.020		GET /api/input -> 200, 142 B
+14:22:51.878	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.092		GET /api/audio/capture -> 200, 21946 B
+14:22:51.896	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.017		GET /api/input/key/60/up -> 200, 48 B
+14:22:51.928	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+14:22:52.016	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.018		GET /api/input -> 200, 138 B
+14:22:52.046	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.021		GET /api/input -> 200, 138 B
+14:22:53.636	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.015		GET /api/input -> 200, 138 B
+14:22:53.723	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.087		GET /api/audio/capture -> 200, 21944 B
+14:22:53.755	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.020		GET /api/info -> 200, 94 B
+14:22:53.775	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.021		GET /api/page -> 200, 452 B
+14:22:53.929	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+14:22:54.656	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	http	0.880		GET /api/screenshot -> 200, 153654 B
+14:22:54.682	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	test	4.781		call passed
+14:22:54.684	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	emu			fm1-live stopped
+14:22:54.684	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	test	0.002		teardown passed
+14:22:54.684	tests/audio/api_audio_test.py::AudioCaptureTest::test_capture_follows_the_output	test	8.833		end passed; 23 io, 4.4 s in io, 0.0 s throttled
+14:22:54.686	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	test			start
+14:22:54.697	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	exec	0.010		xdotool search --name ^FM-1 -> exit 1
+14:22:54.698	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 41119:9222
+14:22:54.700	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.000		GET /api/info -> URLError
+14:22:54.750	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			forward: host:41119 -> guest:9222
+14:22:54.751	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+14:22:54.752	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+14:22:54.752	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+14:22:54.752	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+14:22:54.752	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+14:22:54.752	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+14:22:54.752	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+14:22:54.753	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+14:22:54.753	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+14:22:54.753	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+14:22:54.753	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+14:22:54.753	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			MIDI in: MIDI support could not be initialized
+14:22:54.769	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+14:22:54.769	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+14:22:56.755	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			[  2.1 s] 1.01x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+14:22:57.716	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	2.011		GET /api/info -> TimeoutError
+14:22:58.739	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.022		GET /api/info -> 200, 94 B
+14:22:58.739	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	emu	4.039		firmware API up on port 41119
+14:22:58.740	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	test	4.054		setup passed
+14:22:58.757	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+14:22:58.758	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.018		GET /modd/home -> 200, 442 B
+14:22:58.805	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.047		GET /api/page -> 200, 446 B
+14:22:59.754	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.948		GET /api/screenshot -> 200, 153654 B
+14:22:59.797	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.012		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+14:22:59.816	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.019		GET /api/track/sel -> 200, 194 B
+14:22:59.836	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.020		GET /api/input/pot/master/1023 -> 200, 48 B
+14:22:59.856	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.020		GET /api/input -> 200, 138 B
+14:23:00.186	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.014		GET /api/input -> 200, 138 B
+14:23:00.207	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.020		GET /api/input/key/60/down -> 200, 48 B
+14:23:00.546	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.019		GET /api/input -> 200, 142 B
+14:23:00.639	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.092		GET /api/audio/capture -> 200, 21946 B
+14:23:00.657	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.017		GET /api/input/key/60/up -> 200, 48 B
+14:23:00.760	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+14:23:00.777	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.017		GET /api/input -> 200, 138 B
+14:23:00.806	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.019		GET /api/input/key/62/down -> 200, 48 B
+14:23:01.159	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.036		GET /api/input -> 200, 142 B
+14:23:01.226	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.067		GET /api/audio/capture -> 200, 21946 B
+14:23:01.246	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.019		GET /api/input/key/62/up -> 200, 48 B
+14:23:01.366	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.016		GET /api/input -> 200, 138 B
+14:23:01.387	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.014		GET /api/input/key/64/down -> 200, 49 B
+14:23:01.717	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.014		GET /api/input -> 200, 144 B
+14:23:01.807	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.090		GET /api/audio/capture -> 200, 21947 B
+14:23:01.826	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.018		GET /api/input/key/64/up -> 200, 49 B
+14:23:01.946	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.017		GET /api/input -> 200, 138 B
+14:23:01.965	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.011		GET /api/input/key/65/down -> 200, 49 B
+14:23:02.296	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.013		GET /api/input -> 200, 144 B
+14:23:02.387	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.091		GET /api/audio/capture -> 200, 21947 B
+14:23:02.406	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.018		GET /api/input/key/65/up -> 200, 49 B
+14:23:02.526	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.015		GET /api/input -> 200, 138 B
+14:23:02.547	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.013		GET /api/input/key/67/down -> 200, 50 B
+14:23:02.762	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+14:23:02.877	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.014		GET /api/input -> 200, 146 B
+14:23:02.967	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.090		GET /api/audio/capture -> 200, 21948 B
+14:23:02.986	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.019		GET /api/input/key/67/up -> 200, 50 B
+14:23:03.105	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.018		GET /api/input -> 200, 138 B
+14:23:04.154	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	1.043		GET /api/screenshot -> 200, 153654 B
+14:23:04.177	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.014		GET /api/page -> 200, 452 B
+14:23:04.206	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.013		GET /api/info -> 200, 94 B
+14:23:04.227	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.021		GET /api/info -> 200, 94 B
+14:23:04.247	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	http	0.020		GET /api/page -> 200, 452 B
+14:23:04.251	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	test	5.511		call passed
+14:23:04.253	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	emu			fm1-live stopped
+14:23:04.254	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	test	0.002		teardown passed
+14:23:04.254	tests/audio/api_audio_test.py::AnalogProducesAudioTest::test_analog_produces_audio	test	9.568		end passed; 42 io, 5.0 s in io, 0.0 s throttled

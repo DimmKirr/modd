@@ -12,7 +12,7 @@ import pytest
 from c_harness import run_c_harness
 
 ROOT = Path(__file__).resolve().parents[2]
-ADAPTERS = ROOT / 'firmware' / 'adapters'
+ADAPTERS = ROOT / 'firmware' / 'contracts'
 SOURCE = ROOT / 'tests' / 'dock' / 'dock_test.c'
 MODULES = ROOT / 'firmware' / 'upstream' / 'fm1-dock' / 'docs' / 'modules'
 

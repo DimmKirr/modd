@@ -24,7 +24,7 @@ tasks:
     status:
       - uv run --quiet python tools/build/vendor.py present
     cmds:
-      - vendir sync --locked
+      - uv run --quiet python tools/build/vendor.py sync
 
   patch:
     desc: "Apply patches/<upstream>/*.patch to a copy under build/<defconfig>[-open]/gen/patched/ (the vendored trees stay pristine; -- --defconfig <name>)"
@@ -82,10 +82,10 @@ tasks:
                     uv pip install --reinstall --no-binary pillow pillow
     cmds:
       # Felucca and SLOOP expect a felucca-engines submodule at firmware/engines/;
-      # vendir fetches it separately, so symlink it when missing.
+      # vendir resolves it inside the Felucca tree, so symlink from there when missing.
       - cmd: |
-          if [ ! -e firmware/engines ] && [ -d "{{.ROOT_DIR}}/firmware/upstream/felucca-engines" ]; then
-            ln -s "{{.ROOT_DIR}}/firmware/upstream/felucca-engines" firmware/engines
+          if [ ! -e firmware/engines ] && [ -d "{{.ROOT_DIR}}/firmware/upstream/felucca/firmware/engines" ]; then
+            ln -s "{{.ROOT_DIR}}/firmware/upstream/felucca/firmware/engines" firmware/engines
           fi
         silent: true
       # On non-x86-64 Linux, create a shim toolchain that runs binaries through

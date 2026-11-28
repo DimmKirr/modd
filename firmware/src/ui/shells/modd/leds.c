@@ -97,7 +97,23 @@ static void ui_leds(void)
             led_put(nb, k, 1);
     }
 
-    /* commit to HAL arrays */
+    /* commit to HAL arrays (api_led_override: LED test mode holds them) */
+#ifdef CONFIG_LED_ANIM_FELUCCA
+    if (api_led_override) {
+        fm1_led_anim_stop();
+        return;
+    }
+    {
+        uint32_t busy = 0;
+#ifdef CONFIG_AUDIO
+        busy = song.playing || seq_counting() || song.rec != 0u;
+#endif
+        if (led_idle_poll(fm1_ms, busy, lights != LIGHTS_OFF))
+            return;                                     /* an animation owns the LEDs */
+    }
+#else
+    if (api_led_override) return;
+#endif
     fm1_led_dim_mask[0] = lights_dim_mask(lights);
     fm1_led_dim_mask[1] = BTN_DIM_MASK;
     fm1_led_dim_mask[2] = breath_val();

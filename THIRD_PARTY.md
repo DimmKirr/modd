@@ -29,8 +29,8 @@ found alongside these three files. This attribution follows the SDK-wide
 license; the binaries do not carry individual source-license headers.
 
 `uboot.boot` here means JieLi's SDK SPL, not the separate Das U-Boot project.
-It is also distinct from modd's GPL-3.0 boot stub in `firmware/stub/` and
-update loader in `firmware/loader/`.
+It is also distinct from modd's GPL-3.0 boot stub in `firmware/init/` and
+update loader in `firmware/boot/`.
 
 The current downloader selects SDK tag `AC79NN_SDK_V1.2.14_2026-10-13`.
 An existing SDK installation or an `AC79_SDK` override can supply different
@@ -56,19 +56,19 @@ and `task test:unit` run `task vendor:ensure`, which fetches them at the locked
 commits when missing; `task vendor:sync` re-resolves the pins. The release
 workflow packs the fetched trees into `modd-source.tar.gz` so the corresponding
 source is complete. Vendored files are never edited: modd adapts them through
-`firmware/adapters/` and project-owned config headers. The one exception is
+`firmware/contracts/` and project-owned config headers. The one exception is
 the approved patch series in `patches/` (hooks only, listed in
 `docs/UPSTREAM_ORIGINS.md`): `task build` applies it to a copy under
 `build/<defconfig>/gen/patched/`, not to the vendored tree.
 
 | Path | Source | Pin | License | Use |
 |------|--------|-----|---------|-----|
-| `firmware/upstream/felucca/` | [hugelton/Felucca](https://github.com/hugelton/Felucca) | v1.8.2 (d0260074) | GPL-3.0 | UI renderer (`gfx.c`, `lcd.c`), audio core reference, sequencer reference |
-| `firmware/upstream/felucca-engines/` | [hugelton/Felucca-Engines](https://github.com/hugelton/Felucca-Engines) | c46e008 | MIT | ANALOG, NOISE, LOFI, TRIO, WHEEL engines; `dsp.c` DSP helpers; `felucca_engine.h` vtable |
+| `firmware/upstream/felucca/` | [hugelton/Felucca](https://github.com/hugelton/Felucca) | v1.8.2 (d0260074) | GPL-3.0; `firmware/engines/` submodule ([Felucca-Engines](https://github.com/hugelton/Felucca-Engines)) is MIT | UI renderer (`gfx.c`, `lcd.c`), audio core reference, sequencer reference; `firmware/engines/src/`: ANALOG, NOISE, LOFI, TRIO, WHEEL engines, `dsp.c` DSP helpers, `felucca_engine.h` vtable; `firmware/bsp/` is the felucca-bsp submodule, MPL-2.0 ([MPL-2.0.txt](LICENSES/MPL-2.0.txt)): `boards/fm1/fm1_led_anim.h` (LED animation pictures) is included unchanged, its frame driver is rewritten in `firmware/ports/felucca/leds/led_anim_drv_modd.c` |
 | `firmware/upstream/melodee/` | [keremimo/melodee](https://github.com/keremimo/melodee) | v1.4.5 | GPL-3.0 | CZ, SID, PROPHET, FORMANT + 7 more engines; extended `dsp.c`; FPU-optimized audio core reference |
 | `firmware/upstream/sloop/` | [isod89/sloop-fm1](https://github.com/isod89/sloop-fm1) | v2.8 | GPL-3.0 | DRAWBAR, GRAIN, SAMPLE, SLICE engines; arranger/scene system reference |
 | `firmware/upstream/fmlab/` | [jsmith13/fm_lab](https://github.com/jsmith13/fm_lab) | v1.1.0 | GPL-3.0; `dx7_core.c` is Apache-2.0 AND GPL-3.0-only (Dexed/msfa, Google and Pascal Gauthier; integer port Sven Trogus) | Q23 24-bit audio pipeline; DX7 engine; 2x oversampling; FDN reverb; TPDF dithering |
 | `firmware/upstream/jiant/` | [juanjiant-bit/JIANT](https://github.com/juanjiant-bit/JIANT) | da8baa1 | GPL-3.0 | 6-track song mode, 10 engines, skins, web editor; comparison reference |
+| `firmware/upstream/fm1-base/` | [charlesvestal/fm1-base](https://github.com/charlesvestal/fm1-base) | c8e05997 | MPL-2.0 | `device/mirror.c`: LCD screen mirroring codec (RLE, segment hashing, dirty-row recovery), adapted for WebSocket transport in `firmware/src/debug/mirror_ws.c`; `web/mirror/index.html`: decoder reference for the browser viewer |
 | `firmware/upstream/optimist/` | [w0ts/optimist](https://github.com/w0ts/optimist) | v0.4 (7184726) | GPL-3.0 | BLE stack (`firmware/src/ble/`): link layer, host, SMP, ATT/GATT, BLE MIDI |
 | `firmware/vendor/lwip/` | [lwip-tcpip/lwip](https://github.com/lwip-tcpip/lwip), mirror of [Savannah](https://git.savannah.nongnu.org/cgit/lwip.git) | STABLE-2_2_1_RELEASE (77dcd25) | BSD-3-Clause | IPv4, DHCP, DNS, TCP, UDP for the WiFi module; config in `firmware/src/wifi/lwipopts.h` |
 | `firmware/vendor/fatfs/` | [FatFs by ChaN](http://elm-chan.org/fsw/ff/), `ff15.zip` with pinned SHA-256 | R0.15 | [FatFs license](http://elm-chan.org/fsw/ff/doc/appnote.html#license) (1-clause BSD) | FAT32 for USB mass storage; config in `firmware/src/udisk/ffconf.h`, disk I/O in `firmware/src/udisk/diskio.[ch]`, `strchr` in `firmware/src/libc.c` |
@@ -108,15 +108,15 @@ file header; the license text is `src/libs/frogfs/LICENSE.txt`) has no
 NanoVG, FT800-FT813, barcode, FreeType interface) is switched off in
 `lv_conf.h` and compiles to nothing.
 
-Felucca-Engines is vendored separately from Felucca because upstream Felucca
-references it as a git submodule (MIT-licensed engines kept apart from the
-GPL-3.0 firmware). The pinned commit `c46e008` is the submodule pointer in
-Felucca v1.8.2.
+Felucca-Engines is an MIT-licensed submodule inside the Felucca tree
+(`firmware/upstream/felucca/firmware/engines/`), resolved by vendir's
+recursive git checkout. The MIT-licensed engines are kept apart from the
+GPL-3.0 firmware upstream.
 
 modd includes upstream source via `#include` directives (unity build), not
 by copying. Engine source files are included conditionally from the vendored
-paths (e.g. `#include "upstream/felucca-engines/src/eng_noise.c"`), gated by
-Kconfig symbols. See [docs/PORTING.md](docs/PORTING.md) for the adapter pattern.
+paths (e.g. `#include "upstream/felucca/firmware/engines/src/eng_noise.c"`),
+gated by Kconfig symbols. See [docs/PORTING.md](docs/PORTING.md) for the adapter pattern.
 
 ## Derived files
 
@@ -132,12 +132,12 @@ the added Origin lines. Generated from the headers by
 
 | modd file | Origin (pinned) | Upstream license | modd license |
 |---|---|---|---|
-| `firmware/adapters/modd_audio.h` | [hugelton/Felucca firmware/src/core.h](https://github.com/hugelton/Felucca/blob/a53ecf428c29c780108fd70a31b71a32a6b5c313/firmware/src/core.h) @ v1.6.1 (a53ecf42) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/adapters/modd_debug.h` | [joakimeriksson/fm1-dock firmware/src/dock.c](https://github.com/joakimeriksson/fm1-dock/blob/2118c7299fdc5fabf81eb81962f1168a21792fd7/firmware/src/dock.c) @ main (2118c729) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/adapters/modd_dock.h` | [joakimeriksson/fm1-dock firmware/dock/hb_module.h](https://github.com/joakimeriksson/fm1-dock/blob/6199d250c10376fca0270b917da2e79c7c604691/firmware/dock/hb_module.h) @ v0.8.2 (6199d250)<br>[joakimeriksson/fm1-dock firmware/src/dock.c](https://github.com/joakimeriksson/fm1-dock/blob/6199d250c10376fca0270b917da2e79c7c604691/firmware/src/dock.c) @ v0.8.2 (6199d250) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/adapters/modd_engine.h` | [hugelton/Felucca-Engines src/felucca_engine.h](https://github.com/hugelton/Felucca-Engines/blob/c46e0086f69bdc26df1cd144dca9e683cc4531dd/src/felucca_engine.h) @ (c46e0086)<br>[keremimo/melodee firmware/src/core.h](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/core.h) @ v1.4.5 (398ada1e) | GPL-3.0-only, MIT | GPL-3.0-only |
-| `firmware/adapters/modd_ota.h` | [keremimo/melodee firmware/src/ota_hw.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/ota_hw.c) @ v1.4.5 (398ada1e)<br>[isod89/sloop-fm1 firmware/src/felucca.c](https://github.com/isod89/sloop-fm1/blob/b77bf55e3bf804665b8f5dffb5955bd8443311f0/firmware/src/felucca.c) @ v2.8 (b77bf55e) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/adapters/modd_seq.h` | [hugelton/Felucca firmware/src/ui.c](https://github.com/hugelton/Felucca/blob/a53ecf428c29c780108fd70a31b71a32a6b5c313/firmware/src/ui.c) @ v1.6.1 (a53ecf42) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/contracts/modd_audio.h` | [hugelton/Felucca firmware/src/core.h](https://github.com/hugelton/Felucca/blob/a53ecf428c29c780108fd70a31b71a32a6b5c313/firmware/src/core.h) @ v1.6.1 (a53ecf42) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/contracts/modd_debug.h` | [joakimeriksson/fm1-dock firmware/src/dock.c](https://github.com/joakimeriksson/fm1-dock/blob/2118c7299fdc5fabf81eb81962f1168a21792fd7/firmware/src/dock.c) @ main (2118c729) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/contracts/modd_dock.h` | [joakimeriksson/fm1-dock firmware/dock/hb_module.h](https://github.com/joakimeriksson/fm1-dock/blob/6199d250c10376fca0270b917da2e79c7c604691/firmware/dock/hb_module.h) @ v0.8.2 (6199d250)<br>[joakimeriksson/fm1-dock firmware/src/dock.c](https://github.com/joakimeriksson/fm1-dock/blob/6199d250c10376fca0270b917da2e79c7c604691/firmware/src/dock.c) @ v0.8.2 (6199d250) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/contracts/modd_engine.h` | [hugelton/Felucca-Engines src/felucca_engine.h](https://github.com/hugelton/Felucca-Engines/blob/c46e0086f69bdc26df1cd144dca9e683cc4531dd/src/felucca_engine.h) @ (c46e0086)<br>[keremimo/melodee firmware/src/core.h](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/core.h) @ v1.4.5 (398ada1e) | GPL-3.0-only, MIT | GPL-3.0-only |
+| `firmware/contracts/modd_ota.h` | [keremimo/melodee firmware/src/ota_hw.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/ota_hw.c) @ v1.4.5 (398ada1e)<br>[isod89/sloop-fm1 firmware/src/felucca.c](https://github.com/isod89/sloop-fm1/blob/b77bf55e3bf804665b8f5dffb5955bd8443311f0/firmware/src/felucca.c) @ v2.8 (b77bf55e) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/contracts/modd_seq.h` | [hugelton/Felucca firmware/src/ui.c](https://github.com/hugelton/Felucca/blob/a53ecf428c29c780108fd70a31b71a32a6b5c313/firmware/src/ui.c) @ v1.6.1 (a53ecf42) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/app.ld` | [keremimo/melodee firmware/app.ld](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/app.ld) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/app_dock.ld` | [keremimo/melodee firmware/app.ld](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/app.ld) @ v1.4.5 (398ada1e) (RAM/POOL packed below 0x01C30000, a DOCK region for fm1-dock modules) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/crt0.S` | [keremimo/melodee firmware/crt0.S](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/crt0.S) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
@@ -169,12 +169,12 @@ the added Origin lines. Generated from the headers by
 | `firmware/hal/fm1_vec.S` | [keremimo/melodee firmware/hal/fm1_vec.S](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/hal/fm1_vec.S) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/hal/fm1_wifi_rf.h` | [w0ts/optimist firmware/hal/fm1_ble_rf.h](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/hal/fm1_ble_rf.h) @ v0.1 (a4104fcd) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/hal/fm1_xip.h` | [hugelton/Felucca firmware/hal/fm1_xip.h](https://github.com/hugelton/Felucca/blob/a53ecf428c29c780108fd70a31b71a32a6b5c313/firmware/hal/fm1_xip.h) @ v1.6.1 (a53ecf42) (unchanged) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/loader/crt0_ldr.S` | [keremimo/melodee firmware/loader/crt0_ldr.S](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/crt0_ldr.S) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/loader/ldr_core.c` | [keremimo/melodee firmware/loader/ldr_core.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/ldr_core.c) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/loader/loader.c` | [keremimo/melodee firmware/loader/loader.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/loader.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/loader/loader.ld` | [keremimo/melodee firmware/loader/loader.ld](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/loader.ld) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/src/audio/core/audio.c` | [keremimo/melodee firmware/src/audio.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/audio.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/src/audio/voice.c` | [isod89/sloop-fm1 firmware/src/voice.c](https://github.com/isod89/sloop-fm1/blob/b77bf55e3bf804665b8f5dffb5955bd8443311f0/firmware/src/voice.c) @ v2.8 (b77bf55e) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/boot/crt0_boot.S` | forked from [keremimo/melodee firmware/loader/crt0_ldr.S](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/crt0_ldr.S) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/boot/boot_core.c` | forked from [keremimo/melodee firmware/loader/ldr_core.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/ldr_core.c) @ v1.4.5 (398ada1e) (modd-owned: flash-map layout, no resource region, fwsc marker stripping) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/boot/boot.c` | forked from [keremimo/melodee firmware/loader/loader.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/loader.c) @ v1.4.5 (398ada1e) (modd-owned: USB disk file browser, fwsc format, bitmap font) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/boot/boot.ld` | forked from [keremimo/melodee firmware/loader/loader.ld](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/loader.ld) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/src/audio/audio.c` | [keremimo/melodee firmware/src/audio.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/audio.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/src/core/modd/voice.c` | [isod89/sloop-fm1 firmware/src/voice.c](https://github.com/isod89/sloop-fm1/blob/b77bf55e3bf804665b8f5dffb5955bd8443311f0/firmware/src/voice.c) @ v2.8 (b77bf55e) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ble/ble_att_ft.c` | [w0ts/optimist firmware/src/ble/ble_att.c](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_att.c) @ v0.1 (a4104fcd) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ble/ble_scan.c` | [w0ts/optimist firmware/src/ble/ble_scan.c](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_scan.c) @ v0.1 (a4104fcd) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ble/ble_scan.h` | [w0ts/optimist firmware/src/ble/ble_scan.h](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/src/ble/ble_scan.h) @ v0.1 (a4104fcd) | GPL-3.0-only | GPL-3.0-only |
@@ -184,22 +184,22 @@ the added Origin lines. Generated from the headers by
 | `firmware/src/debug/debug_dap.c` | [joakimeriksson/fm1-dock firmware/src/dock.c](https://github.com/joakimeriksson/fm1-dock/blob/2118c7299fdc5fabf81eb81962f1168a21792fd7/firmware/src/dock.c) @ main (2118c729) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/libc.c` | [keremimo/melodee firmware/src/libc.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/libc.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/midi/melodee/midi_routing.c` | [keremimo/melodee firmware/src/midi_control.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/midi_control.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/src/midi/usb.c` | [keremimo/melodee firmware/src/usb.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/usb.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/src/midi/felucca/usb.c` | [keremimo/melodee firmware/src/usb.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/usb.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/modd.c` | [keremimo/melodee firmware/src/main.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/main.c) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/src/settings/settings_fmlab.c` | [jsmith13/fm_lab firmware/src/platform.c](https://github.com/jsmith13/fm_lab/blob/cf35dc26709ede9c974654dfc2135f8c25a00082/firmware/src/platform.c) @ v1.1.0 (cf35dc26) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/src/settings/fmlab/settings.c` | [jsmith13/fm_lab firmware/src/platform.c](https://github.com/jsmith13/fm_lab/blob/cf35dc26709ede9c974654dfc2135f8c25a00082/firmware/src/platform.c) @ v1.1.0 (cf35dc26) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ui/shells/melodee/gfx.c` | [keremimo/melodee firmware/src/gfx.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/gfx.c) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/ui/shells/melodee/lcd.c` | [keremimo/melodee firmware/src/lcd.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/src/lcd.c) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/udisk/diskio.h` | [FatFs R0.15 source/diskio.h](https://elm-chan.org/fsw/ff/arc/ff15.zip) (trimmed to the unity build) | FatFs | FatFs |
-| `firmware/src/udisk/usb_host_xfer.c` | [keremimo/melodee firmware/src/usb_host.c](https://github.com/keremimo/melodee/blob/165d177a425944f3d30b0b669255a6ed0050c3a5/firmware/src/usb_host.c) @ v1.6.1 (165d177a) (`uh_csr0`/`uh_ctl` EP0 control transfer and CSR0 wait sequence; reimplemented). Copyright Kerem Kilic (Ellic Studio), Adrien Tibi (Recursive Field Instruments) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/src/udisk/usb_hub.c` | [keremimo/melodee firmware/src/usb_host.c](https://github.com/keremimo/melodee/blob/165d177a425944f3d30b0b669255a6ed0050c3a5/firmware/src/usb_host.c) @ v1.6.1 (165d177a) (`uh_hub_probe`/`uh_hub_port_probe`/`uh_hub_status`: port power and power-good wait, port reset handshake, abandoning an unresponsive hub; reimplemented). Copyright Kerem Kilic (Ellic Studio), Adrien Tibi (Recursive Field Instruments) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/src/usb/host/usb_host_xfer.c` | [keremimo/melodee firmware/src/usb_host.c](https://github.com/keremimo/melodee/blob/165d177a425944f3d30b0b669255a6ed0050c3a5/firmware/src/usb_host.c) @ v1.6.1 (165d177a) (`uh_csr0`/`uh_ctl` EP0 control transfer and CSR0 wait sequence; reimplemented). Copyright Kerem Kilic (Ellic Studio), Adrien Tibi (Recursive Field Instruments) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/src/usb/host/usb_hub.c` | [keremimo/melodee firmware/src/usb_host.c](https://github.com/keremimo/melodee/blob/165d177a425944f3d30b0b669255a6ed0050c3a5/firmware/src/usb_host.c) @ v1.6.1 (165d177a) (`uh_hub_probe`/`uh_hub_port_probe`/`uh_hub_status`: port power and power-good wait, port reset handshake, abandoning an unresponsive hub; reimplemented). Copyright Kerem Kilic (Ellic Studio), Adrien Tibi (Recursive Field Instruments) | GPL-3.0-only | GPL-3.0-only |
 | `firmware/src/udisk/ffconf.h` | [FatFs R0.15 source/ffconf.h](https://elm-chan.org/fsw/ff/arc/ff15.zip) (configuration template, values changed) | FatFs | FatFs |
 | `firmware/src/wifi/arch/cc.h` | [lwip-tcpip/lwip src/include/lwip/arch.h](https://github.com/lwip-tcpip/lwip/blob/77dcd25a72509eb83f72b033d219b1d40cd8eb95/src/include/lwip/arch.h) @ STABLE-2_2_1_RELEASE (77dcd25a) | BSD-3-Clause | BSD-3-Clause |
 | `firmware/src/wifi/lwipopts.h` | [lwip-tcpip/lwip contrib/examples/example_app/test_configs/opt_nosys_ipv4.h](https://github.com/lwip-tcpip/lwip/blob/77dcd25a72509eb83f72b033d219b1d40cd8eb95/contrib/examples/example_app/test_configs/opt_nosys_ipv4.h) @ STABLE-2_2_1_RELEASE (77dcd25a) | BSD-3-Clause | BSD-3-Clause |
 | `firmware/src/wifi/wifi_rf.c` | [w0ts/optimist firmware/hal/fm1_ble_rf.h](https://github.com/w0ts/optimist/blob/a4104fcdc78b5173ef058b282058c2366c627f9b/firmware/hal/fm1_ble_rf.h) @ v0.1 (a4104fcd) (RF-die SPI and BBP window helpers) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/stub/crt0_stub.S` | [keremimo/melodee firmware/stub/crt0_stub.S](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/crt0_stub.S) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/stub/stub.c` | [keremimo/melodee firmware/stub/stub.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/stub.c) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/stub/stub.ld` | [keremimo/melodee firmware/stub/stub.ld](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/stub.ld) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
-| `firmware/stub/stub_core.h` | [keremimo/melodee firmware/stub/stub_core.h](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/stub_core.h) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/init/crt0_init.S` | forked from [keremimo/melodee firmware/stub/crt0_stub.S](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/crt0_stub.S) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/init/init.c` | forked from [keremimo/melodee firmware/stub/stub.c](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/stub.c) @ v1.4.5 (398ada1e) (modd-owned: commit marker, flash-map layout, diagnostic mailbox) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/init/init.ld` | forked from [keremimo/melodee firmware/stub/stub.ld](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/stub.ld) @ v1.4.5 (398ada1e) | GPL-3.0-only | GPL-3.0-only |
+| `firmware/init/init_core.h` | forked from [keremimo/melodee firmware/stub/stub_core.h](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/stub/stub_core.h) @ v1.4.5 (398ada1e) (modd-owned: commit marker, flash-map layout, diagnostic mailbox) | GPL-3.0-only | GPL-3.0-only |
 | `tools/build/fm1pkg_make.py` | [keremimo/melodee tools/fm1pkg_make.py](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/tools/fm1pkg_make.py) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
 | `tools/build/lz4blk.py` | [keremimo/melodee tools/lz4blk.py](https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/tools/lz4blk.py) @ v1.4.5 (398ada1e) (unchanged) | GPL-3.0-only | GPL-3.0-only |
 | `tools/codegen/gen_engine_tables.py` | [hugelton/Felucca-Engines tools/gen_engine_tables.py](https://github.com/hugelton/Felucca-Engines/blob/c46e0086f69bdc26df1cd144dca9e683cc4531dd/tools/gen_engine_tables.py) @ (c46e0086) | MIT | GPL-3.0-only |

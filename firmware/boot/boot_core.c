@@ -1,0 +1,231 @@
+/* SPDX-License-Identifier: GPL-3.0-only
+ * Modifications Copyright (C) 2026 Kerem Kilic (Ellic Studio)
+ * Copyright (C) 2026 ChoralRoot FM-1 contributors
+ * Portions Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Modifications Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
+ * Origin: forked from keremimo/melodee firmware/loader/ldr_core.c @ v1.4.5 (398ada1e)
+ *         https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/loader/ldr_core.c
+ *         modd-owned: flash-map layout, no resource region, fwsc marker stripping */
+/* Write ordering adapted from ChoralRoot FM-1 contributors (v0.16). */
+/* Melodee OTA updater, the portable part (step 2 of the M-UPGRADE update
+ * protocol).
+ *
+ * The host serves the package ("logical image") with cmd 0x30 reads (ota.c).
+ * The updater:
+ *   1. reads the UFW header and finds flash.bin;
+ *   2. checks that the package's app area decrypts with THIS chip's key
+ *      (taken from isd_config.ini in the device's own flash head), so a
+ *      package for another key is refused before anything is erased;
+ *   3. writes ONLY the app area [0x4000, 0x93000), sector by sector, skipping
+ *      sectors that are already equal, and verifies each one; the flash head
+ *      (SPL, isd_config) is never written;
+ *   4. asks 0xF0000000 ("success"), then invalidates the update record (RAM
+ *      and flash) so the SPL boots the new app, and resets.
+ *
+ * The order of 3 for a package with ChoralRoot's boot init and commit marker
+ * (firmware/init/init_core.h, docs/BOOT-SAFETY.md), so that a write
+ * cut at any point leaves a unit the init turns into a rescue:
+ *   a. before the first write anywhere else, the marker's sector (0x91000) is
+ *      erased: the body is uncommitted, the init will not boot it;
+ *   b. sector 0x4000 (the directory and the init), only if it differs from the
+ *      flash: the one window without a working init. It is the same bytes in
+ *      every build with the same init, so normally nothing is written here;
+ *   c. the body, 0x5000..0x90FFF and 0x92000..0x92FFF;
+ *   d. the marker's sector last (its last page holds the marker).
+ * A package without the marker is written in address order, as before.
+ * Power loss during 3 (the SPL does not start the updater from the flash copy
+ * of the record on a cold boot: BOOT-SAFETY.md): the init finds no marker and
+ * hands over to the staged updater, or to the ROM's USB boot.
+ *
+ * Hooks from the platform (boot.c, boot_test.c):
+ *   boot_fread(off, p, n)  boot_erase(off)  boot_prog(off, p, n)   flash, 0 = ok
+ *   boot_record_clear()    forget the RAM update record
+ *   boot_progress(done, total)
+ * plus the ota.c hooks (frames, time, idle). */
+#define BOOT_APP_LO FLASH_APP_LO
+#define BOOT_APP_HI FLASH_APP_END
+#define BOOT_REC_LO FLASH_APP_END                     /* update records live above the app ... */
+#define BOOT_REC_HI FLASH_GLOB_LO                     /* ... and below Melodee's globals */
+#define BOOT_INIT_SEC FLASH_APP_LO                    /* the directory and the boot init */
+#define BOOT_MARK_SEC FLASH_MARK_SEC                /* init_core.h INIT_MARK_SEC, INIT_MARK_OFF */
+#define BOOT_MARK_OFF FLASH_MARK_OFF
+
+static int boot_fread(uint32_t off, void *p, uint32_t n);
+static int boot_erase(uint32_t off);
+static int boot_prog(uint32_t off, const void *p, uint32_t n);
+static void boot_record_clear(void);
+static void boot_progress(uint32_t done, uint32_t total);
+
+/* SFC cipher: per 32-byte block, key ^ (block offset >> 2) */
+static void boot_sfc(uint8_t *p, uint32_t n, uint32_t base_off, uint32_t key)
+{
+    uint32_t i, j;
+    for (i = 0; i < n; i += 32u) {
+        uint32_t k = key ^ ((base_off + i) >> 2);
+        for (j = 0; j < 32u && i + j < n; j++) {
+            p[i + j] ^= (uint8_t)k;
+            k = ((k << 1) ^ (k & 0x8000u ? 0x1021u : 0u)) & 0xFFFFu;
+        }
+    }
+}
+
+/* chip key from the device's flash head: JLFS top entries (ENC 0xFFFF) -> isd_config.ini blob */
+static int boot_chip_key(uint32_t *key)
+{
+    uint8_t e[32], blob[34];
+    uint32_t off, i, sum, k;
+    for (off = 32; off < 0x400u; off += 32u) {
+        if (boot_fread(off, e, 32))
+            return -1;
+        ota_jl_enc(e, 32);
+        if (ota_crc16(e + 2, 30, 0) != ota_rd16(e))
+            return -2;
+        if (!ota_memeq(e + 16, (const uint8_t *)"isd_config.ini", 15)) {
+            if (ota_rd16(e + 14))
+                return -3;                               /* last entry, not found */
+            continue;
+        }
+        if (boot_fread(ota_rd32(e + 4), blob, 34) || ota_crc16(blob, 32, 0) != ota_rd16(blob + 32))
+            return -4;
+        for (i = 0, sum = 0; i < 16u; i++)
+            sum += blob[i];
+        sum &= 0xFFu;
+        sum = sum >= 0xE0u ? 0xAAu : sum <= 0x10u ? 0x55u : sum;
+        for (i = 0, k = 0; i < 16u; i++)
+            if ((uint32_t)(blob[16 + i] ^ blob[15 - i]) < sum)
+                k |= 1u << i;
+        *key = k;
+        return 0;
+    }
+    return -3;
+}
+
+/* CRC-32 (zlib's), bit by bit: the marker's own 16 bytes only */
+static uint32_t boot_crc32(const uint8_t *p, uint32_t n)
+{
+    uint32_t c = 0xFFFFFFFFu, i;
+    while (n--) {
+        c ^= *p++;
+        for (i = 0; i < 8u; i++)
+            c = c & 1u ? (c >> 1) ^ 0xEDB88320u : c >> 1;
+    }
+    return ~c;
+}
+
+/* does the package carry the init's commit marker? (the 512 bytes that hold it, decrypted in place) */
+static int boot_pkg_marker(uint32_t fl_off, uint8_t *b, uint32_t key, uint32_t stub)
+{
+    const uint8_t *m = b + (BOOT_MARK_OFF & 0x1FFu);
+    if (ota_read(fl_off + (BOOT_MARK_OFF & ~0x1FFu), b, 512))
+        return -7;
+    boot_sfc(b, 512, (BOOT_MARK_OFF & ~0x1FFu) - BOOT_APP_LO, key);
+    uint32_t len = ota_rd32(m + 8);
+    int valid = ota_rd32(m) == 0x4D425243u && ota_rd32(m + 4) == 1u &&
+                len && !(len & 3u) && len <= FLASH_BODY_MAX && ota_rd32(m + 16) == boot_crc32(m, 16);
+    /* A damaged marker must not silently select the legacy write order for
+     * an image whose entry is the recovery init. Reject before any erase. */
+    return stub && !valid ? -15 : valid;
+}
+
+/* the marker's sector erased, once, before the first write elsewhere: from here to the marker's own write the
+ * init refuses the body. Left alone when it is blank already (a resumed install) */
+static int boot_uncommit(uint8_t *cur, uint32_t *open)
+{
+    uint32_t i, tries;
+    if (*open)
+        return 0;
+    for (tries = 0; tries < 3u; tries++) {
+        if (boot_fread(BOOT_MARK_SEC, cur, 0x1000u))
+            return -8;
+        for (i = 0; i < 0x1000u && cur[i] == 0xFFu; i++)
+            ;
+        if (i == 0x1000u) {
+            *open = 1;
+            return 0;
+        }
+        if (tries < 2u && boot_erase(BOOT_MARK_SEC))
+            return -9;
+    }
+    return -12;                                          /* it does not erase: nothing else was touched */
+}
+
+/* one sector: the package's into sec first, then the flash's; erased, written and read back (twice at most) only
+ * when they differ. mark: the package has a marker, so its sector goes blank before anything else is written */
+static int boot_sector(uint32_t fl_off, uint32_t s, uint8_t *sec, uint8_t *cur, uint32_t mark, uint32_t *open)
+{
+    uint32_t k, tries;
+    int rc;
+    for (k = 0; k < 0x1000u; k += 512u)
+        if (ota_read(fl_off + s + k, sec + k, 512))
+            return -7;
+    if (boot_fread(s, cur, 0x1000u))
+        return -8;
+    if (ota_memeq(sec, cur, 0x1000u))
+        return 0;
+    if (mark && s != BOOT_MARK_SEC && (rc = boot_uncommit(cur, open)) != 0)
+        return rc;
+    for (tries = 0; tries < 2u; tries++) {
+        if (boot_erase(s))
+            return -9;
+        for (k = 0; k < 0x1000u; k += 256u)
+            if (boot_prog(s + k, sec + k, 256))
+                return -10;
+        if (boot_fread(s, cur, 0x1000u))
+            return -8;
+        if (ota_memeq(sec, cur, 0x1000u))
+            return 0;
+    }
+    return -11;                                          /* verify failed twice */
+}
+
+static int boot_session(void)
+{
+    static uint8_t hdr[0x400], sec[0x1000], cur[0x1000];
+    uint32_t i, fl_off, fl_size, ota_off, ota_len, key, s, done = 0, open = 0, stub;
+    int rc, mark;
+    /* 1. UFW header + entry list (ota.c) */
+    if ((rc = ota_ufw(hdr, &fl_off, &fl_size, &ota_off, &ota_len)) != 0)
+        return rc;
+    if (!fl_off || fl_size != BOOT_APP_HI)
+        return -3;
+    /* 2. the package's app area must decrypt with this chip's key */
+    if ((rc = boot_chip_key(&key)) != 0)
+        return -40 + rc;
+    if (ota_read(fl_off + BOOT_APP_LO, sec, 512))
+        return -5;
+    boot_sfc(sec, 512, 0, key);
+    if (ota_crc16(sec + 2, 30, 0) != ota_rd16(sec))
+        return -6;                                       /* package for another chip key */
+    stub = (uint32_t)ota_memeq(sec + 0x128u, (const uint8_t *)"CRSTUB", 6);
+    /* 3. app area, sector by sector: the init's sector first (it is the lowest), the marker's last */
+    if ((mark = boot_pkg_marker(fl_off, sec, key, stub)) < 0)
+        return mark;
+    for (s = BOOT_APP_LO; s < BOOT_APP_HI; s += 0x1000u) {
+        if (mark && s == BOOT_MARK_SEC)
+            continue;
+        if ((rc = boot_sector(fl_off, s, sec, cur, (uint32_t)mark, &open)) != 0)
+            return rc;
+        done += 0x1000u;
+        boot_progress(done, BOOT_APP_HI - BOOT_APP_LO);
+    }
+    if (mark) {                                          /* the commit: every other sector is written and verified */
+        if ((rc = boot_sector(fl_off, BOOT_MARK_SEC, sec, cur, 1u, &open)) != 0)
+            return rc;
+        boot_progress(BOOT_APP_HI - BOOT_APP_LO, BOOT_APP_HI - BOOT_APP_LO);
+    }
+    /* 4. finish: the host confirms, the record goes, the SPL boots the app */
+    for (i = 0; i < 4u; i++)
+        if (!ota_read(0xF0000000u, sec, 8))
+            break;
+    boot_record_clear();
+    for (s = BOOT_REC_HI; s > BOOT_REC_LO; s -= 0x1000u) {   /* flash records: 4K boundary - 256 */
+        uint8_t r[80];
+        if (s > FLASH_OTA_LO && s <= FLASH_OTA_HI)
+            continue;                                    /* the staged updater; ota_boot_cleanup() owns it */
+        if (boot_fread(s - 0x100u, r, 80))
+            break;
+        if (ota_rd16(r + 6) == 0x5441u && ota_rd16(r) && ota_rd16(r) == ota_crc16(r + 2, 78, 0))
+            boot_erase(s - 0x1000u);
+    }
+    return 0;
+}

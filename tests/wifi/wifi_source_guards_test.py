@@ -26,7 +26,7 @@ def _fn_body(src, name):
 
 def test_assoc_sends_its_request_once_on_entry():
     """ASSOC must not resend on a `< 10` ms elapsed window every poll."""
-    src = (WIFI / 'wifi_sta.c').read_text()
+    src = (WIFI / 'sta.c').read_text()
     fn_start = src.index('wifi_sta_poll(')
     fn_end = src.index('\n}', src.index('case WIFI_STATE_CONNECTED:', fn_start))
     fn = src[fn_start:fn_end]
@@ -36,7 +36,7 @@ def test_assoc_sends_its_request_once_on_entry():
 
 
 def test_connect_derives_the_pmk_before_authentication():
-    src = (WIFI / 'wifi_api.c').read_text()
+    src = (WIFI / 'wifi.c').read_text()
     fn_start = src.index('wifi_connect(')
     fn = src[fn_start:src.index('\n}', fn_start) + 2]
     pmk = max(fn.find('wifi_wpa_init('), fn.find('wifi_wpa_derive_pmk('))
@@ -51,7 +51,7 @@ def test_connect_derives_the_pmk_before_authentication():
 def test_sdio_tx_keeps_irq_off_regions_short():
     """The audio DMA deadline is 2.9 ms: a claim/release region in wifi_sdio_tx must not hold
     both a loop and fm1_delay_us."""
-    body = _fn_body((WIFI / 'wifi_sdio.c').read_text(), 'wifi_sdio_tx')
+    body = _fn_body((WIFI / 'hw' / 'sdio.c').read_text(), 'wifi_sdio_tx')
     regions = re.findall(r'wifi_sdio_claim\s*\(\s*\)(.*?)wifi_sdio_release\s*\(\s*\)', body, re.DOTALL)
     assert regions, 'no wifi_sdio_claim/release region found in wifi_sdio_tx'
     for i, region in enumerate(regions):
@@ -61,7 +61,7 @@ def test_sdio_tx_keeps_irq_off_regions_short():
 
 def test_rtos_shim_has_no_linux_kernel_names():
     """Clean-room guard: the RTOS shim uses project-original names only."""
-    text = (WIFI / 'wifi_rtos.c').read_text()
+    text = (WIFI / 'rtos.c').read_text()
     forbidden = ['sk_buff', 'alloc_skb', 'kfree_skb', 'skb_push', 'skb_pull', 'skb_put', 'skb_trim',
                  'skb_reserve', 'skb_clone', 'skb_copy', 'spinlock_t', 'spin_lock_irqsave',
                  'spin_unlock_irqrestore', 'tasklet_struct', 'tasklet_init', 'tasklet_hi_schedule',

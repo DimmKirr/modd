@@ -1,0 +1,282 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+12:07:40.691	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	test			start
+12:07:40.701	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	exec	0.006		xdotool search --name ^FM-1 -> exit 1
+12:07:40.702	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 39275:9222
+12:07:40.724	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.020		GET /api/info -> URLError
+12:07:40.749	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			forward: host:39275 -> guest:9222
+12:07:40.750	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+12:07:40.750	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+12:07:40.751	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+12:07:40.751	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+12:07:40.751	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+12:07:40.751	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+12:07:40.751	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+12:07:40.751	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+12:07:40.751	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+12:07:40.751	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+12:07:40.752	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+12:07:40.752	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			MIDI in: MIDI support could not be initialized
+12:07:40.767	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+12:07:40.767	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+12:07:42.755	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			[  2.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:07:43.734	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	2.005		GET /api/info -> TimeoutError
+12:07:44.758	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:07:44.758	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.019		GET /api/info -> 200, 94 B
+12:07:44.759	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	emu	4.055		firmware API up on port 39275
+12:07:44.760	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	test	4.066		setup passed
+12:07:44.775	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.015		GET /api/info -> 200, 94 B
+12:07:44.797	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.021		GET /api/page -> 200, 446 B
+12:07:45.772	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.923		GET /api/screenshot -> 200, 153654 B
+12:07:46.761	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:07:46.803	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.982		GET /api/screenshot -> 200, 153654 B
+12:07:46.835	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.015		GET /api/page -> 200, 446 B
+12:07:46.871	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.025		GET /api/log -> 200, 2593 B
+12:07:46.894	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.018		GET /api/info -> 200, 94 B
+12:07:46.914	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.020		GET /api/info -> 200, 94 B
+12:07:46.934	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	http	0.020		GET /api/page -> 200, 446 B
+12:07:46.938	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	test	2.178		call passed
+12:07:46.942	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	emu			fm1-live stopped
+12:07:46.942	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	test	0.004		teardown passed
+12:07:46.942	tests/boot/api_boot_test.py::BootTest::test_firmware_boots	test	6.251		end passed; 13 io, 4.1 s in io, 0.0 s throttled
+12:07:46.945	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test			start
+12:07:46.957	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	exec	0.010		xdotool search --name ^FM-1 -> exit 1
+12:07:46.959	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 58113:9222
+12:07:46.961	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.000		GET /api/info -> URLError
+12:07:47.012	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			forward: host:58113 -> guest:9222
+12:07:47.015	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+12:07:47.016	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+12:07:47.016	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+12:07:47.016	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+12:07:47.016	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+12:07:47.017	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+12:07:47.017	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+12:07:47.017	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+12:07:47.018	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+12:07:47.018	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+12:07:47.019	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+12:07:47.019	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			MIDI in: MIDI support could not be initialized
+12:07:47.039	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+12:07:47.039	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+12:07:49.021	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			[  2.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:07:49.970	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	2.004		GET /api/info -> TimeoutError
+12:07:50.994	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.022		GET /api/info -> 200, 94 B
+12:07:50.995	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	emu	4.034		firmware API up on port 58113
+12:07:50.995	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	4.050		setup passed
+12:07:51.011	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.016		GET /modd/home -> 200, 442 B
+12:07:51.022	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:07:51.062	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.050		GET /api/page -> 200, 446 B
+12:07:52.008	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.946		GET /api/screenshot -> 200, 153654 B
+12:07:52.090	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.017		GET /api/input -> 200, 136 B
+12:07:52.111	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/oct-/down -> 200, 46 B
+12:07:52.130	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 136 B
+12:07:52.151	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/oct-/up -> 200, 46 B
+12:07:52.221	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.016		GET /api/input -> 200, 136 B
+12:07:52.242	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /modd/home -> 200, 442 B
+12:07:52.291	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.049		GET /api/page -> 200, 446 B
+12:07:52.292	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:52.310	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input/button/oct+/down -> 200, 46 B
+12:07:52.330	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 136 B
+12:07:52.351	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/oct+/up -> 200, 46 B
+12:07:52.420	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.017		GET /api/input -> 200, 136 B
+12:07:52.441	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /modd/home -> 200, 442 B
+12:07:52.491	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.050		GET /api/page -> 200, 446 B
+12:07:52.492	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:52.511	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input/button/fx/down -> 200, 44 B
+12:07:52.531	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 136 B
+12:07:52.551	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/fx/up -> 200, 44 B
+12:07:52.620	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input -> 200, 136 B
+12:07:52.641	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /modd/home -> 200, 442 B
+12:07:52.691	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.050		GET /api/page -> 200, 446 B
+12:07:52.692	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:52.710	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input/button/scl/down -> 200, 45 B
+12:07:52.730	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 136 B
+12:07:52.751	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/scl/up -> 200, 45 B
+12:07:52.820	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input -> 200, 136 B
+12:07:52.841	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /modd/home -> 200, 442 B
+12:07:52.889	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.048		GET /api/page -> 200, 446 B
+12:07:52.889	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:52.910	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/env/down -> 200, 45 B
+12:07:52.930	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 138 B
+12:07:52.951	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/env/up -> 200, 45 B
+12:07:53.021	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 136 B
+12:07:53.025	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:07:53.041	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /modd/home -> 200, 442 B
+12:07:53.091	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.050		GET /api/page -> 200, 446 B
+12:07:53.091	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:53.110	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input/button/lfo/down -> 200, 45 B
+12:07:53.130	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 138 B
+12:07:53.151	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/lfo/up -> 200, 45 B
+12:07:53.221	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.016		GET /api/input -> 200, 136 B
+12:07:53.241	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /modd/home -> 200, 442 B
+12:07:53.291	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.050		GET /api/page -> 200, 446 B
+12:07:53.292	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:53.310	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input/button/edit/down -> 200, 46 B
+12:07:53.330	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 138 B
+12:07:53.350	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/edit/up -> 200, 46 B
+12:07:53.420	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.016		GET /api/input -> 200, 136 B
+12:07:53.441	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /modd/home -> 200, 442 B
+12:07:53.490	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.049		GET /api/page -> 200, 446 B
+12:07:53.491	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:53.510	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/button/glo/down -> 200, 45 B
+12:07:53.530	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 140 B
+12:07:53.550	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/glo/up -> 200, 45 B
+12:07:53.620	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.013		GET /api/input -> 200, 136 B
+12:07:53.641	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /modd/home -> 200, 442 B
+12:07:53.690	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.049		GET /api/page -> 200, 446 B
+12:07:53.691	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:53.710	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/button/home/down -> 200, 46 B
+12:07:53.731	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 140 B
+12:07:53.750	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/button/home/up -> 200, 46 B
+12:07:53.820	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 136 B
+12:07:53.840	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /modd/home -> 200, 442 B
+12:07:53.891	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.051		GET /api/page -> 200, 446 B
+12:07:53.892	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:53.910	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input/button/save/down -> 200, 46 B
+12:07:53.931	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/input -> 200, 140 B
+12:07:53.950	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/button/save/up -> 200, 46 B
+12:07:54.020	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 136 B
+12:07:54.041	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /modd/home -> 200, 442 B
+12:07:54.092	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.051		GET /api/page -> 200, 446 B
+12:07:54.092	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:54.110	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.017		GET /api/input/button/arp/down -> 200, 45 B
+12:07:54.130	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 142 B
+12:07:54.150	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/arp/up -> 200, 45 B
+12:07:54.230	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 136 B
+12:07:54.251	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /modd/home -> 200, 442 B
+12:07:54.303	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.052		GET /api/page -> 200, 446 B
+12:07:54.304	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:54.320	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.016		GET /api/input/button/seq/down -> 200, 45 B
+12:07:54.340	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 142 B
+12:07:54.359	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/button/seq/up -> 200, 45 B
+12:07:54.430	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/input -> 200, 136 B
+12:07:54.450	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /modd/home -> 200, 442 B
+12:07:54.503	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.053		GET /api/page -> 200, 446 B
+12:07:54.504	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:54.520	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.016		GET /api/input/button/play/down -> 200, 46 B
+12:07:54.540	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 142 B
+12:07:54.561	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/input/button/play/up -> 200, 46 B
+12:07:54.640	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/input -> 200, 136 B
+12:07:54.662	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.022		GET /modd/home -> 200, 442 B
+12:07:54.711	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.048		GET /api/page -> 200, 446 B
+12:07:54.711	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:54.731	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/rec/down -> 200, 45 B
+12:07:54.750	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input -> 200, 142 B
+12:07:54.770	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/rec/up -> 200, 45 B
+12:07:54.841	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.016		GET /api/input -> 200, 136 B
+12:07:54.862	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /modd/home -> 200, 442 B
+12:07:54.911	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.049		GET /api/page -> 200, 446 B
+12:07:54.911	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:07:54.931	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/home/hold/700 -> 200, 48 B
+12:07:55.027	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:07:55.700	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.017		GET /api/input -> 200, 136 B
+12:07:55.721	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/page -> 200, 178 B
+12:07:56.723	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	1.002		GET /api/screenshot -> 200, 153654 B
+12:07:56.760	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/page -> 200, 178 B
+12:07:56.780	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/enc/select/1 -> 200, 48 B
+12:07:56.850	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 136 B
+12:07:56.870	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/page -> 200, 170 B
+12:07:57.030	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:07:57.759	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.888		GET /api/screenshot -> 200, 153654 B
+12:07:57.801	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.015		GET /api/input/button/home/tap/80 -> 200, 48 B
+12:07:57.950	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.014		GET /api/input -> 200, 137 B
+12:07:57.971	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/page -> 200, 446 B
+12:07:59.031	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			[ 12.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:07:59.046	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	1.075		GET /api/screenshot -> 200, 153654 B
+12:07:59.082	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.015		GET /api/page -> 200, 446 B
+12:07:59.101	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/enc/select/1 -> 200, 49 B
+12:07:59.170	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input -> 200, 137 B
+12:07:59.191	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/page -> 200, 446 B
+12:08:00.074	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.882		GET /api/screenshot -> 200, 153654 B
+12:08:00.111	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.013		GET /api/input/enc/select/-1 -> 200, 50 B
+12:08:00.190	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 137 B
+12:08:00.210	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/page -> 200, 446 B
+12:08:01.033	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:08:01.101	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.890		GET /api/screenshot -> 200, 153654 B
+12:08:01.140	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.013		GET /api/input/enc/algorithm/2 -> 200, 52 B
+12:08:01.210	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 137 B
+12:08:01.231	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/input/enc/algorithm/-2 -> 200, 53 B
+12:08:01.301	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.016		GET /api/input -> 200, 137 B
+12:08:01.301	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:08:01.321	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/enc/knob1/2 -> 200, 48 B
+12:08:01.390	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.015		GET /api/input -> 200, 137 B
+12:08:01.411	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/input/enc/knob1/-2 -> 200, 49 B
+12:08:01.480	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.015		GET /api/input -> 200, 137 B
+12:08:01.481	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:08:01.501	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/enc/knob2/2 -> 200, 48 B
+12:08:01.570	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input -> 200, 137 B
+12:08:01.590	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/enc/knob2/-2 -> 200, 49 B
+12:08:01.661	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.013		GET /api/input -> 200, 137 B
+12:08:01.661	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:08:01.681	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/enc/knob3/2 -> 200, 48 B
+12:08:01.750	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.017		GET /api/input -> 200, 137 B
+12:08:01.771	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/input/enc/knob3/-2 -> 200, 49 B
+12:08:01.841	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 137 B
+12:08:01.842	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:08:01.860	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input/enc/knob4/2 -> 200, 48 B
+12:08:01.930	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input -> 200, 137 B
+12:08:01.951	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/enc/knob4/-2 -> 200, 49 B
+12:08:02.020	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input -> 200, 137 B
+12:08:02.020	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:08:02.040	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/enc/presets/2 -> 200, 50 B
+12:08:02.111	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 137 B
+12:08:02.130	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input/enc/presets/-2 -> 200, 51 B
+12:08:02.200	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.015		GET /api/input -> 200, 137 B
+12:08:02.200	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:08:02.220	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/page -> 200, 446 B
+12:08:02.240	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/edit/down -> 200, 47 B
+12:08:02.260	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 139 B
+12:08:02.280	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/enc/knob1/1 -> 200, 48 B
+12:08:02.350	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 139 B
+12:08:02.370	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 139 B
+12:08:02.390	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input/button/edit/up -> 200, 47 B
+12:08:02.461	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 137 B
+12:08:02.481	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /modd/home -> 200, 442 B
+12:08:02.531	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.050		GET /api/page -> 200, 446 B
+12:08:02.550	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/pot/master/1023 -> 200, 49 B
+12:08:02.572	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/input/key/60/down -> 200, 49 B
+12:08:02.590	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input -> 200, 143 B
+12:08:02.611	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 143 B
+12:08:02.841	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input -> 200, 143 B
+12:08:02.862	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/audio -> 200, 137 B
+12:08:02.881	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/key/60/up -> 200, 49 B
+12:08:02.951	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 139 B
+12:08:02.952	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:08:02.971	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input/key/61/down -> 200, 49 B
+12:08:02.991	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 143 B
+12:08:03.011	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 143 B
+12:08:03.033	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			[ 16.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:08:03.242	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 143 B
+12:08:03.261	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/audio -> 200, 137 B
+12:08:03.280	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/key/61/up -> 200, 49 B
+12:08:03.351	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input -> 200, 139 B
+12:08:03.351	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:08:03.370	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/input/key/77/down -> 200, 54 B
+12:08:03.390	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 153 B
+12:08:03.410	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input -> 200, 153 B
+12:08:03.641	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.017		GET /api/input -> 200, 153 B
+12:08:03.661	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/audio -> 200, 137 B
+12:08:03.680	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/key/77/up -> 200, 54 B
+12:08:03.751	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 139 B
+12:08:03.751	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.000		call passed
+12:08:04.664	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.913		GET /api/screenshot -> 200, 153654 B
+12:08:04.700	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/page -> 200, 446 B
+12:08:04.720	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.014		GET /api/input/pot/master/0 -> 200, 46 B
+12:08:04.741	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/audio -> 200, 131 B
+12:08:05.034	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			[ 18.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:08:05.060	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.017		GET /api/audio -> 200, 128 B
+12:08:05.381	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/audio -> 200, 128 B
+12:08:05.401	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/pot/master/1023 -> 200, 49 B
+12:08:05.421	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/audio -> 200, 129 B
+12:08:05.741	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.018		GET /api/audio -> 200, 131 B
+12:08:06.061	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/audio -> 200, 131 B
+12:08:06.080	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/input/pot/master/release -> 200, 47 B
+12:08:06.101	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.020		GET /api/input -> 200, 137 B
+12:08:06.121	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.013		GET /api/info -> 200, 95 B
+12:08:06.140	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.019		GET /api/info -> 200, 95 B
+12:08:06.161	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.021		GET /api/page -> 200, 446 B
+12:08:07.036	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	fm1-live			[ 20.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+12:08:07.084	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	http	0.922		GET /api/screenshot -> 200, 153654 B
+12:08:07.118	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	16.123		call passed
+12:08:07.120	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	emu			fm1-live stopped
+12:08:07.120	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	0.002		teardown passed
+12:08:07.120	tests/boot/api_boot_test.py::PanelControlsTest::test_panel_controls_reach_firmware	test	20.176		end passed; 186 io, 13.3 s in io, 0.0 s throttled

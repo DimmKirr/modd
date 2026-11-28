@@ -130,7 +130,7 @@ graph TD
     end
 
     subgraph "5. USB driver + OTA"
-        USB_DRV["midi/usb.c<br/><small>MIDI IN/OUT, SysEx, UBOOT</small>"]
+        USB_DRV["ports/melodee/usb/usb.c<br/><small>MIDI IN/OUT, SysEx, UBOOT</small>"]
         OTA_ADAPT["modd_ota.h<br/><small>flash hooks (CONFIG_OTA)</small>"]
         OTA_CORE["boot/ota.c<br/><small>M-UPGRADE protocol</small>"]
     end
@@ -144,11 +144,14 @@ graph TD
         CTX_S["sched/ctx.S<br/><small>context switch (asm)</small>"]
     end
 
-    subgraph "6. Audio core"
-        PARAMS["params.c"]
-        VOICE["voice.c"]
-        CORE_AUDIO["audio.c<br/><small>DMA ISR + mix_block</small>"]
-        FX["effects/fx.c"]
+    subgraph "6. Core (CONFIG_CORE_*)"
+        CORE_STUBS["core/*/stubs.c"]
+        PARAMS["core/*/params.c"]
+        VOICE["core/*/voice.c"]
+        CORE_FX["core/*/fx.c"]
+        CORE_SEQ["core/*/seq.c"]
+        CORE_INIT["core/*/init.c"]
+        CORE_AUDIO["audio/audio.c<br/><small>DMA ISR + mix_block</small>"]
     end
 
     subgraph "7. UI"
@@ -251,8 +254,8 @@ if (usb.uboot_req) {
 ### Source
 
 - HAL: `firmware/hal/fm1_usb.h` (register-level, USB0 peripheral)
-- Driver: `firmware/src/midi/usb.c` (~1000 lines, Melodee upstream)
-- Adapter guard: `firmware/adapters/modd_midi.h` (`MODD_USB_MIDI` flag avoids stub conflict)
+- Driver: `firmware/ports/melodee/usb/usb.c` (~1000 lines, Melodee upstream)
+- Adapter guard: `firmware/contracts/modd_midi.h` (`MODD_USB_MIDI` flag avoids stub conflict)
 
 ## Audio
 
@@ -260,11 +263,14 @@ Voice allocator, render pipeline, DMA half-buffer (128 samples @ 44.1kHz stereo)
 
 Enabled by `CONFIG_AUDIO`. Requires `fm1_irq_enable_all()` after `audio_init()` or the ALNK0 DMA ISR never fires. Optionally uses `CONFIG_DUAL_CORE` for render on core 1.
 
-### Core component (pick one upstream)
+### Core (`CONFIG_CORE_*`, atomic radio choice)
 
-- **Felucca**: 8+6 voices (14 total)
-- **SLOOP**: inherited from Felucca
-- **Melodee**: 18 budget units, FPU, per-voice cost (used by `felucca_mock` and `minimal` defconfigs)
+The core is an unsplittable unit: params + voice + seq + fx + mix + mod. Each core lives in `firmware/src/core/<upstream>/` as thin adapters that `#include` the upstream files unchanged, plus `firmware/src/core/modd/` for modd's own stubs/forks.
+
+- **Felucca** (`CONFIG_CORE_FELUCCA`): `core/felucca/{stubs,params,voice,fx,seq,init}.c` — 8+6 voices (14 total)
+- **modd** (`CONFIG_CORE_MODD`): `core/modd/{params,voice,seq}.c` — reduced forks, inherits best from all upstreams later
+- **SLOOP**: inherited from Felucca (not yet implemented)
+- **Melodee**: 18 budget units, FPU, per-voice cost (not yet implemented)
 
 ### Engines (pick any combination)
 
@@ -295,13 +301,12 @@ Prophet-5, CZ-1, SID
 
 ## Sequencer
 
-Step sequencer, pattern management, recording. Depends on Audio.
+Step sequencer, pattern management, recording. Part of the atomic core (`CONFIG_CORE_*`), not independently swappable.
 
-### Sequencer component (pick one upstream)
-
-- **Felucca**: 64-step, chords, ties, live loop
-- **SLOOP**: arranger, scenes
-- **Melodee**: 64-step, 8 banks, 1024 notes, recording, undo, motion, song
+- **Felucca** (`core/felucca/seq.c`): 64-step, chords, ties, live loop, song chain — upstream included unchanged
+- **modd** (`core/modd/seq.c`): REDUCED fork — 64-step, polymeter, parameter locks, live recording; left out song chain, motion, chords, MIDI clock
+- **SLOOP**: arranger, scenes (not yet implemented)
+- **Melodee**: 64-step, 8 banks, 1024 notes, recording, undo, motion, song (not yet implemented)
 
 ## MIDI
 
@@ -373,8 +378,8 @@ first; if it returns 0 (unhandled), the shell falls through to the nav table.
 
 | File | Role |
 |------|------|
-| `firmware/adapters/modd_controls.h` | Button/encoder mapping tables (tap, hold, thresholds) |
-| `firmware/adapters/modd_page.h` | Page vtable: name, draw, knob, button, key, enter, leave |
+| `firmware/contracts/modd_controls.h` | Button/encoder mapping tables (tap, hold, thresholds) |
+| `firmware/contracts/modd_page.h` | Page vtable: name, draw, knob, button, key, enter, leave |
 | `firmware/src/ui/felucca/ui.c` | Layout constants, includes all page files |
 | `firmware/src/ui/felucca/shell.c` | Page array, navigation, input routing, draw loop |
 | `firmware/src/ui/felucca/pages.c` | Page registration order |
@@ -543,9 +548,9 @@ sequenceDiagram
 
 ### Source
 
-- Protocol core: `firmware/src/boot/ota.c` (Melodee upstream, portable)
-- Hardware hooks: `firmware/adapters/modd_ota.h` (flash ops, clock, progress display, commit)
-- Wire transport: `firmware/src/midi/usb.c` (`ota_wire_send`, `ota_frame_get`, gated by `MELODEE_OTA`)
+- Protocol core: `firmware/ports/melodee/ota/ota.c` (Melodee upstream, portable)
+- Hardware hooks: `firmware/contracts/modd_ota.h` (flash ops, clock, progress display, commit)
+- Wire transport: `firmware/ports/melodee/usb/usb.c` (`ota_wire_send`, `ota_frame_get`, gated by `MELODEE_OTA`)
 - Host tool: `firmware/upstream/felucca/tools/fm1_install.py`
 
 ## Contracts (adapters)

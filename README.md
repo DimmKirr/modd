@@ -20,7 +20,7 @@ vendored for reference and reuse.
 ### How modd compares
 
 Most FM-1 firmwares are monoliths: you use all of one or none of it.
-modd's [adapter contracts](firmware/adapters/) and
+modd's [adapter contracts](firmware/contracts/) and
 [Kconfig build system](Kconfig) let you mix modules from different
 firmwares, enable WiFi or USB storage, and test the result in the
 emulator. The default build uses Melodee's audio core with FMLab's FM6
@@ -34,7 +34,7 @@ and modularity.
 
 ### Adapter contracts
 
-28 [`modd_*.h`](firmware/adapters/) headers define every interface between
+28 [`modd_*.h`](firmware/contracts/) headers define every interface between
 modules: audio state, MIDI events, network status, settings, storage, dock
 modules, USB audio, BLE, OTA. No other FM-1 firmware defines a comparable set of
 inter-module contracts. Your shell or engine reads firmware state through
@@ -53,9 +53,9 @@ task test:api    # build, boot in fm1-live, run the API tests
 ### Connectivity
 
 - **WiFi**: WPA2-PSK STA, RF calibration, SDIO transport ([20 files](firmware/src/wifi/))
-- **USB tethering**: Apple USB tethering (ipheth) for wired networking via iPhone<sup>1</sup> ([usbnet.c](firmware/src/net/usbnet.c))
-- **USB disk**: FAT filesystem, mass storage, hub enumeration ([firmware/src/udisk/](firmware/src/udisk/))
-- **List widget**: scrolling list over any source: USB directory, dock instruments, HTTP index (planned) ([modd_list.h](firmware/adapters/modd_list.h))
+- **USB tethering**: Apple USB tethering (ipheth) for wired networking via iPhone<sup>1</sup> ([usbnet.c](firmware/src/usb/net/usbnet.c))
+- **USB disk**: FAT filesystem, mass storage, hub enumeration ([firmware/src/udisk/](firmware/src/udisk/), [firmware/src/usb/](firmware/src/usb/))
+- **List widget**: scrolling list over any source: USB directory, dock instruments, HTTP index (planned) ([modd_list.h](firmware/contracts/modd_list.h))
 
 WiFi and USB ethernet can auto-start or be disabled in config; link priority
 election (wired > WiFi > tethering), async HTTP, weather pixel-art,
@@ -187,7 +187,7 @@ supported combination. Include the configuration and test results with your
 contribution, and retain upstream credits and license notices. Start with:
 
 - [Layout vtable](firmware/src/ui/ui_layout.h) and [existing shells](firmware/src/ui/shells/)
-- [Adapter contracts](firmware/adapters/) (`modd_*.h` headers)
+- [Adapter contracts](firmware/contracts/) (`modd_*.h` headers)
 - [Configuration](Kconfig) and [firmware entry point](firmware/src/modd.c)
 - [Build tasks](Taskfile.yml)
 

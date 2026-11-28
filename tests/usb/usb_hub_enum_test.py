@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-"""Hub enumeration policy guards (firmware/src/udisk/usb_hub.c).
+"""Hub enumeration policy guards (firmware/src/usb/host/usb_hub.c).
 
 Source-level checks, no hardware: the 2026-11-13 device log showed a flash
 drive behind the dock's hub timing out its first SET_ADDRESS 33 ms after the
@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-HUB = ROOT / 'firmware' / 'src' / 'udisk' / 'usb_hub.c'
+HUB = ROOT / 'firmware' / 'src' / 'usb' / 'host' / 'usb_hub.c'
 
 
 def _src():

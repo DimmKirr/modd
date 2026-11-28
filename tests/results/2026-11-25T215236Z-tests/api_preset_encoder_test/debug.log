@@ -1,0 +1,271 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+21:55:03.016	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	test			start
+21:55:03.034	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	exec	0.013		xdotool search --name ^FM-1 -> exit 1
+21:55:03.036	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 55879:9222
+21:55:03.038	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.000		GET /api/info -> URLError
+21:55:03.084	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			forward: host:55879 -> guest:9222
+21:55:03.085	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+21:55:03.085	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+21:55:03.085	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+21:55:03.085	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+21:55:03.086	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+21:55:03.086	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+21:55:03.086	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+21:55:03.086	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+21:55:03.086	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+21:55:03.086	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+21:55:03.086	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+21:55:03.087	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			MIDI in: MIDI support could not be initialized
+21:55:03.103	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+21:55:03.104	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+21:55:05.095	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			[  2.1 s] 1.01x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:06.046	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	2.005		GET /api/info -> TimeoutError
+21:55:07.075	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.026		GET /api/info -> 200, 94 B
+21:55:07.075	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	emu	4.037		firmware API up on port 55879
+21:55:07.075	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	test	4.057		setup passed
+21:55:07.094	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:07.095	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.019		GET /modd/home -> 200, 442 B
+21:55:07.143	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.048		GET /api/page -> 200, 446 B
+21:55:08.090	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.947		GET /api/screenshot -> 200, 153654 B
+21:55:08.121	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.015		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+21:55:08.140	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.019		GET /api/input/pot/master/1023 -> 200, 48 B
+21:55:08.159	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.019		GET /api/input -> 200, 138 B
+21:55:08.599	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.020		GET /api/input -> 200, 138 B
+21:55:08.620	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.021		GET /api/track/sel -> 200, 194 B
+21:55:08.640	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.019		GET /api/input/enc/algorithm/1 -> 200, 51 B
+21:55:08.711	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.020		GET /api/input -> 200, 138 B
+21:55:08.729	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.017		GET /api/track/sel -> 200, 192 B
+21:55:08.752	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.022		GET /api/info -> 200, 94 B
+21:55:08.770	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.018		GET /api/page -> 200, 448 B
+21:55:09.097	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:09.619	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	http	0.849		GET /api/screenshot -> 200, 153654 B
+21:55:09.646	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	test	2.571		call passed
+21:55:09.647	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	test	0.000		teardown passed
+21:55:09.647	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_algo_selects_track	test	6.630		end passed; 18 io, 4.1 s in io, 0.0 s throttled
+21:55:09.648	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	test			start
+21:55:09.648	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	test	0.000		setup passed
+21:55:09.661	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.013		GET /modd/home -> 200, 444 B
+21:55:09.712	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.051		GET /api/page -> 200, 448 B
+21:55:10.645	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.932		GET /api/screenshot -> 200, 153654 B
+21:55:10.690	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.019		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+21:55:10.709	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.018		GET /api/input/pot/master/1023 -> 200, 48 B
+21:55:10.729	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.020		GET /api/input -> 200, 138 B
+21:55:11.101	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:11.180	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.016		GET /api/input -> 200, 138 B
+21:55:11.211	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.030		GET /api/track/sel -> 200, 194 B
+21:55:11.231	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.017		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:11.320	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.015		GET /api/input -> 200, 138 B
+21:55:11.341	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.020		GET /api/track/sel -> 200, 194 B
+21:55:11.361	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.019		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:11.442	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.023		GET /api/input -> 200, 138 B
+21:55:11.459	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.017		GET /api/track/sel -> 200, 194 B
+21:55:11.479	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.020		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:11.551	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.021		GET /api/input -> 200, 138 B
+21:55:11.573	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.022		GET /api/track/sel -> 200, 194 B
+21:55:11.591	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.018		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:11.680	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.015		GET /api/input -> 200, 138 B
+21:55:11.701	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.021		GET /api/track/sel -> 200, 194 B
+21:55:11.722	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.020		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:11.790	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.017		GET /api/input -> 200, 138 B
+21:55:11.810	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.019		GET /api/track/sel -> 200, 194 B
+21:55:11.829	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.020		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:11.921	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.021		GET /api/input -> 200, 138 B
+21:55:11.941	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.019		GET /api/track/sel -> 200, 194 B
+21:55:11.960	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.020		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:12.032	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.020		GET /api/input -> 200, 138 B
+21:55:12.050	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.017		GET /api/track/sel -> 200, 194 B
+21:55:12.073	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.023		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:12.180	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.015		GET /api/input -> 200, 138 B
+21:55:12.204	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.023		GET /api/track/sel -> 200, 194 B
+21:55:12.219	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.015		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:12.301	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.023		GET /api/input -> 200, 138 B
+21:55:12.323	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.022		GET /api/track/sel -> 200, 194 B
+21:55:12.340	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.016		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:12.419	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.010		GET /api/input -> 200, 138 B
+21:55:12.444	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.024		GET /api/track/sel -> 200, 195 B
+21:55:12.461	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.017		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:12.542	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.019		GET /api/input -> 200, 138 B
+21:55:12.562	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.020		GET /api/track/sel -> 200, 195 B
+21:55:12.581	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.018		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:12.651	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.015		GET /api/input -> 200, 138 B
+21:55:12.669	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.018		GET /api/track/sel -> 200, 189 B
+21:55:12.690	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.020		GET /api/input/enc/presets/1 -> 200, 49 B
+21:55:12.770	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.013		GET /api/input -> 200, 138 B
+21:55:12.789	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.019		GET /api/track/sel -> 200, 193 B
+21:55:12.812	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.022		GET /api/input/key/60/down -> 200, 48 B
+21:55:13.103	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:13.151	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.018		GET /api/input -> 200, 143 B
+21:55:13.240	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.089		GET /api/audio/capture -> 200, 21947 B
+21:55:13.259	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.018		GET /api/input/key/60/up -> 200, 49 B
+21:55:13.391	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.014		GET /api/input -> 200, 139 B
+21:55:14.450	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	1.057		GET /api/screenshot -> 200, 153654 B
+21:55:14.481	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.015		GET /api/page -> 200, 448 B
+21:55:14.502	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.015		GET /api/info -> 200, 95 B
+21:55:14.520	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	http	0.018		GET /api/page -> 200, 448 B
+21:55:14.525	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	test	4.877		call passed
+21:55:14.525	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	test	0.000		teardown passed
+21:55:14.525	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_engine_cross_loads_new_engine_sound	test	4.877		end passed; 56 io, 3.1 s in io, 0.0 s throttled
+21:55:14.527	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	test			start
+21:55:14.528	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	test	0.000		setup passed
+21:55:14.550	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.023		GET /modd/home -> 200, 444 B
+21:55:14.599	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.049		GET /api/page -> 200, 448 B
+21:55:14.620	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.021		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+21:55:14.641	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.021		GET /api/input/pot/master/1023 -> 200, 49 B
+21:55:14.660	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.018		GET /api/input -> 200, 139 B
+21:55:15.109	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	fm1-live			[ 12.1 s] 1.01x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:15.129	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.021		GET /api/input -> 200, 139 B
+21:55:15.149	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.020		GET /api/track/sel -> 200, 194 B
+21:55:15.170	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.021		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:15.239	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.016		GET /api/input -> 200, 139 B
+21:55:15.259	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.020		GET /api/track/sel -> 200, 194 B
+21:55:15.281	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.022		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:15.350	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.016		GET /api/input -> 200, 139 B
+21:55:15.370	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.019		GET /api/track/sel -> 200, 194 B
+21:55:15.390	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.020		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:15.462	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.018		GET /api/input -> 200, 139 B
+21:55:15.480	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.018		GET /api/track/sel -> 200, 194 B
+21:55:15.501	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.021		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:15.569	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.017		GET /api/input -> 200, 139 B
+21:55:15.591	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.022		GET /api/track/sel -> 200, 194 B
+21:55:15.610	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.019		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:15.681	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.018		GET /api/input -> 200, 139 B
+21:55:15.704	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.023		GET /api/track/sel -> 200, 194 B
+21:55:15.720	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.016		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:15.790	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.013		GET /api/input -> 200, 139 B
+21:55:15.810	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.019		GET /api/track/sel -> 200, 194 B
+21:55:15.830	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.019		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:15.899	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.017		GET /api/input -> 200, 139 B
+21:55:15.919	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.019		GET /api/track/sel -> 200, 194 B
+21:55:15.942	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.022		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:16.011	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.018		GET /api/input -> 200, 139 B
+21:55:16.034	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.023		GET /api/track/sel -> 200, 194 B
+21:55:16.051	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.016		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:16.140	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.021		GET /api/input -> 200, 139 B
+21:55:16.159	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.018		GET /api/track/sel -> 200, 194 B
+21:55:16.180	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.021		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:16.249	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.009		GET /api/input -> 200, 139 B
+21:55:16.273	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.024		GET /api/track/sel -> 200, 195 B
+21:55:16.289	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.016		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:16.360	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.011		GET /api/input -> 200, 139 B
+21:55:16.383	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.023		GET /api/track/sel -> 200, 195 B
+21:55:16.402	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.018		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:16.473	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.019		GET /api/input -> 200, 139 B
+21:55:16.492	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.019		GET /api/track/sel -> 200, 189 B
+21:55:16.512	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.019		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:16.589	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.016		GET /api/input -> 200, 139 B
+21:55:16.610	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.021		GET /api/track/sel -> 200, 193 B
+21:55:16.631	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.020		GET /api/input/enc/presets/-1 -> 200, 51 B
+21:55:16.712	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.020		GET /api/input -> 200, 139 B
+21:55:16.733	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.020		GET /api/track/sel -> 200, 189 B
+21:55:16.753	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.019		GET /api/info -> 200, 95 B
+21:55:16.772	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.019		GET /api/page -> 200, 441 B
+21:55:17.110	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:17.661	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	http	0.889		GET /api/screenshot -> 200, 153654 B
+21:55:17.687	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	test	3.159		call passed
+21:55:17.687	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	test	0.000		teardown passed
+21:55:17.687	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_back	test	3.160		end passed; 52 io, 1.9 s in io, 0.0 s throttled
+21:55:17.689	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	test			start
+21:55:17.689	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	test	0.000		setup passed
+21:55:17.712	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.022		GET /modd/home -> 200, 437 B
+21:55:17.758	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.046		GET /api/page -> 200, 441 B
+21:55:18.697	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.939		GET /api/screenshot -> 200, 153654 B
+21:55:18.732	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.015		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+21:55:18.751	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.019		GET /api/input/pot/master/1023 -> 200, 49 B
+21:55:18.770	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.019		GET /api/input -> 200, 139 B
+21:55:19.113	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	fm1-live			[ 16.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:19.213	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.016		GET /api/input -> 200, 139 B
+21:55:19.230	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.016		GET /api/track/sel -> 200, 194 B
+21:55:19.249	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.019		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:19.320	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.021		GET /api/input -> 200, 139 B
+21:55:19.343	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.023		GET /api/track/sel -> 200, 194 B
+21:55:19.361	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.018		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:19.432	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.019		GET /api/input -> 200, 139 B
+21:55:19.449	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.017		GET /api/track/sel -> 200, 194 B
+21:55:19.470	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.020		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:19.542	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.023		GET /api/input -> 200, 139 B
+21:55:19.563	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.020		GET /api/track/sel -> 200, 194 B
+21:55:19.578	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.015		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:19.651	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.022		GET /api/input -> 200, 139 B
+21:55:19.670	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.018		GET /api/track/sel -> 200, 194 B
+21:55:19.692	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.021		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:19.800	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.018		GET /api/input -> 200, 139 B
+21:55:19.819	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.019		GET /api/track/sel -> 200, 194 B
+21:55:19.842	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.022		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:19.920	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.018		GET /api/input -> 200, 139 B
+21:55:19.941	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.021		GET /api/track/sel -> 200, 194 B
+21:55:19.960	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.018		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:20.042	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.019		GET /api/input -> 200, 139 B
+21:55:20.062	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.020		GET /api/track/sel -> 200, 194 B
+21:55:20.084	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.022		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:20.150	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.010		GET /api/input -> 200, 139 B
+21:55:20.172	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.021		GET /api/track/sel -> 200, 194 B
+21:55:20.191	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.018		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:20.269	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.017		GET /api/input -> 200, 139 B
+21:55:20.291	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.022		GET /api/track/sel -> 200, 194 B
+21:55:20.309	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.018		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:20.391	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.017		GET /api/input -> 200, 139 B
+21:55:20.412	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.021		GET /api/track/sel -> 200, 195 B
+21:55:20.430	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.018		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:20.501	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.019		GET /api/input -> 200, 139 B
+21:55:20.520	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.018		GET /api/track/sel -> 200, 195 B
+21:55:20.543	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.023		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:20.620	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.016		GET /api/input -> 200, 139 B
+21:55:20.643	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.022		GET /api/track/sel -> 200, 189 B
+21:55:20.660	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.017		GET /api/info -> 200, 95 B
+21:55:20.682	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	0.022		GET /api/page -> 200, 441 B
+21:55:21.116	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	fm1-live			[ 18.1 s] 1.01x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:21.726	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	http	1.044		GET /api/screenshot -> 200, 153654 B
+21:55:21.744	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	test	4.055		call passed
+21:55:21.745	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	test	0.000		teardown passed
+21:55:21.745	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_crosses_to_next_engine	test	4.056		end passed; 47 io, 2.9 s in io, 0.0 s throttled
+21:55:21.746	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	test			start
+21:55:21.747	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	test	0.000		setup passed
+21:55:21.761	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.014		GET /modd/home -> 200, 437 B
+21:55:21.800	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.039		GET /api/page -> 200, 441 B
+21:55:21.820	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.020		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+21:55:21.840	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.020		GET /api/input/pot/master/1023 -> 200, 49 B
+21:55:21.861	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.021		GET /api/input -> 200, 139 B
+21:55:22.300	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.018		GET /api/input -> 200, 139 B
+21:55:22.322	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.021		GET /api/track/sel -> 200, 194 B
+21:55:22.341	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.019		GET /api/input/key/60/down -> 200, 49 B
+21:55:22.692	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.015		GET /api/input -> 200, 143 B
+21:55:22.784	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.091		GET /api/audio/capture -> 200, 21947 B
+21:55:22.799	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.015		GET /api/input/key/60/up -> 200, 49 B
+21:55:22.919	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.015		GET /api/input -> 200, 139 B
+21:55:22.940	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.016		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:23.023	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.022		GET /api/input -> 200, 139 B
+21:55:23.039	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.016		GET /api/track/sel -> 200, 194 B
+21:55:23.060	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.021		GET /api/input/key/60/down -> 200, 49 B
+21:55:23.120	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	fm1-live			[ 20.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:23.399	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.016		GET /api/input -> 200, 143 B
+21:55:23.491	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.091		GET /api/audio/capture -> 200, 21947 B
+21:55:23.512	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.020		GET /api/input/key/60/up -> 200, 49 B
+21:55:23.644	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.018		GET /api/input -> 200, 139 B
+21:55:23.660	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.012		GET /api/info -> 200, 95 B
+21:55:23.681	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	0.021		GET /api/page -> 200, 451 B
+21:55:24.684	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	http	1.002		GET /api/screenshot -> 200, 153654 B
+21:55:24.700	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	test	2.954		call passed
+21:55:24.701	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	test	0.000		teardown passed
+21:55:24.701	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_loads_params_different_sound	test	2.955		end passed; 23 io, 1.6 s in io, 0.0 s throttled
+21:55:24.702	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	test			start
+21:55:24.703	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	test	0.000		setup passed
+21:55:24.722	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.020		GET /modd/home -> 200, 447 B
+21:55:24.760	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.037		GET /api/page -> 200, 451 B
+21:55:25.121	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	fm1-live			[ 22.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:25.724	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.964		GET /api/screenshot -> 200, 153654 B
+21:55:25.760	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.016		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+21:55:25.782	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.021		GET /api/input/pot/master/1023 -> 200, 49 B
+21:55:25.801	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.019		GET /api/input -> 200, 139 B
+21:55:26.240	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.016		GET /api/input -> 200, 139 B
+21:55:26.263	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.023		GET /api/track/sel -> 200, 194 B
+21:55:26.282	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.019		GET /api/input/enc/presets/1 -> 200, 50 B
+21:55:26.352	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.018		GET /api/input -> 200, 139 B
+21:55:26.371	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.019		GET /api/track/sel -> 200, 194 B
+21:55:26.392	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.020		GET /api/info -> 200, 95 B
+21:55:26.411	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.018		GET /api/page -> 200, 451 B
+21:55:27.123	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	fm1-live			[ 24.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+21:55:27.262	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	http	0.851		GET /api/screenshot -> 200, 153654 B
+21:55:27.283	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	test	2.580		call passed
+21:55:27.284	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	emu			fm1-live stopped
+21:55:27.285	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	test	0.002		teardown passed
+21:55:27.285	tests/audio/api_preset_encoder_test.py::TestPresetEncoder::test_preset_steps_within_engine	test	2.582		end passed; 14 io, 2.1 s in io, 0.0 s throttled

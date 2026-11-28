@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT / 'tools' / 'device'))
 import fm1log
 import hbdeploy
 
-RING = 4096  # MODD_DBG_LOG_SIZE in firmware/adapters/modd_debug.h
+RING = 4096  # MODD_DBG_LOG_SIZE in firmware/contracts/modd_debug.h
 CHUNK = 180  # bytes per D_LOG reply in firmware/src/debug/debug_dap.c
 
 

@@ -42,7 +42,7 @@ static DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count)
     if (uhost.state != UHOST_MSC_READY) return RES_NOTRDY;
     int r = usb_host_read_sectors(sector, buff, count);
     if (r != 0) {
-        modd_log_int("usb: fat read err lba=", (int32_t)sector);
+        modd_log_int("DR ERR LBA ", (int32_t)sector);
         return RES_ERROR;
     }
     return RES_OK;

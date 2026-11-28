@@ -4,12 +4,12 @@
  * Origin: keremimo/melodee firmware/app.ld @ v1.4.5 (398ada1e)
  *         https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/app.ld */
 /* MELODEE memory map.
- * Code + constants execute in place from XIP (body offset 0 = 0x02001000; boot stub at 0x02000120).
+ * Code + constants execute in place from XIP (body offset 0 = 0x02001000; boot init at 0x02000120).
  * 0x01C00000..0x01C07F00 holds .ram_text (code that must run while the flash
  * is busy: the flash driver). Unused RAMTEXT/debug space ends at 0x01C07F00:
- * the boot stub writes STATUS in the last 256 bytes. Linker-derived SRAM tails
+ * the boot init writes STATUS in the last 256 bytes. Linker-derived SRAM tails
  * join the audio resource banks without changing retained state or stacks.
- * 0x01C7C000..0x01C7C01F belongs to the boot stub, across warm resets.
+ * 0x01C7C000..0x01C7C01F belongs to the boot init, across warm resets.
  * RAM  : .data/.bss (96 KiB)
  * POOL : big zero-initialised buffers (FX lines, canvases), section .pool
  * STACKS with 256-byte guard bands; NOINIT survives resets and UBOOT entry.
@@ -27,6 +27,8 @@ SECTIONS
 {
     .text : {
         KEEP(*(.text.crt0))
+        . = ORIGIN(XIP) + 0x80;
+        KEEP(*(.fw_meta))
         *(.text*) *(.rodata*)
         . = ALIGN(4); _etext = .;
     } > XIP

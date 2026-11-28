@@ -38,6 +38,8 @@
 #define SIE_RXINTERVAL 27
 
 #define USB_BULK_HOST_EP  1
+#define USB_NET_HOST_EP   2
+#define USB_AUDIO_HOST_EP 3
 #define USB_EP0_MAXP_DEFAULT 64
 
 /* Per-EP function address registers (MUSB multipoint).
@@ -78,6 +80,7 @@ static uint32_t usb_host_sie_rd(uint32_t r)
 #define UHOST_ATTACHED      1
 #define UHOST_ENUMERATED    2
 #define UHOST_MSC_READY     3
+#define UHOST_UAC_READY     4
 #define UHOST_ERROR         0xFF
 #define USB_HOST_DISC_MS    2000u
 
@@ -112,6 +115,17 @@ typedef struct {
     uint8_t  ctl_csr0;
     uint8_t  ctl_faddr;
     uint32_t disc_ms;      /* non-blocking disconnect debounce timestamp */
+#ifdef CONFIG_USB_AUDIO_HOST
+    uint8_t  uac_ep_out;      /* ISO OUT endpoint on the DAC */
+    uint16_t uac_max_packet;  /* max ISO packet (up to 1023 at FS) */
+    uint8_t  uac_alt;         /* active alt setting on the streaming iface */
+    uint8_t  uac_if_streaming;/* bInterfaceNumber of the AS interface */
+    uint8_t  uac_addr;        /* USB address of the audio device */
+    uint8_t  uac_ep0_mps;     /* its bMaxPacketSize0 */
+    uint8_t  uac_channels;    /* number of audio channels (2 = stereo) */
+    uint8_t  uac_bit_depth;   /* bits per sample (16, 24, 32) */
+    uint32_t uac_sample_rate; /* negotiated sample rate in Hz */
+#endif
 } usb_host_t;
 
 static usb_host_t uhost;
@@ -335,7 +349,7 @@ static void usb_host_poll(uint32_t now_ms)
     }
 }
 
-/* D_USB debug dump lives in udisk/usb_hub.c (needs the hub device table). */
+/* D_USB debug dump lives in usb/host/usb_hub.c (needs the hub device table). */
 static uint32_t usb_debug_fill(uint8_t *b, uint32_t max);
 
 #endif /* FM1_USB_HOST_H */

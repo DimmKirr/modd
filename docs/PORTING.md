@@ -8,23 +8,24 @@ How upstream code gets ported to modd, module by module.
 
 **The work of porting is writing the adapter, and nothing else.** If a port step produces anything other than adapter code, a thin wrapper, a Kconfig symbol and an `#include`, it is not a port step: stop and ask.
 
-A component is *ported* when the upstream source file is compiled as it is, from `firmware/upstream/<name>/`, and everything modd-specific lives in an adapter (`firmware/adapters/modd_*.h`) or in a thin wrapper file next to the include.
+A component is *ported* when the upstream source file is compiled as it is, from `firmware/upstream/<name>/`, and everything modd-specific lives in an adapter (`firmware/contracts/modd_*.h`) or in a thin wrapper file next to the include.
 
 ```
 firmware/upstream/felucca/firmware/src/eng_adpcm.c     upstream, never edited (vendir)
         |  #include
-firmware/src/audio/engines/eng_adpcm_modd.c            wrapper: renames, one signature, the vtable
+firmware/ports/felucca/engines/eng_adpcm_modd.c            wrapper: renames, one signature, the vtable
         |  conforms to
-firmware/adapters/modd_engine.h                        adapter contract (engine_t)
+firmware/contracts/modd_engine.h                        adapter contract (engine_t)
 ```
 
 ### Classes
 
-Every layer of a build is in one of six classes. Say the class in the ticket, the commit message and the report.
+Every layer of a build is in one of seven classes. Say the class in the ticket, the commit message and the report.
 
 | Class | Meaning | Counts as ported |
 |-------|---------|------------------|
 | INCLUDED | the upstream file is `#include`d unchanged; glue is in an adapter or wrapper | yes |
+| HOSTED | the upstream file is `#include`d unchanged; a wrapper provides stubs for a few circular deps the file calls back into (the HOST strategy) | yes, with the stubs named |
 | PATCHED | the upstream file is `#include`d through a build-time copy with an approved patch from `patches/<upstream>/` applied (a hook only); `firmware/upstream/` is unchanged | yes, with the patch named |
 | COPIED | a copy of the upstream file lives in `firmware/src/` and is edited there | no: needs the user's approval |
 | REDUCED | a copy with features removed to fit modd's types | no: needs the user's approval |
@@ -35,7 +36,7 @@ State on 2026-11-24 for the Felucca build (`modd_felucca_emu`, `CONFIG_AUDIO_FEL
 
 ### Do
 
-The model is `firmware/src/audio/engines/eng_adpcm_modd.c`. The whole wrapper is the difference between upstream and modd, and nothing else:
+The model is `firmware/ports/felucca/engines/eng_adpcm_modd.c`. The whole wrapper is the difference between upstream and modd, and nothing else:
 
 ```c
 /* Origin: hugelton/Felucca firmware/src/eng_adpcm.c @ v1.6.1 (a53ecf42)
@@ -75,10 +76,10 @@ Go down this list and stop at the first step that works. Each step is tried only
 
 | # | Step | Where the code goes | Class | Example in the tree |
 |---|------|---------------------|-------|---------------------|
-| 1 | `#include` the upstream file as it is | wrapper `<name>_modd.c` | INCLUDED | `firmware/src/audio/core/felucca/stack_modd.c` |
+| 1 | `#include` the upstream file as it is | wrapper `<name>_modd.c` | INCLUDED | `firmware/ports/felucca/core/params.c` |
 | 2 | Rename what clashes, for the span of the include (`#define x up_x` ... `#undef x`) | wrapper | INCLUDED | `eng_adpcm_modd.c` above |
-| 3 | Supply what the file expects from its includer: a macro, a switch, a type with the fields it reads, a function it calls | wrapper, or `firmware/adapters/modd_*.h` when a second file will need it | INCLUDED | `fx_unit_sloop_insert_modd.c` (the parameter record, the ids, the dry-copy arrays) |
-| 4 | The file needs a helper from its own upstream that clashes with one modd already has: include that upstream's helper file too, every shared name renamed for the span of the include | a wrapper of its own | INCLUDED | `firmware/src/audio/effects/host/dsp_optimist_modd.c` (Optimist's `dsp.c` beside Felucca-Engines' `dsp.c`, 17 names renamed) |
+| 3 | Supply what the file expects from its includer: a macro, a switch, a type with the fields it reads, a function it calls | wrapper, or `firmware/contracts/modd_*.h` when a second file will need it | INCLUDED | `fx_unit_sloop_insert_modd.c` (the parameter record, the ids, the dry-copy arrays) |
+| 4 | The file needs a helper from its own upstream that clashes with one modd already has: include that upstream's helper file too, every shared name renamed for the span of the include | a wrapper of its own | INCLUDED | `firmware/ports/optimist/effects/dsp_optimist_modd.c` (Optimist's `dsp.c` beside Felucca-Engines' `dsp.c`, 17 names renamed) |
 | 5 | A constant or a hook the file fixes with a plain `#define`: a patch | `patches/<upstream>/` | PATCHED | `patches/felucca/0001-buffer-sizes-from-config.patch` |
 | 6 | Stop and report the blocker; ask for a fork by file name | the ticket | none | see the stop rule below |
 
@@ -103,7 +104,7 @@ The first patch is the worked example: Felucca's delay, chorus and slicer buffer
 2. Ask the user for the patch by file name and by what it changes: "may I patch Felucca `firmware/src/fx.c` and `slicer.c`: `#ifndef` around `DLY_LEN`, `CHO_LEN`, `SL_LEN`, nothing else?". No approval, no patch.
 3. Write the diff on a copy outside the vendored tree and add the header (`Description`, `Approved-by`, `Forwarded`, `Applies-to` with the commit from `vendir.lock.yml`). Commands and the header format: [patches/README.md](../patches/README.md). Save as `patches/<upstream>/NNNN-<what>.patch`; the number is the order.
 4. Add the Kconfig symbols that carry the values, defaults equal to upstream's (`FELUCCA_DLY_LEN`, `FELUCCA_CHO_LEN`, `FELUCCA_SL_LEN` in `kconf/audio.kconfig`). Put limits upstream relies on into `range` and the help text.
-5. In the wrapper, define the constants from Kconfig before the include, and assert what upstream assumes about them (`stack_modd.c`: `#define DLY_LEN (CONFIG_FELUCCA_DLY_LEN + 0u)` and a `_Static_assert` that it is a power of two, because upstream masks with `DLY_LEN - 1u`).
+5. In the wrapper, define the constants from Kconfig before the include, and assert what upstream assumes about them (`core/felucca/params.c`: `#define DLY_LEN (CONFIG_FELUCCA_DLY_LEN + 0u)` and a `_Static_assert` that it is a power of two, because upstream masks with `DLY_LEN - 1u`).
 6. Add the PATCHED row to `docs/UPSTREAM_ORIGINS.md` (the patch file, the upstream files, who approved, when).
 7. Check it:
    - `task vendor:patches:check`: header complete, commit matches the lock, the series applies.
@@ -123,7 +124,7 @@ The first patch is the worked example: Felucca's delay, chorus and slicer buffer
 
 1. Name the blocker exactly: the symbol that clashes, the field `track_t` lacks, the function upstream calls that modd does not have.
 2. Fix it in the adapter or the wrapper (rename, shim, new field, a small glue function).
-3. If that is not possible, **stop and report** the blocker and what the adapter would need. Do not fall back to a copy or a rewrite: that needs the user's approval, asked for by name ("may I fork `seq.c` into `firmware/src/seq/`?").
+3. If that is not possible, **stop and report** the blocker and what the adapter would need. Do not fall back to a copy or a rewrite: that needs the user's approval, asked for by name ("may I fork `seq.c` into `firmware/ports/felucca/core/`?").
 
 An approved fork is recorded where it lives: the `Origin:` line, one sentence saying who approved it and why, and the class in the ticket.
 
@@ -151,7 +152,7 @@ Porting rule (the owner's words):
   "Never copy or rewrite upstream code unless duplication / forking is approved by the user."
   "The work of porting is writing the adapter, and nothing else."
 
-A port step may produce: adapter code (firmware/adapters/modd_*.h), a thin
+A port step may produce: adapter code (firmware/contracts/modd_*.h), a thin
 <name>_modd.c wrapper, a Kconfig symbol, and an #include of the upstream file.
 Nothing else.
 
@@ -177,7 +178,7 @@ REDUCED / REWRITTEN / OTHER UPSTREAM) and every upstream line you changed or lef
 ### Before you start a port step
 
 1. Which upstream file is it (`firmware/upstream/<name>/...`)?
-2. Which adapter contract does it plug into (`firmware/adapters/modd_*.h`)?
+2. Which adapter contract does it plug into (`firmware/contracts/modd_*.h`)?
 3. What does the include fail on? Compile it and quote the first errors.
 4. Has the user approved a fork of this file? The default answer is no.
 5. Does `patches/<upstream>/` already hold a series for this upstream? Read it: the hook you need may exist, and your include gets the patched copy.
@@ -240,9 +241,163 @@ Rules:
 - A class that names its own `DEFCONFIG` (`TestFeluccaSampleEngines`) boots that build whatever the task says. A class without one boots the task's defconfig.
 - The shell tests are behind the shell (2026-11-23). They expect 17 pages (`PAGES` in `modd_api_test.py`) with FILES, DISK, ABOUT and LOG, a THEME row in Settings, and the CLAY palette. The shell now has about 50 pages, none of those four, and a PALETTE row, so the page-list, page-hold and walkthrough tests fail on `modd_emu` as well. `modd_felucca_emu` also has no DEMO page and starts on the GREY palette, which fails the colour tests: 22 shell tests fail on it in all, none of them a reset. The pages the list does not name (STEP, DETAIL, AUTO and the rest) are not visited. Until the page list comes from `/api/pages`, read a shell failure against this list before treating it as a defect of the port.
 
+## Dependency analysis
+
+Before porting a component, run the dependency graph tool to determine the right strategy. The argument is the top-level vendored directory (e.g. `firmware/upstream/felucca`), not a subdirectory like `firmware/upstream/felucca/firmware/src/`:
+
+```
+uv run python tools/debug/dep_graph.py firmware/upstream/felucca           # all files, text
+uv run python tools/debug/dep_graph.py firmware/upstream/sloop --json      # all files, JSON
+uv run python tools/debug/dep_graph.py firmware/upstream/felucca --file seq.c        # one file, text
+uv run python tools/debug/dep_graph.py firmware/upstream/felucca --file seq.c --json  # one file, JSON
+```
+
+The tool finds the unity root (the `.c` file that `#include`s all others), extracts symbols per file, cross-references use, and classifies each file against modd's contract headers. Run with `uv run` so pycparser is available.
+
+### Five dependency classes
+
+The tool tracks five kinds of cross-file dependency:
+
+| Class | Source | Method | Example |
+|-------|--------|--------|---------|
+| **Functions** | `static` function defs in `.c` files | regex | `trk_note_on(t, note, vel)` in voice.c |
+| **Macros** | `#define` in `.h` and `.c` files | regex (pre-expansion) | `SF_SLIDE`, `NUDGE_DIV` in core.h |
+| **Globals** | `static` variable defs at file scope | regex + pycparser | `perf_mask` in perform.c, `trk[4]` in core.h |
+| **Inlines** | `static inline` functions in `.h` files | pycparser (accurate sigs) | `step_chance(1)`, `swing_step_len(3)` in core.h |
+| **Signatures** | parameter count comparison | pycparser | `engine_block`: contract has 4 args, upstream has 1 |
+
+When pycparser and clang are available, headers and contracts are preprocessed with `clang -E` and parsed for accurate function signatures and global types. When unavailable (`--no-pycparser`), the tool falls back to regex for everything and says so on stderr.
+
+### Contract-aware analysis
+
+Contracts (`firmware/contracts/modd_*.h`) are auto-detected from the project root. The tool subtracts dependencies that contracts already satisfy. Without contracts, Felucca looks like a 42-file atomic block; with them, many cross-file calls are already provided by `modd_audio.h`, `modd_fx.h`, `modd_seq.h`, etc., and the block breaks apart.
+
+The pycparser path gives accurate signature comparison: if a contract provides `engine_block(t, buf_l, buf_r, n)` (4 args) but upstream defines `engine_block(t)` (1 arg), the tool reports a **signature warning** instead of silently marking it as satisfied.
+
+### Stub estimate
+
+For HOST and FORK files, the tool reports a `stub_estimate` with counts per kind and an estimated line count:
+
+```
+stub_estimate: functions=18 macros=16 globals=19 inlines=7 total=60 (~176 lines)
+```
+
+The threshold between HOST and FORK is 30 total stubs. ADAPTER means zero stubs needed. The threshold is a heuristic — a file at 40 stubs where 35 are no-op macros (`#define FOO 0`) may still be HOST-able. A file at 15 stubs where one controls audio routing may not. Read the stubs, don't just count them.
+
+### Kconfig modularity breaks false atomicity
+
+A dependency on "fx.c" does not mean a dependency on **Felucca's** fx.c. Modules like FX, audio core, and sequencer are Kconfig radio choices — modd picks one implementation at build time. When `seq.c` calls `beat_samples()` from `fx.c`, that call is satisfied by whichever FX is active (`CONFIG_EFFECTS_FELUCCA`, `CONFIG_EFFECTS_MELODEE`, or `CONFIG_EFFECTS_SLOOP`). The tool's raw SCC graph does not know this; the contract-aware mode partially captures it (the contracts define the shared interface), but always cross-check Kconfig modularity before concluding a file is inseparable.
+
+### Three porting strategies
+
+The tool classifies each file as one of:
+
+| Strategy | Tool output | UPSTREAM_ORIGINS class | "What to try" steps |
+|----------|-------------|----------------------|---------------------|
+| **ADAPTER** | `recommendation: ADAPTER`, 0 stubs | INCLUDED | steps 1–4 |
+| **HOST** | `recommendation: HOST`, ≤30 stubs | HOSTED | step 3 with stubs |
+| **FORK** | `recommendation: FORK`, >30 stubs | REDUCED or COPIED | step 6 (needs user approval) |
+
+A stub is **semantically important** when the upstream code's correctness depends on the stub's return value or side effects — it checks the return, reads through a pointer the stub should fill, or skips code when the stub returns zero. A stub is **safe** when the upstream file just calls it as a notification or when the feature it enables is optional (arp, chord voicings, song chain, perform mode). Read the upstream code at each call site before deciding.
+
+### The HOST pattern
+
+The host wrapper does two things:
+
+1. **Provides inputs** the upstream file expects to call — stubs, redirects, or macros defined before the `#include`
+2. **Exposes outputs** the upstream file defines — through contract vtables or known function names that modd calls
+
+This pattern works for any upstream firmware: the wrapper translates between modd's contract interface and what the specific upstream file expects.
+
+#### Stub types by kind
+
+The tool reports four kinds of stubs in `needs_stub`. Here is how to write each:
+
+**Function stubs** — define a `static` function with the right signature before the `#include`. The tool shows `args=N`. A no-op returns void or 0:
+```c
+static void chain_start(void) { }              // no-op: song chain not active
+static uint32_t drum_lane(uint32_t note) { return 0; }  // stub: no drum lanes
+```
+
+**Macro stubs** — `#define` with the value from the tool output (`value=...`). Copy the value directly:
+```c
+#define SF_SLIDE  2u           // from core.h, value=2u
+#define NUDGE_DIV 16           // from core.h, value=16
+#define RING_PUBLISH() __asm__ volatile("" ::: "memory")  // memory barrier
+```
+
+**Global stubs** — declare a `static` variable with the type from the tool output (`type=...`). Zero-initialized is usually correct. For arrays, check the upstream source for the size:
+```c
+static uint32_t perf_mask;                     // zeroed: perform mode off
+static uint8_t perf_map[16];                   // PF_KEYS=16, zeroed
+static uint8_t DIV_DEN[] = {1, 2, 4, 8, 16, 32};  // tempo divisors (copy from fx.c)
+```
+
+**Inline stubs** — these are `static inline` functions from upstream headers (usually `core.h`). They contain logic — you cannot just return 0. Two options: (a) `#include` the header they come from if it doesn't conflict with modd's contracts, or (b) copy the specific inline functions the tool lists (they are short, 1–10 lines):
+```c
+static inline uint32_t step_chance(const step_t *s) {
+    return s->probability < 102u ? (uint32_t)s->probability : 0u;
+}
+```
+
+**Signature bridges** — when `signature_warnings` reports a mismatch (e.g., `engine_block`: contract 4 args, upstream 1 arg), write a bridge that adapts the upstream's call convention to modd's:
+```c
+// upstream calls engine_block(t) with 1 arg; modd's voice.c provides engine_block(t, l, r, n) with 4
+static void engine_block(track_t *t) { /* no-op: modd's audio core handles block processing */ }
+```
+
+#### Sub-includes
+
+When the tool shows `sub_includes: [chord.c, motion.c, midi_clock.c]`, those files are `#include`d by the target file itself — they come for free when you include the target. But their external dependencies also become yours. The tool marks these as `via_sub_include=True` in `needs_stub` and lists them in `from_sub_includes`, so you can see which stubs exist only because of a sub-include.
+
+#### Worked example: fx.c HOST wrapper
+
+```c
+// fx_felucca_modd.c — HOST wrapper for Felucca's fx.c
+// Stubs for functions fx.c's sub-includes call back into:
+static void events_block(void) { }                    // no-op: no Felucca seq here
+static int slicer_busy(void) { return 0; }            // slicer optional
+// Include the dependency chain, then the target:
+#include "upstream/felucca/firmware/src/slicer.c"      // sub-dep (203 lines)
+#include "upstream/felucca/firmware/src/perform.c"     // sub-dep (803 lines)
+#include "upstream/felucca/firmware/src/fx.c"          // the target (unchanged)
+// fx.c now exposes: mix_block(), beat_samples(), div_samples() — called by modd's audio core
+```
+
+### Reading the tool output
+
+**Text mode** (default): grouped by recommendation (ADAPTER, HOST, FORK), showing contract-satisfied symbols, stubs needed per kind, and the atomic block.
+
+**Single-file mode** (`--file seq.c`): detailed breakdown of one file's dependencies, including every stub with its source file, argument count, type, and whether it comes from a sub-include.
+
+**JSON mode** (`--json`): machine-readable output for LLM consumption. Each file has:
+- `sub_includes`: files this file `#include`s — they come for free but bring their own deps (see "Sub-includes" above)
+- `deps.contract_satisfied`: symbols modd's contracts already provide — **no action needed**, these are in scope
+- `deps.signature_warnings`: contract symbols where upstream and modd have different argument counts — **write a bridge function** (see "Signature bridges" above)
+- `deps.needs_stub`: what the wrapper must define before the `#include`, broken down by `functions`, `macros`, `globals`, `inlines` — **this is the work**
+- `deps.independent`: symbols from files included earlier in the upstream's unity build — **these are already in scope** from modd's include order in modd.c, no action needed (verify by checking modd.c's include order above the target's include point)
+- `deps.from_sub_includes`: which of the `needs_stub` entries came from sub-included files, not the target itself — helps triage: if most stubs are from a sub-include, consider whether that sub-include is needed
+- `stub_estimate`: counts per kind and total estimated lines
+- `confidence`: `high` (only function-call deps — the tool's most accurate mode), `medium` (has macro/global deps — regex-based, may have false positives), `low` (a needed name is also a struct field name in the file — manually verify these are real function deps, not `t->knob` or `s->page_title`)
+- `atomic_block`: other files in the same strongly-connected component — **if present, these files must be ported together** as a group, or stubs must break the cycle
+
+**Flags**:
+- `--json`: JSON output
+- `--file NAME`: single-file detailed analysis (works with or without `--json`)
+- `--root path/to/unity.c`: override unity root detection
+- `--contracts path/to/dir`: override contract headers directory
+- `--no-pycparser`: force regex-only mode (for environments without clang)
+
+**How to use the output for porting**:
+- **ADAPTER files** (class INCLUDED): port directly — write a thin wrapper (`<name>_modd.c`) that `#include`s the upstream file, add the Kconfig symbol in `kconf/`, guard the include in `modd.c`.
+- **HOST files** (class HOSTED): write each stub from `needs_stub` (see "Stub types by kind" above), then `#include` the upstream file. Check `signature_warnings` for bridges. Check `from_sub_includes` to triage — if most stubs come from one sub-include you don't need, consider whether the target can work without it.
+- **FORK files** (class REDUCED/COPIED): deep entanglement. Options: (a) import the entire `atomic_block` as a group with `CONFIG_CORE_<upstream>`, (b) write a reduced copy (needs user approval per file name), (c) skip the component. Always check `atomic_block` to understand the minimum set.
+
+**When the tool is wrong**: the tool reports Kconfig-modular deps (like fx.c) as circular even though modd picks one FX implementation at build time. If the tool says FORK but you believe the circular deps are Kconfig-satisfied, attempt a build — count the actual compiler errors, not the tool's stub count.
+
 ## Adapter layer
 
-Adapters live in `firmware/adapters/modd_*.h`. Each one defines types, globals, constants, and mock data (when the real module is off).
+Adapters live in `firmware/contracts/modd_*.h`. Each one defines types, globals, constants, and mock data (when the real module is off).
 
 ```
 modd_audio.h    - track/song/engine types, P_* enum, mock engine + init
@@ -312,9 +467,9 @@ New splash styles can be added as Kconfig options (e.g. animated splash).
 
 ### Felucca UI port (worked example)
 
-This example describes the upstream-renderer Felucca shell (`firmware/src/ui/shells/felucca/`), written before the rule above. By class: step 1 is INCLUDED; steps 2 to 5 are COPIED or REWRITTEN ("extracted", "replicate", pages written for modd) and are not a pattern to repeat without the user's approval. The modd shell (`CONFIG_UI_SHELL_MODD`, the shell of `modd_felucca_emu`) has its own pages in `firmware/src/ui/shells/modd/page_*.c`, all REWRITTEN.
+This example describes the upstream-renderer Felucca shell (`firmware/ports/felucca/shell/`), written before the rule above. By class: step 1 is INCLUDED; steps 2 to 5 are COPIED or REWRITTEN ("extracted", "replicate", pages written for modd) and are not a pattern to repeat without the user's approval. The modd shell (`CONFIG_UI_SHELL_MODD`, the shell of `modd_felucca_emu`) has its own pages in `firmware/src/ui/shells/modd/page_*.c`, all REWRITTEN.
 
-The Felucca visual style is available as an LVGL skin (`CONFIG_UI_SKIN_FELUCCA`) on the modd shell. Felucca palettes and controls are in `firmware/src/ui/shells/felucca/lvgl_*.c`.
+The Felucca visual style is available as an LVGL skin (`CONFIG_UI_SKIN_FELUCCA`) on the modd shell. Felucca palettes and controls are in `firmware/ports/felucca/shell/lvgl_*.c`.
 
 ### Porting a different UI upstream
 
@@ -349,16 +504,16 @@ Engine cost is measured in VBUDGET units (Prophet: 2-3, FM6: 2, CZ-1: 1).
 Engines compile independently of the full audio core via `CONFIG_ENGINES` (auto-selected). Build-time table generator (`tools/codegen/gen_engine_tables.py`) produces `fe_tables.h` with SINE, PITCH_OCT, SVF_G, and TANH_Q15 lookup tables. DSP helpers (`dsp.c`) provide fixed-point math.
 
 Porting an engine (class INCLUDED):
-1. Leave the source where vendir put it (`firmware/upstream/felucca-engines/src/`, `firmware/upstream/felucca/firmware/src/`, ...). Do not copy it.
+1. Leave the source where vendir put it (`firmware/upstream/felucca/firmware/engines/src/`, `firmware/upstream/felucca/firmware/src/`, ...). Do not copy it.
 2. If it compiles against `modd_engine.h` as it is, `#include` it from `engines.c` under its `CONFIG_ENGINE_<NAME>` guard (`eng_analog.c`, `eng_noise.c` are included this way).
 3. If a name or a signature differs, add a wrapper `firmware/src/audio/engines/eng_<name>_modd.c` that renames, includes and adapts (`eng_adpcm_modd.c`), and include the wrapper.
 4. Add the Kconfig symbol in `kconf/engines.kconfig` with `select ENGINES`.
 5. Register in the `ENGINES[]` array.
-6. Shared DSP helpers come from `firmware/upstream/felucca-engines/src/dsp.c`, included unchanged by `modd.c`; a helper another upstream needs and that file lacks goes into the adapter, not into a private copy.
+6. Shared DSP helpers come from `firmware/upstream/felucca/firmware/engines/src/dsp.c`, included unchanged by `modd.c`; a helper another upstream needs and that file lacks goes into the adapter, not into a private copy.
 
 ### NOISE engine (worked example)
 
-The NOISE engine is Felucca's (MIT, 271 lines), class INCLUDED: `engines.c` includes `upstream/felucca-engines/src/eng_noise.c`. It compiles against `modd_engine.h` / `modd_audio.h` without modification: `voice_t`, `vmod_t`, `engine_t`, and `track_t` are type-compatible.
+The NOISE engine is Felucca's (MIT, 271 lines), class INCLUDED: `engines.c` includes `upstream/felucca/firmware/engines/src/eng_noise.c`. It compiles against `modd_engine.h` / `modd_audio.h` without modification: `voice_t`, `vmod_t`, `engine_t`, and `track_t` are type-compatible.
 
 Dependencies: `fe_tables.h` (generated), `dsp.c` (MIT helpers: `clamp`, `mulq15`, `noise32`, `softclip`, `soft_knee`, `voice_amp`), and the SVF_G cutoff table.
 
@@ -366,7 +521,7 @@ Config: `CONFIG_ENGINE_NOISE=y` in the defconfig. No `CONFIG_AUDIO` required: th
 
 ### ANALOG engine (worked example)
 
-The ANALOG engine is Felucca's (MIT, ~500 lines), class INCLUDED. Same process as NOISE: `engines.c` includes `upstream/felucca-engines/src/eng_analog.c` under `CONFIG_ENGINE_ANALOG` (`kconf/engines.kconfig`) and registers it in `ENGINES[]`. There is no copy in `firmware/src/`.
+The ANALOG engine is Felucca's (MIT, ~500 lines), class INCLUDED. Same process as NOISE: `engines.c` includes `upstream/felucca/firmware/engines/src/eng_analog.c` under `CONFIG_ENGINE_ANALOG` (`kconf/engines.kconfig`) and registers it in `ENGINES[]`. There is no copy in `firmware/src/`.
 
 Dependencies: same as NOISE (`fe_tables.h`, `dsp.c`, SVF_G table). ANALOG also uses `PITCH_OCT[]` and `SINE[]` from the generated tables for its oscillator.
 
@@ -427,7 +582,7 @@ The stub voice allocator was a no-op. Replaced with a working round-robin alloca
 
 The voice allocator renders mono per-voice, then adds to both L/R channels. The `vmod_t` passed to render must have `pitch16`, `inc` (from `pitch_inc()`), and `amp0`/`amp1` set to non-zero values or the engine output is silent.
 
-#### 2. Audio core (`audio/core/audio.c`)
+#### 2. Audio core (`audio/audio.c`)
 
 The audio core implements the I2S DMA double-buffer ISR:
 - `fm1_alnk0_irq()`: checks `fm1_audio_pending()`, calls `mix_block()`, interleaves L/R into DMA buffer with `<< OUT_SHIFT` (Q15 to 24-bit)
@@ -447,7 +602,7 @@ The assembly ISR wrapper (`fm1_isr.S`) reads/writes `fm1_audio_irq_start_ticks` 
 
 #### 5. Adapter ordering
 
-`modd_midi.h` provides a stub `midi_out_event()` guarded by `#ifndef MODD_USB_MIDI`. The USB MIDI module (`midi/usb.c`) defines the real one. But `MODD_USB_MIDI` was defined _after_ the adapter include, so both definitions were emitted, causing a redefinition error. Fix: define `MODD_USB_MIDI` before the adapter includes.
+`modd_midi.h` provides a stub `midi_out_event()` guarded by `#ifndef MODD_USB_MIDI`. The USB MIDI module (`usb/midi/usb.c`) defines the real one. But `MODD_USB_MIDI` was defined _after_ the adapter include, so both definitions were emitted, causing a redefinition error. Fix: define `MODD_USB_MIDI` before the adapter includes.
 
 #### 6. Page key handler return type
 
@@ -530,7 +685,7 @@ Porting a sequencer (class INCLUDED):
 2. Where it needs fields `track_t` / `step_t` lack (step conditions, nudge, motion locks), add them to the adapter types.
 3. Add the Kconfig choice under `kconf/sequencer.kconfig` and the conditional include in `modd.c`.
 
-The Felucca sequencer in the tree today (`firmware/src/seq/seq.c`, 323 lines from upstream's 1,500) is REDUCED: count-in, metronome, song chain, motion automation, step conditions, NUDGE timing and external MIDI clock were cut because the adapter types had no fields for them. Do not add them back by hand; make upstream's `seq.c` includable.
+The Felucca sequencer in the tree today (`firmware/src/core/modd/seq.c`, 323 lines from upstream's 1,500) is REDUCED: count-in, metronome, song chain, motion automation, step conditions, NUDGE timing and external MIDI clock were cut because the adapter types had no fields for them. Do not add them back by hand; make upstream's `seq.c` includable.
 
 ---
 
@@ -599,10 +754,10 @@ Startup, loader, OTA update mechanism.
 ### Boot chain
 
 ```
-on-chip ROM -> boot stub (crt0_stub.S) -> loader (decompresses app) -> fm1_cstart
+on-chip ROM -> boot init (crt0_init.S) -> loader (decompresses app) -> fm1_cstart
 ```
 
-The boot stub (`firmware/stub/`) is the first code from flash. It initializes the CPU minimally and jumps to the loader. The loader decompresses the main application into RAM. `fm1_cstart` initializes BSS, copies data sections, and calls `fm1_main()`.
+The boot init (`firmware/init/`) is the first code from flash. It initializes the CPU minimally and jumps to the loader. The loader decompresses the main application into RAM. `fm1_cstart` initializes BSS, copies data sections, and calls `fm1_main()`.
 
 LCD is not available until `fm1_main()` calls `lcd_init()`. The boot logo appears immediately after.
 

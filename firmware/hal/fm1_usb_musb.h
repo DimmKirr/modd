@@ -46,6 +46,7 @@ typedef unsigned char  usb_dev;
 #define USB_DT_ENDPOINT     5
 
 /* USB class codes */
+#define USB_CLASS_AUDIO     0x01
 #define USB_CLASS_MSC       0x08
 #define USB_MSC_SUBCLASS_SCSI 0x06
 #define USB_MSC_PROTO_BBB   0x50

@@ -4,27 +4,27 @@
  * Each engine provides a static const engine_t and is added to ENGINES[]. */
 
 #ifdef CONFIG_ENGINE_ANALOG
-#include "upstream/felucca-engines/src/eng_analog.c"
+#include "upstream/felucca/firmware/engines/src/eng_analog.c"
 #endif
 
 #ifdef CONFIG_ENGINE_NOISE
-#include "upstream/felucca-engines/src/eng_noise.c"
+#include "upstream/felucca/firmware/engines/src/eng_noise.c"
 #endif
 
 #ifdef CONFIG_ENGINE_LOFI
-#include "upstream/felucca-engines/src/eng_lofi.c"
+#include "upstream/felucca/firmware/engines/src/eng_lofi.c"
 #endif
 
 #ifdef CONFIG_ENGINE_TRIO
-#include "upstream/felucca-engines/src/eng_trio.c"
+#include "upstream/felucca/firmware/engines/src/eng_trio.c"
 #endif
 
 #ifdef CONFIG_ENGINE_PHASE
-#include "upstream/felucca-engines/src/eng_phase.c"
+#include "upstream/felucca/firmware/engines/src/eng_phase.c"
 #endif
 
 #ifdef CONFIG_ENGINE_TONEWHEEL
-#include "upstream/felucca-engines/src/eng_wheel.c"
+#include "upstream/felucca/firmware/engines/src/eng_wheel.c"
 #endif
 
 #if defined(CONFIG_ENGINE_GRANULAR) || defined(CONFIG_ENGINE_SLICE) || defined(CONFIG_ENGINE_ADPCM) || defined(CONFIG_ENGINE_FM6_FELUCCA)
@@ -45,11 +45,11 @@ static union {
 
 #ifdef CONFIG_ENGINE_FM6
 #if defined(CONFIG_ENGINE_FM6_FMLAB)
-#include "fm6/fm6_fmlab.c"
+#include "../../../ports/fmlab/engines/fm6_fmlab.c"
 #elif defined(CONFIG_ENGINE_FM6_FELUCCA)
-#include "fm6/fm6_felucca.c"
+#include "felucca/engines/fm6_felucca.c"
 #elif defined(CONFIG_ENGINE_FM6_MELODEE)
-#include "fm6/fm6_melodee.c"
+#include "../../../ports/melodee/engines/fm6_melodee.c"
 #endif
 #endif
 
@@ -60,7 +60,7 @@ static union {
 #ifdef CONFIG_ENGINE_SLICE
 #define FELUCCA_SLICE 1
 #endif
-#include "eng_sample_modd.c"
+#include "felucca/engines/eng_sample_modd.c"
 #endif
 
 #ifdef CONFIG_ENGINE_GRANULAR
@@ -68,11 +68,11 @@ static union {
 #endif
 
 #ifdef CONFIG_ENGINE_SLICE
-#include "eng_slice_modd.c"
+#include "felucca/engines/eng_slice_modd.c"
 #endif
 
 #ifdef CONFIG_ENGINE_ADPCM
-#include "eng_adpcm_modd.c"
+#include "felucca/engines/eng_adpcm_modd.c"
 #endif
 
 #ifdef CONFIG_ENGINE_STUB

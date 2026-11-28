@@ -1,0 +1,574 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+17:03:44.554	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	test			start
+17:03:44.571	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	exec	0.008		xdotool search --name ^FM-1 -> exit 1
+17:03:44.572	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 43475:9222
+17:03:44.592	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	http	0.019		GET /api/info -> URLError
+17:03:44.628	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			forward: host:43475 -> guest:9222
+17:03:44.630	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+17:03:44.631	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+17:03:44.631	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+17:03:44.631	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+17:03:44.631	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+17:03:44.631	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+17:03:44.631	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+17:03:44.631	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+17:03:44.631	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+17:03:44.631	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+17:03:44.632	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+17:03:44.632	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			MIDI in: MIDI support could not be initialized
+17:03:44.657	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+17:03:44.657	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+17:03:46.635	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			[  2.1 s] 1.02x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:03:47.599	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	http	2.004		GET /api/info -> TimeoutError
+17:03:48.616	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	http	0.016		GET /api/info -> 200, 94 B
+17:03:48.617	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	emu	4.043		firmware API up on port 43475
+17:03:48.617	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	test	4.061		setup passed
+17:03:48.635	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:03:48.641	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	http	0.024		GET /api/pages -> 200, 2816 B
+17:03:48.654	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	http	0.012		GET /api/info -> 200, 94 B
+17:03:48.675	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	http	0.021		GET /api/page -> 200, 446 B
+17:03:49.640	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	http	0.965		GET /api/screenshot -> 200, 153654 B
+17:03:49.723	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	test	1.072		call failed: tests/ui/shells/modd/api/modd_api_test.py:56: AssertionError
+17:03:49.723	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	test	0.000		teardown passed
+17:03:49.724	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_01_pages_listed	test	5.169		end failed; 8 io, 3.1 s in io, 0.0 s throttled
+17:03:49.725	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test			start
+17:03:49.726	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		setup passed
+17:03:49.745	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.019		GET /modd/HOME -> 200, 442 B
+17:03:49.796	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.051		GET /api/page -> 200, 446 B
+17:03:50.636	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:03:50.670	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.874		GET /api/screenshot -> 200, 153654 B
+17:03:50.706	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.020		GET /api/page -> 200, 446 B
+17:03:51.701	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.995		GET /api/screenshot -> 200, 153654 B
+17:03:51.735	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.019		GET /api/page -> 200, 446 B
+17:03:51.741	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:03:51.755	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.014		GET /modd/MIXER -> 200, 275 B
+17:03:51.806	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.050		GET /api/page -> 200, 391 B
+17:03:52.638	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:03:52.730	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.924		GET /api/screenshot -> 200, 153654 B
+17:03:52.765	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.021		GET /api/page -> 200, 391 B
+17:03:53.761	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.996		GET /api/screenshot -> 200, 153654 B
+17:03:53.795	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.016		GET /api/page -> 200, 391 B
+17:03:53.803	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:03:53.825	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.021		GET /modd/ENV -> 200, 101 B
+17:03:53.864	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.039		GET /api/page -> 200, 217 B
+17:03:54.640	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:03:54.789	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.925		GET /api/screenshot -> 200, 153654 B
+17:03:54.824	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.018		GET /api/page -> 200, 217 B
+17:03:55.822	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.997		GET /api/screenshot -> 200, 153654 B
+17:03:55.855	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.016		GET /api/page -> 200, 217 B
+17:03:55.863	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:03:55.875	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.012		GET /modd/LFO -> 200, 96 B
+17:03:55.912	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.037		GET /api/page -> 200, 222 B
+17:03:56.642	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 12.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:03:56.857	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.945		GET /api/screenshot -> 200, 153654 B
+17:03:56.895	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.020		GET /api/page -> 200, 222 B
+17:03:57.879	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.984		GET /api/screenshot -> 200, 153654 B
+17:03:57.916	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.020		GET /api/page -> 200, 222 B
+17:03:57.924	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:03:57.945	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.021		GET /modd/FX -> 200, 100 B
+17:03:57.975	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.030		GET /api/page -> 200, 212 B
+17:03:58.644	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:03:58.914	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.939		GET /api/screenshot -> 200, 153654 B
+17:03:58.944	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.016		GET /api/page -> 200, 212 B
+17:03:59.938	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.994		GET /api/screenshot -> 200, 153654 B
+17:03:59.975	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.020		GET /api/page -> 200, 212 B
+17:03:59.982	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:03:59.995	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.013		GET /modd/SCL -> 200, 99 B
+17:04:00.024	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.029		GET /api/page -> 200, 218 B
+17:04:00.647	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 16.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:00.964	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.939		GET /api/screenshot -> 200, 153654 B
+17:04:00.995	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.015		GET /api/page -> 200, 218 B
+17:04:01.994	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.999		GET /api/screenshot -> 200, 153654 B
+17:04:02.025	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.015		GET /api/page -> 200, 218 B
+17:04:02.032	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:04:02.045	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.013		GET /modd/EDIT -> 200, 99 B
+17:04:02.095	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.049		GET /api/page -> 200, 207 B
+17:04:02.650	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 18.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:03.025	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.930		GET /api/screenshot -> 200, 153654 B
+17:04:03.056	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.014		GET /api/page -> 200, 207 B
+17:04:04.057	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	1.001		GET /api/screenshot -> 200, 153654 B
+17:04:04.085	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.015		GET /api/page -> 200, 207 B
+17:04:04.091	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:04:04.104	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.013		GET /modd/VOICE -> 200, 101 B
+17:04:04.135	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.031		GET /api/page -> 200, 229 B
+17:04:04.652	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 20.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:05.079	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.944		GET /api/screenshot -> 200, 153654 B
+17:04:05.115	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.014		GET /api/page -> 200, 229 B
+17:04:06.116	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	1.000		GET /api/screenshot -> 200, 153654 B
+17:04:06.145	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.016		GET /api/page -> 200, 229 B
+17:04:06.150	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:04:06.166	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.015		GET /modd/MENU -> 200, 188 B
+17:04:06.195	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.029		GET /api/page -> 200, 178 B
+17:04:06.653	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 22.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:07.145	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.949		GET /api/screenshot -> 200, 153654 B
+17:04:07.175	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.016		GET /api/page -> 200, 178 B
+17:04:08.176	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	1.001		GET /api/screenshot -> 200, 153654 B
+17:04:08.215	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.021		GET /api/page -> 200, 178 B
+17:04:08.222	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:04:08.235	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.012		GET /modd/ARP -> 200, 105 B
+17:04:08.275	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.040		GET /api/page -> 200, 227 B
+17:04:08.654	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 24.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:09.203	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.928		GET /api/screenshot -> 200, 153654 B
+17:04:09.236	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.020		GET /api/page -> 200, 227 B
+17:04:10.236	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	1.000		GET /api/screenshot -> 200, 153654 B
+17:04:10.265	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.021		GET /api/page -> 200, 227 B
+17:04:10.271	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:04:10.285	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.014		GET /modd/SEQ -> 200, 255 B
+17:04:10.335	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.050		GET /api/page -> 200, 359 B
+17:04:10.656	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 26.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:11.271	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.935		GET /api/screenshot -> 200, 153654 B
+17:04:11.305	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.017		GET /api/page -> 200, 359 B
+17:04:12.307	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	1.001		GET /api/screenshot -> 200, 153654 B
+17:04:12.345	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.021		GET /api/page -> 200, 359 B
+17:04:12.353	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:04:12.365	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.011		GET /modd/WX -> 200, 258 B
+17:04:12.416	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.051		GET /api/page -> 200, 379 B
+17:04:12.657	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 28.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:13.333	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.917		GET /api/screenshot -> 200, 153654 B
+17:04:13.366	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.018		GET /api/page -> 200, 379 B
+17:04:14.356	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.990		GET /api/screenshot -> 200, 153654 B
+17:04:14.386	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.013		GET /api/page -> 200, 379 B
+17:04:14.394	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:04:14.415	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.021		GET /modd/DEMO -> 200, 99 B
+17:04:14.475	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.060		GET /api/page -> 200, 213 B
+17:04:14.660	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 30.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:15.384	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.908		GET /api/screenshot -> 200, 153654 B
+17:04:15.415	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.017		GET /api/page -> 200, 214 B
+17:04:16.410	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.995		GET /api/screenshot -> 200, 153654 B
+17:04:16.435	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.016		GET /api/page -> 200, 214 B
+17:04:16.445	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call passed
+17:04:16.466	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.021		GET /modd/FILES -> HTTP 404
+17:04:16.496	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call failed: tests/api_fixtures.py:171: ApiError
+17:04:16.515	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.019		GET /modd/DISK -> HTTP 404
+17:04:16.535	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call failed: tests/api_fixtures.py:171: ApiError
+17:04:16.555	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.020		GET /modd/ABOUT -> HTTP 404
+17:04:16.570	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call failed: tests/api_fixtures.py:171: ApiError
+17:04:16.584	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.014		GET /modd/LOG -> HTTP 404
+17:04:16.600	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		call failed: tests/api_fixtures.py:171: ApiError
+17:04:16.622	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.022		GET /api/pages -> 200, 2817 B
+17:04:16.645	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.021		GET /api/info -> 200, 95 B
+17:04:16.664	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	fm1-live			[ 32.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:16.664	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	0.020		GET /api/page -> 200, 214 B
+17:04:17.696	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	http	1.031		GET /api/screenshot -> 200, 153654 B
+17:04:17.712	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	shot			end-of-test outputs: AttributeError: 'dict' object has no attribute 'append'
+17:04:17.720	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	27.990		call failed: tests/ui/shells/modd/api/modd_api_test.py:67: AssertionError
+17:04:17.720	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	0.000		teardown passed
+17:04:17.720	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_02_goto_each_page	test	27.995		end failed; 86 io, 27.4 s in io, 0.0 s throttled
+17:04:17.722	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	test			start
+17:04:17.722	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	test	0.000		setup passed
+17:04:17.734	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	http	0.011		GET /modd/nosuch -> HTTP 404
+17:04:17.755	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	http	0.021		GET /modd/home/nosuch -> HTTP 404
+17:04:17.805	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	http	0.049		GET /modd/menu/nosuch -> HTTP 404
+17:04:17.836	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	http	0.026		GET /api/info -> 200, 95 B
+17:04:17.855	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	http	0.019		GET /api/info -> 200, 95 B
+17:04:17.875	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	http	0.020		GET /api/page -> 200, 178 B
+17:04:18.666	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	fm1-live			[ 34.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:18.721	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	http	0.846		GET /api/screenshot -> 200, 153654 B
+17:04:18.748	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	shot			end-of-test outputs: AttributeError: 'dict' object has no attribute 'append'
+17:04:18.751	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	test	1.028		call passed
+17:04:18.755	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	emu			fm1-live stopped
+17:04:18.755	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	test	0.004		teardown passed
+17:04:18.755	tests/ui/shells/modd/api/modd_api_test.py::PagesTest::test_03_unknown_page_and_sub	test	1.033		end passed; 7 io, 1.0 s in io, 0.0 s throttled
+17:04:18.757	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	test			start
+17:04:18.778	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	exec	0.016		xdotool search --name ^FM-1 -> exit 1
+17:04:18.779	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 58399:9222
+17:04:18.781	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	http	0.000		GET /api/info -> URLError
+17:04:18.825	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			forward: host:58399 -> guest:9222
+17:04:18.827	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+17:04:18.828	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+17:04:18.828	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+17:04:18.828	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+17:04:18.828	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+17:04:18.828	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+17:04:18.828	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+17:04:18.828	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+17:04:18.829	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+17:04:18.829	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+17:04:18.829	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+17:04:18.829	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			MIDI in: MIDI support could not be initialized
+17:04:18.846	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+17:04:18.846	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+17:04:20.832	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			[  2.1 s] 1.02x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:21.784	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	http	2.003		GET /api/info -> TimeoutError
+17:04:22.805	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	http	0.019		GET /api/info -> 200, 94 B
+17:04:22.805	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	emu	4.024		firmware API up on port 58399
+17:04:22.806	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	test	4.049		setup passed
+17:04:22.824	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	http	0.018		GET /modd/HOME -> 200, 442 B
+17:04:22.835	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:22.874	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	http	0.050		GET /api/page -> 200, 446 B
+17:04:23.829	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	http	0.955		GET /api/screenshot -> 200, 153654 B
+17:04:23.842	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:04:23.863	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	http	0.022		GET /api/page -> 200, 446 B
+17:04:23.882	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	http	0.019		GET /api/info -> 200, 94 B
+17:04:23.903	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	http	0.020		GET /api/page -> 200, 446 B
+17:04:23.906	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	test	1.099		call passed
+17:04:23.906	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	test	0.000		teardown passed
+17:04:23.906	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_home_data	test	5.149		end passed; 10 io, 3.1 s in io, 0.0 s throttled
+17:04:23.907	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	test			start
+17:04:23.907	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	test	0.000		setup passed
+17:04:23.922	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.015		GET /modd/MENU/display -> 200, 204 B
+17:04:23.953	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.030		GET /api/page -> 200, 178 B
+17:04:24.836	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:24.852	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.899		GET /api/screenshot -> 200, 153654 B
+17:04:24.875	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:04:24.893	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.018		GET /api/page -> 200, 178 B
+17:04:24.912	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.019		GET /api/page -> 200, 178 B
+17:04:24.932	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.020		GET /modd/MENU/midi -> 200, 187 B
+17:04:24.963	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.030		GET /api/page -> 200, 170 B
+17:04:25.884	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.921		GET /api/screenshot -> 200, 153654 B
+17:04:25.896	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:04:25.913	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.017		GET /api/page -> 200, 170 B
+17:04:25.933	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.020		GET /api/page -> 200, 170 B
+17:04:25.953	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.020		GET /modd/MENU/hw -> 200, 177 B
+17:04:25.983	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.030		GET /api/page -> 200, 329 B
+17:04:26.839	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:26.914	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.930		GET /api/screenshot -> 200, 153654 B
+17:04:26.928	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:04:26.942	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.014		GET /api/page -> 200, 329 B
+17:04:26.962	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.020		GET /api/page -> 200, 329 B
+17:04:26.983	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.021		GET /modd/MENU/net -> 200, 337 B
+17:04:27.013	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.029		GET /api/page -> 200, 200 B
+17:04:27.943	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.930		GET /api/screenshot -> 200, 153654 B
+17:04:27.957	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:04:27.972	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.014		GET /api/page -> 200, 200 B
+17:04:27.992	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.020		GET /api/page -> 200, 200 B
+17:04:28.841	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:28.973	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.981		GET /api/screenshot -> 200, 153654 B
+17:04:29.002	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.016		GET /api/page -> 200, 200 B
+17:04:29.022	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.016		GET /api/info -> 200, 95 B
+17:04:29.043	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	http	0.020		GET /api/page -> 200, 200 B
+17:04:29.073	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	test	5.138		call failed: tests/api_fixtures.py:791: KeyError
+17:04:29.076	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	emu			fm1-live stopped
+17:04:29.077	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	test	0.004		teardown passed
+17:04:29.077	tests/ui/shells/modd/api/modd_api_test.py::PageDataTest::test_menu_tabs	test	5.170		end failed; 24 io, 5.1 s in io, 0.0 s throttled
+17:04:29.078	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	test			start
+17:04:29.086	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	exec	0.006		xdotool search --name ^FM-1 -> exit 1
+17:04:29.087	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 37705:9222
+17:04:29.089	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.000		GET /api/info -> URLError
+17:04:29.135	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			forward: host:37705 -> guest:9222
+17:04:29.136	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+17:04:29.136	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+17:04:29.137	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+17:04:29.137	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+17:04:29.137	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+17:04:29.137	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+17:04:29.137	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+17:04:29.137	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+17:04:29.137	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+17:04:29.138	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+17:04:29.138	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+17:04:29.138	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			MIDI in: MIDI support could not be initialized
+17:04:29.153	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+17:04:29.154	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+17:04:31.141	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			[  2.1 s] 1.02x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:32.096	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	2.006		GET /api/info -> TimeoutError
+17:04:33.112	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.016		GET /api/info -> 200, 94 B
+17:04:33.113	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	emu	4.023		firmware API up on port 37705
+17:04:33.113	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	test	4.034		setup passed
+17:04:33.132	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /modd/HOME -> 200, 442 B
+17:04:33.144	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:33.182	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.050		GET /api/page -> 200, 446 B
+17:04:34.137	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.954		GET /api/screenshot -> 200, 153654 B
+17:04:34.152	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:04:34.172	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:34.192	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.020		GET /api/input/button/fx/hold/700 -> 200, 46 B
+17:04:34.961	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.018		GET /api/input -> 200, 136 B
+17:04:34.982	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.020		GET /api/page -> 200, 446 B
+17:04:35.145	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:35.502	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.020		GET /api/page -> 200, 446 B
+17:04:36.021	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:36.542	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.015		GET /api/page -> 200, 446 B
+17:04:37.061	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:37.148	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:37.582	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.020		GET /api/page -> 200, 446 B
+17:04:38.101	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:38.622	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.018		GET /api/page -> 200, 446 B
+17:04:39.142	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:39.149	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:39.661	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.015		GET /api/page -> 200, 446 B
+17:04:40.182	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.020		GET /api/page -> 200, 446 B
+17:04:40.701	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:41.149	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			[ 12.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:41.221	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:41.741	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:42.261	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:42.781	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:43.150	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:43.302	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.020		GET /api/page -> 200, 446 B
+17:04:43.821	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.016		GET /api/page -> 200, 446 B
+17:04:44.341	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:44.862	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.020		GET /api/page -> 200, 446 B
+17:04:45.150	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			[ 16.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:45.381	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.018		GET /api/page -> 200, 446 B
+17:04:45.901	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:46.421	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:46.941	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:47.154	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			[ 18.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:47.462	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.020		GET /api/page -> 200, 446 B
+17:04:47.981	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.016		GET /api/page -> 200, 446 B
+17:04:48.502	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.020		GET /api/page -> 200, 446 B
+17:04:49.021	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.019		GET /api/page -> 200, 446 B
+17:04:49.156	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	fm1-live			[ 20.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:49.542	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.018		GET /api/page -> 200, 446 B
+17:04:50.061	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.017		GET /api/info -> 200, 95 B
+17:04:50.082	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.021		GET /api/page -> 200, 446 B
+17:04:51.077	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	http	0.994		GET /api/screenshot -> 200, 153654 B
+17:04:51.097	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	shot			end-of-test outputs: KeyError: -1
+17:04:51.118	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	test	17.988		call failed: tests/api_fixtures.py:325: ApiError
+17:04:51.118	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	test	0.000		teardown passed
+17:04:51.118	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01_holds_open_pages	test	22.040		end failed; 42 io, 4.7 s in io, 0.0 s throttled
+17:04:51.119	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	test			start
+17:04:51.120	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	test	0.000		setup passed
+17:04:51.142	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.022		GET /modd/HOME -> 200, 442 B
+17:04:51.158	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	fm1-live			[ 22.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:51.191	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.049		GET /api/page -> 200, 446 B
+17:04:51.212	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.021		GET /api/page -> 200, 446 B
+17:04:51.230	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.019		GET /api/input/button/save/hold/700 -> 200, 49 B
+17:04:52.001	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.017		GET /api/input -> 200, 137 B
+17:04:52.021	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.020		GET /api/page -> 200, 239 B
+17:04:53.013	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.992		GET /api/screenshot -> 200, 153654 B
+17:04:53.035	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:04:53.160	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	fm1-live			[ 24.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:53.550	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.015		GET /api/page -> 200, 239 B
+17:04:54.071	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.020		GET /api/page -> 200, 239 B
+17:04:54.591	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.020		GET /api/page -> 200, 239 B
+17:04:55.112	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.019		GET /api/page -> 200, 239 B
+17:04:55.162	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	fm1-live			[ 26.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:55.631	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.018		GET /api/page -> 200, 239 B
+17:04:56.151	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.020		GET /api/page -> 200, 239 B
+17:04:56.671	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.019		GET /api/page -> 200, 239 B
+17:04:57.164	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	fm1-live			[ 28.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:57.192	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.020		GET /api/page -> 200, 239 B
+17:04:57.712	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.018		GET /api/page -> 200, 239 B
+17:04:58.231	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.017		GET /api/page -> 200, 239 B
+17:04:58.751	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.019		GET /api/page -> 200, 239 B
+17:04:59.166	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	fm1-live			[ 30.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:04:59.272	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.020		GET /api/page -> 200, 239 B
+17:04:59.791	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.018		GET /api/page -> 200, 239 B
+17:05:00.311	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.017		GET /api/page -> 200, 239 B
+17:05:00.831	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.019		GET /api/page -> 200, 239 B
+17:05:01.167	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	fm1-live			[ 32.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:01.352	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.021		GET /api/page -> 200, 239 B
+17:05:01.871	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.017		GET /api/page -> 200, 239 B
+17:05:02.390	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.015		GET /api/page -> 200, 239 B
+17:05:02.910	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.020		GET /api/page -> 200, 239 B
+17:05:03.168	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	fm1-live			[ 34.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:03.431	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.020		GET /api/page -> 200, 239 B
+17:05:03.952	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.020		GET /api/page -> 200, 239 B
+17:05:04.471	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.018		GET /api/page -> 200, 239 B
+17:05:04.991	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.019		GET /api/page -> 200, 239 B
+17:05:05.169	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	fm1-live			[ 36.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:05.510	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.019		GET /api/page -> 200, 239 B
+17:05:06.032	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.021		GET /api/page -> 200, 239 B
+17:05:06.551	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.019		GET /api/page -> 200, 239 B
+17:05:07.071	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.019		GET /api/info -> 200, 95 B
+17:05:07.091	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	http	0.020		GET /api/page -> 200, 239 B
+17:05:07.106	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	test	15.975		call failed: tests/api_fixtures.py:325: ApiError
+17:05:07.107	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	test	0.000		teardown passed
+17:05:07.107	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_01b_save_hold_opens_files_then_disk	test	15.987		end failed; 35 io, 1.7 s in io, 0.0 s throttled
+17:05:07.108	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	test			start
+17:05:07.108	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	test	0.000		setup passed
+17:05:07.121	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.012		GET /modd/WX -> 200, 258 B
+17:05:07.160	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.040		GET /api/page -> 200, 379 B
+17:05:07.171	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	fm1-live			[ 38.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:08.099	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.938		GET /api/screenshot -> 200, 153654 B
+17:05:08.118	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:08.131	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.013		GET /api/page -> 200, 379 B
+17:05:08.150	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.018		GET /api/input/enc/select/1 -> 200, 49 B
+17:05:08.220	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.015		GET /api/input -> 200, 137 B
+17:05:08.241	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.021		GET /api/page -> 200, 213 B
+17:05:09.135	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.893		GET /api/screenshot -> 200, 153654 B
+17:05:09.155	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:09.171	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.015		GET /modd/FILES -> HTTP 404
+17:05:09.174	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	fm1-live			[ 40.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:09.191	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.020		GET /api/info -> 200, 95 B
+17:05:09.211	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.020		GET /api/page -> 200, 214 B
+17:05:10.170	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	http	0.959		GET /api/screenshot -> 200, 153654 B
+17:05:10.190	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	shot			end-of-test outputs: AttributeError: 'dict' object has no attribute 'append'
+17:05:10.210	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	test	3.084		call failed: tests/api_fixtures.py:171: ApiError
+17:05:10.211	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	test	0.000		teardown passed
+17:05:10.211	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_02_select_cycles_pages	test	3.103		end failed; 12 io, 3.0 s in io, 0.0 s throttled
+17:05:10.212	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	test			start
+17:05:10.213	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	test	0.000		setup passed
+17:05:10.231	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.018		GET /modd/HOME -> 200, 442 B
+17:05:10.250	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.019		GET /api/page -> 200, 446 B
+17:05:11.176	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	fm1-live			[ 42.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:11.189	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.939		GET /api/screenshot -> 200, 153654 B
+17:05:11.204	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:11.221	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.017		GET /api/page -> 200, 446 B
+17:05:11.240	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.018		GET /api/input/enc/select/-5 -> 200, 50 B
+17:05:11.310	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.020		GET /api/input -> 200, 137 B
+17:05:11.332	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.021		GET /api/page -> 200, 446 B
+17:05:12.213	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.880		GET /api/screenshot -> 200, 153654 B
+17:05:12.237	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:12.251	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.013		GET /api/input/enc/select/1 -> 200, 49 B
+17:05:12.320	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.020		GET /api/input -> 200, 137 B
+17:05:12.341	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.021		GET /api/page -> 200, 446 B
+17:05:13.178	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	fm1-live			[ 44.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:13.242	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.900		GET /api/screenshot -> 200, 153654 B
+17:05:13.263	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:13.280	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.017		GET /api/input/enc/select/10 -> 200, 50 B
+17:05:13.351	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.021		GET /api/input -> 200, 137 B
+17:05:13.372	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.020		GET /api/page -> 200, 446 B
+17:05:14.267	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.895		GET /api/screenshot -> 200, 153654 B
+17:05:14.288	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:15.180	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	fm1-live			[ 46.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:15.292	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	1.005		GET /api/screenshot -> 200, 153654 B
+17:05:15.332	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.022		GET /api/page -> 200, 446 B
+17:05:15.350	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.015		GET /api/info -> 200, 95 B
+17:05:15.372	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	http	0.021		GET /api/page -> 200, 446 B
+17:05:15.394	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	test	5.162		call failed: tests/api_fixtures.py:791: KeyError
+17:05:15.395	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	test	0.000		teardown passed
+17:05:15.395	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_03_home_select_picks_track	test	5.182		end failed; 20 io, 4.9 s in io, 0.0 s throttled
+17:05:15.397	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	test			start
+17:05:15.397	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	test	0.000		setup passed
+17:05:15.412	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.014		GET /modd/MENU/midi -> 200, 203 B
+17:05:15.440	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.028		GET /api/page -> 200, 172 B
+17:05:16.319	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.879		GET /api/screenshot -> 200, 153654 B
+17:05:16.345	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:16.361	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.016		GET /api/page -> 200, 172 B
+17:05:16.381	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.019		GET /api/page -> 200, 172 B
+17:05:16.401	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.020		GET /api/input/button/oct+/tap/80 -> 200, 48 B
+17:05:16.552	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.019		GET /api/input -> 200, 137 B
+17:05:16.571	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.017		GET /api/input/button/oct+/tap/80 -> 200, 48 B
+17:05:16.721	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.018		GET /api/input -> 200, 137 B
+17:05:16.741	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.020		GET /api/page -> 200, 172 B
+17:05:17.181	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	fm1-live			[ 48.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:17.603	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.862		GET /api/screenshot -> 200, 153654 B
+17:05:17.619	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:18.633	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	1.014		GET /api/screenshot -> 200, 153654 B
+17:05:18.670	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.020		GET /api/page -> 200, 172 B
+17:05:18.690	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.015		GET /api/input/button/oct-/tap/80 -> 200, 48 B
+17:05:18.841	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.020		GET /api/input -> 200, 137 B
+17:05:18.861	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.020		GET /api/input/button/oct-/tap/80 -> 200, 48 B
+17:05:19.011	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.017		GET /api/input -> 200, 137 B
+17:05:19.031	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.019		GET /api/info -> 200, 95 B
+17:05:19.051	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.020		GET /api/page -> 200, 172 B
+17:05:19.183	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	fm1-live			[ 50.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:20.025	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	http	0.974		GET /api/screenshot -> 200, 153654 B
+17:05:20.049	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	shot			end-of-test outputs: AttributeError: 'dict' object has no attribute 'append'
+17:05:20.074	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	test	4.654		call failed: tests/api_fixtures.py:791: KeyError
+17:05:20.074	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	test	0.000		teardown passed
+17:05:20.074	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_04_settings_select_tab_oct_value	test	4.677		end failed; 20 io, 4.0 s in io, 0.0 s throttled
+17:05:20.076	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	test			start
+17:05:20.076	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	test	0.000		setup passed
+17:05:20.091	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.015		GET /modd/MENU/hw -> 200, 179 B
+17:05:20.127	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.036		GET /api/page -> 200, 331 B
+17:05:21.056	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.929		GET /api/screenshot -> 200, 153654 B
+17:05:21.080	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:21.101	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.021		GET /api/page -> 200, 331 B
+17:05:21.121	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.019		GET /api/page -> 200, 331 B
+17:05:21.141	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.020		GET /api/input/enc/algorithm/0 -> 200, 52 B
+17:05:21.183	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	fm1-live			[ 52.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:21.211	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.019		GET /api/input -> 200, 137 B
+17:05:21.231	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.019		GET /api/input/button/oct+/tap/80 -> 200, 48 B
+17:05:21.380	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.019		GET /api/input -> 200, 137 B
+17:05:21.401	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.020		GET /api/page -> 200, 332 B
+17:05:22.341	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.940		GET /api/screenshot -> 200, 153654 B
+17:05:22.361	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:23.186	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	fm1-live			[ 54.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:23.368	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	1.006		GET /api/screenshot -> 200, 153654 B
+17:05:23.391	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.012		GET /api/page -> 200, 332 B
+17:05:23.410	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.016		GET /api/info -> 200, 95 B
+17:05:23.431	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	http	0.020		GET /api/page -> 200, 332 B
+17:05:23.460	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	test	3.359		call failed: tests/api_fixtures.py:791: KeyError
+17:05:23.460	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	test	0.000		teardown passed
+17:05:23.460	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_05_settings_algo_row_flips_a_switch	test	3.384		end failed; 15 io, 3.1 s in io, 0.0 s throttled
+17:05:23.461	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	test			start
+17:05:23.462	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	test	0.000		setup passed
+17:05:23.481	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	http	0.019		GET /modd/HOME -> 200, 442 B
+17:05:23.532	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	http	0.051		GET /api/page -> 200, 446 B
+17:05:24.403	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	http	0.871		GET /api/screenshot -> 200, 153654 B
+17:05:24.420	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:24.442	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	http	0.022		GET /api/page -> 200, 446 B
+17:05:25.188	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	fm1-live			[ 56.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:25.430	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	http	0.988		GET /api/screenshot -> 200, 153654 B
+17:05:25.461	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	http	0.019		GET /api/page -> 200, 446 B
+17:05:25.481	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	http	0.014		GET /api/info -> 200, 95 B
+17:05:25.502	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	http	0.021		GET /api/page -> 200, 446 B
+17:05:25.534	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	test	2.044		call failed: tests/api_fixtures.py:791: KeyError
+17:05:25.534	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	test	0.000		teardown passed
+17:05:25.534	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_06_theme_palette	test	2.072		end failed; 8 io, 2.0 s in io, 0.0 s throttled
+17:05:25.536	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	test			start
+17:05:25.536	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	test	0.000		setup passed
+17:05:25.551	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	http	0.014		GET /modd/HOME -> 200, 442 B
+17:05:25.601	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	http	0.050		GET /api/page -> 200, 446 B
+17:05:25.621	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	http	0.020		GET /api/page -> 200, 446 B
+17:05:25.640	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	http	0.019		GET /api/input -> 200, 137 B
+17:05:25.971	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	http	0.014		GET /api/input -> 200, 137 B
+17:05:26.984	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	http	1.012		GET /api/screenshot -> 200, 153654 B
+17:05:27.011	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	http	0.012		GET /api/page -> 200, 446 B
+17:05:27.032	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	http	0.014		GET /api/info -> 200, 95 B
+17:05:27.051	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	http	0.019		GET /api/page -> 200, 446 B
+17:05:27.190	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	fm1-live			[ 58.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:28.011	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	http	0.959		GET /api/screenshot -> 200, 153654 B
+17:05:28.032	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	shot			end-of-test outputs: AttributeError: 'dict' object has no attribute 'append'
+17:05:28.054	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	test	2.499		call failed: tests/api_fixtures.py:804: AttributeError
+17:05:28.055	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	test	0.000		teardown passed
+17:05:28.055	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_07_glo_tap_toggles_hints	test	2.519		end failed; 10 io, 2.1 s in io, 0.0 s throttled
+17:05:28.056	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	test			start
+17:05:28.056	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	test	0.000		setup passed
+17:05:28.070	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	http	0.013		GET /modd/DEMO -> 200, 101 B
+17:05:28.121	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	http	0.051		GET /api/page -> 200, 215 B
+17:05:29.037	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	http	0.916		GET /api/screenshot -> 200, 153654 B
+17:05:29.058	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:29.071	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	http	0.012		GET /api/page -> 200, 216 B
+17:05:29.191	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	fm1-live			[ 60.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:30.072	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	http	1.001		GET /api/screenshot -> 200, 153654 B
+17:05:30.102	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	http	0.022		GET /api/page -> 200, 216 B
+17:05:30.121	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	http	0.013		GET /api/info -> 200, 95 B
+17:05:30.142	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	http	0.021		GET /api/page -> 200, 216 B
+17:05:30.163	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	test	2.088		call failed: tests/api_fixtures.py:804: AttributeError
+17:05:30.168	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	emu			fm1-live stopped
+17:05:30.168	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	test	0.004		teardown passed
+17:05:30.168	tests/ui/shells/modd/api/modd_api_test.py::PanelTest::test_08_demo_screens_and_knobs	test	2.112		end failed; 8 io, 2.0 s in io, 0.0 s throttled
+17:05:30.170	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	test			start
+17:05:30.188	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	exec	0.014		xdotool search --name ^FM-1 -> exit 1
+17:05:30.190	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 42389:9222
+17:05:30.193	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.000		GET /api/info -> URLError
+17:05:30.252	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			forward: host:42389 -> guest:9222
+17:05:30.254	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+17:05:30.254	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+17:05:30.255	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+17:05:30.255	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+17:05:30.255	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+17:05:30.255	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+17:05:30.255	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+17:05:30.256	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+17:05:30.256	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+17:05:30.256	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+17:05:30.256	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+17:05:30.256	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			MIDI in: MIDI support could not be initialized
+17:05:30.274	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+17:05:30.274	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+17:05:32.259	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			[  2.1 s] 1.01x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:33.202	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	2.008		GET /api/info -> TimeoutError
+17:05:34.222	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.017		GET /api/info -> 200, 94 B
+17:05:34.222	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	emu	4.029		firmware API up on port 42389
+17:05:34.223	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	test	4.053		setup passed
+17:05:34.241	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.018		GET /modd/HOME -> 200, 442 B
+17:05:34.260	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:34.290	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.048		GET /api/page -> 200, 446 B
+17:05:35.240	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.950		GET /api/screenshot -> 200, 153654 B
+17:05:35.253	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	shot			page screenshot failed: AttributeError: 'dict' object has no attribute 'append'
+17:05:35.269	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.016		GET /api/page -> 200, 446 B
+17:05:35.290	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.021		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+17:05:35.309	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.019		GET /api/input/pot/master/1023 -> 200, 48 B
+17:05:35.329	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.020		GET /api/input -> 200, 138 B
+17:05:35.659	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.013		GET /api/input -> 200, 138 B
+17:05:35.748	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.089		GET /api/audio/capture -> 200, 21944 B
+17:05:35.769	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.020		GET /api/input/key/60/down -> 200, 48 B
+17:05:36.099	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.014		GET /api/input -> 200, 142 B
+17:05:36.191	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.091		GET /api/audio/capture -> 200, 21946 B
+17:05:36.209	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.018		GET /api/input/key/60/up -> 200, 48 B
+17:05:36.261	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+17:05:36.329	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.018		GET /api/input -> 200, 138 B
+17:05:36.359	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.017		GET /api/info -> 200, 94 B
+17:05:36.379	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.021		GET /api/info -> 200, 94 B
+17:05:36.399	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.019		GET /api/page -> 200, 448 B
+17:05:37.353	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	http	0.954		GET /api/screenshot -> 200, 153654 B
+17:05:37.378	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	shot			end-of-test outputs: AttributeError: 'dict' object has no attribute 'append'
+17:05:37.381	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	test	3.158		call passed
+17:05:37.385	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	emu			fm1-live stopped
+17:05:37.386	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	test	0.004		teardown passed
+17:05:37.386	tests/ui/shells/modd/api/modd_api_test.py::AudioTest::test_home_keys_play	test	7.216		end passed; 22 io, 4.4 s in io, 0.0 s throttled

@@ -7,6 +7,10 @@
 #define CONFIG_RPC_PORT 9222
 #endif
 
+#ifdef CONFIG_MIRROR
+static void mirror_ws_recv(const uint8_t *data, uint32_t len);
+#endif
+
 static uint8_t rpc_active;
 
 static void rpc_reset_session(void)
@@ -334,6 +338,10 @@ static void rpc_poll(void)
                 rpc_dispatch((const char *)payload, payload_len, tx);
                 if (tx->len > 0)
                     ws_send_text((const uint8_t *)tx->buf, tx->len);
+            } else if (opcode == WS_OP_BIN) {
+#ifdef CONFIG_MIRROR
+                mirror_ws_recv(payload, payload_len);
+#endif
             } else if (opcode == WS_OP_PING) {
                 ws_send_pong(payload, payload_len);
             } else if (opcode == WS_OP_CLOSE) {

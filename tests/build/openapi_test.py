@@ -22,7 +22,8 @@ import gen_openapi as g  # noqa: E402
 
 FULL = g.generate()
 ALL_ON = {'RPC', 'RPC_OPENAPI', 'RPC_INPUT', 'RPC_MEM', 'RPC_AUDIO_TAP', 'AUDIO', 'DEBUG_LOG_BUF',
-          'DEBUG_FRAMEBUFFER', 'UI_SHELL_MODD', 'SYS_MENU', 'SYS_MENU_NETWORK', 'LWIP', 'WIFI', 'FX_HOST', 'ARENA_MELODEE'}
+          'DEBUG_FRAMEBUFFER', 'UI_SHELL_MODD', 'SYS_MENU', 'SYS_MENU_NETWORK', 'LWIP', 'WIFI', 'FX_HOST', 'ARENA_MELODEE',
+          'USB_AUDIO_HOST', 'USB_HOST', 'EMU', 'MIRROR', 'UDISK'}
 RELEASE = {'RPC', 'RPC_OPENAPI', 'AUDIO', 'UI_SHELL_MODD', 'SYS_MENU', 'SYS_MENU_NETWORK', 'LWIP',
            'DEBUG_LOG_BUF'}
 
@@ -64,7 +65,9 @@ class TestRealSources(unittest.TestCase):
         self.assertEqual(audio['sample_rate']['const'], 44100)
         info = schema_200(FULL, '/api/info')
         self.assertEqual(info['properties']['firmware'], {'type': 'string', 'const': 'modd'})
-        self.assertEqual(info['required'], ['firmware', 'version', 'uptime_ms', 'ip'])
+        self.assertEqual(info['required'], ['firmware', 'version', 'uptime_ms', 'ip',
+                                              'init_info', 'init_detail', 'init_dn', 'init_up', 'init_idle',
+                                              'ota_staged'])
         shot = schema_200(FULL, '/api/screenshot')['properties']
         self.assertEqual(shot['data']['contentEncoding'], 'base64')
 

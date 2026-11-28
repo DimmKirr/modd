@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Host test of the network needs: firmware/src/net/net_need.c (net_need -> wifi_need / eth_need by
- * link policy) and firmware/src/wifi/wifi_need.c (the radio runs on setting + need). The radio
+ * link policy) and firmware/src/wifi/need.c (the radio runs on setting + need). The radio
  * and the link state are stubs. */
 #include <stdint.h>
 #include <stdio.h>
@@ -37,7 +37,7 @@ static void wifi_power(uint8_t on)
     } else powered_off++;
 }
 
-#include "wifi/wifi_need.c"
+#include "wifi/need.c"
 #include "net/net_need.c"
 
 static int fails;

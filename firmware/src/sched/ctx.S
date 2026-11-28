@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Based on fm1-base ble/shim/ctx.S by Charles Vestal (MPL-2.0). */
 /* Cooperative context switch for pi32v2.
- * Based on fm1-base ctx.S (proven on AC791N hardware).
  * Saves rets + r4-r15, exchanges sp, restores through pc. */
 
     .section .text,"ax",@progbits

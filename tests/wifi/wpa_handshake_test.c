@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* Host test of the WPA2-PSK 4-way handshake in firmware/src/wifi/wifi_wpa.c,
+/* Host test of the WPA2-PSK 4-way handshake in firmware/src/wifi/mac/wpa.c,
  * with this file playing the access point: it derives its own PTK from the
  * SNonce of a message 2 and builds message 3 the way an AP does.
  *
@@ -19,7 +19,7 @@ static void modd_log(const char *m) { (void)m; }
 static void modd_log_int(const char *p, int32_t v) { (void)p; (void)v; }
 static uint8_t wifi_sta_wpa_pending;
 
-#include "wifi/wifi_wpa.c"
+#include "wifi/mac/wpa.c"
 
 static int fails;
 #define CHECK(c) do { if (!(c)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #c); } } while (0)

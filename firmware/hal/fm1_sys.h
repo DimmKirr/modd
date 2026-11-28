@@ -13,7 +13,7 @@
  *   fm1_reboot()         chip reset through P33 (P3_PR_PWR bit 4)
  *   fm1_enter_uboot()    "usb_update_mode" at 0x01C7FD80 + chip reset
  *   fm1_enter_update(p)  112-byte UPDATA_PARM record at 0x01C7FD88 + core reset
- *                        (the SPL then runs the staged update loader)
+ *                        (the SPL then runs the staged OTA updater)
  *   fm1_core_reset()     PWR_CON core reset
  *   fm1_updata_parm_clear()  zero the record (CRC 0: ignored on a warm reset)
  *   fm1_mailbox_clear()  zero 0x01C7FD80..0x01C7FDFF (boot info, mailbox) at cold start

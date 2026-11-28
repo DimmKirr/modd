@@ -1,0 +1,111 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+09:13:00.903	tests/build/genconfig_test.py::test_kconfig_parses	test			start
+09:13:00.905	tests/build/genconfig_test.py::test_kconfig_parses	test	0.000		setup passed
+09:13:01.000	tests/build/genconfig_test.py::test_kconfig_parses	exec	0.095		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); print(len(k.syms), "symbols") -> exit 0
+09:13:01.001	tests/build/genconfig_test.py::test_kconfig_parses	test	0.096		call passed
+09:13:01.001	tests/build/genconfig_test.py::test_kconfig_parses	test	0.000		teardown passed
+09:13:01.002	tests/build/genconfig_test.py::test_kconfig_parses	test	0.099		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:01.003	tests/build/genconfig_test.py::test_genconfig_writes_header	test			start
+09:13:01.003	tests/build/genconfig_test.py::test_genconfig_writes_header	test	0.000		setup passed
+09:13:01.131	tests/build/genconfig_test.py::test_genconfig_writes_header	exec	0.127		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-26T091259Z-usb_hub_enum_test/genconfig_test/header_modd -> exit 0
+09:13:01.132	tests/build/genconfig_test.py::test_genconfig_writes_header	test	0.129		call passed
+09:13:01.133	tests/build/genconfig_test.py::test_genconfig_writes_header	test	0.000		teardown passed
+09:13:01.133	tests/build/genconfig_test.py::test_genconfig_writes_header	test	0.130		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:01.134	tests/build/genconfig_test.py::test_menuconfig_imports_library	test			start
+09:13:01.134	tests/build/genconfig_test.py::test_menuconfig_imports_library	test	0.000		setup passed
+09:13:01.239	tests/build/genconfig_test.py::test_menuconfig_imports_library	exec	0.105		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python -c import runpy; m = runpy.run_path('tools/build/menuconfig.py'); assert m['menuconfig'].__module__ == 'menuconfig' -> exit 0
+09:13:01.240	tests/build/genconfig_test.py::test_menuconfig_imports_library	test	0.106		call passed
+09:13:01.240	tests/build/genconfig_test.py::test_menuconfig_imports_library	test	0.000		teardown passed
+09:13:01.240	tests/build/genconfig_test.py::test_menuconfig_imports_library	test	0.106		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:01.241	tests/build/genconfig_test.py::test_genconfig_writes_manifest	test			start
+09:13:01.241	tests/build/genconfig_test.py::test_genconfig_writes_manifest	test	0.000		setup passed
+09:13:01.367	tests/build/genconfig_test.py::test_genconfig_writes_manifest	exec	0.125		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-26T091259Z-usb_hub_enum_test/genconfig_test/manifest_modd -> exit 0
+09:13:01.370	tests/build/genconfig_test.py::test_genconfig_writes_manifest	test	0.128		call passed
+09:13:01.370	tests/build/genconfig_test.py::test_genconfig_writes_manifest	test	0.000		teardown passed
+09:13:01.370	tests/build/genconfig_test.py::test_genconfig_writes_manifest	test	0.129		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:01.371	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	test			start
+09:13:01.371	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	test	0.000		setup passed
+09:13:01.465	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	exec	0.094		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/melodee_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("melodee:", enabled, "enabled") -> exit 0
+09:13:01.467	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	test	0.096		call passed
+09:13:01.467	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	test	0.000		teardown passed
+09:13:01.467	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	test	0.096		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:01.468	tests/build/genconfig_test.py::test_defconfig_loads[modd]	test			start
+09:13:01.469	tests/build/genconfig_test.py::test_defconfig_loads[modd]	test	0.000		setup passed
+09:13:01.562	tests/build/genconfig_test.py::test_defconfig_loads[modd]	exec	0.093		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/modd_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("modd:", enabled, "enabled") -> exit 0
+09:13:01.563	tests/build/genconfig_test.py::test_defconfig_loads[modd]	test	0.094		call passed
+09:13:01.563	tests/build/genconfig_test.py::test_defconfig_loads[modd]	test	0.000		teardown passed
+09:13:01.563	tests/build/genconfig_test.py::test_defconfig_loads[modd]	test	0.095		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:01.565	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	test			start
+09:13:01.565	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	test	0.000		setup passed
+09:13:01.656	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	exec	0.091		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/modd_emu_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("modd_emu:", enabled, "enabled") -> exit 0
+09:13:01.658	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	test	0.093		call passed
+09:13:01.658	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	test	0.000		teardown passed
+09:13:01.658	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	test	0.093		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:01.659	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	test			start
+09:13:01.659	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	test	0.000		setup passed
+09:13:01.756	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	exec	0.097		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/modd_felucca_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("modd_felucca:", enabled, "enabled") -> exit 0
+09:13:01.758	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	test	0.098		call passed
+09:13:01.758	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	test	0.000		teardown passed
+09:13:01.758	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	test	0.099		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:01.759	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	test			start
+09:13:01.760	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	test	0.000		setup passed
+09:13:01.860	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	exec	0.101		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/modd_felucca_emu_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("modd_felucca_emu:", enabled, "enabled") -> exit 0
+09:13:01.862	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	test	0.102		call passed
+09:13:01.862	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	test	0.000		teardown passed
+09:13:01.862	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	test	0.103		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:01.864	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	test			start
+09:13:01.864	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	test	0.000		setup passed
+09:13:01.964	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	exec	0.100		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/sloop_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("sloop:", enabled, "enabled") -> exit 0
+09:13:01.966	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	test	0.102		call passed
+09:13:01.966	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	test	0.000		teardown passed
+09:13:01.966	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	test	0.103		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:01.967	tests/build/genconfig_test.py::test_manifest_components[modd]	test			start
+09:13:01.967	tests/build/genconfig_test.py::test_manifest_components[modd]	test	0.000		setup passed
+09:13:02.098	tests/build/genconfig_test.py::test_manifest_components[modd]	exec	0.130		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-26T091259Z-usb_hub_enum_test/genconfig_test/manifest_modd -> exit 0
+09:13:02.100	tests/build/genconfig_test.py::test_manifest_components[modd]	test	0.132		call passed
+09:13:02.100	tests/build/genconfig_test.py::test_manifest_components[modd]	test	0.000		teardown passed
+09:13:02.100	tests/build/genconfig_test.py::test_manifest_components[modd]	test	0.133		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:02.101	tests/build/genconfig_test.py::test_usb_host_depends_on_usb	test			start
+09:13:02.101	tests/build/genconfig_test.py::test_usb_host_depends_on_usb	test	0.000		setup passed
+09:13:02.121	tests/build/genconfig_test.py::test_usb_host_depends_on_usb	test	0.019		call passed
+09:13:02.121	tests/build/genconfig_test.py::test_usb_host_depends_on_usb	test	0.000		teardown passed
+09:13:02.121	tests/build/genconfig_test.py::test_usb_host_depends_on_usb	test	0.020		end passed; 0 io, 0.0 s in io, 0.0 s throttled
+09:13:02.122	tests/build/genconfig_test.py::test_lwip_is_selectable_without_wifi	test			start
+09:13:02.122	tests/build/genconfig_test.py::test_lwip_is_selectable_without_wifi	test	0.000		setup passed
+09:13:02.140	tests/build/genconfig_test.py::test_lwip_is_selectable_without_wifi	test	0.018		call passed
+09:13:02.141	tests/build/genconfig_test.py::test_lwip_is_selectable_without_wifi	test	0.000		teardown passed
+09:13:02.141	tests/build/genconfig_test.py::test_lwip_is_selectable_without_wifi	test	0.019		end passed; 0 io, 0.0 s in io, 0.0 s throttled
+09:13:02.142	tests/build/genconfig_test.py::test_wifi_lwip_selects_lwip	test			start
+09:13:02.142	tests/build/genconfig_test.py::test_wifi_lwip_selects_lwip	test	0.000		setup passed
+09:13:02.158	tests/build/genconfig_test.py::test_wifi_lwip_selects_lwip	test	0.016		call passed
+09:13:02.159	tests/build/genconfig_test.py::test_wifi_lwip_selects_lwip	test	0.000		teardown passed
+09:13:02.159	tests/build/genconfig_test.py::test_wifi_lwip_selects_lwip	test	0.017		end passed; 0 io, 0.0 s in io, 0.0 s throttled
+09:13:02.160	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	test			start
+09:13:02.160	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	test	0.000		setup passed
+09:13:02.290	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	exec	0.129		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-26T091259Z-usb_hub_enum_test/genconfig_test/manifest_modd_wifi -> exit 0
+09:13:02.291	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	test	0.130		call passed
+09:13:02.291	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	test	0.000		teardown passed
+09:13:02.291	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	test	0.131		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:02.292	tests/build/genconfig_test.py::test_rpc_and_llm_follow_lwip_not_wifi	test			start
+09:13:02.292	tests/build/genconfig_test.py::test_rpc_and_llm_follow_lwip_not_wifi	test	0.000		setup passed
+09:13:02.307	tests/build/genconfig_test.py::test_rpc_and_llm_follow_lwip_not_wifi	test	0.015		call passed
+09:13:02.307	tests/build/genconfig_test.py::test_rpc_and_llm_follow_lwip_not_wifi	test	0.000		teardown passed
+09:13:02.307	tests/build/genconfig_test.py::test_rpc_and_llm_follow_lwip_not_wifi	test	0.015		end passed; 0 io, 0.0 s in io, 0.0 s throttled
+09:13:02.308	tests/build/genconfig_test.py::test_usb_net_selects_lwip_and_needs_usb_host	test			start
+09:13:02.308	tests/build/genconfig_test.py::test_usb_net_selects_lwip_and_needs_usb_host	test	0.000		setup passed
+09:13:02.322	tests/build/genconfig_test.py::test_usb_net_selects_lwip_and_needs_usb_host	test	0.014		call passed
+09:13:02.322	tests/build/genconfig_test.py::test_usb_net_selects_lwip_and_needs_usb_host	test	0.000		teardown passed
+09:13:02.323	tests/build/genconfig_test.py::test_usb_net_selects_lwip_and_needs_usb_host	test	0.015		end passed; 0 io, 0.0 s in io, 0.0 s throttled
+09:13:02.324	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	test			start
+09:13:02.324	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	test	0.000		setup passed
+09:13:02.456	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	exec	0.131		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-26T091259Z-usb_hub_enum_test/genconfig_test/masked_secrets -> exit 0
+09:13:02.458	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	test	0.134		call passed
+09:13:02.458	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	test	0.000		teardown passed
+09:13:02.458	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	test	0.135		end passed; 1 io, 0.1 s in io, 0.0 s throttled
+09:13:02.459	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	test			start
+09:13:02.460	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	test	0.000		setup passed
+09:13:02.588	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	exec	0.127		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-26T091259Z-usb_hub_enum_test/genconfig_test/emu_wifi_modd -> exit 0
+09:13:02.708	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	exec	0.119		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd_emu --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-26T091259Z-usb_hub_enum_test/genconfig_test/emu_wifi_modd_emu -> exit 0
+09:13:02.710	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	test	0.250		call passed
+09:13:02.710	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	test	0.000		teardown passed
+09:13:02.710	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	test	0.251		end passed; 2 io, 0.2 s in io, 0.0 s throttled

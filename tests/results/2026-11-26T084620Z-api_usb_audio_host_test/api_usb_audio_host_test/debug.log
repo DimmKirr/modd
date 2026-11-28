@@ -1,0 +1,64 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+08:46:21.024	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	test			start
+08:46:21.036	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	exec	0.006		xdotool search --name ^FM-1 -> exit 1
+08:46:21.038	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 52013:9222
+08:46:21.060	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.020		GET /api/info -> URLError
+08:46:21.089	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			forward: host:52013 -> guest:9222
+08:46:21.090	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+08:46:21.090	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+08:46:21.090	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+08:46:21.090	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+08:46:21.090	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+08:46:21.091	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+08:46:21.091	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+08:46:21.091	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+08:46:21.091	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+08:46:21.091	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+08:46:21.091	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+08:46:21.092	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			MIDI in: MIDI support could not be initialized
+08:46:21.106	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+08:46:21.106	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+08:46:23.126	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[  2.1 s] 1.07x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:24.103	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	2.015		GET /api/info -> TimeoutError
+08:46:25.133	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[  4.1 s] 1.04x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:27.118	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	2.004		GET /api/info -> TimeoutError
+08:46:27.142	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[  6.1 s] 1.02x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:28.147	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.014		GET /api/info -> 200, 94 B
+08:46:28.147	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	emu	7.108		firmware API up on port 52013
+08:46:28.148	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	test	7.121		setup passed
+08:46:28.165	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.017		GET /api/usb/audio/ring/arm/48000/24 -> 200, 25 B
+08:46:28.186	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.021		GET /modd/home -> 200, 447 B
+08:46:28.236	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.050		GET /api/page -> 200, 451 B
+08:46:29.146	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:29.154	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.860		GET /api/screenshot -> 200, 153654 B
+08:46:29.217	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.019		GET /api/input/pot/master/1023 -> 200, 48 B
+08:46:29.235	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.018		GET /api/input -> 200, 138 B
+08:46:29.468	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.017		GET /api/input -> 200, 138 B
+08:46:29.488	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.019		GET /api/input/key/69/down -> 200, 50 B
+08:46:30.026	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.012		GET /api/input -> 200, 146 B
+08:46:30.058	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.032		GET /api/usb/audio/ring -> 200, 5561 B
+08:46:30.075	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.016		GET /api/input/key/69/up -> 200, 50 B
+08:46:30.195	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	0.020		GET /api/input -> 200, 138 B
+08:46:31.150	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:33.150	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 12.1 s] 1.09x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:35.154	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:37.158	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 16.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:39.165	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 18.2 s] 1.03x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:41.168	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 20.2 s] 1.18x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:43.173	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 22.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:45.175	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 24.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:47.178	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 26.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:49.186	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 28.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:51.187	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 30.2 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:53.198	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 32.2 s] 1.05x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:55.207	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 34.2 s] 0.95x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:57.211	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 36.2 s] 0.93x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:46:59.215	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 38.2 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:47:00.550	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	30.043		GET /api/usb/audio/ring/disarm -> TimeoutError
+08:47:01.219	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 40.2 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:47:03.223	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	fm1-live			[ 42.2 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:47:03.563	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	http	3.013		GET /api/info -> TimeoutError
+08:47:03.689	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	test	35.422		call failed: tests/usb/api_usb_audio_host_test.py:172: AssertionError
+08:47:03.690	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	emu			fm1-live stopped
+08:47:03.691	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	test	0.002		teardown passed
+08:47:03.691	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHost24bit::test_src_440hz_24bit	test	42.667		end failed; 19 io, 38.2 s in io, 0.0 s throttled

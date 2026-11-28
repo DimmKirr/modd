@@ -58,7 +58,7 @@ class Config:
     # Calls through a function pointer: the table of {"NAME", function} it comes from.
     dispatch: dict = field(default_factory=lambda: {'jfn': 'api_page_json_table'})
     # Functions in api_ctl.c / api_pages.c that write JSON outside any route.
-    ignore: set = field(default_factory=set)
+    ignore: set = field(default_factory=lambda: {'api_usb_audio_ring', 'api_usb_audio_ring_arm', 'api_usb_audio_ring_disarm', 'api_usb_regs'})
 
 
 # --- what the JSON writers are -------------------------------------------------------------

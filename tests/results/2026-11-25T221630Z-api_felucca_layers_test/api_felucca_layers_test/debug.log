@@ -1,0 +1,59 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+22:16:30.722	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	test			start
+22:16:30.737	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	exec	0.008		xdotool search --name ^FM-1 -> exit 1
+22:16:30.738	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 56861:9222
+22:16:30.758	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.019		GET /api/info -> URLError
+22:16:30.793	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			forward: host:56861 -> guest:9222
+22:16:30.794	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+22:16:30.794	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+22:16:30.795	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+22:16:30.795	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+22:16:30.795	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+22:16:30.795	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+22:16:30.795	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+22:16:30.795	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+22:16:30.795	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+22:16:30.796	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+22:16:30.796	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+22:16:30.796	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			MIDI in: MIDI support could not be initialized
+22:16:30.814	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+22:16:30.814	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+22:16:32.802	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			[  2.1 s] 1.02x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:16:33.769	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	2.010		GET /api/info -> TimeoutError
+22:16:34.793	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.021		GET /api/info -> 200, 94 B
+22:16:34.793	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	emu	4.054		firmware API up on port 56861
+22:16:34.795	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	test	4.069		setup passed
+22:16:34.804	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:16:34.813	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.018		GET /modd/home -> 200, 442 B
+22:16:34.859	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.046		GET /api/page -> 200, 446 B
+22:16:35.803	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.877		GET /api/screenshot -> 200, 153654 B
+22:16:35.859	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.015		GET /api/input/pot/master/1023 -> 200, 48 B
+22:16:35.879	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.020		GET /api/input -> 200, 138 B
+22:16:36.110	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.018		GET /api/input -> 200, 138 B
+22:16:36.132	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.018		GET /api/input/key/60/down -> 200, 48 B
+22:16:36.488	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.007		GET /api/input -> 200, 142 B
+22:16:36.559	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.071		GET /api/audio/capture -> 200, 21946 B
+22:16:36.581	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.022		GET /api/input/key/60/up -> 200, 48 B
+22:16:36.711	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.023		GET /api/input -> 200, 138 B
+22:16:36.730	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.017		GET /api/input -> 200, 138 B
+22:16:36.809	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			[  6.1 s] 1.01x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:16:37.810	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.018		GET /api/input -> 200, 138 B
+22:16:37.831	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.020		GET /api/audio -> 200, 131 B
+22:16:37.850	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.019		GET /api/input/button/glo/down -> 200, 45 B
+22:16:37.870	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.019		GET /api/input -> 200, 142 B
+22:16:38.114	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.023		GET /api/input -> 200, 142 B
+22:16:38.132	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.018		GET /api/input/key/60/down -> 200, 48 B
+22:16:38.149	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.017		GET /api/input -> 200, 146 B
+22:16:38.692	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.016		GET /api/input -> 200, 146 B
+22:16:38.712	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.020		GET /api/audio -> 200, 137 B
+22:16:38.729	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.017		GET /api/input/key/60/up -> 200, 48 B
+22:16:38.749	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.019		GET /api/input/button/glo/up -> 200, 45 B
+22:16:38.814	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			[  8.1 s] 1.01x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:16:38.830	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.019		GET /api/input -> 200, 138 B
+22:16:38.849	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.018		GET /api/info -> 200, 94 B
+22:16:38.869	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.020		GET /api/page -> 200, 247 B
+22:16:39.954	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	1.084		GET /api/screenshot -> 200, 153654 B
+22:16:40.003	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	test	5.184		call failed: E   AssertionError: 5197 not less than or equal to 10 : Key should be silent during layer hold: baseline=0, got=5197
+22:16:40.005	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	emu			fm1-live stopped
+22:16:40.005	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	test	0.002		teardown passed
+22:16:40.006	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	test	9.284		end failed; 31 io, 4.6 s in io, 0.0 s throttled

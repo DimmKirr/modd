@@ -12,7 +12,7 @@
  * Data: wx_read() (ui/page_data.c), what the REST API's WX data is made of. Opening the
  * page starts a fetch when there is no report; PLAY starts one at any time. */
 
-#include "ui/shells/felucca/weather_colors.h"   /* weather_condition_name() */
+#include "felucca/shell/weather_colors.h"   /* weather_condition_name() */
 
 static struct {
     lv_obj_t *sky, *temp, *cond, *info;

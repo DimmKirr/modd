@@ -45,7 +45,7 @@ static inline void *fl_far(void *p) { void *volatile q = p; return q; }
 #define FL_GLOB_HI      FLASH_GLOB_HI
 #define FL_BANK_EXT_LO  FLASH_BANK_EXT_LO                /* expanded presets and project extension copies; after OTA staging */
 #define FL_BANK_EXT_HI  FLASH_BANK_EXT_HI
-#define FL_OTA_LO       FLASH_OTA_LO                /* M-UPGRADE loader staging, ota.c */
+#define FL_OTA_LO       FLASH_OTA_LO                /* M-UPGRADE OTA staging, ota.c */
 #define FL_OTA_HI       FLASH_OTA_HI
 /* [off, off + n) inside [lo, hi), without wrapping: off + n can overflow, and
  * the 1 MiB part ignores the high address bits, so a wrapped range lands low. */
@@ -54,7 +54,7 @@ static inline void *fl_far(void *p) { void *volatile q = p; return q; }
 /* Melodee's own store (projects, user samples; settings) */
 #define FL_STORE_OK(off, n) (FL_IN(off, n, FLASH_STORE_A_LO, FLASH_STORE_A_HI) || FL_IN(off, n, FL_DATA_LO, FL_DATA_HI) || FL_IN(off, n, FL_GLOB_LO, FL_GLOB_HI) || FL_IN(off, n, FL_BANK_EXT_LO, FL_BANK_EXT_HI))
 /* Where the RAM driver may erase / program. The app build allows only its own
- * data regions; the update loader (firmware/loader) defines its own window. */
+ * data regions; the OTA updater (firmware/boot) defines its own window. */
 #ifndef FL_RANGE_OK
 #define FL_RANGE_OK(off, n) (FL_STORE_OK(off, n) || FL_IN(off, n, FL_OTA_LO, FL_OTA_HI))
 #endif

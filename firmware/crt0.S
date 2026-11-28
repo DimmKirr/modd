@@ -4,7 +4,7 @@
  * Origin: keremimo/melodee firmware/crt0.S @ v1.4.5 (398ada1e)
  *         https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/crt0.S */
 #include "src/build_options.h"
-/* The boot stub at 0x02000120 validates the committed body before entering
+/* The boot init at 0x02000120 validates the committed body before entering
  * here at 0x02001000. It saved the SPL's STATUS; keep those original values. */
 	.section .text.crt0,"ax",@progbits
 	.globl _start

@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-ADAPTERS_DIR = ROOT / "firmware" / "adapters"
+ADAPTERS_DIR = ROOT / "firmware" / "contracts"
 SRC_DIR = ROOT / "firmware" / "src"
 
 BUDGET_ADAPTERS = 3500
@@ -35,10 +35,10 @@ def _count_lines_multi(directory: Path, patterns: list[str]) -> int:
 
 
 def test_adapters_line_budget():
-    """firmware/adapters/ stays below the ceiling."""
+    """firmware/contracts/ stays below the ceiling."""
     actual = _count_lines_multi(ADAPTERS_DIR, ["*.h", "*.c"])
     assert actual <= BUDGET_ADAPTERS, (
-        f"firmware/adapters/ has {actual} lines (budget {BUDGET_ADAPTERS})"
+        f"firmware/contracts/ has {actual} lines (budget {BUDGET_ADAPTERS})"
     )
 
 

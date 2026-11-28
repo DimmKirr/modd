@@ -4,7 +4,7 @@
  *         https://github.com/hugelton/Felucca/blob/a53ecf428c29c780108fd70a31b71a32a6b5c313/firmware/hal/fm1_usb.h */
 /* FM-1 USB0 full-speed device controller, register level only
  * The protocol (descriptors, EP0 requests,
- * MIDI / CDC / SysEx) is the driver src/usb.c, shared with the update loader
+ * MIDI / CDC / SysEx) is the driver src/usb.c, shared with the OTA updater
  * and the host tests; this header is every USB register access it makes.
  *
  *   fm1_usb_reset()        CON0 = CON1 = 0, pads detached; wait >= 20 ms

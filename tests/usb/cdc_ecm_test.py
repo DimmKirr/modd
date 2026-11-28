@@ -12,7 +12,7 @@ from pathlib import Path
 from c_harness import run_c_harness
 
 ROOT = Path(__file__).resolve().parents[2]
-ADAPTERS = ROOT / 'firmware' / 'adapters'
+ADAPTERS = ROOT / 'firmware' / 'contracts'
 SOURCE = ROOT / 'tests' / 'usb' / 'cdc_ecm_test.c'
 
 

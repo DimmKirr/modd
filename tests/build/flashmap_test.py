@@ -33,7 +33,7 @@ def test_hardware_layout_is_pinned():
     assert (hw.body_max, hw.mark_sec, hw.mark_off) == (0x8C000, 0x91000, 0x91FE0)
     assert (hw.app_slot, hw.vm_len, hw.shift) == (0x8DFBC, 352256, 0)
     assert (hw.data_lo, hw.data_hi, hw.ota_lo, hw.bank_ext_lo, hw.glob_lo, hw.keymac) == \
-        (0x97000, 0xE0000, 0xE0000, 0xE5000, 0xFC000, 0xFF000)
+        (0x97000, 0xE0000, 0xE0000, 0xEA000, 0xFC000, 0xFF000)
     assert (hw.btif, hw.usr, hw.flash_hdr_size, hw.smp_user_lo) == (0xE9000, 0xEA000, 0xFF000, 0xA0000)
     hw.check()
 

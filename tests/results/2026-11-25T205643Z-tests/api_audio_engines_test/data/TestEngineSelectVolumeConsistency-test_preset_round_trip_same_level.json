@@ -1,0 +1,488 @@
+{
+  "test": "audio.api_audio_engines_test.TestEngineSelectVolumeConsistency.test_preset_round_trip_same_level",
+  "requests": [
+    {
+      "t": "21:02:06.175",
+      "path": "/modd/home",
+      "reply": {
+        "ok": true,
+        "page": "HOME",
+        "index": 0,
+        "data": {
+          "selected_track": 1,
+          "tracks": [
+            {
+              "index": 0,
+              "engine": "ANALOG",
+              "preset": 0,
+              "engine_id": 0
+            },
+            {
+              "index": 1,
+              "engine": "FM6",
+              "preset": 0,
+              "engine_id": 12
+            },
+            {
+              "index": 2,
+              "engine": "LOFI",
+              "preset": 0,
+              "engine_id": 3
+            },
+            {
+              "index": 3,
+              "engine": "PHASE",
+              "preset": 0,
+              "engine_id": 2
+            }
+          ],
+          "palette": 0,
+          "palette_name": "GREY",
+          "bpm": 120,
+          "playing": false,
+          "recording": false,
+          "oct": 0,
+          "root": 0,
+          "scale": 0,
+          "level": 104,
+          "atk": 0,
+          "dec": 0,
+          "sus": 127,
+          "rel": 0
+        }
+      }
+    },
+    {
+      "t": "21:02:06.216",
+      "path": "/api/page",
+      "reply": {
+        "modal": false,
+        "page": "HOME",
+        "index": 0,
+        "data": {
+          "selected_track": 1,
+          "tracks": [
+            {
+              "index": 0,
+              "engine": "ANALOG",
+              "preset": 0,
+              "engine_id": 0
+            },
+            {
+              "index": 1,
+              "engine": "FM6",
+              "preset": 0,
+              "engine_id": 12
+            },
+            {
+              "index": 2,
+              "engine": "LOFI",
+              "preset": 0,
+              "engine_id": 3
+            },
+            {
+              "index": 3,
+              "engine": "PHASE",
+              "preset": 0,
+              "engine_id": 2
+            }
+          ],
+          "palette": 0,
+          "palette_name": "GREY",
+          "bpm": 120,
+          "playing": false,
+          "recording": false,
+          "oct": 0,
+          "root": 0,
+          "scale": 0,
+          "level": 104,
+          "atk": 0,
+          "dec": 0,
+          "sus": 127,
+          "rel": 0
+        }
+      }
+    },
+    {
+      "t": "21:02:07.170",
+      "path": "/api/screenshot",
+      "reply": {
+        "width": 240,
+        "height": 240,
+        "format": "rgb565",
+        "data": "<153600 characters>"
+      }
+    },
+    {
+      "t": "21:02:07.214",
+      "path": "/api/input/pot/master/307",
+      "reply": {
+        "ok": true,
+        "input": "pot",
+        "value": 307,
+        "ms": 10226
+      }
+    },
+    {
+      "t": "21:02:07.235",
+      "path": "/api/input",
+      "reply": {
+        "ms": 10246,
+        "buttons": 0,
+        "notes": 0,
+        "inject_buttons": 0,
+        "inject_notes": 0,
+        "pending": 0,
+        "enc_pending": 0,
+        "pot": 307,
+        "master_q12": 3356,
+        "idle": true
+      }
+    },
+    {
+      "t": "21:02:07.702",
+      "path": "/api/input",
+      "reply": {
+        "ms": 10716,
+        "buttons": 0,
+        "notes": 0,
+        "inject_buttons": 0,
+        "inject_notes": 0,
+        "pending": 0,
+        "enc_pending": 0,
+        "pot": 307,
+        "master_q12": 382,
+        "idle": true
+      }
+    },
+    {
+      "t": "21:02:07.724",
+      "path": "/api/track/sel/engine/ANALOG",
+      "reply": {
+        "track": 1,
+        "selected": true,
+        "engine_id": 0,
+        "engine": "ANALOG",
+        "preset": 0,
+        "engines": [
+          "ANALOG",
+          "-",
+          "PHASE",
+          "LOFI",
+          "SAMPLE",
+          "VOICE",
+          "TRIO",
+          "WHEEL",
+          "GRAIN",
+          "PHYS",
+          "DRUM",
+          "NOISE",
+          "FM6",
+          "SLICE",
+          "ADPCM"
+        ]
+      }
+    },
+    {
+      "t": "21:02:07.744",
+      "path": "/api/input/key/60,64,67/down",
+      "reply": {
+        "ok": true,
+        "input": "keys",
+        "value": 18560,
+        "ms": 10756
+      }
+    },
+    {
+      "t": "21:02:08.083",
+      "path": "/api/input",
+      "reply": {
+        "ms": 11096,
+        "buttons": 0,
+        "notes": 18560,
+        "inject_buttons": 0,
+        "inject_notes": 18560,
+        "pending": 0,
+        "enc_pending": 0,
+        "pot": 307,
+        "master_q12": 368,
+        "idle": true
+      }
+    },
+    {
+      "t": "21:02:08.175",
+      "path": "/api/audio/capture",
+      "reply": {
+        "rate": 44100,
+        "format": "s16le",
+        "channels": 1,
+        "n": 8192,
+        "pos": 474624,
+        "ms": 11117,
+        "notes": 18560,
+        "data": "<21848 characters>"
+      }
+    },
+    {
+      "t": "21:02:08.192",
+      "path": "/api/input/key/60,64,67/up",
+      "reply": {
+        "ok": true,
+        "input": "keys",
+        "value": 18560,
+        "ms": 11203
+      }
+    },
+    {
+      "t": "21:02:08.336",
+      "path": "/api/input",
+      "reply": {
+        "ms": 11343,
+        "buttons": 0,
+        "notes": 0,
+        "inject_buttons": 0,
+        "inject_notes": 0,
+        "pending": 0,
+        "enc_pending": 0,
+        "pot": 307,
+        "master_q12": 368,
+        "idle": true
+      }
+    },
+    {
+      "t": "21:02:08.362",
+      "path": "/api/track/sel/engine/NOISE",
+      "reply": {
+        "track": 1,
+        "selected": true,
+        "engine_id": 11,
+        "engine": "NOISE",
+        "preset": 0,
+        "engines": [
+          "ANALOG",
+          "-",
+          "PHASE",
+          "LOFI",
+          "SAMPLE",
+          "VOICE",
+          "TRIO",
+          "WHEEL",
+          "GRAIN",
+          "PHYS",
+          "DRUM",
+          "NOISE",
+          "FM6",
+          "SLICE",
+          "ADPCM"
+        ]
+      }
+    },
+    {
+      "t": "21:02:08.382",
+      "path": "/api/input/key/60,64,67/down",
+      "reply": {
+        "ok": true,
+        "input": "keys",
+        "value": 18560,
+        "ms": 11393
+      }
+    },
+    {
+      "t": "21:02:08.725",
+      "path": "/api/input",
+      "reply": {
+        "ms": 11733,
+        "buttons": 0,
+        "notes": 18560,
+        "inject_buttons": 0,
+        "inject_notes": 18560,
+        "pending": 0,
+        "enc_pending": 0,
+        "pot": 307,
+        "master_q12": 368,
+        "idle": true
+      }
+    },
+    {
+      "t": "21:02:08.817",
+      "path": "/api/audio/capture",
+      "reply": {
+        "rate": 44100,
+        "format": "s16le",
+        "channels": 1,
+        "n": 8192,
+        "pos": 499584,
+        "ms": 11754,
+        "notes": 18560,
+        "data": "<21848 characters>"
+      }
+    },
+    {
+      "t": "21:02:08.832",
+      "path": "/api/input/key/60,64,67/up",
+      "reply": {
+        "ok": true,
+        "input": "keys",
+        "value": 18560,
+        "ms": 11840
+      }
+    },
+    {
+      "t": "21:02:08.963",
+      "path": "/api/input",
+      "reply": {
+        "ms": 11970,
+        "buttons": 0,
+        "notes": 0,
+        "inject_buttons": 0,
+        "inject_notes": 0,
+        "pending": 0,
+        "enc_pending": 0,
+        "pot": 307,
+        "master_q12": 368,
+        "idle": true
+      }
+    },
+    {
+      "t": "21:02:08.984",
+      "path": "/api/track/sel/engine/ANALOG",
+      "reply": {
+        "track": 1,
+        "selected": true,
+        "engine_id": 0,
+        "engine": "ANALOG",
+        "preset": 0,
+        "engines": [
+          "ANALOG",
+          "-",
+          "PHASE",
+          "LOFI",
+          "SAMPLE",
+          "VOICE",
+          "TRIO",
+          "WHEEL",
+          "GRAIN",
+          "PHYS",
+          "DRUM",
+          "NOISE",
+          "FM6",
+          "SLICE",
+          "ADPCM"
+        ]
+      }
+    },
+    {
+      "t": "21:02:09.006",
+      "path": "/api/input/key/60,64,67/down",
+      "reply": {
+        "ok": true,
+        "input": "keys",
+        "value": 18560,
+        "ms": 12010
+      }
+    },
+    {
+      "t": "21:02:09.353",
+      "path": "/api/input",
+      "reply": {
+        "ms": 12360,
+        "buttons": 0,
+        "notes": 18560,
+        "inject_buttons": 0,
+        "inject_notes": 18560,
+        "pending": 0,
+        "enc_pending": 0,
+        "pot": 307,
+        "master_q12": 368,
+        "idle": true
+      }
+    },
+    {
+      "t": "21:02:09.447",
+      "path": "/api/audio/capture",
+      "reply": {
+        "rate": 44100,
+        "format": "s16le",
+        "channels": 1,
+        "n": 8192,
+        "pos": 524032,
+        "ms": 12381,
+        "notes": 18560,
+        "data": "<21848 characters>"
+      }
+    },
+    {
+      "t": "21:02:09.462",
+      "path": "/api/input/key/60,64,67/up",
+      "reply": {
+        "ok": true,
+        "input": "keys",
+        "value": 18560,
+        "ms": 12469
+      }
+    },
+    {
+      "t": "21:02:09.594",
+      "path": "/api/input",
+      "reply": {
+        "ms": 12599,
+        "buttons": 0,
+        "notes": 0,
+        "inject_buttons": 0,
+        "inject_notes": 0,
+        "pending": 0,
+        "enc_pending": 0,
+        "pot": 307,
+        "master_q12": 368,
+        "idle": true
+      }
+    }
+  ],
+  "page_at_end": {
+    "modal": false,
+    "page": "HOME",
+    "index": 0,
+    "data": {
+      "selected_track": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "engine": "ANALOG",
+          "preset": 0,
+          "engine_id": 0
+        },
+        {
+          "index": 1,
+          "engine": "ANALOG",
+          "preset": 0,
+          "engine_id": 0
+        },
+        {
+          "index": 2,
+          "engine": "LOFI",
+          "preset": 0,
+          "engine_id": 3
+        },
+        {
+          "index": 3,
+          "engine": "PHASE",
+          "preset": 0,
+          "engine_id": 2
+        }
+      ],
+      "palette": 0,
+      "palette_name": "GREY",
+      "bpm": 120,
+      "playing": false,
+      "recording": false,
+      "oct": 0,
+      "root": 0,
+      "scale": 0,
+      "level": 104,
+      "atk": 4,
+      "dec": 70,
+      "sus": 100,
+      "rel": 50
+    }
+  }
+}

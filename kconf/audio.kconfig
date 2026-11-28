@@ -77,6 +77,17 @@ config FELUCCA_SL_LEN
       uses 4096 stereo frames of it). The default is upstream's value.
 
 # kc2mm:hide
+config AUDIO_MELODEE_STACK_INCLUDED
+    bool "Melodee stack included from upstream (params, mod, voice, mix, fx, seq)"
+    depends on AUDIO_CORE_MELODEE
+    default n
+    help
+      Includes upstream Melodee's audio stack unchanged (core.h, dsp.c,
+      params.c, mod.c, voice.c, mix.c, fx.c, seq.c) through the adapter.
+      The stack owns the voice allocator, the mixer and the effects.
+      Melodee's types (NTRK=8, NVOICE=16, P_COUNT) replace modd's own.
+
+# kc2mm:hide
 config ARENA_MIN_LEFT
     int "Bytes the build must leave free for the audio arena"
     depends on AUDIO

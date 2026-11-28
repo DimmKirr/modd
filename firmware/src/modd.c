@@ -18,6 +18,28 @@ extern uint32_t _pool_net_start[], _pool_net_end[];
 extern uint32_t _rt_start[], _rt_end[], _rt_load[];
 extern uint32_t _audio_start[], _audio_end[], _audio_load[];
 
+/* --- Firmware metadata at body + 0x80 (XIP 0x02001080) --- */
+
+#include "fm1_meta.h"
+
+#ifndef BUILD_TIMESTAMP
+#define BUILD_TIMESTAMP 0
+#endif
+#ifndef GIT_SHA_SHORT
+#define GIT_SHA_SHORT "unknown"
+#endif
+
+static const fw_meta_t __attribute__((section(".fw_meta"), used))
+fw_meta = {
+    .magic      = FW_META_MAGIC,
+    .meta_ver   = FW_META_VER,
+    .flags      = 0,
+    .name       = CONFIG_FIRMWARE_NAME,
+    .version    = CONFIG_FIRMWARE_VERSION,
+    .build_time = BUILD_TIMESTAMP,
+    .git_sha    = GIT_SHA_SHORT,
+};
+
 /* --- HAL (header-only) --- */
 
 #include "fm1_cc.h"
@@ -70,6 +92,11 @@ extern uint32_t _audio_start[], _audio_end[], _audio_load[];
 #elif defined(CONFIG_HAL_INPUT_SLOOP)
 #include "fm1_input_sloop.h"
 #endif
+#include "fm1_led_map.h"
+#ifdef CONFIG_LED_ANIM_FELUCCA
+#include "felucca/leds/led_anim_modd.c"   /* Felucca's LED animations over Melodee's LED arrays */
+#include "ui/led_idle.c"
+#endif
 #endif
 
 #ifdef CONFIG_FLASH
@@ -116,13 +143,14 @@ extern uint32_t _audio_start[], _audio_end[], _audio_load[];
 #endif
 
 /* --- libc (freestanding: memset, memcpy, memmove, strlen) --- */
-#include "libc.c"
+#include "../ports/melodee/libc/libc.c"
 
 #ifdef CONFIG_AUDIO
 /* the master volume pot (0..1023); the REST API can hold it at a value (api_ctl.c) */
 #ifdef CONFIG_RPC_INPUT
 static volatile int32_t master_pot_override = -1;   /* >= 0: this value instead of the ADC */
 #endif
+static int api_led_override;   /* >0: api_led_test holds fm1_led[], shell must not touch it */
 static int32_t master_pot_read(void)
 {
 #ifdef CONFIG_RPC_INPUT
@@ -138,8 +166,14 @@ static int32_t master_pot_read(void)
 /* --- audio output tap for the REST API (emulator-only, 16 KB) --- */
 #include "debug/audio_tap.c"
 
+/* --- forward declarations for LCD hooks (defined later) --- */
+#ifdef CONFIG_MIRROR
+static uint8_t mirror_on;
+static void mirror_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px);
+static void mirror_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint16_t c);
+#endif
 /* --- LCD driver (ST7789 240x240) --- */
-#include "ui/shells/melodee/lcd.c"
+#include "../ports/melodee/shell/lcd.c"
 
 /* --- minimal 5x7 bitmap font for boot screen --- */
 static const uint8_t font5x7[] = {
@@ -375,8 +409,6 @@ static void fm1_fault(const fm1_crash_t *c)
  *   modd_udisk.h      - USB mass storage
  *
  * Stub (placeholder, no real .c yet):
- *   modd_console.h    - CDC serial diagnostics
- *   modd_editor.h     - SysEx web editor
  *   modd_fx.h         - effects chain
  *   modd_midi.h       - MIDI routing + clock
  *   modd_mix.h        - per-track mixer
@@ -418,8 +450,6 @@ static void fm1_fault(const fm1_crash_t *c)
 #include "ui/ui_view.h"
 #include "modd_controls.h"
 #include "modd_usb_audio.h"
-#include "modd_editor.h"
-#include "modd_console.h"
 
 #if defined(CONFIG_UI_SHELL_MODD)
 static uint8_t modd_lights = 3; /* LIGHTS_HIGH default; SYS_MENU overrides from flash */
@@ -497,14 +527,14 @@ static uint8_t ep0buf[64 + 4] __attribute__((aligned(4)));
 static uint8_t *usb_host_rxbuf;
 #define EP0BUF_DEFINED
 #include "fm1_usb_host.h"
-#include "udisk/usb_host_xfer.c"
-#include "udisk/usb_host_enum.c"
-#include "udisk/usb_hub.c"
-#include "udisk/usb_msc.c"
+#include "usb/host/usb_host_xfer.c"
+#include "usb/host/usb_host_enum.c"
+#include "usb/host/usb_hub.c"
+#include "usb/msc/usb_msc.c"
 #ifdef CONFIG_UDISK
 /* FatFs R0.15, vendored unmodified (vendir.yml). Project config comes from
  * udisk/ffconf.h and udisk/diskio.h via -Ifirmware/src/udisk; the libc
- * calls resolve through wifi/string.h and libc.c. */
+ * calls resolve through libc/string.h and libc.c. */
 #include "vendor/fatfs/source/ff.c"
 #include "udisk/diskio.c"
 #include "udisk/udisk.c"
@@ -519,7 +549,7 @@ static uint8_t *usb_host_rxbuf;
 #else
 #include "fe_tables.h"
 #endif
-#include "upstream/felucca-engines/src/dsp.c"   /* Felucca-Engines DSP helpers, INCLUDED unchanged */
+#include "upstream/felucca/firmware/engines/src/dsp.c"   /* Felucca-Engines DSP helpers, INCLUDED unchanged */
 #include "audio/engines/engines.c"
 #endif
 
@@ -538,24 +568,15 @@ static uint8_t *usb_host_rxbuf;
 #else
 #define MELODEE_OTA 0
 #endif
-#include "midi/usb.c"
-#ifdef CONFIG_USB_AUDIO
-#include "midi/melodee/usb_audio.c"
-#endif
+#include "../ports/melodee/usb/usb.c"
 #ifdef CONFIG_OTA
-#include "boot/boot_work.c"
-#include "../adapters/modd_ota.h"
+#include "ota/ota_work.c"
+#include "../contracts/modd_ota.h"
 
-#include "boot/ota.c"
+#include "../ports/melodee/ota/ota.c"
 #endif
 #ifdef CONFIG_DEBUG_DAP
 #include "debug/debug_dap.c"
-#endif
-#ifdef CONFIG_EDITOR
-#include "editor/melodee/editor.c"
-#endif
-#ifdef CONFIG_CONSOLE
-#include "console/console.c"
 #endif
 #endif
 
@@ -658,13 +679,13 @@ static void ble_app_central_keys(const struct ble_keys *k) { (void)k; }
 #include "../upstream/optimist/firmware/src/ble/ble_host.c"
 #ifdef MODD_BLE_FT
 #include "ble/ble_ft.c"
-#include "ble/ble_att_ft.c"
+#include "../ports/optimist/ble/ble_att_ft.c"
 #else
 #include "../upstream/optimist/firmware/src/ble/ble_att.c"
 #endif
 #include "../upstream/optimist/firmware/src/ble/ble_store.c"
 #if BLE_CENTRAL
-#include "ble/ble_scan.c"
+#include "../ports/optimist/ble/ble_scan.c"
 #include "../upstream/optimist/firmware/src/ble/ble_gattc.c"
 #include "../upstream/optimist/firmware/src/ble/ble_central.c"
 #ifdef MODD_BLE_HID
@@ -674,7 +695,7 @@ static struct ble_scan_tab ble_scan_tab;
 #endif
 /* baseband driver */
 #ifdef MODD_BLE_STUB
-#include "ble/ble_hw_stub_sim.c"
+#include "../ports/optimist/ble/ble_hw_stub_sim.c"
 #else
 #define BLE_HW_WL82 1
 #include "../upstream/optimist/firmware/src/ble/ble_vm.c"
@@ -797,15 +818,16 @@ static void modd_ble_sync(void) {}
 #include "net/net_need.c"      /* net_need() -> wifi_need() / eth_need() by link policy */
 #include "net/net.c"
 #include "net/http.c"
-#include "wifi/wifi_weather.c"   /* weather client on http.c; link-agnostic */
-#include "wifi/wifi_llm.c"       /* LLM client on http.c; link-agnostic */
-#include "net/usbnet.c"          /* USB network link (CONFIG_USB_NET), stubs otherwise */
-#include "net/usbnet_ecm.c"     /* CDC-ECM ethernet (CONFIG_USB_NET_ECM), stubs otherwise */
+#include "net/weather.c"         /* weather client on http.c; link-agnostic */
+#include "net/llm.c"             /* LLM client on http.c; link-agnostic */
+#include "usb/net/usbnet.c"      /* USB network link (CONFIG_USB_NET), stubs otherwise */
+#include "usb/net/usbnet_ecm.c" /* CDC-ECM ethernet (CONFIG_USB_NET_ECM), stubs otherwise */
+#include "usb/audio/usb_audio_host.c"  /* USB DAC output (CONFIG_USB_AUDIO_HOST) */
 
 /* --- WiFi module (GPL-3.0 clean-room driver) --- */
 
 #ifdef CONFIG_WIFI
-#include "../adapters/modd_wifi.h"
+#include "../contracts/modd_wifi.h"
 #include "fm1_ble_rf.h"
 #include "fm1_wifi_rf.h"
 #include "fm1_wifi_sdio.h"
@@ -815,12 +837,12 @@ static void modd_ble_sync(void) {}
 #define NULL ((void *)0)
 #endif
 
-#include "wifi/wifi_rtos.c"
-#include "wifi/wifi_rf.c"
+#include "wifi/rtos.c"
+#include "wifi/hw/rf.c"
 
 static void wifi_mac_rx(uint8_t *data, uint32_t len, int8_t rssi);
 
-#include "wifi/wifi_sdio.c"
+#include "wifi/hw/sdio.c"
 
 static void wifi_on_connected(void);
 static void wifi_on_disconnected(void);
@@ -843,25 +865,25 @@ static int  wifi_wpa_ccmp_decrypt(uint8_t *frame, uint32_t hdr_len,
 
 static uint8_t wifi_sta_bssid[6];
 
-#include "wifi/wifi_mac.c"
-#include "wifi/wifi_sta.c"
-#include "wifi/wifi_data.c"
-#include "wifi/wifi_wpa.c"
-#include "wifi/wifi_lwip.c"
+#include "wifi/mac/mac.c"
+#include "wifi/sta.c"
+#include "wifi/mac/data.c"
+#include "wifi/mac/wpa.c"
+#include "wifi/lwip.c"
 #ifdef CONFIG_SCHED
 static void wifi_cmd_poll(void);
 #endif
-#include "wifi/wifi_need.c"      /* wifi_need(): the radio runs on setting + need */
-#include "wifi/wifi_api.c"
-#include "wifi/wifi_cmd.c"
-#include "wifi/wifi_debug.c"
+#include "wifi/need.c"           /* wifi_need(): the radio runs on setting + need */
+#include "wifi/wifi.c"
+#include "wifi/cmd.c"
+#include "wifi/debug.c"
 #endif /* CONFIG_WIFI */
 
 /* --- WiFi hardware probes (cleanroom analyst instrument) --- */
 
 #ifdef CONFIG_WIFI_PROBES
 #include "fm1_wifi_rf.h"
-#include "wifi/wifi_probes.c"
+#include "wifi/probes.c"
 #endif /* CONFIG_WIFI_PROBES */
 
 /* --- audio module --- */
@@ -870,13 +892,22 @@ static int32_t master_iir;
 
 #ifdef CONFIG_AUDIO
 #ifdef CONFIG_CORE_FELUCCA
-/* the upstream Felucca core: params, mod, voice, slicer, fx, seq (with chord, motion, midi) */
-#include "core/felucca/core_modd.c"
-#elif defined(CONFIG_AUDIO_FELUCCA_STACK_INCLUDED)
-/* the Felucca audio stack without seq */
-#include "audio/core/felucca/stack_modd.c"
+#include "felucca/core/stubs.c"
+#include "felucca/core/params.c"
+#include "felucca/core/voice.c"
+#include "felucca/core/fx.c"
+#include "felucca/core/seq.c"
+#include "felucca/core/init.c"
+#elif defined(CONFIG_CORE_MELODEE)
+/* NOT YET COMPILABLE — scaffold only (requires CONFIG_AUDIO_MELODEE_STACK_INCLUDED) */
+#include "../ports/melodee/core/stubs.c"
+#include "../ports/melodee/core/params.c"
+#include "../ports/melodee/core/voice.c"
+#include "../ports/melodee/core/fx.c"
+#include "../ports/melodee/core/seq.c"
+#include "../ports/melodee/core/init.c"
 #else /* modd-native audio path */
-#include "audio/params.c"
+#include "core/modd/params.c"
 #ifndef CONFIG_ENGINES
 #include "audio/engines/engines.c"
 #endif
@@ -885,44 +916,40 @@ static int32_t master_iir;
 #ifdef CONFIG_MODULATION
 #if defined(CONFIG_MOD_MELODEE)
 #define MODD_HAS_MOD 1
-#include "audio/mod/melodee/mod.c"
+#include "../ports/melodee/mod/mod.c"
 #endif
 #endif
 
-#include "audio/voice.c"
+#include "core/modd/voice.c"
 
 /* --- stereo mixer --- */
-#ifdef CONFIG_MIX
-#define MODD_HAS_MIX 1
-#include "audio/mix/mix.c"
-#endif
 
 #ifdef CONFIG_ARENA_MELODEE
-#include "mem/arena_melodee_modd.c"
+#include "../ports/melodee/mem/arena_melodee_modd.c"
 #endif
 
 #ifdef CONFIG_FX_HOST
 /* --- effects host (modd-native): units after dsp.c, host before the audio core that calls it --- */
 #ifdef CONFIG_FX_UNIT_SLOOP_INSERT
-#include "audio/effects/host/fx_unit_sloop_insert_modd.c"
+#include "../ports/sloop/effects/fx_unit_sloop_insert_modd.c"
 #endif
 #ifdef CONFIG_DSP_OPTIMIST
-#include "audio/effects/host/dsp_optimist_modd.c"   /* Optimist dsp/dsp.c INCLUDED unchanged (names renamed inside) */
+#include "../ports/optimist/effects/dsp_optimist_modd.c"   /* Optimist dsp/dsp.c INCLUDED unchanged (names renamed inside) */
 #endif
 #ifdef CONFIG_FX_UNIT_EXGAIN
-#include "audio/effects/host/fx_unit_exgain_modd.c"
+#include "../ports/optimist/effects/fx_unit_exgain_modd.c"
 #endif
-#include "audio/effects/host/fx_host.c"
+#include "audio/effects/effects.c"
 #endif
 
 /* --- effects chain --- */
 #ifdef CONFIG_EFFECTS_MELODEE
-#include "audio/effects/melodee/fx.c"
+/* TODO: Melodee FX – needs a HOST wrapper when ported */
 #endif
 #endif /* modd-native audio path */
 
 /* universal audio host: owns fm1_alnk0_irq for every upstream */
-#include "audio/core/audio.c"
+#include "audio/audio.c"
 #endif
 
 #include "modd_pages.h"
@@ -931,35 +958,33 @@ static int32_t master_iir;
 #ifndef CONFIG_CORE_FELUCCA
 #if defined(CONFIG_SCALES_MELODEE)
 #define MODD_HAS_SCALES 1
-#include "scales/melodee/scales.c"
+#include "../ports/melodee/scales/scales.c"
 #elif defined(CONFIG_SCALES_FELUCCA)
 #define MODD_HAS_SCALES 1
-#include "scales/scales.c"
+#include "felucca/scales/scales.c"
 #endif
 #endif
 
 /* --- MIDI routing --- */
 #if defined(CONFIG_MIDI_MELODEE)
-#include "midi/melodee/midi_routing.c"
-#elif defined(CONFIG_MIDI_FELUCCA)
-#include "midi/midi_routing.c"
+#include "../ports/melodee/midi/routing.c"
 #endif
 
 /* --- sequencer --- */
 #if defined(CONFIG_SEQ_FELUCCA) && !defined(CONFIG_CORE_FELUCCA)
-#include "seq/seq.c"
+#include "core/modd/seq.c"
 #endif
 
 /* --- storage --- */
 #if defined(CONFIG_STORAGE_MELODEE)
-#include "storage/melodee/storage.c"
+#include "../ports/melodee/storage/storage.c"
 #elif defined(CONFIG_STORAGE_FELUCCA)
-#include "storage/felucca/storage.c"
+#include "felucca/storage/storage.c"
 #endif
 
 /* --- GFX renderer --- */
 #if defined(CONFIG_UI_SHELL_MELODEE)
-#include "ui/shells/melodee/gfx.c"
+#include "../ports/melodee/shell/gfx.c"
 #endif
 
 /* --- UI shell --- */
@@ -974,9 +999,9 @@ static uint8_t hints_visible;                   /* GLO tap badge overlay (chrome
 #endif
 
 #if defined(CONFIG_UI_SHELL_MELODEE)
-#include "ui/shells/melodee/shell.c"
+#include "../ports/melodee/shell/shell.c"
 #elif defined(CONFIG_UI_SKIN_FELUCCA)
-#include "ui/shells/felucca/lvgl_ui.c"
+#include "felucca/shell/lvgl_ui.c"
 #elif defined(CONFIG_UI_SHELL_MODD)
 #include "ui/shells/modd/ui.c"
 #else
@@ -994,6 +1019,8 @@ static uint8_t hints_visible;                   /* GLO tap badge overlay (chrome
 #include "rpc/api_ctl.c"
 #include "rpc/rpc_server.c"
 #endif /* CONFIG_RPC */
+/* --- LCD mirror over WebSocket (uses rpc_ws.c's ws_send_bin) --- */
+#include "debug/mirror_ws.c"
 
 /* --- main loop --- */
 
@@ -1019,6 +1046,9 @@ void fm1_timer5_irq(void)
     }
 #ifdef CONFIG_INPUT
     fm1_input_tick();
+#ifdef CONFIG_LED_ANIM_FELUCCA
+    led_anim_tick();
+#endif
 #endif
 #ifdef CONFIG_USB
     {
@@ -1125,6 +1155,9 @@ static void usb_task(void)
 #ifdef CONFIG_UDISK
         udisk_poll();
 #endif
+#ifdef CONFIG_USB_AUDIO_HOST
+        usb_audio_host_poll();
+#endif
 #ifdef CONFIG_OTA
         ota_service();
         if (usb.ota_req) {
@@ -1177,7 +1210,7 @@ static void settings_task(void)
 }
 #endif /* CONFIG_SYS_MENU */
 
-/* Services task: editor, console, debug */
+/* Services task: debug */
 static void services_task(void)
 {
 #ifdef CONFIG_DEBUG
@@ -1189,12 +1222,6 @@ static void services_task(void)
             sched_log_stats();
             sched_stats_next = fm1_ms + 60000u;
         }
-#ifdef CONFIG_EDITOR
-        editor_poll();
-#endif
-#ifdef CONFIG_CONSOLE
-        console_poll();
-#endif
 #if defined(CONFIG_DEBUG_DAP) && defined(CONFIG_USB)
         modd_debug_poll();
 #endif
@@ -1204,6 +1231,9 @@ static void services_task(void)
         llm_poll();
 #ifdef CONFIG_RPC
         rpc_poll();
+#endif
+#ifdef CONFIG_MIRROR
+        mirror_ws_step();
 #endif
         usbnet_poll();
         ecm_poll();
@@ -1335,8 +1365,14 @@ static void fm1_main(void)
 #endif
 
 #ifdef CONFIG_OTA
-    if (modd_flash_ok)
-        ota_boot_cleanup();
+    if (modd_flash_ok) {
+        uint32_t ota_pre = ota_staged();
+        modd_log_int("ota: staged bytes ", (int32_t)ota_pre);
+        int ota_rc = ota_boot_cleanup();
+        uint32_t ota_post = ota_staged();
+        modd_log_int("ota: cleanup rc ", ota_rc);
+        modd_log_int("ota: post bytes ", (int32_t)ota_post);
+    }
     modd_log("ota: ready");
 #endif
 
@@ -1448,6 +1484,9 @@ static void fm1_main(void)
     otg_init();
     usbnet_init();                 /* stub without CONFIG_USB_NET */
     ecm_init();                    /* stub without CONFIG_USB_NET_ECM */
+#ifdef CONFIG_USB_AUDIO_HOST
+    usb_audio_host_init();
+#endif
     modd_log("OTG: device mode (boot)");
 #endif
 
@@ -1472,14 +1511,6 @@ static void fm1_main(void)
     seq_init();
 #ifdef CONFIG_MODULATION
     mod_init();
-#endif
-
-#ifdef CONFIG_EDITOR
-    editor_init();
-    modd_log("editor: ready");
-#endif
-#ifdef CONFIG_CONSOLE
-    console_init();
 #endif
 
     /* ---- Phase 1: boot logo, no ISR ---- */
@@ -1530,6 +1561,12 @@ static void fm1_main(void)
     else
         modd_log("dual-core: CPU1 failed, single-core fallback");
 #endif
+#endif
+
+#if defined(CONFIG_LED_ANIM_FELUCCA) && defined(CONFIG_LED_ANIM_BOOT)
+    /* after shell_init (sets modd_lights) and fm1_input_init, before the TIMER5 ISR runs the first frame */
+    fm1_led_anim_start(modd_lights != 0);
+    modd_log("leds: boot sweep");
 #endif
 
     /* ---- Phase 2: ISR active, ready to play ---- */
@@ -1681,9 +1718,6 @@ static void fm1_main(void)
         fx_host_poll();
 #endif
 #endif
-#ifdef CONFIG_EDITOR
-        editor_poll();
-#endif
 #if defined(CONFIG_DEBUG_DAP) && defined(CONFIG_USB)
         modd_debug_poll();
 #endif
@@ -1698,9 +1732,6 @@ static void fm1_main(void)
             fm1_delay_ms(200);
             fm1_reboot();
         }
-#endif
-#ifdef CONFIG_CONSOLE
-        console_poll();
 #endif
 #ifdef CONFIG_INPUT
         ui_input();
@@ -1730,6 +1761,9 @@ static void fm1_main(void)
 #endif
         usbnet_poll();
         ecm_poll();
+#ifdef CONFIG_USB_AUDIO_HOST
+        usb_audio_host_poll();
+#endif
 #ifdef UI_SHELL
         shell_draw();
         ui_leds();

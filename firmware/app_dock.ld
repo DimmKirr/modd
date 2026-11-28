@@ -7,7 +7,7 @@
 /* modd memory map with fm1-dock modules (CONFIG_DOCK; tools/build/build.py picks this file).
  * As app.ld, except that a module's fixed regions stay free:
  *   0x01C04000..0x01C07F00  the module's .ram_text (HB_MOD_RT; modd's own RAM code is below 0x01C04000,
- *                           the boot stub's STATUS keeps the last 256 bytes: DOCK_RT_MAX)
+ *                           the boot init's STATUS keeps the last 256 bytes: DOCK_RT_MAX)
  *   0x01C30000..0x01C74000  the module's .data + .bss (HB_MOD_RAM, 272 KiB), which doubles as the
  *                           audio resource arena and holds the network memory (.pool_net: lwIP pools,
  *                           the USB link, HTTP): a module, modd's engines and a network link never
@@ -26,7 +26,7 @@ MEMORY
 }
 SECTIONS
 {
-    .text : { KEEP(*(.text.crt0)) *(.text*) *(.rodata*) . = ALIGN(4); _etext = .; } > XIP
+    .text : { KEEP(*(.text.crt0)) . = ORIGIN(XIP) + 0x80; KEEP(*(.fw_meta)) *(.text*) *(.rodata*) . = ALIGN(4); _etext = .; } > XIP
     .ram_text : { _rt_start = .; KEEP(*(.ram_text*)) . = ALIGN(4); _rt_end = .; } > RAMTEXT AT > XIP
     _rt_load = LOADADDR(.ram_text);
     .dsp_text : { _dsp_start = .; *(.dsp_text*) . = ALIGN(4); _dsp_end = .; } > RAMTEXT AT > XIP

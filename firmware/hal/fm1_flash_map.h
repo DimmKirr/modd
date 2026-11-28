@@ -2,27 +2,27 @@
 /* The SPI-flash layout of a 1 MiB FM-1 (flash offsets), in one place.
  *
  *   0x0000 .. 0x4000       head: SPL, ISD, directory (JieLi packer)
- *   0x4000 .. FLASH_APP_END   application area: the boot stub, then the body from FLASH_BODY_OFF
+ *   0x4000 .. FLASH_APP_END   application area: the boot init, then the body from FLASH_BODY_OFF
  *                          (XIP 0x02001000), up to FLASH_BODY_MAX bytes; the commit marker's sector
  *                          follows the body, one more sector (cfg/EQ tables) ends the area
  *   FLASH_APP_END .. FLASH_DATA_LO   store A (the Prophet banks above the app)
  *   FLASH_DATA_LO .. FLASH_DATA_HI   Melodee's main store (projects, user samples, dock modules)
- *   0xE0000 .. 0xE5000     OTA staging (the staged update loader)
- *   0xE5000 .. 0xFB000     bank extension (expanded presets, project copies)
+ *   0xE0000 .. 0xEA000     OTA staging (the staged OTA updater, 40 KB)
+ *   0xEA000 .. 0xFB000     bank extension (expanded presets, project copies)
  *   0xFC000 .. 0xFF000     Melodee globals
  *
  * Only two numbers differ between builds and are Kconfig symbols (kconf/flash.kconfig, from which
  * config.h takes them): CONFIG_FLASH_CHIP_SIZE and CONFIG_FLASH_APP_END. Every store above the app
  * area keeps its size and order and follows FLASH_APP_END (the emulator map: an 8 MiB chip, the
- * area to 0x600000, the stores shifted up). The app, the boot stub (firmware/stub) and the update loader
- * (firmware/loader) all include this file; tools/build/flashmap.py repeats the formulas for the
+ * area to 0x600000, the stores shifted up). The app, the boot init (firmware/init) and the OTA updater
+ * (firmware/boot) all include this file; tools/build/flashmap.py repeats the formulas for the
  * package builder and the linker (--defsym FLASH_BODY_MAX). Nothing else may spell a layout number. */
 #ifndef FM1_FLASH_MAP_H
 #define FM1_FLASH_MAP_H
 
 #include <stdint.h>
 
-/* The app gets the CONFIG_FLASH_* values from config.h (-include). The stub and the loader are built
+/* The app gets the CONFIG_FLASH_* values from config.h (-include). The init and the updater are built
  * without it (the rest of config.h would change them): build.py passes the two as -D. */
 #if !defined(CONFIG_FLASH_CHIP_SIZE) || !defined(CONFIG_FLASH_APP_END)
 #error "CONFIG_FLASH_CHIP_SIZE and CONFIG_FLASH_APP_END come from kconf/flash.kconfig (config.h, or -D)"
@@ -31,7 +31,7 @@
 #define FLASH_TOTAL        ((uint32_t)CONFIG_FLASH_CHIP_SIZE)
 #define FLASH_SECTOR       0x1000u
 
-#define FLASH_APP_LO       0x4000u                          /* the boot stub (and its directory entry) */
+#define FLASH_APP_LO       0x4000u                          /* the boot init (and its directory entry) */
 #define FLASH_BODY_OFF     0x5000u
 #define FLASH_APP_END      ((uint32_t)CONFIG_FLASH_APP_END)
 #define FLASH_MARK_SEC     (FLASH_APP_END - 0x2000u)        /* the commit marker's sector */
@@ -48,10 +48,10 @@
 #define FLASH_DATA_LO      FLASH_STORE_A_HI
 #define FLASH_DATA_HI      (FLASH_DATA_LO + 0x49000u)
 #define FLASH_OTA_LO       FLASH_DATA_HI
-#define FLASH_OTA_LEN      0x5000u
+#define FLASH_OTA_LEN      0xA000u
 #define FLASH_OTA_HI       (FLASH_OTA_LO + FLASH_OTA_LEN)
 #define FLASH_BANK_EXT_LO  FLASH_OTA_HI
-#define FLASH_BANK_EXT_HI  (FLASH_BANK_EXT_LO + 0x16000u)
+#define FLASH_BANK_EXT_HI  (FLASH_BANK_EXT_LO + 0x11000u)
 #define FLASH_GLOB_LO      (FLASH_BANK_EXT_HI + 0x1000u)
 #define FLASH_GLOB_HI      (FLASH_GLOB_LO + 0x3000u)
 #define FLASH_KEYMAC_LO    FLASH_GLOB_HI                    /* the chip's key_mac sector, the last of the FM-1's */
@@ -65,7 +65,7 @@
 _Static_assert(FLASH_ALIGNED(FLASH_TOTAL) && FLASH_ALIGNED(FLASH_APP_END),
                "flash map: the chip size and the app area end are 4 KiB sector aligned");
 _Static_assert(FLASH_BODY_OFF < FLASH_MARK_SEC && FLASH_MARK_SEC < FLASH_APP_END && FLASH_APP_END < FLASH_DATA_LO,
-               "flash map: stub, body, marker, app end and the store are in order");
+               "flash map: init, body, marker, app end and the store are in order");
 _Static_assert(FLASH_DATA_LO < FLASH_DATA_HI && FLASH_DATA_HI <= FLASH_OTA_LO && FLASH_OTA_HI <= FLASH_BANK_EXT_LO &&
                FLASH_BANK_EXT_LO < FLASH_BANK_EXT_HI && FLASH_BANK_EXT_HI <= FLASH_GLOB_LO &&
                FLASH_GLOB_LO < FLASH_GLOB_HI && FLASH_KEYMAC_LO + FLASH_SECTOR <= FLASH_TOTAL,

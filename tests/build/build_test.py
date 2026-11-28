@@ -146,13 +146,13 @@ def test_ar_member_reads_gnu_archives_without_a_host_ar(tmp_path):
         build._ar_member(path, 'nope.o')
 
 
-def test_loader_container_roundtrip():
+def test_boot_container_roundtrip():
     image = (bytes(range(256)) * 39) + b'last block'
-    wrapped = build.loader_wrap(image)
+    wrapped = build.boot_wrap(image)
     hcrc, dcrc, offset, size, attr, _, _, name = struct.unpack('<HHIIBBH16s', wrapped[:32])
     assert hcrc == fm1pkg_make.crc16(wrapped[2:32])
     assert dcrc == fm1pkg_make.crc16(wrapped[32:])
-    assert (offset, size, attr, name.rstrip(b'\0')) == (32, len(wrapped)-32, 0x41, b'usb_hid_ota.bin')
+    assert (offset, size, attr, name.rstrip(b'\0')) == (32, len(wrapped)-32, 0x41, b'BOOT.BIN')
     hcrc, dcrc, size, address, attr, _, _, _ = struct.unpack('<HHIIBBH16s', wrapped[32:64])
     assert hcrc == fm1pkg_make.crc16(wrapped[34:64])
     assert (size, address, attr) == (len(image), 0x01c0a800, 0)
@@ -169,14 +169,14 @@ def test_loader_container_roundtrip():
     assert dcrc == fm1pkg_make.crc16(decoded)
 
 
-def test_stub_commit_contains_body_checksum():
+def test_init_commit_contains_body_checksum():
     import zlib
-    stub = bytearray(b'\xff' * fm1pkg_make.STUB_LEN)
-    stub[8:14] = b'CRSTUB'
+    init = bytearray(b'\xff' * fm1pkg_make.INIT_LEN)
+    init[8:14] = b'CRSTUB'
     body = b'firmware body!!!' * 4
     layout = flashmap.Layout(0x100000, 0x93000)
-    mark_off = layout.mark_off - fm1pkg_make.STUB_FLASH_OFF
-    app = fm1pkg_make.commit(stub + body, layout)
+    mark_off = layout.mark_off - fm1pkg_make.INIT_FLASH_OFF
+    app = fm1pkg_make.commit(init + body, layout)
     magic, version, length, crc, marker_crc = struct.unpack_from('<IIIII', app, mark_off)
     assert (magic, version, length, crc) == (fm1pkg_make.MARK_MAGIC, 1, len(body), zlib.crc32(body))
     assert marker_crc == zlib.crc32(app[mark_off:mark_off+16])

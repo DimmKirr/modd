@@ -17,5 +17,5 @@ SOURCE = ROOT / 'tests' / 'usb' / 'udisk_need_test.c'
 
 
 def test_udisk_setting_and_need():
-    run_c_harness(SOURCE, includes=[FIRMWARE / 'adapters', FIRMWARE / 'src'],
+    run_c_harness(SOURCE, includes=[FIRMWARE / 'contracts', FIRMWARE / 'src'],
                   extra_flags=['-Wno-unused-function', '-Wno-unused-variable'])

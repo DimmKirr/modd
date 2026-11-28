@@ -1,6 +1,6 @@
 # Felucca UI Navigation
 
-Auto-generated from `firmware/src/ui/shells/felucca/lvgl_pages.c` and `firmware/adapters/modd_controls.h`.
+Auto-generated from `firmware/ports/felucca/shell/lvgl_pages.c` and `firmware/contracts/modd_controls.h`.
 
 Regenerate: `task docs:ui-map -- felucca`
 

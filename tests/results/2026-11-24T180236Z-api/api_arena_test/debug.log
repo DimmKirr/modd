@@ -1,0 +1,158 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+18:02:41.345	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	test			start
+18:02:41.356	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	exec	0.007		xdotool search --name ^FM-1 -> exit 0
+18:02:41.358	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 51103:9222
+18:02:41.384	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.024		GET /api/info -> URLError
+18:02:41.408	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			forward: host:51103 -> guest:9222
+18:02:41.409	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+18:02:41.409	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+18:02:41.409	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+18:02:41.409	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+18:02:41.410	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+18:02:41.410	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+18:02:41.410	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+18:02:41.410	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+18:02:41.410	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+18:02:41.410	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+18:02:41.410	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+18:02:41.411	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			MIDI in: MIDI support could not be initialized
+18:02:41.428	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+18:02:41.429	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+18:02:43.411	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			[  2.1 s] 0.97x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:02:44.387	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	2.002		GET /api/info -> TimeoutError
+18:02:45.414	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			[  4.1 s] 1.11x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:02:47.389	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	2.002		GET /api/info -> TimeoutError
+18:02:47.418	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			[  6.1 s] 1.14x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:02:48.403	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.013		GET /api/info -> 200, 94 B
+18:02:48.403	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	emu	7.044		firmware API up on port 51103
+18:02:48.404	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	test	7.056		setup passed
+18:02:48.422	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.018		GET /modd/home -> 200, 447 B
+18:02:48.462	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.040		GET /api/page -> 200, 451 B
+18:02:49.414	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.951		GET /api/screenshot -> 200, 153654 B
+18:02:49.426	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:02:49.472	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.022		GET /api/arena/release/0 -> 200, 81 B
+18:02:49.492	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/arena/release/1 -> 200, 81 B
+18:02:49.511	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.019		GET /api/arena/release/2 -> 200, 81 B
+18:02:49.531	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/arena/release/3 -> 200, 81 B
+18:02:49.552	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.021		GET /api/fx/slot/off -> 200, 100 B
+18:02:49.572	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/fx/slot -> 200, 100 B
+18:02:49.592	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/info -> 200, 94 B
+18:02:49.611	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.019		GET /api/arena -> 200, 82 B
+18:02:49.632	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.021		GET /api/arena/probe/melodee/0/20000 -> 200, 133 B
+18:02:49.652	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.019		GET /api/arena/probe/sloop/1/30000 -> 200, 171 B
+18:02:49.672	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/arena/release/0 -> 200, 126 B
+18:02:49.692	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/arena -> 200, 127 B
+18:02:49.711	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.019		GET /api/arena/release/1 -> 200, 85 B
+18:02:49.732	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.021		GET /api/arena -> 200, 86 B
+18:02:49.752	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/arena/release/0 -> 200, 85 B
+18:02:49.772	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/arena/release/1 -> 200, 85 B
+18:02:49.791	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.019		GET /api/arena/release/2 -> 200, 85 B
+18:02:49.812	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.021		GET /api/arena/release/3 -> 200, 85 B
+18:02:49.832	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/fx/slot/off -> 200, 100 B
+18:02:49.852	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.019		GET /api/fx/slot -> 200, 100 B
+18:02:49.872	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.015		GET /api/info -> 200, 94 B
+18:02:49.891	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.019		GET /api/info -> 200, 94 B
+18:02:49.912	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/info -> 200, 94 B
+18:02:49.932	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	0.020		GET /api/page -> 200, 451 B
+18:02:50.938	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	http	1.006		GET /api/screenshot -> 200, 153654 B
+18:02:50.961	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	test	2.557		call passed
+18:02:50.961	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	test	0.000		teardown passed
+18:02:50.961	tests/audio/api_arena_test.py::ArenaTest::test_a_two_styles_one_area	test	9.616		end passed; 33 io, 6.5 s in io, 0.0 s throttled
+18:02:50.963	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	test			start
+18:02:50.963	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	test	0.000		setup passed
+18:02:50.982	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.019		GET /modd/home -> 200, 447 B
+18:02:51.029	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.046		GET /api/page -> 200, 451 B
+18:02:51.041	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.012		GET /api/arena/release/0 -> 200, 85 B
+18:02:51.061	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/arena/release/1 -> 200, 85 B
+18:02:51.081	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/arena/release/2 -> 200, 85 B
+18:02:51.101	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/arena/release/3 -> 200, 85 B
+18:02:51.122	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/fx/slot/off -> 200, 100 B
+18:02:51.141	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.019		GET /api/fx/slot -> 200, 100 B
+18:02:51.162	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.021		GET /api/info -> 200, 94 B
+18:02:51.181	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.019		GET /api/arena -> 200, 86 B
+18:02:51.202	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/info -> 200, 94 B
+18:02:51.221	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.019		GET /api/arena/probe/melodee/2/4000000 -> 200, 86 B
+18:02:51.242	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/arena/probe/sloop/3/4000000 -> 200, 86 B
+18:02:51.261	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.019		GET /api/info -> 200, 94 B
+18:02:51.282	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/arena/probe/melodee/2/1000 -> 200, 131 B
+18:02:51.301	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.019		GET /api/arena/release/0 -> 200, 124 B
+18:02:51.321	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/arena/release/1 -> 200, 124 B
+18:02:51.341	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/arena/release/2 -> 200, 85 B
+18:02:51.361	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/arena/release/3 -> 200, 85 B
+18:02:51.381	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.019		GET /api/fx/slot/off -> 200, 100 B
+18:02:51.401	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/fx/slot -> 200, 100 B
+18:02:51.422	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:02:51.422	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.017		GET /api/info -> 200, 95 B
+18:02:51.441	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.019		GET /api/info -> 200, 95 B
+18:02:51.462	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.021		GET /api/info -> 200, 95 B
+18:02:51.482	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.020		GET /api/page -> 200, 451 B
+18:02:52.455	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	http	0.973		GET /api/screenshot -> 200, 153654 B
+18:02:52.474	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	test	1.511		call passed
+18:02:52.475	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	test	0.000		teardown passed
+18:02:52.475	tests/audio/api_arena_test.py::ArenaTest::test_b_oversize_is_refused_without_reset	test	1.512		end passed; 26 io, 1.5 s in io, 0.0 s throttled
+18:02:52.476	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	test			start
+18:02:52.476	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	test	0.000		setup passed
+18:02:52.492	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.016		GET /modd/home -> 200, 447 B
+18:02:52.537	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.045		GET /api/page -> 200, 451 B
+18:02:52.551	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.013		GET /api/arena/release/0 -> 200, 85 B
+18:02:52.571	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/arena/release/1 -> 200, 85 B
+18:02:52.591	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/arena/release/2 -> 200, 85 B
+18:02:52.611	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/arena/release/3 -> 200, 85 B
+18:02:52.631	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.019		GET /api/fx/slot/off -> 200, 100 B
+18:02:52.651	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/fx/slot -> 200, 100 B
+18:02:52.671	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/info -> 200, 95 B
+18:02:52.692	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.021		GET /api/arena/probe/melodee/0/20000 -> 200, 133 B
+18:02:52.711	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.019		GET /api/arena/probe/sloop/1/30000 -> 200, 171 B
+18:02:52.732	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.021		GET /api/fx/slot/on/5/100 -> 200, 104 B
+18:02:52.751	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.019		GET /api/fx/slot -> 200, 131 B
+18:02:52.772	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/arena -> 200, 202 B
+18:02:52.791	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.019		GET /api/fx/slot/off -> 200, 131 B
+18:02:52.812	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.021		GET /api/fx/slot -> 200, 130 B
+18:02:53.132	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.019		GET /api/fx/slot -> 200, 125 B
+18:02:53.152	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/arena/release/0 -> 200, 126 B
+18:02:53.171	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.019		GET /api/arena/release/1 -> 200, 85 B
+18:02:53.191	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/arena/release/2 -> 200, 85 B
+18:02:53.211	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/arena/release/3 -> 200, 85 B
+18:02:53.232	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/fx/slot/off -> 200, 121 B
+18:02:53.251	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.019		GET /api/fx/slot -> 200, 121 B
+18:02:53.271	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.016		GET /api/info -> 200, 95 B
+18:02:53.291	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/info -> 200, 95 B
+18:02:53.312	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.020		GET /api/info -> 200, 95 B
+18:02:53.333	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	0.021		GET /api/page -> 200, 451 B
+18:02:53.424	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	fm1-live			[ 12.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:02:54.392	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	http	1.059		GET /api/screenshot -> 200, 153654 B
+18:02:54.408	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	test	1.931		call passed
+18:02:54.408	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	test	0.000		teardown passed
+18:02:54.408	tests/audio/api_arena_test.py::ArenaTest::test_c_fx_host_block_comes_from_the_same_area	test	1.932		end passed; 28 io, 1.6 s in io, 0.0 s throttled
+18:02:54.409	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	test			start
+18:02:54.409	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	test	0.000		setup passed
+18:02:54.421	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.012		GET /modd/home -> 200, 447 B
+18:02:54.472	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.050		GET /api/page -> 200, 451 B
+18:02:54.491	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.019		GET /api/arena/release/0 -> 200, 85 B
+18:02:54.511	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/arena/release/1 -> 200, 85 B
+18:02:54.531	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/arena/release/2 -> 200, 85 B
+18:02:54.551	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/arena/release/3 -> 200, 85 B
+18:02:54.571	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/fx/slot/off -> 200, 121 B
+18:02:54.591	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.019		GET /api/fx/slot -> 200, 121 B
+18:02:54.611	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/info -> 200, 95 B
+18:02:54.632	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/fx/refuse/1 -> 200, 120 B
+18:02:54.652	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/fx/slot/on/5/100 -> 200, 120 B
+18:02:54.671	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/fx/slot -> 200, 124 B
+18:02:54.692	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/arena -> 200, 86 B
+18:02:54.712	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/fx/refuse/0 -> 200, 125 B
+18:02:54.732	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.019		GET /api/arena/release/0 -> 200, 85 B
+18:02:54.751	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.019		GET /api/arena/release/1 -> 200, 85 B
+18:02:54.771	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/arena/release/2 -> 200, 85 B
+18:02:54.792	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/arena/release/3 -> 200, 85 B
+18:02:54.811	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.019		GET /api/fx/slot/off -> 200, 125 B
+18:02:54.832	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.021		GET /api/fx/slot -> 200, 121 B
+18:02:54.851	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.016		GET /api/info -> 200, 95 B
+18:02:54.871	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/info -> 200, 95 B
+18:02:54.892	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.021		GET /api/info -> 200, 95 B
+18:02:54.912	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	0.020		GET /api/page -> 200, 451 B
+18:02:55.427	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:02:55.918	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	http	1.005		GET /api/screenshot -> 200, 153654 B
+18:02:55.939	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	test	1.529		call passed
+18:02:55.940	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	emu			fm1-live stopped
+18:02:55.940	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	test	0.001		teardown passed
+18:02:55.940	tests/audio/api_arena_test.py::ArenaTest::test_d_refuse_switch_still_works	test	1.531		end passed; 25 io, 1.5 s in io, 0.0 s throttled

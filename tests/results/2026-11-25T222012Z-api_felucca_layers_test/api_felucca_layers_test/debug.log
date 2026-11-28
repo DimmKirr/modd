@@ -1,0 +1,384 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+22:20:12.507	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	test			start
+22:20:12.524	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	exec	0.008		xdotool search --name ^FM-1 -> exit 1
+22:20:12.525	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 54765:9222
+22:20:12.550	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.022		GET /api/info -> URLError
+22:20:12.582	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			forward: host:54765 -> guest:9222
+22:20:12.583	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+22:20:12.583	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+22:20:12.584	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+22:20:12.584	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+22:20:12.584	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+22:20:12.584	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+22:20:12.584	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+22:20:12.584	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+22:20:12.584	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+22:20:12.585	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+22:20:12.585	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+22:20:12.585	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			MIDI in: MIDI support could not be initialized
+22:20:12.606	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+22:20:12.606	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+22:20:14.591	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			[  2.1 s] 1.01x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:15.566	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	2.009		GET /api/info -> TimeoutError
+22:20:16.593	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.018		GET /api/info -> 200, 94 B
+22:20:16.594	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			[  4.1 s] 0.99x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:16.594	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	emu	4.066		firmware API up on port 54765
+22:20:16.595	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	test	4.084		setup passed
+22:20:16.611	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.016		GET /modd/home -> 200, 442 B
+22:20:16.662	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.050		GET /api/page -> 200, 446 B
+22:20:17.603	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.884		GET /api/screenshot -> 200, 153654 B
+22:20:17.679	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.022		GET /modd/home -> 200, 442 B
+22:20:17.730	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.051		GET /api/page -> 200, 446 B
+22:20:17.752	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.021		GET /api/page -> 200, 446 B
+22:20:17.770	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.018		GET /modd/menu/CONTROL -> 200, 204 B
+22:20:17.799	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.029		GET /api/page -> 200, 300 B
+22:20:18.596	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:18.884	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	1.085		GET /api/screenshot -> 200, 153654 B
+22:20:18.929	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.019		GET /api/page -> 200, 300 B
+22:20:18.952	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.022		GET /api/input/button/oct+/tap/80 -> 200, 47 B
+22:20:19.100	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.016		GET /api/input -> 200, 136 B
+22:20:19.119	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.019		GET /api/page -> 200, 299 B
+22:20:20.163	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	1.044		GET /api/screenshot -> 200, 153654 B
+22:20:20.200	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.023		GET /modd/home -> 200, 442 B
+22:20:20.241	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.041		GET /api/page -> 200, 446 B
+22:20:20.601	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:21.186	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.945		GET /api/screenshot -> 200, 153654 B
+22:20:21.230	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.017		GET /modd/home -> 200, 442 B
+22:20:21.282	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.052		GET /api/page -> 200, 446 B
+22:20:21.302	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.019		GET /api/page -> 200, 446 B
+22:20:21.322	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.020		GET /api/input/enc/select/3 -> 200, 48 B
+22:20:21.392	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.019		GET /api/input -> 200, 136 B
+22:20:21.410	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.018		GET /modd/home -> 200, 442 B
+22:20:21.457	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.047		GET /api/page -> 200, 446 B
+22:20:21.479	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.021		GET /api/page -> 200, 446 B
+22:20:21.499	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.020		GET /api/input/button/glo/down -> 200, 45 B
+22:20:21.519	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.020		GET /api/input -> 200, 140 B
+22:20:21.598	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.016		GET /api/input -> 200, 140 B
+22:20:21.618	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.020		GET /api/input/enc/select/3 -> 200, 48 B
+22:20:21.700	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.018		GET /api/input -> 200, 140 B
+22:20:21.719	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.018		GET /api/input/button/glo/up -> 200, 45 B
+22:20:21.791	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.022		GET /api/input -> 200, 136 B
+22:20:21.809	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.017		GET /modd/home -> 200, 442 B
+22:20:21.858	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.049		GET /api/page -> 200, 446 B
+22:20:22.607	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:22.731	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.872		GET /api/screenshot -> 200, 153654 B
+22:20:22.769	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.011		GET /api/page -> 200, 446 B
+22:20:22.789	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.020		GET /modd/menu/CONTROL -> 200, 325 B
+22:20:22.831	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.041		GET /api/page -> 200, 299 B
+22:20:23.759	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.927		GET /api/screenshot -> 200, 153654 B
+22:20:23.798	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.014		GET /api/input/button/oct+/tap/80 -> 200, 48 B
+22:20:23.950	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.021		GET /api/input -> 200, 137 B
+22:20:23.970	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.020		GET /modd/home -> 200, 442 B
+22:20:24.021	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.050		GET /api/page -> 200, 446 B
+22:20:24.610	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	fm1-live			[ 12.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:25.042	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	1.020		GET /api/screenshot -> 200, 153654 B
+22:20:25.082	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.018		GET /api/info -> 200, 95 B
+22:20:25.099	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	http	0.016		GET /api/page -> 200, 446 B
+22:20:25.108	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	test	8.513		call passed
+22:20:25.108	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	test	0.000		teardown passed
+22:20:25.108	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_bpm_lock	test	12.601		end passed; 50 io, 9.8 s in io, 0.0 s throttled
+22:20:25.110	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	test			start
+22:20:25.110	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	test	0.000		setup passed
+22:20:25.129	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.019		GET /modd/home -> 200, 442 B
+22:20:25.170	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.040		GET /api/page -> 200, 446 B
+22:20:25.189	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.019		GET /modd/mixer -> 200, 275 B
+22:20:25.219	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.030		GET /api/page -> 200, 391 B
+22:20:26.325	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	1.105		GET /api/screenshot -> 200, 153654 B
+22:20:26.372	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.019		GET /api/page -> 200, 391 B
+22:20:26.391	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.019		GET /modd/home -> 200, 442 B
+22:20:26.440	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.048		GET /api/page -> 200, 446 B
+22:20:26.613	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:27.362	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.922		GET /api/screenshot -> 200, 153654 B
+22:20:27.411	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.019		GET /api/input/button/glo/tap/80 -> 200, 47 B
+22:20:27.480	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.018		GET /api/input/button/glo/tap/80 -> 200, 47 B
+22:20:27.650	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.017		GET /api/input/enc/knob1/-5 -> 200, 49 B
+22:20:27.718	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.014		GET /api/input -> 200, 137 B
+22:20:27.800	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.014		GET /api/input -> 200, 137 B
+22:20:27.820	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.020		GET /modd/mixer -> 200, 275 B
+22:20:27.861	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.040		GET /api/page -> 200, 391 B
+22:20:28.622	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	fm1-live			[ 16.1 s] 0.99x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:28.891	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	1.030		GET /api/screenshot -> 200, 153654 B
+22:20:28.931	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.022		GET /api/page -> 200, 391 B
+22:20:28.952	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.021		GET /api/info -> 200, 95 B
+22:20:28.970	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	http	0.018		GET /api/page -> 200, 391 B
+22:20:28.997	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	test	3.863		call failed: E   AssertionError: 104 == 104 : Double-tap GLO lock: K1 should adjust T1 level after release: 104
+22:20:28.998	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	test	0.000		teardown passed
+22:20:28.998	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_double_tap_lock	test	3.888		end failed; 20 io, 3.5 s in io, 0.0 s throttled
+22:20:28.999	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	test			start
+22:20:28.999	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	test	0.000		setup passed
+22:20:29.019	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.019		GET /modd/home -> 200, 442 B
+22:20:29.072	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.053		GET /api/page -> 200, 446 B
+22:20:29.924	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.852		GET /api/screenshot -> 200, 153654 B
+22:20:29.969	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.015		GET /api/track/sel -> 200, 192 B
+22:20:29.991	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.021		GET /api/input/button/edit/down -> 200, 47 B
+22:20:30.008	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.017		GET /api/input -> 200, 139 B
+22:20:30.099	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.012		GET /api/input -> 200, 139 B
+22:20:30.119	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.019		GET /api/input/enc/knob1/1 -> 200, 48 B
+22:20:30.200	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.018		GET /api/input -> 200, 139 B
+22:20:30.218	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.018		GET /api/input/button/edit/up -> 200, 47 B
+22:20:30.338	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.010		GET /api/input -> 200, 137 B
+22:20:30.359	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.021		GET /api/track/sel -> 200, 194 B
+22:20:30.380	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.020		GET /modd/home -> 200, 445 B
+22:20:30.399	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.019		GET /api/page -> 200, 449 B
+22:20:30.627	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	fm1-live			[ 18.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:31.485	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	1.086		GET /api/screenshot -> 200, 153654 B
+22:20:31.518	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.016		GET /api/info -> 200, 95 B
+22:20:31.540	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	http	0.021		GET /api/page -> 200, 449 B
+22:20:31.542	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	test	2.543		call passed
+22:20:31.543	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	test	0.000		teardown passed
+22:20:31.543	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_edit_layer_engine_cycle	test	2.544		end passed; 17 io, 2.2 s in io, 0.0 s throttled
+22:20:31.545	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	test			start
+22:20:31.545	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	test	0.000		setup passed
+22:20:31.562	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.017		GET /modd/home -> 200, 445 B
+22:20:31.608	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.046		GET /api/page -> 200, 449 B
+22:20:31.629	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.021		GET /modd/mixer -> 200, 277 B
+22:20:31.660	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.031		GET /api/page -> 200, 393 B
+22:20:32.630	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	fm1-live			[ 20.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:32.759	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	1.098		GET /api/screenshot -> 200, 153654 B
+22:20:32.789	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.016		GET /api/page -> 200, 393 B
+22:20:32.810	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.020		GET /modd/home -> 200, 445 B
+22:20:32.861	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.051		GET /api/page -> 200, 449 B
+22:20:33.789	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.927		GET /api/screenshot -> 200, 153654 B
+22:20:33.830	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.016		GET /api/input/button/glo/down -> 200, 46 B
+22:20:33.851	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.020		GET /api/input -> 200, 141 B
+22:20:33.941	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.015		GET /api/input -> 200, 141 B
+22:20:33.962	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.019		GET /api/input/enc/knob1/3 -> 200, 48 B
+22:20:34.041	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.023		GET /api/input -> 200, 141 B
+22:20:34.061	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.018		GET /api/input/enc/knob2/3 -> 200, 48 B
+22:20:34.133	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.008		GET /api/input -> 200, 141 B
+22:20:34.148	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.015		GET /api/input/enc/knob3/3 -> 200, 48 B
+22:20:34.222	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.018		GET /api/input -> 200, 141 B
+22:20:34.238	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.016		GET /api/input/enc/knob4/3 -> 200, 48 B
+22:20:34.318	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.019		GET /api/input -> 200, 141 B
+22:20:34.342	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.022		GET /api/input/button/glo/up -> 200, 46 B
+22:20:34.421	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.007		GET /api/input -> 200, 137 B
+22:20:34.429	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.008		GET /modd/mixer -> 200, 277 B
+22:20:34.480	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.051		GET /api/page -> 200, 393 B
+22:20:34.633	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	fm1-live			[ 22.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:35.575	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	1.095		GET /api/screenshot -> 200, 153654 B
+22:20:35.610	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.020		GET /api/page -> 200, 393 B
+22:20:35.611	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	test	0.000		call passed
+22:20:35.611	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	test	0.000		call passed
+22:20:35.611	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	test	0.000		call passed
+22:20:35.611	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	test	0.000		call passed
+22:20:35.629	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.017		GET /modd/home -> 200, 445 B
+22:20:35.679	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.050		GET /api/page -> 200, 449 B
+22:20:36.610	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.931		GET /api/screenshot -> 200, 153654 B
+22:20:36.635	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	fm1-live			[ 24.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:36.659	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.015		GET /api/info -> 200, 95 B
+22:20:36.679	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	http	0.020		GET /api/page -> 200, 449 B
+22:20:36.685	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	test	5.140		call passed
+22:20:36.685	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	test	0.000		teardown passed
+22:20:36.686	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_all_knobs	test	5.141		end passed; 31 io, 4.7 s in io, 0.0 s throttled
+22:20:36.687	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	test			start
+22:20:36.687	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	test	0.000		setup passed
+22:20:36.712	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.024		GET /modd/home -> 200, 445 B
+22:20:36.758	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.046		GET /api/page -> 200, 449 B
+22:20:36.780	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.022		GET /modd/mixer -> 200, 277 B
+22:20:36.811	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.030		GET /api/page -> 200, 393 B
+22:20:37.892	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	1.081		GET /api/screenshot -> 200, 153654 B
+22:20:37.930	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.023		GET /api/page -> 200, 393 B
+22:20:37.952	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.022		GET /modd/home -> 200, 445 B
+22:20:38.001	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.049		GET /api/page -> 200, 449 B
+22:20:38.639	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	fm1-live			[ 26.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:38.921	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.919		GET /api/screenshot -> 200, 153654 B
+22:20:38.959	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.015		GET /api/input/button/glo/down -> 200, 46 B
+22:20:38.979	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.020		GET /api/input -> 200, 141 B
+22:20:39.089	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.017		GET /api/input -> 200, 141 B
+22:20:39.112	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.022		GET /api/input/enc/knob1/5 -> 200, 48 B
+22:20:39.190	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.015		GET /api/input -> 200, 141 B
+22:20:39.209	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.019		GET /api/input/button/glo/up -> 200, 46 B
+22:20:39.279	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.014		GET /api/input -> 200, 137 B
+22:20:39.303	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.023		GET /modd/mixer -> 200, 277 B
+22:20:39.349	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.046		GET /api/page -> 200, 393 B
+22:20:40.466	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	1.117		GET /api/screenshot -> 200, 153654 B
+22:20:40.500	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.015		GET /api/page -> 200, 393 B
+22:20:40.522	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.022		GET /modd/home -> 200, 445 B
+22:20:40.568	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.046		GET /api/page -> 200, 449 B
+22:20:40.641	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	fm1-live			[ 28.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:41.498	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.929		GET /api/screenshot -> 200, 153654 B
+22:20:41.529	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.017		GET /api/info -> 200, 95 B
+22:20:41.552	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	http	0.023		GET /api/page -> 200, 449 B
+22:20:41.554	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	test	4.867		call passed
+22:20:41.554	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	test	0.000		teardown passed
+22:20:41.555	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_levels	test	4.867		end passed; 25 io, 4.6 s in io, 0.0 s throttled
+22:20:41.556	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	test			start
+22:20:41.556	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	test	0.000		setup passed
+22:20:41.571	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.015		GET /modd/home -> 200, 445 B
+22:20:41.619	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.047		GET /api/page -> 200, 449 B
+22:20:41.642	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.023		GET /modd/mixer -> 200, 277 B
+22:20:41.661	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.019		GET /api/page -> 200, 393 B
+22:20:42.644	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	fm1-live			[ 30.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:42.776	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	1.116		GET /api/screenshot -> 200, 153654 B
+22:20:42.809	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.015		GET /api/page -> 200, 393 B
+22:20:42.830	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.021		GET /modd/home -> 200, 445 B
+22:20:42.850	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.020		GET /api/page -> 200, 449 B
+22:20:43.809	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.958		GET /api/screenshot -> 200, 153654 B
+22:20:43.852	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.025		GET /api/input/button/glo/down -> 200, 46 B
+22:20:43.869	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.016		GET /api/input -> 200, 141 B
+22:20:43.939	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.010		GET /api/input -> 200, 141 B
+22:20:43.958	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.019		GET /api/input/key/54/down -> 200, 47 B
+22:20:43.979	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.020		GET /api/input -> 200, 141 B
+22:20:44.053	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.020		GET /api/input -> 200, 141 B
+22:20:44.069	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.015		GET /api/input/key/54/up -> 200, 47 B
+22:20:44.092	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.023		GET /api/input/button/glo/up -> 200, 46 B
+22:20:44.169	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.018		GET /api/input -> 200, 137 B
+22:20:44.191	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.021		GET /modd/mixer -> 200, 277 B
+22:20:44.238	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.047		GET /api/page -> 200, 393 B
+22:20:44.652	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	fm1-live			[ 32.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:45.341	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	1.102		GET /api/screenshot -> 200, 153654 B
+22:20:45.381	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.022		GET /api/page -> 200, 393 B
+22:20:45.402	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.020		GET /api/input/button/glo/down -> 200, 46 B
+22:20:45.418	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.016		GET /api/input -> 200, 141 B
+22:20:45.491	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.020		GET /api/input -> 200, 141 B
+22:20:45.511	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.019		GET /api/input/key/54/down -> 200, 47 B
+22:20:45.531	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.020		GET /api/input -> 200, 141 B
+22:20:45.599	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.012		GET /api/input -> 200, 141 B
+22:20:45.621	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.022		GET /api/input/key/54/up -> 200, 47 B
+22:20:45.641	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.019		GET /api/input/button/glo/up -> 200, 46 B
+22:20:45.708	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.014		GET /api/input -> 200, 137 B
+22:20:45.730	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.021		GET /modd/mixer -> 200, 277 B
+22:20:45.751	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.021		GET /api/page -> 200, 393 B
+22:20:46.637	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.886		GET /api/screenshot -> 200, 153654 B
+22:20:46.656	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	fm1-live			[ 34.1 s] 0.99x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:46.669	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.017		GET /api/page -> 200, 393 B
+22:20:46.691	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.022		GET /modd/home -> 200, 445 B
+22:20:46.743	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.051		GET /api/page -> 200, 449 B
+22:20:47.671	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.928		GET /api/screenshot -> 200, 153654 B
+22:20:47.709	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.019		GET /api/info -> 200, 95 B
+22:20:47.729	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	http	0.020		GET /api/page -> 200, 449 B
+22:20:47.731	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	test	6.175		call passed
+22:20:47.732	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	test	0.000		teardown passed
+22:20:47.732	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_glo_layer_mute_toggle	test	6.176		end passed; 40 io, 5.7 s in io, 0.0 s throttled
+22:20:47.733	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	test			start
+22:20:47.733	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	test	0.000		setup passed
+22:20:47.752	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.019		GET /modd/home -> 200, 445 B
+22:20:47.797	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.044		GET /api/page -> 200, 449 B
+22:20:47.820	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.023		GET /api/input/pot/master/1023 -> 200, 49 B
+22:20:47.839	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.019		GET /api/input -> 200, 139 B
+22:20:48.071	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.022		GET /api/input -> 200, 139 B
+22:20:48.090	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.019		GET /api/input/button/glo/down -> 200, 46 B
+22:20:48.112	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.021		GET /api/input -> 200, 143 B
+22:20:48.371	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.015		GET /api/input -> 200, 143 B
+22:20:48.391	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.020		GET /api/input/key/60/tap/200 -> 200, 49 B
+22:20:48.659	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			[ 36.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:48.689	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.019		GET /api/input -> 200, 143 B
+22:20:48.710	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.020		GET /api/input/button/glo/up -> 200, 46 B
+22:20:48.749	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.039		GET /api/input -> 200, 139 B
+22:20:49.318	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.019		GET /api/input -> 200, 139 B
+22:20:49.342	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.024		GET /api/audio -> 200, 135 B
+22:20:49.360	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.018		GET /api/input/key/60/down -> 200, 49 B
+22:20:49.379	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.017		GET /api/input -> 200, 143 B
+22:20:49.608	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.014		GET /api/input -> 200, 143 B
+22:20:49.631	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.023		GET /api/audio -> 200, 138 B
+22:20:49.648	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.016		GET /api/input/key/60/up -> 200, 49 B
+22:20:49.720	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.020		GET /api/input -> 200, 139 B
+22:20:49.740	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.020		GET /modd/home -> 200, 445 B
+22:20:49.791	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.050		GET /api/page -> 200, 449 B
+22:20:49.808	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.018		GET /api/info -> 200, 95 B
+22:20:49.829	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	0.021		GET /api/page -> 200, 449 B
+22:20:50.661	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	fm1-live			[ 38.1 s] 0.99x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:50.835	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	http	1.005		GET /api/screenshot -> 200, 153654 B
+22:20:50.865	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	test	3.131		call passed
+22:20:50.865	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	test	0.000		teardown passed
+22:20:50.866	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_key_silenced_during_layer	test	3.133		end passed; 25 io, 1.5 s in io, 0.0 s throttled
+22:20:50.870	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	test			start
+22:20:50.871	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	test	0.000		setup passed
+22:20:50.891	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.021		GET /modd/home -> 200, 445 B
+22:20:50.939	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.047		GET /api/page -> 200, 449 B
+22:20:50.961	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.022		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+22:20:50.979	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.015		GET /api/track/sel -> 200, 194 B
+22:20:50.998	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.019		GET /api/input/enc/presets/1 -> 200, 50 B
+22:20:51.059	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.010		GET /api/input -> 200, 139 B
+22:20:51.078	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.020		GET /api/track/sel -> 200, 194 B
+22:20:51.099	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.020		GET /api/input/button/save/hold/700 -> 200, 49 B
+22:20:51.870	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.018		GET /api/input -> 200, 139 B
+22:20:51.892	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.022		GET /api/track/sel -> 200, 194 B
+22:20:51.913	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.021		GET /modd/home -> 200, 438 B
+22:20:51.960	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.047		GET /api/page -> 200, 442 B
+22:20:52.672	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	fm1-live			[ 40.1 s] 1.01x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:52.889	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.928		GET /api/screenshot -> 200, 153654 B
+22:20:52.931	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.022		GET /api/info -> 200, 95 B
+22:20:52.952	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	http	0.020		GET /api/page -> 200, 442 B
+22:20:52.955	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	test	2.084		call passed
+22:20:52.955	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	test	0.000		teardown passed
+22:20:52.955	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_save_hold_undo	test	2.085		end passed; 15 io, 1.3 s in io, 0.0 s throttled
+22:20:52.957	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	test			start
+22:20:52.958	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	test	0.000		setup passed
+22:20:52.981	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.023		GET /modd/home -> 200, 438 B
+22:20:53.030	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.049		GET /api/page -> 200, 442 B
+22:20:53.048	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.018		GET /api/input/button/scl/down -> 200, 46 B
+22:20:53.071	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.023		GET /api/input -> 200, 139 B
+22:20:53.150	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.019		GET /api/input -> 200, 139 B
+22:20:53.170	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.019		GET /api/input/key/64/down -> 200, 50 B
+22:20:53.191	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.021		GET /api/input -> 200, 145 B
+22:20:53.259	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.011		GET /api/input -> 200, 145 B
+22:20:53.282	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.023		GET /api/input/key/64/up -> 200, 50 B
+22:20:53.299	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.017		GET /api/input/button/scl/up -> 200, 46 B
+22:20:53.360	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.010		GET /api/input -> 200, 139 B
+22:20:53.379	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.019		GET /modd/home -> 200, 438 B
+22:20:53.430	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.049		GET /api/page -> 200, 442 B
+22:20:54.419	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.989		GET /api/screenshot -> 200, 153654 B
+22:20:54.461	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.020		GET /api/page -> 200, 442 B
+22:20:54.479	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.017		GET /api/info -> 200, 95 B
+22:20:54.499	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	http	0.020		GET /api/page -> 200, 442 B
+22:20:54.501	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	test	1.543		call passed
+22:20:54.501	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	test	0.000		teardown passed
+22:20:54.501	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_key_sets_root	test	1.544		end passed; 17 io, 1.3 s in io, 0.0 s throttled
+22:20:54.502	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	test			start
+22:20:54.503	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	test	0.000		setup passed
+22:20:54.522	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.019		GET /modd/home -> 200, 438 B
+22:20:54.571	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.049		GET /api/page -> 200, 442 B
+22:20:54.592	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.020		GET /modd/home -> 200, 438 B
+22:20:54.610	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.018		GET /api/page -> 200, 442 B
+22:20:54.648	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.037		GET /api/page -> 200, 442 B
+22:20:54.659	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.011		GET /api/input/button/scl/down -> 200, 46 B
+22:20:54.674	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	fm1-live			[ 42.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:54.679	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.020		GET /api/input -> 200, 139 B
+22:20:54.749	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.015		GET /api/input -> 200, 139 B
+22:20:54.769	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.019		GET /api/input/enc/knob1/2 -> 200, 48 B
+22:20:54.860	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.019		GET /api/input -> 200, 139 B
+22:20:54.881	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.021		GET /api/input/button/scl/up -> 200, 46 B
+22:20:54.948	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.017		GET /api/input -> 200, 139 B
+22:20:54.970	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.021		GET /modd/home -> 200, 438 B
+22:20:55.021	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.051		GET /api/page -> 200, 442 B
+22:20:55.968	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.946		GET /api/screenshot -> 200, 153654 B
+22:20:56.010	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.022		GET /api/page -> 200, 442 B
+22:20:56.029	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.018		GET /api/info -> 200, 95 B
+22:20:56.051	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	http	0.021		GET /api/page -> 200, 442 B
+22:20:56.054	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	test	1.551		call passed
+22:20:56.054	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	test	0.000		teardown passed
+22:20:56.054	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_scl_layer_root	test	1.552		end passed; 18 io, 1.3 s in io, 0.0 s throttled
+22:20:56.056	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	test			start
+22:20:56.056	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	test	0.000		setup passed
+22:20:56.072	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.016		GET /modd/home -> 200, 438 B
+22:20:56.117	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.045		GET /api/page -> 200, 442 B
+22:20:56.141	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.024		GET /modd/seq -> 200, 256 B
+22:20:56.168	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.026		GET /api/page -> 200, 360 B
+22:20:56.676	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	fm1-live			[ 44.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:57.254	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	1.085		GET /api/screenshot -> 200, 153654 B
+22:20:57.301	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.023		GET /api/page -> 200, 360 B
+22:20:57.319	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.018		GET /modd/home -> 200, 438 B
+22:20:57.369	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.049		GET /api/page -> 200, 442 B
+22:20:58.279	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.911		GET /api/screenshot -> 200, 153654 B
+22:20:58.318	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.020		GET /api/input/button/seq/down -> 200, 46 B
+22:20:58.339	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.020		GET /api/input -> 200, 145 B
+22:20:58.412	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.016		GET /api/input -> 200, 145 B
+22:20:58.428	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.016		GET /api/input/enc/knob1/2 -> 200, 48 B
+22:20:58.499	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.013		GET /api/input -> 200, 145 B
+22:20:58.520	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.020		GET /api/input/button/seq/up -> 200, 46 B
+22:20:58.590	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.018		GET /api/input -> 200, 139 B
+22:20:58.612	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.022		GET /modd/seq -> 200, 356 B
+22:20:58.658	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.045		GET /api/page -> 200, 360 B
+22:20:58.682	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	fm1-live			[ 46.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+22:20:59.574	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.916		GET /api/screenshot -> 200, 153654 B
+22:20:59.622	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.021		GET /api/page -> 200, 360 B
+22:20:59.641	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.019		GET /modd/home -> 200, 438 B
+22:20:59.679	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.038		GET /api/page -> 200, 442 B
+22:21:00.604	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.924		GET /api/screenshot -> 200, 153654 B
+22:21:00.651	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.021		GET /api/info -> 200, 95 B
+22:21:00.669	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	http	0.018		GET /api/page -> 200, 442 B
+22:21:00.672	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	test	4.615		call passed
+22:21:00.673	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	emu			fm1-live stopped
+22:21:00.674	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	test	0.002		teardown passed
+22:21:00.674	tests/ui/api_felucca_layers_test.py::TestFeluccaLayers::test_seq_layer_params	test	4.618		end passed; 25 io, 4.3 s in io, 0.0 s throttled

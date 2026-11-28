@@ -414,11 +414,11 @@ def genconfig(defconfig=None, outdir=None):
     subprocess.run(cmd, check=True, cwd=str(ROOT))
 
 
-def loader_wrap(image):
+def boot_wrap(image):
     """SPL loader container: JLFS headers and independently checked LZ4 blocks."""
     def header(crc, offset, size, attr):
         body = struct.pack('<HIIBBH16s', crc, offset, size, attr, 0, 0,
-                           b'usb_hid_ota.bin')
+                           b'BOOT.BIN')
         return struct.pack('<H', fm1pkg_make.crc16(body)) + body
 
     blocks = bytearray()
@@ -432,9 +432,12 @@ def loader_wrap(image):
     return header(fm1pkg_make.crc16(body), 0x20, len(body), 0x41) + body
 
 
-def build_support(name, entry, layout):
+def build_support(name, entry, layout, *, src_dir=None, main_c=None, ld=None, extra_defs=None):
     """Compile the standalone boot stub or RAM update loader."""
-    src, out = FW / name, OUT / name
+    src = FW / (src_dir or name)
+    out = OUT / name
+    main = main_c or f'{name}.c'
+    ld_script = ld or f'{name}.ld'
     out.mkdir(parents=True, exist_ok=True)
     tc('cc', f'-I{src}', '-c', src / entry, '-o', out / 'crt0.o')
     # no -include config.h here (it would change the code): hal/fm1_flash_map.h gets the layout as -D
@@ -445,9 +448,9 @@ def build_support(name, entry, layout):
         upstream_inc.insert(0, f'-I{patched}')
         upstream_inc += [f'-I{d}' for d in patches.include_dirs(patched)]
     tc('cc', *CFLAGS, *layout.defines(), '-Ifirmware/hal', '-Ifirmware/src', f'-I{src}',
-       *upstream_inc, '-c', src / f'{name}.c', '-o', out / f'{name}.o')
+       *upstream_inc, *(extra_defs or []), '-c', src / main, '-o', out / f'{name}.o')
     elf = out / f'{name}.elf'
-    tc('pi32v2/bin/ld', '--gc-sections', '-e', '_start', '-T', src / f'{name}.ld',
+    tc('pi32v2/bin/ld', '--gc-sections', '-e', '_start', '-T', src / ld_script,
        out / 'crt0.o', out / f'{name}.o', '-o', elf)
     binary = out / f'{name}.bin'
     binary.unlink(missing_ok=True)
@@ -456,22 +459,25 @@ def build_support(name, entry, layout):
 
 
 def package(version, layout):
-    stub = build_support('stub', 'crt0_stub.S', layout)
-    if not fm1pkg_make.has_stub(stub + bytes(fm1pkg_make.STUB_LEN)):
+    stub = build_support('init', 'crt0_init.S', layout)
+    if not fm1pkg_make.has_init(stub + bytes(fm1pkg_make.INIT_LEN)):
         raise SystemExit('boot stub: missing CRSTUB signature')
-    if not stub or len(stub) > fm1pkg_make.STUB_LEN - 256:
+    if not stub or len(stub) > fm1pkg_make.INIT_LEN - 256:
         raise SystemExit('boot stub exceeds its reserved slot')
-    image = build_support('loader', 'crt0_ldr.S', layout)
+    image = build_support('boot', 'crt0_boot.S', layout,
+                           main_c='boot.c', ld='boot.ld',
+                           extra_defs=[f'-DBOOT_BUILD_VERSION="{version}"'])
     if not image or len(image) > 0x14000:
         raise SystemExit('loader: image empty or too big')
-    ota = loader_wrap(image)
-    if len(ota) > 0x4000:
-        raise SystemExit('loader overlaps the update-record sector')
-    (OUT / 'loader' / 'ota.bin').write_bytes(ota)
+    ota = boot_wrap(image)
+    if len(ota) > 0xA000:
+        raise SystemExit('loader exceeds OTA flash slot (FLASH_OTA_LEN = 0xA000)')
+    (OUT / 'boot' / 'ota.bin').write_bytes(ota)
+    print(f'ota: {len(image)} raw, {len(ota)} wrapped')
     body = (OUT / 'body.bin').read_bytes()
     if not body or len(body) > layout.body_max:
         raise SystemExit('application body empty or too big')
-    app = stub.ljust(fm1pkg_make.STUB_LEN, b'\xff') + body
+    app = stub.ljust(fm1pkg_make.INIT_LEN, b'\xff') + body
     (OUT / 'modd.bin').write_bytes(app)
     fwsc = fm1pkg_make.ufw(fm1pkg_make.flash_image(app, fm1pkg_make.KEY, layout), ota, 'FM-1_900')
     path = OUT / 'modd.fwsc'
@@ -564,7 +570,7 @@ def gen_felucca_tables():
     """Run upstream Felucca's generators; output goes to modd's GEN/, not the upstream tree."""
     GEN.mkdir(parents=True, exist_ok=True)
     felucca_tools = FW / 'upstream' / 'felucca' / 'tools'
-    env = {**os.environ, 'PYTHONPATH': str(FW / 'upstream' / 'felucca-engines' / 'tools')}
+    env = {**os.environ, 'PYTHONPATH': str(FW / 'upstream' / 'felucca' / 'firmware' / 'engines' / 'tools')}
     subprocess.run([sys.executable, str(felucca_tools / 'gen_tables.py'),
                     str(GEN / 'felucca_tables.h')], check=True, cwd=str(ROOT), env=env)
     if not (GEN / 'felucca_ui_palettes.h').exists():
@@ -638,7 +644,26 @@ def build_lvgl():
         # Stamp now, not after the last file: an object exists only once it compiled with these
         # flags, so a build that fails part way keeps its objects and the next run goes on from there.
         stamp.write_text(key)
-    srcs = sorted((LVGL / 'src').rglob('*.c'))
+    _LVGL_GATED = {'drivers', 'draw', 'stdlib', 'libs'}
+    _LVGL_ALLOW_SUB = {
+        'draw': {'sw', 'convert'},
+        'stdlib': {'builtin', 'clib'},
+        'libs': {'bin_decoder', 'bmp', 'lodepng', 'lz4', 'rle', 'barcode', 'qrcode', 'fsdrv', 'tjpgd'},
+        'drivers': {'display'},
+    }
+
+    def _lvgl_ok(src):
+        parts = src.relative_to(LVGL / 'src').parts
+        if len(parts) < 2:
+            return True
+        top = parts[0]
+        if top not in _LVGL_GATED:
+            return True
+        if len(parts) == 2:
+            return True
+        return parts[1] in _LVGL_ALLOW_SUB.get(top, set())
+
+    srcs = sorted(s for s in (LVGL / 'src').rglob('*.c') if _lvgl_ok(s))
     todo = []
     objs = []
     for src in srcs:
@@ -677,13 +702,13 @@ def build(dry_run=False):
     gen_inc = [f'-I{GEN}']
     if str(GEN) != str(OUT / 'gen'):
         gen_inc.append(f'-I{OUT / "gen"}')
-    flags = [*CFLAGS, '-Ifirmware/hal', '-Ifirmware/adapters',
-             '-Ifirmware/src', '-Ifirmware', *gen_inc,
+    flags = [*CFLAGS, '-Ifirmware/hal', '-Ifirmware/contracts',
+             '-Ifirmware/src', '-Ifirmware/ports', '-Ifirmware', *gen_inc,
              '-Ifirmware/src/udisk',  # FatFs project config: ffconf.h, diskio.h
              '-Ifirmware/upstream/optimist/firmware/src/ble',
              '-Ifirmware/vendor/lwip/src/include',
              '-Ifirmware/src/net',   # lwipopts.h, arch/cc.h
-             '-Ifirmware/src/wifi']  # wifi_rf_tables.h
+             '-Ifirmware/src/libc']  # bare-metal stdio.h, stdlib.h, string.h shims
 
     config_h = GEN / 'config.h'
     if not config_h.exists():
@@ -769,6 +794,18 @@ def build(dry_run=False):
     flags.append(f'-DCONFIG_FIRMWARE_VERSION="{version}"')
     print(f'build: version {version}')
 
+    import time as _time
+    flags.append(f'-DBUILD_TIMESTAMP={int(_time.time())}')
+    try:
+        _sha = subprocess.run(
+            ['git', 'rev-parse', '--short=11', 'HEAD'],
+            capture_output=True, text=True, cwd=str(ROOT), timeout=5,
+        ).stdout.strip()
+        if _sha:
+            flags.append(f'-DGIT_SHA_SHORT="{_sha}"')
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
     if 'RPC' in enabled:
         # The REST API's OpenAPI document for this build: build/<dc>/openapi.json, and the
         # same bytes as gen/openapi_json.h for GET /openapi.json (CONFIG_RPC_OPENAPI).
@@ -806,7 +843,7 @@ def build(dry_run=False):
         if 'UI_SHELL_MODD' in enabled:
             print(f'  [lib] {LVGL.relative_to(ROOT)}/src/**/*.c -> liblvgl.a')
         print(f'Flags: {" ".join(flags)}')
-        print(f'Then build firmware/stub, firmware/loader and package {OUT.relative_to(ROOT)}/modd.fwsc')
+        print(f'Then build firmware/init, firmware/boot and package {OUT.relative_to(ROOT)}/modd.fwsc')
         return
 
     logo_src = ROOT / 'assets' / 'logo.svg'
@@ -914,11 +951,25 @@ def main():
     ap.add_argument('--defconfig', help='load defconfig before building')
     ap.add_argument('--genconfig-only', action='store_true')
     ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--force', action='store_true', help='clean build output and rebuild')
     args = ap.parse_args()
 
     global OUT, GEN
     dc = args.defconfig or 'modd'
     OUT = BUILD / (dc + '-open' if OPEN else dc)
+    if args.force and OUT.exists():
+        import shutil
+        keep = OUT / 'gen'
+        gen_bak = None
+        if keep.exists():
+            gen_bak = OUT.parent / f'.gen-{dc}-bak'
+            if gen_bak.exists():
+                shutil.rmtree(gen_bak)
+            keep.rename(gen_bak)
+        shutil.rmtree(OUT)
+        OUT.mkdir(parents=True, exist_ok=True)
+        if gen_bak:
+            gen_bak.rename(OUT / 'gen')
     if 'MODD_GEN_DIR' not in os.environ:
         GEN = OUT / 'gen'
 

@@ -5,11 +5,21 @@
 
     vendor.py paths      print every vendored directory, one per line
     vendor.py present    exit 1 when a vendored directory is missing or empty
+    vendor.py sync       sync only the missing directories (vendir sync --locked --directory ...)
 
 The trees under firmware/upstream/ and firmware/vendor/ are not committed:
 `task vendor:ensure` runs `present` as its status check and fetches them with
-`vendir sync --locked` when it fails. `task vendor:sync` re-resolves the pins.
+`sync` (only the missing dirs) when it fails.  `task vendor:sync` re-resolves
+all pins.
+
+vendir's atomic rename (os.Rename over an existing directory) fails on
+Docker bind mounts (virtiofs/FUSE from macOS): the kernel returns ENOTEMPTY.
+`sync` avoids this by calling vendir only for directories that are actually
+missing; present directories are never touched.  To update a pin, run
+`task vendor:sync` (or `vendir sync --directory <path>` after removing the
+stale tree) — `ensure` is a build gate, not an updater.
 """
+import subprocess
 import sys
 from pathlib import Path
 
@@ -36,8 +46,16 @@ def missing_paths(paths, root=ROOT):
     return gone
 
 
+def sync_missing(gone):
+    """Run vendir sync --locked only for the missing directories."""
+    cmd = ['vendir', 'sync', '--locked', '--lazy=false']
+    for d in gone:
+        cmd += ['--directory', d]
+    return subprocess.call(cmd, cwd=ROOT)
+
+
 def main(argv):
-    if len(argv) != 2 or argv[1] not in ('paths', 'present'):
+    if len(argv) != 2 or argv[1] not in ('paths', 'present', 'sync'):
         print(__doc__.strip(), file=sys.stderr)
         return 2
     paths = vendored_paths()
@@ -53,6 +71,15 @@ def main(argv):
                   + "\nRun 'task vendor:sync'.", file=sys.stderr)
             return 1
         return 0
+
+    if argv[1] == 'sync':
+        gone = missing_paths(paths)
+        if not gone:
+            return 0
+        print(f'Syncing {len(gone)} missing tree(s): ' + ', '.join(gone),
+              file=sys.stderr)
+        return sync_missing(gone)
+
     return 0
 
 

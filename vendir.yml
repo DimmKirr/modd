@@ -5,7 +5,7 @@
 #   task vendor:check   fail if the committed trees drift from the lock (CI)
 #
 # Never edit files under these paths. modd adapts upstream code through
-# firmware/adapters/ and project-owned config headers (for example
+# firmware/contracts/ and project-owned config headers (for example
 # firmware/src/udisk/ffconf.h), never by patching the vendored tree.
 # Provenance, licenses and what each tree is used for: THIRD_PARTY.md.
 apiVersion: vendir.k14s.io/v1alpha1
@@ -18,23 +18,16 @@ directories:
 - path: firmware/upstream/felucca
   contents:
   - path: .
+    lazy: true
     git:
       url: https://github.com/hugelton/Felucca
       ref: v1.8.2
     excludePaths: [".git/**"]
 
-- path: firmware/upstream/felucca-engines
-  contents:
-  - path: .
-    git:
-      url: https://github.com/hugelton/Felucca-Engines
-      # Felucca-Engines HEAD at the time of Felucca v1.8.2 (MIT-licensed engines).
-      ref: d0260074ce100a47675814b7f38d61f11176c926
-    excludePaths: [".git/**"]
-
 - path: firmware/upstream/melodee
   contents:
   - path: .
+    lazy: true
     git:
       url: https://github.com/keremimo/melodee
       ref: v1.6.1
@@ -43,6 +36,7 @@ directories:
 - path: firmware/upstream/sloop
   contents:
   - path: .
+    lazy: true
     git:
       url: https://github.com/isod89/sloop-fm1
       ref: v2.8.5
@@ -51,6 +45,7 @@ directories:
 - path: firmware/upstream/fmlab
   contents:
   - path: .
+    lazy: true
     git:
       url: https://github.com/jsmith13/fm_lab
       ref: v1.4.0
@@ -59,6 +54,7 @@ directories:
 - path: firmware/upstream/fm1-dock
   contents:
   - path: .
+    lazy: true
     git:
       url: https://github.com/joakimeriksson/fm1-dock
       ref: v0.9.0
@@ -67,6 +63,7 @@ directories:
 - path: firmware/upstream/skiff
   contents:
   - path: .
+    lazy: true
     git:
       url: https://github.com/illuminus5/skiff
       ref: v2.7
@@ -75,6 +72,7 @@ directories:
 - path: firmware/upstream/optimist
   contents:
   - path: .
+    lazy: true
     git:
       url: https://github.com/w0ts/optimist
       ref: v0.4
@@ -85,6 +83,7 @@ directories:
 - path: firmware/upstream/jiant
   contents:
   - path: .
+    lazy: true
     git:
       url: https://github.com/juanjiant-bit/JIANT
       # No release tags; pin to latest commit (JIANT FM V10).
@@ -94,6 +93,7 @@ directories:
 - path: firmware/upstream/fm1-base
   contents:
   - path: .
+    lazy: true
     git:
       url: https://github.com/charlesvestal/fm1-base
       # No release tags yet; pin to latest commit.
@@ -105,6 +105,7 @@ directories:
 - path: firmware/vendor/lwip
   contents:
   - path: .
+    lazy: true
     git:
       # Official GitHub mirror of https://git.savannah.nongnu.org/git/lwip.git
       url: https://github.com/lwip-tcpip/lwip
@@ -115,6 +116,7 @@ directories:
 - path: firmware/vendor/fatfs
   contents:
   - path: .
+    lazy: true
     http:
       # FatFs R0.15 by ChaN. Project config lives in firmware/src/udisk/
       # (ffconf.h, diskio.h); only the pristine core is vendored.
@@ -130,6 +132,7 @@ directories:
 - path: firmware/vendor/lvgl
   contents:
   - path: .
+    lazy: true
     git:
       # LVGL 9.6.0 (MIT), the widget library behind the modd shell (CONFIG_UI_SHELL_MODD).
       # Project config: firmware/src/ui/shells/modd/lv_conf.h. Only the library
@@ -151,6 +154,7 @@ directories:
 - path: docs/lvgl
   contents:
   - path: .
+    lazy: true
     git:
       # The LVGL 9.6.0 manual (docs/src/**/*.mdx) and the example sources its
       # pages show, from the same tag as firmware/vendor/lvgl. Read these when

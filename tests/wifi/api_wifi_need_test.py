@@ -5,7 +5,7 @@
 
 firmware/src/net/net_need.c maps consumers' net_need() / net_release() onto one link
 (wired USB ethernet preferred: while an ethernet netif has an address the WiFi need is
-dropped); firmware/src/wifi/wifi_need.c keeps the radio active only while the WiFi
+dropped); firmware/src/wifi/need.c keeps the radio active only while the WiFi
 setting (Settings > HW > WIFI) is on AND a need is held. It logs "wifi: activate" and
 "wifi: deactivate" on every change. wifi_poll() (the WiFi task) does the work: "wifi: init
 done" when the radio comes up, "wifi: deinit start" / "wifi: deinit done" when it goes down

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* LVGL on the FM-1: the display, the tick and the one input device.
  *
- * Display: Melodee's ST7789 driver (ui/shells/melodee/lcd.c). lcd_blit() starts a DMA
+ * Display: Melodee's ST7789 driver (ports/melodee/shell/lcd.c). lcd_blit() starts a DMA
  * transfer and returns; lcd_sync() waits for it. LVGL draws in strips ("partial" render
  * mode) into two buffers, so it draws the next strip while the last one is still on the
  * bus; when it needs a buffer back it calls the flush-wait callback, which is lcd_sync().

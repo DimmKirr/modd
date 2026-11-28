@@ -4,7 +4,7 @@
 #
 # The layout is chosen as a group: FM-1 (the shipped hardware map) or Emulator
 # (an 8 MiB chip with a large application area and the FM-1's stores above it;
-# fm1-live runs it with --flash-size, its boot stub and loader read these values).
+# fm1-live runs it with --flash-size, its boot init and OTA updater read these values).
 # The two numbers are prompt-less, so no defconfig sets them.
 
 choice FLASH_MAP
@@ -12,7 +12,7 @@ choice FLASH_MAP
     default FLASH_MAP_EMU if EMU
     default FLASH_MAP_FM1
     help
-      Which flash map the app, the boot stub, the update loader and the package
+      Which flash map the app, the boot init, the OTA updater and the package
       builder use. A package built with the Emulator map does not install on
       an FM-1.
 
@@ -45,7 +45,7 @@ config FLASH_APP_END
     default 0x600000 if FLASH_MAP_EMU
     default 0x93000
     help
-      End of the application area [0x4000, FLASH_APP_END). The body (boot stub
+      End of the application area [0x4000, FLASH_APP_END). The body (boot init
       excluded) ends two sectors below it, at the commit-marker sector. Every
       store above it (see hal/fm1_flash_map.h) keeps its size and order and
       follows this value.

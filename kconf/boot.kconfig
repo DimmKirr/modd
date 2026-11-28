@@ -3,7 +3,7 @@
 
 menu "Boot"
 
-# kc2mm:label "Loader"
+# kc2mm:label "Boot"
 choice
     prompt "Boot/OTA"
     default BOOT_MELODEE
@@ -26,9 +26,18 @@ config OTA
     default y if BOOT_MELODEE && FLASH
     help
       Enable the M-UPGRADE SysEx update protocol. The running firmware
-      reads the package from the host, stages the update loader in the
+      reads the package from the host, stages the OTA updater in the
       OTA area, then reboots into it. Requires flash access (CONFIG_FLASH).
       Without this, firmware updates need manual UBOOT entry (hold OCT+/-
       for 5 seconds, or send the UBOOT soft key F0 22 24 35 7D F7).
+
+config BOOT_LFN
+    bool "Long filenames in the USB disk updater"
+    default y
+    help
+      Enable FAT long filename (LFN) support in the USB disk OTA updater.
+      Required to open files with extensions longer than 3 characters
+      (e.g. .fwsc). Adds ~1 KB to the updater binary. Disable to save
+      space if only 8.3 filenames (e.g. UPDATE.FWS) are used.
 
 endmenu

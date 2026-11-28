@@ -1,0 +1,79 @@
+{
+  "test": "usb.api_usb_audio_host_test.TestUsbAudioHost24bit.test_ring_metadata_24bit",
+  "requests": [
+    {
+      "t": "08:53:54.129",
+      "path": "/api/usb/audio/ring/arm/48000/24",
+      "reply": {
+        "rate": 48000,
+        "depth": 24
+      }
+    },
+    {
+      "t": "08:53:54.161",
+      "path": "/api/usb/audio/ring",
+      "reply": {
+        "rate": 48000,
+        "format": "s24le",
+        "channels": 2,
+        "n": 4092,
+        "wr": 5856,
+        "rd": 0,
+        "bit_depth": 24,
+        "data": "<5456 characters>"
+      }
+    },
+    {
+      "t": "08:54:24.223",
+      "path": "/api/usb/audio/ring/disarm",
+      "error": "TimeoutError: timed out"
+    }
+  ],
+  "page_at_end": {
+    "modal": false,
+    "page": "HOME",
+    "index": 0,
+    "data": {
+      "selected_track": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "engine": "ANALOG",
+          "preset": 0,
+          "engine_id": 0
+        },
+        {
+          "index": 1,
+          "engine": "ANALOG",
+          "preset": 0,
+          "engine_id": 0
+        },
+        {
+          "index": 2,
+          "engine": "ANALOG",
+          "preset": 0,
+          "engine_id": 0
+        },
+        {
+          "index": 3,
+          "engine": "ANALOG",
+          "preset": 0,
+          "engine_id": 0
+        }
+      ],
+      "palette": 8,
+      "palette_name": "CLAY",
+      "bpm": 128,
+      "playing": false,
+      "recording": false,
+      "oct": 0,
+      "root": 0,
+      "scale": 0,
+      "level": 100,
+      "atk": 10,
+      "dec": 40,
+      "sus": 80,
+      "rel": 88
+    }
+  }
+}

@@ -1,0 +1,127 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+18:05:22.286	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	test			start
+18:05:22.299	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	exec	0.008		xdotool search --name ^FM-1 -> exit 0
+18:05:22.300	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 54111:9222
+18:05:22.302	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.000		GET /api/info -> URLError
+18:05:22.347	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			forward: host:54111 -> guest:9222
+18:05:22.348	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+18:05:22.348	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+18:05:22.348	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+18:05:22.348	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+18:05:22.348	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+18:05:22.348	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+18:05:22.349	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+18:05:22.349	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+18:05:22.349	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+18:05:22.349	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+18:05:22.349	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+18:05:22.349	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			MIDI in: MIDI support could not be initialized
+18:05:22.364	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+18:05:22.364	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+18:05:24.350	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			[  2.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:05:25.308	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	2.004		GET /api/info -> TimeoutError
+18:05:26.322	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.014		GET /api/info -> 200, 94 B
+18:05:26.322	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	emu	4.020		firmware API up on port 54111
+18:05:26.323	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	test	4.035		setup passed
+18:05:26.341	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.018		GET /modd/home -> 200, 442 B
+18:05:26.352	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:05:26.392	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.050		GET /api/page -> 200, 446 B
+18:05:27.337	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.945		GET /api/screenshot -> 200, 153654 B
+18:05:27.381	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.022		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+18:05:27.400	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.019		GET /api/input/pot/master/1023 -> 200, 48 B
+18:05:27.420	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.020		GET /api/input -> 200, 138 B
+18:05:27.860	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.020		GET /api/input -> 200, 138 B
+18:05:27.881	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.020		GET /modd/INSERT -> 200, 106 B
+18:05:27.921	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.040		GET /api/page -> 200, 343 B
+18:05:28.354	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:05:28.880	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.959		GET /api/screenshot -> 200, 153654 B
+18:05:28.921	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.019		GET /api/page -> 200, 343 B
+18:05:28.942	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.020		GET /modd/home -> 200, 444 B
+18:05:28.993	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.051		GET /api/page -> 200, 448 B
+18:05:29.908	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.915		GET /api/screenshot -> 200, 153654 B
+18:05:29.940	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.015		GET /api/input/key/60/down -> 200, 48 B
+18:05:30.270	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.014		GET /api/input -> 200, 142 B
+18:05:30.354	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:05:30.364	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.094		GET /api/audio/capture -> 200, 21946 B
+18:05:30.380	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.016		GET /api/input/key/60/up -> 200, 48 B
+18:05:30.501	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.019		GET /api/input -> 200, 138 B
+18:05:30.520	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.016		GET /modd/INSERT -> 200, 106 B
+18:05:30.561	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.040		GET /api/page -> 200, 343 B
+18:05:31.520	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.959		GET /api/screenshot -> 200, 153654 B
+18:05:31.550	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.013		GET /api/input/enc/knob1/2 -> 200, 47 B
+18:05:31.620	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.019		GET /api/input -> 200, 138 B
+18:05:31.641	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.021		GET /api/page -> 200, 349 B
+18:05:32.358	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:05:32.553	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.911		GET /api/screenshot -> 200, 153654 B
+18:05:32.591	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.022		GET /modd/home -> 200, 447 B
+18:05:32.641	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.050		GET /api/page -> 200, 451 B
+18:05:33.581	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.939		GET /api/screenshot -> 200, 153654 B
+18:05:33.610	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.012		GET /api/input/key/60/down -> 200, 49 B
+18:05:33.941	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.015		GET /api/input -> 200, 143 B
+18:05:34.033	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.092		GET /api/audio/capture -> 200, 21947 B
+18:05:34.051	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.017		GET /api/input/key/60/up -> 200, 49 B
+18:05:34.170	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.019		GET /api/input -> 200, 139 B
+18:05:34.191	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.018		GET /modd/INSERT -> 200, 106 B
+18:05:34.231	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.040		GET /api/page -> 200, 349 B
+18:05:34.359	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			[ 12.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:05:35.197	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.967		GET /api/screenshot -> 200, 153654 B
+18:05:35.230	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.014		GET /api/input/enc/knob1/-2 -> 200, 49 B
+18:05:35.300	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.019		GET /api/input -> 200, 139 B
+18:05:35.321	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.020		GET /modd/home -> 200, 447 B
+18:05:35.371	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.050		GET /api/page -> 200, 451 B
+18:05:36.224	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.853		GET /api/screenshot -> 200, 153654 B
+18:05:36.260	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.014		GET /api/input/key/60/down -> 200, 49 B
+18:05:36.361	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:05:36.591	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.014		GET /api/input -> 200, 143 B
+18:05:36.682	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.091		GET /api/audio/capture -> 200, 21947 B
+18:05:36.700	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.018		GET /api/input/key/60/up -> 200, 49 B
+18:05:36.821	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.020		GET /api/input -> 200, 139 B
+18:05:36.840	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.012		GET /api/info -> 200, 95 B
+18:05:36.860	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.019		GET /api/info -> 200, 95 B
+18:05:36.881	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.021		GET /api/page -> 200, 451 B
+18:05:37.845	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	http	0.964		GET /api/screenshot -> 200, 153654 B
+18:05:37.861	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	test	11.538		call passed
+18:05:37.861	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	test	0.000		teardown passed
+18:05:37.862	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_insert_changes_the_capture	test	15.576		end passed; 55 io, 11.6 s in io, 0.0 s throttled
+18:05:37.863	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	test			start
+18:05:37.863	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	test	0.000		setup passed
+18:05:37.881	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.018		GET /modd/home -> 200, 447 B
+18:05:37.930	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.049		GET /api/page -> 200, 451 B
+18:05:37.950	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.020		GET /api/input/pot/master/1023 -> 200, 49 B
+18:05:37.970	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.020		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+18:05:37.990	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.020		GET /api/input -> 200, 139 B
+18:05:38.364	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	fm1-live			[ 16.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:05:38.430	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.019		GET /api/input -> 200, 139 B
+18:05:38.449	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.019		GET /api/input/key/60/down -> 200, 49 B
+18:05:38.781	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.016		GET /api/input -> 200, 143 B
+18:05:38.870	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.089		GET /api/audio/capture -> 200, 21947 B
+18:05:38.891	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.021		GET /api/input/key/60/up -> 200, 49 B
+18:05:39.010	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.017		GET /api/input -> 200, 139 B
+18:05:39.030	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.016		GET /api/track/sel -> 200, 194 B
+18:05:39.051	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.020		GET /api/track/sel/engine/NOISE -> 200, 194 B
+18:05:39.070	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.019		GET /api/input -> 200, 139 B
+18:05:39.510	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.020		GET /api/input -> 200, 139 B
+18:05:39.530	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.020		GET /api/input/key/60/down -> 200, 49 B
+18:05:39.861	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.015		GET /api/input -> 200, 143 B
+18:05:39.952	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.091		GET /api/audio/capture -> 200, 21947 B
+18:05:39.970	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.018		GET /api/input/key/60/up -> 200, 49 B
+18:05:40.091	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.018		GET /api/input -> 200, 139 B
+18:05:40.111	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.017		GET /api/track/sel -> 200, 194 B
+18:05:40.130	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.018		GET /api/track/sel/engine/FM6 -> 200, 192 B
+18:05:40.150	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.020		GET /api/input -> 200, 139 B
+18:05:40.367	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	fm1-live			[ 18.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:05:40.590	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.019		GET /api/input -> 200, 139 B
+18:05:40.610	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.020		GET /api/input/key/60/down -> 200, 49 B
+18:05:40.941	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.015		GET /api/input -> 200, 143 B
+18:05:41.031	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.090		GET /api/audio/capture -> 200, 21947 B
+18:05:41.050	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.019		GET /api/input/key/60/up -> 200, 49 B
+18:05:41.171	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.019		GET /api/input -> 200, 139 B
+18:05:41.191	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.017		GET /api/track/sel -> 200, 192 B
+18:05:41.210	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.013		GET /api/info -> 200, 95 B
+18:05:41.230	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.020		GET /api/info -> 200, 95 B
+18:05:41.251	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.020		GET /api/page -> 200, 449 B
+18:05:42.190	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	http	0.939		GET /api/screenshot -> 200, 153654 B
+18:05:42.212	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	test	4.349		call passed
+18:05:42.214	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	emu			fm1-live stopped
+18:05:42.214	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	test	0.002		teardown passed
+18:05:42.214	tests/audio/api_felucca_stack_test.py::FeluccaStackTest::test_note_plays	test	4.352		end passed; 34 io, 1.8 s in io, 0.0 s throttled

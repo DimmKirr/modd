@@ -1,0 +1,33 @@
+{
+  "test": "usb.api_usb_audio_host_test.TestUsbAudioHost16bit.test_ring_metadata_16bit",
+  "requests": [
+    {
+      "t": "08:39:41.368",
+      "path": "/api/usb/audio/ring/arm/44100/16",
+      "reply": {
+        "rate": 44100,
+        "depth": 16
+      }
+    },
+    {
+      "t": "08:39:41.396",
+      "path": "/api/usb/audio/ring",
+      "reply": {
+        "rate": 44100,
+        "format": "s16le",
+        "channels": 2,
+        "n": 3584,
+        "wr": 3584,
+        "rd": 0,
+        "bit_depth": 16,
+        "data": "<4780 characters>"
+      }
+    },
+    {
+      "t": "08:39:51.408",
+      "path": "/api/usb/audio/ring/disarm",
+      "error": "TimeoutError: timed out"
+    }
+  ],
+  "page_at_end": null
+}

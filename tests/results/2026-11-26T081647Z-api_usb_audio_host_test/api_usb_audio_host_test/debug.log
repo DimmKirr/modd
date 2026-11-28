@@ -1,0 +1,37 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+08:16:47.629	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	test			start
+08:16:47.646	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	exec	0.009		xdotool search --name ^FM-1 -> exit 1
+08:16:47.648	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 49121:9222
+08:16:47.671	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	http	0.021		GET /api/info -> URLError
+08:16:47.706	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			forward: host:49121 -> guest:9222
+08:16:47.707	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+08:16:47.707	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+08:16:47.707	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+08:16:47.707	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+08:16:47.707	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+08:16:47.707	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+08:16:47.708	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+08:16:47.708	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+08:16:47.708	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+08:16:47.708	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+08:16:47.708	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+08:16:47.709	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			MIDI in: MIDI support could not be initialized
+08:16:47.726	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+08:16:47.726	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+08:16:49.718	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			[  2.1 s] 0.98x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:16:50.712	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	http	2.011		GET /api/info -> TimeoutError
+08:16:51.726	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			[  4.1 s] 1.04x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:16:53.726	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	http	2.012		GET /api/info -> TimeoutError
+08:16:53.737	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			[  6.1 s] 1.11x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:16:54.753	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	http	0.016		GET /api/info -> 200, 94 B
+08:16:54.753	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	emu	7.104		firmware API up on port 49121
+08:16:54.753	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	test	7.121		setup passed
+08:16:54.774	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	http	0.020		GET /api/usb/audio/ring -> 200, 84 B
+08:16:54.794	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	http	0.020		GET /api/info -> 200, 94 B
+08:16:54.814	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	http	0.020		GET /api/page -> 200, 451 B
+08:16:55.737	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+08:16:55.755	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	http	0.884		GET /api/screenshot -> 200, 153654 B
+08:16:55.821	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	test	1.047		call failed: E   AssertionError: 0 not found in (44100, 48000)
+08:16:55.823	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	emu			fm1-live stopped
+08:16:55.824	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	test	0.003		teardown passed
+08:16:55.824	tests/usb/api_usb_audio_host_test.py::TestUsbAudioHostRing::test_ring_format_metadata	test	8.195		end failed; 9 io, 5.0 s in io, 0.0 s throttled

@@ -64,4 +64,17 @@ config DEBUG_FRAMEBUFFER
       GET /api/screenshot serves it as raw RGB565 (base64).
       Only enable in emulator builds where RAM is not constrained.
 
+config MIRROR
+    bool "LCD mirror over WebSocket"
+    default n
+    depends on RPC && LWIP
+    help
+      Stream the LCD to a browser via WebSocket. Hooks lcd_blit/lcd_fill,
+      compresses dirty rectangles (RLE + segment hashing from fm1-base's
+      mirror.c) and sends them as binary WebSocket frames. Open /mirror
+      in a browser to view the screen live.
+      Cost: ~11 KB RAM (segment hashes, codec buffers).
+      Off in every defconfig since 2026-11-27: the WebSocket transport has
+      no backpressure and its send blocks the LCD flush. See docs/features/MIRROR.md.
+
 endmenu

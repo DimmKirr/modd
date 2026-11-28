@@ -501,7 +501,7 @@ Reading the results:
 
 | What you see | What it means | Next step |
 |--------------|---------------|-----------|
-| No log lines in RAM; every PC between `0x02000120` and `0x02001000` | The boot stub refused the image and the application never started | Check 4: the second word is `0x5342vvdd`, `dd` 1 boot, 2 loader, 3 ROM USB boot; the low byte of the fourth word is the marker code (`stub_core.h` `STUB_MK_*`; 4 = body length). Compare `body.bin` with the build's limit: `0x8C000` (573,440 bytes) on hardware, `0x5F9000` (6,262,784) on an emulator build |
+| No log lines in RAM; every PC between `0x02000120` and `0x02001000` | The boot stub refused the image and the application never started | Check 4: the second word is `0x5342vvdd`, `dd` 1 boot, 2 loader, 3 ROM USB boot; the low byte of the fourth word is the marker code (`init_core.h` `INIT_MK_*`; 4 = body length). Compare `body.bin` with the build's limit: `0x8C000` (573,440 bytes) on hardware, `0x5F9000` (6,262,784) on an emulator build |
 | The log reaches `sched:` / `ui: task start`; then PCs at millions of addresses outside `0x01C00000..0x01CFFFFF` and the XIP | A wild jump: a return address, function pointer or interrupt vector was overwritten. The summary shows `100% of instructions in ISRs` | Profile short windows (`...,380,410` with `--shot 600`) to find the last real functions before it. Look at the value of the first wild PC: `0x0841....` was an LCD pixel, so a framebuffer had been placed over the vectors |
 | PCs in one real function | That function loops or waits | Read it |
 | One request times out, later ones answer at once, and `uptime_ms` in `/api/info` is lower than before | The firmware reset | Find the action before the reset, repeat it by hand (`--forward 19441:9222` and `curl`), read `/api/log` after the reboot |
@@ -514,10 +514,10 @@ Two limits that a linker script cannot lift, because the emulator runs the same 
 the same chip addresses as an FM-1:
 
 - **The application body is at most `0x8C000` bytes on an FM-1 and `0x5F9000` (about 5.98 MiB) in
-  an emulator build.** The boot stub checks the length and so does the loader (`STUB_BODY_MAX`), and the
+  an emulator build.** The boot init checks the length and so does the updater (`FLASH_BODY_MAX`), and the
   package builder too. The limit comes from the flash map (`kconf/flash.kconfig`, choice
   `FLASH_MAP`: `FM1` or `EMU`, which `CONFIG_EMU` selects by default): `hal/fm1_flash_map.h`
-  derives it for the app, the stub and the loader, `tools/build/flashmap.py` for the package
+  derives it for the app, the init and the updater, `tools/build/flashmap.py` for the package
   and the link (`--defsym=FLASH_BODY_MAX`, the XIP length in `app*.ld`). A larger region in an
   `app*.ld` alone gives a package that builds and never boots. The emulator map describes an
   8 MiB chip: the app area ends at `0x600000` and every store above it keeps its FM-1 size and

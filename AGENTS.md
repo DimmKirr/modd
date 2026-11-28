@@ -11,7 +11,7 @@ modd is a modular firmware framework for the M-VAVE FM-1 synthesizer (JieLi AC79
 "Never copy or rewrite upstream code unless duplication / forking is approved by the user."
 "The work of porting is writing the adapter, and nothing else."
 
-- A port step produces adapter code (`firmware/adapters/modd_*.h`), a thin `<name>_modd.c` wrapper, a Kconfig symbol and an `#include` of the upstream file from `firmware/upstream/`. Anything else is not a port step.
+- A port step produces adapter code (`firmware/contracts/modd_*.h`), a thin `<name>_modd.c` wrapper, a Kconfig symbol and an `#include` of the upstream file from `firmware/upstream/`. Anything else is not a port step.
 - Stop rule: if the include does not compile, name the blocker and fix the adapter, or stop and report. A fork needs the user's approval, asked for by file name.
 - Only INCLUDED and PATCHED count as ported. The other classes (COPIED, REDUCED, REWRITTEN, OTHER UPSTREAM) are named in every ticket and report.
 - When an adapter cannot reach it (a size upstream fixes with a plain `#define`), the next step is a patch, not a copy: `patches/<upstream>/NNNN-*.patch`, a hook only, value from Kconfig, approved by the user by file name, applied by the build to a copy (class PATCHED). Order of attempts and the steps: [docs/PORTING.md](docs/PORTING.md#what-to-try-in-order).
@@ -201,7 +201,7 @@ tools/
 
 ## Working with Engines
 
-Engines implement the `engine_t` vtable (defined in `firmware/adapters/modd_engine.h`, GPL-3.0-only, derived from the MIT `felucca_engine.h`). Required fields: `note_on`, `render`. Optional: `amp`, `block`, `done`, `desc`, `keys`, `alloc`, `legato`, `mono_key`, `post`, `cap`, `units`, `preset_make`. Felucca engines set extra optional fields to NULL/0.
+Engines implement the `engine_t` vtable (defined in `firmware/contracts/modd_engine.h`, GPL-3.0-only, derived from the MIT `felucca_engine.h`). Required fields: `note_on`, `render`. Optional: `amp`, `block`, `done`, `desc`, `keys`, `alloc`, `legato`, `mono_key`, `post`, `cap`, `units`, `preset_make`. Felucca engines set extra optional fields to NULL/0.
 
 The registry is `firmware/src/audio/engines/engines.c`: each engine `#include`s its source under a `CONFIG_ENGINE_*` guard, then adds its `ENG_*` to the `ENGINES[]` array.
 
@@ -212,8 +212,8 @@ The registry is `firmware/src/audio/engines/engines.c`: each engine `#include`s 
 | Engine | Source | Vtable | Notes |
 |--------|--------|--------|-------|
 | FM6 FMLab | `firmware/src/audio/engines/fm6/fm6_fmlab.c` | `ENG_FM6` | Integer Q24, 20 factory voices |
-| Analog | `firmware/upstream/felucca-engines/src/eng_analog.c` | `ENG_ANALOG` | MIT, SVF filter, 7 waveforms |
-| Noise | `firmware/upstream/felucca-engines/src/eng_noise.c` | `ENG_NOISE` | MIT |
+| Analog | `firmware/upstream/felucca/firmware/engines/src/eng_analog.c` | `ENG_ANALOG` | MIT, SVF filter, 7 waveforms |
+| Noise | `firmware/upstream/felucca/firmware/engines/src/eng_noise.c` | `ENG_NOISE` | MIT |
 | Stub | `firmware/src/audio/engines/eng_stub.c` | `ENG_STUB` | Silent, UI testing |
 
 **In upstream repos (need an adapter or wrapper; the source stays where it is):**
@@ -225,24 +225,24 @@ The registry is `firmware/src/audio/engines/engines.c`: each engine `#include`s 
 | Prophet | `firmware/upstream/melodee/firmware/src/eng_trio.c` (misleading name) | `ENG_PROPHET` | `prophet_patch.c`, `prophet_user.c`, `prophet_edit.h` |
 | CZ-1 | `firmware/upstream/melodee/firmware/src/eng_cz.c` | `ENG_CZ` | `cz_patch.h`, `cz_panel.h`, `cz_edit.h`, `cz_store.c`, `cz_native.c`, `cz_bank.c` |
 | SID | `firmware/upstream/melodee/firmware/src/eng_sid.c` | `ENG_SID` | Uses `eng_idx()` (not in modd), Melodee dsp paths |
-| Trio | `firmware/upstream/felucca-engines/src/eng_trio.c` | `ENG_TRIO` | MIT, likely ready |
-| LoFi | `firmware/upstream/felucca-engines/src/eng_lofi.c` | `ENG_LOFI` | MIT, likely ready |
-| Wheel | `firmware/upstream/felucca-engines/src/eng_wheel.c` | `ENG_WHEEL` | MIT |
+| Trio | `firmware/upstream/felucca/firmware/engines/src/eng_trio.c` | `ENG_TRIO` | MIT, likely ready |
+| LoFi | `firmware/upstream/felucca/firmware/engines/src/eng_lofi.c` | `ENG_LOFI` | MIT, likely ready |
+| Wheel | `firmware/upstream/felucca/firmware/engines/src/eng_wheel.c` | `ENG_WHEEL` | MIT |
 | Formant | `firmware/upstream/melodee/firmware/src/eng_formant.c` | ? | Melodee |
 | Phase | `firmware/upstream/melodee/firmware/src/eng_phase.c` | ? | Melodee |
 | Physical | `firmware/upstream/melodee/firmware/src/eng_phys.c` | ? | `phys_dsp.c`, `phys_symp.c` |
 
-**Felucca-engines repo** (`firmware/upstream/felucca-engines/src/`): MIT-licensed standalone engines. These use `felucca_engine.h` (compatible with `modd_engine.h`) and `dsp.c` helpers. Most can be wired directly.
+**Felucca-engines repo** (`firmware/upstream/felucca/firmware/engines/src/`): MIT-licensed standalone engines. These use `felucca_engine.h` (compatible with `modd_engine.h`) and `dsp.c` helpers. Most can be wired directly.
 
 **Melodee upstream** (`firmware/upstream/melodee/firmware/src/eng_*.c`): GPL engines that live inside Melodee's unity build. They often depend on Melodee-specific globals (`eng_idx()`, `drum_track()`, Melodee `dsp.c`). Each needs dependency analysis before wiring.
 
-**DSP helpers**: `firmware/upstream/felucca-engines/src/dsp.c`, included unchanged by `modd.c` (the shared DSP: `tsvf_t`, `clamp`, `pitch_inc`, polyBLEP). Melodee's `dsp.c` is a superset with FPU paths.
+**DSP helpers**: `firmware/upstream/felucca/firmware/engines/src/dsp.c`, included unchanged by `modd.c` (the shared DSP: `tsvf_t`, `clamp`, `pitch_inc`, polyBLEP). Melodee's `dsp.c` is a superset with FPU paths.
 
 ## Reference Firmwares
 
-Upstream trees are fetched with vendir and are not committed: `vendir.yml` pins each tree to a tag or commit, `vendir.lock.yml` records the resolved SHA. `task vendor:ensure` (a dependency of `task build` and `task test:unit`) fetches them at the locked commits when missing; `task vendor:sync` re-resolves the pins and rewrites the lock. Never edit files under `firmware/upstream/` or `firmware/vendor/`: adapt them through `firmware/adapters/` and project-owned config headers. Pins, licenses and uses: `THIRD_PARTY.md`.
+Upstream trees are fetched with vendir and are not committed: `vendir.yml` pins each tree to a tag or commit, `vendir.lock.yml` records the resolved SHA. `task vendor:ensure` (a dependency of `task build` and `task test:unit`) fetches them at the locked commits when missing; `task vendor:sync` re-resolves the pins and rewrites the lock. Never edit files under `firmware/upstream/` or `firmware/vendor/`: adapt them through `firmware/contracts/` and project-owned config headers. Pins, licenses and uses: `THIRD_PARTY.md`.
 - Felucca full firmware: `firmware/upstream/felucca/` (research copy also at `.scratch/examples/felucca/`)
-- Felucca engines: `firmware/upstream/felucca-engines/`
+- Felucca engines (submodule inside Felucca): `firmware/upstream/felucca/firmware/engines/`
 - Melodee: `firmware/upstream/melodee/`
 - SLOOP: `firmware/upstream/sloop/`
 - FMLab: `firmware/upstream/fmlab/`
@@ -406,7 +406,7 @@ For the mock-first porting strategy (start with stub data, wire real components 
 
 If you want modules from multiple firmwares in one build (e.g. one engine from Felucca, one engine from Melodee, a UI shell from SLOOP), the recommended path is to add them as modules via adapters to modd. Each module conforms to its adapter contract independently, so modules from different upstreams coexist as long as they fit the voice budget and satisfy Kconfig dependencies.
 
-Upstream firmwares are vendored under `firmware/upstream/` via vendir and are never modified. **Never copy or rewrite upstream code unless duplication / forking is approved by the user.** To port a component, `#include` its upstream source unchanged behind the relevant contract, put modd-specific glue in the adapter (`firmware/adapters/`) or a thin wrapper (`eng_adpcm_modd.c` is the model), and add its `CONFIG_*` guard. If the include does not compile, name the blocker and fix the adapter, or stop and report; do not fall back to a copy. Classes (INCLUDED / COPIED / REDUCED / REWRITTEN / OTHER UPSTREAM), the stop rule and task wording: [docs/PORTING.md](docs/PORTING.md#the-rule-upstream-code-through-an-adapter-into-modd). The [Engine source locations](#engine-source-locations) tables show what is ready and what needs porting.
+Upstream firmwares are vendored under `firmware/upstream/` via vendir and are never modified. **Never copy or rewrite upstream code unless duplication / forking is approved by the user.** To port a component, `#include` its upstream source unchanged behind the relevant contract, put modd-specific glue in the adapter (`firmware/contracts/`) or a thin wrapper (`eng_adpcm_modd.c` is the model), and add its `CONFIG_*` guard. If the include does not compile, name the blocker and fix the adapter, or stop and report; do not fall back to a copy. Classes (INCLUDED / COPIED / REDUCED / REWRITTEN / OTHER UPSTREAM), the stop rule and task wording: [docs/PORTING.md](docs/PORTING.md#the-rule-upstream-code-through-an-adapter-into-modd). The [Engine source locations](#engine-source-locations) tables show what is ready and what needs porting.
 
 ## Adding Upstream Firmware
 
@@ -443,7 +443,7 @@ Check the new upstream's build system:
 - **`build.sh`**: all FM-1 firmwares have one. Read it to find the output filename and any special dependencies.
 - **Output filename**: most produce `felucca.fwsc` (the default FM-1 package name) or `<name>.fwsc`. Check `tools/build.py` for the exact name (look for `.fwsc`).
 - **Pillow + raqm**: if the build generates font headers from TTF files (look for `gen_aa_font.py`, `ImageFont`, `layout_engine=...RAQM`), the upstream needs Pillow with raqm support. Most do.
-- **Submodules**: check `.gitmodules` or `firmware/engines/`. Felucca and SLOOP need the felucca-engines submodule; the `_build` task symlinks it automatically. Newer firmwares (Skiff, fm1-dock) are typically self-contained.
+- **Submodules**: check `.gitmodules` or `firmware/engines/`. Felucca and SLOOP have a felucca-engines submodule resolved by vendir's recursive checkout; the `_build` task symlinks it for the vendor build. Newer firmwares (Skiff, fm1-dock) are typically self-contained.
 - **Special config**: some upstreams (e.g. Optimist) have non-standard config systems or overflow default flash budgets. Check if a specific config profile is needed.
 
 ### 4. Add Taskfile tasks

@@ -139,7 +139,7 @@ static uint32_t base64_decode(const char *in, uint32_t in_len, uint8_t *out)
 
 /* WebSocket handshake key extraction and accept computation */
 
-static const char ws_magic[] = "258EAFA5-E914-47DA-95CA-5AB9CD86B611";
+static const char ws_magic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 static int ws_find_key(const uint8_t *http, uint32_t len, char *key_out)
 {
@@ -192,17 +192,20 @@ static int ws_handle_upgrade(const uint8_t *data, uint32_t len)
         "HTTP/1.1 101 Switching Protocols\r\n",
         "Upgrade: websocket\r\n",
         "Connection: Upgrade\r\n",
-        "Sec-WebSocket-Accept: ", 0,
-        "\r\n\r\n", 0
+        "Sec-WebSocket-Accept: ",
+        0
     };
     for (i = 0; parts[i]; i++) {
         const char *p = parts[i];
         while (*p && rlen < 255) resp[rlen++] = *p++;
-        if (i == 3) {
-            /* insert accept key */
-            const char *a = accept_b64;
-            while (*a && rlen < 255) resp[rlen++] = *a++;
-        }
+    }
+    {
+        const char *a = accept_b64;
+        while (*a && rlen < 255) resp[rlen++] = *a++;
+    }
+    {
+        const char *p = "\r\n\r\n";
+        while (*p && rlen < 255) resp[rlen++] = *p++;
     }
 
     rpc_tcp_send((const uint8_t *)resp, rlen);
@@ -246,7 +249,7 @@ static int ws_decode_frame(const uint8_t *data, uint32_t len,
         *payload = (uint8_t *)data + hdr;
     }
     *payload_len = plen;
-    return (int)(hdr + (masked ? 4 : 0) + plen);
+    return (int)(hdr + plen);
 }
 
 /* WebSocket frame encode: write to TCP. Server frames are unmasked. */
@@ -268,8 +271,34 @@ static int ws_send_text(const uint8_t *data, uint32_t len)
         return -1; /* too large */
     }
 
-    /* send header then payload (two TCP writes, or combine) */
-    uint8_t frame[WS_MAX_FRAME + 10];
+    /* send header then payload */
+    static uint8_t frame[WS_MAX_FRAME + 10];
+    if (hdr_len + len > sizeof(frame)) return -1;
+    uint32_t i;
+    for (i = 0; i < hdr_len; i++) frame[i] = hdr[i];
+    for (i = 0; i < len; i++) frame[hdr_len + i] = data[i];
+    return rpc_tcp_send(frame, hdr_len + len);
+}
+
+static int ws_send_bin(const uint8_t *data, uint32_t len)
+{
+    uint8_t hdr[10];
+    uint32_t hdr_len;
+
+    hdr[0] = 0x80 | WS_OP_BIN; /* FIN + binary */
+    if (len < 126) {
+        hdr[1] = (uint8_t)len;
+        hdr_len = 2;
+    } else if (len < 65536) {
+        hdr[1] = 126;
+        hdr[2] = (uint8_t)(len >> 8);
+        hdr[3] = (uint8_t)len;
+        hdr_len = 4;
+    } else {
+        return -1; /* too large */
+    }
+
+    static uint8_t frame[WS_MAX_FRAME + 10];
     if (hdr_len + len > sizeof(frame)) return -1;
     uint32_t i;
     for (i = 0; i < hdr_len; i++) frame[i] = hdr[i];

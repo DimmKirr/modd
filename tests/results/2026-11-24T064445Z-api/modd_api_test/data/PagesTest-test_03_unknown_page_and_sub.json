@@ -1,0 +1,49 @@
+{
+  "test": "modd_api_test.PagesTest.test_03_unknown_page_and_sub",
+  "requests": [
+    {
+      "t": "07:02:46.997",
+      "path": "/modd/nosuch",
+      "error": "ApiError: GET /modd/nosuch: HTTP 404 {\"error\":\"Unknown page\"}"
+    },
+    {
+      "t": "07:02:47.017",
+      "path": "/modd/home/nosuch",
+      "error": "ApiError: GET /modd/home/nosuch: HTTP 404 {\"error\":\"Unknown sub-page\"}"
+    },
+    {
+      "t": "07:02:47.063",
+      "path": "/modd/menu/nosuch",
+      "error": "ApiError: GET /modd/menu/nosuch: HTTP 404 {\"error\":\"Unknown sub-page\"}"
+    },
+    {
+      "t": "07:02:47.097",
+      "path": "/api/info",
+      "reply": {
+        "firmware": "modd",
+        "version": "dev-20261124T064409Z-1c9f80584",
+        "uptime_ms": 52717,
+        "ip": 251789322
+      }
+    }
+  ],
+  "page_at_end": {
+    "modal": false,
+    "page": "MENU",
+    "index": 32,
+    "data": {
+      "track": 1,
+      "engine": "ANALOG",
+      "title": "Settings",
+      "tab": "DISPLAY",
+      "items": [
+        {
+          "name": "LIGHTS",
+          "value": "HIGH",
+          "index": 3,
+          "tab": "DISPLAY"
+        }
+      ]
+    }
+  }
+}

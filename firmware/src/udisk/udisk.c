@@ -25,6 +25,11 @@ static void udisk_update(void)
     modd_log(on ? "udisk: activate" : "udisk: deactivate");
 }
 
+static int udisk_need(void);
+#ifdef CONFIG_EMU
+static void udisk_emu_ota_selftest(void);
+#endif
+
 static void udisk_init(void)
 {
     udisk_mounted = 0;
@@ -35,7 +40,85 @@ static void udisk_init(void)
     udisk_active = 0;
     udisk_cwd[0] = '/';
     udisk_cwd[1] = 0;
+#ifdef CONFIG_EMU
+    udisk_need();
+#endif
 }
+
+#ifdef CONFIG_EMU
+static uint32_t udisk_emu_crc16(const uint8_t *p, uint32_t n, uint32_t c)
+{
+    while (n--) {
+        c ^= (uint32_t)*p++ << 8;
+        uint32_t i;
+        for (i = 0; i < 8u; i++)
+            c = c & 0x8000u ? (c << 1) ^ 0x1021u : c << 1;
+        c &= 0xFFFFu;
+    }
+    return c;
+}
+
+static void udisk_emu_jl_dec(uint8_t *p, uint32_t n)
+{
+    uint32_t k = 0xFFFFu, i;
+    for (i = 0; i < n; i++) {
+        p[i] ^= (uint8_t)k;
+        k = ((k << 1) ^ (k & 0x8000u ? 0x1021u : 0u)) & 0xFFFFu;
+    }
+}
+
+static void udisk_emu_fwsc_strip(uint8_t *buf, uint32_t raw_len)
+{
+    uint32_t src = 0, dst = 0, blk;
+    for (blk = 0; blk < 20u && src + 0x2Fu < raw_len; blk++) {
+        if (dst != src) {
+            uint32_t j;
+            for (j = 0; j < 0x2Fu; j++)
+                buf[dst + j] = buf[src + j];
+        }
+        dst += 0x2Fu;
+        src += 0x2Fu + 1u;
+    }
+    while (src < raw_len)
+        buf[dst++] = buf[src++];
+}
+
+static void udisk_emu_ota_selftest(void)
+{
+    static uint8_t buf[1024];
+    FIL fil;
+    UINT br;
+    FRESULT fr = f_open(&fil, "MODD.FWS", FA_READ);
+    if (fr != FR_OK)
+        fr = f_open(&fil, "UPDATE.FWS", FA_READ);
+    if (fr != FR_OK) {
+        modd_log("ota-test: no firmware file");
+        return;
+    }
+    int rc = 0;
+    if (f_read(&fil, buf, 512, &br) != FR_OK || br != 512) rc = -1;
+    if (rc == 0 && (f_read(&fil, buf + 512, 512, &br) != FR_OK || br != 512)) rc = -1;
+    f_close(&fil);
+
+    if (rc == 0) {
+        udisk_emu_fwsc_strip(buf, 1024);
+        udisk_emu_jl_dec(buf, 0x40);
+        uint32_t nent = (uint32_t)buf[8] | (uint32_t)buf[9] << 8;
+        uint32_t hdr_crc = (uint32_t)buf[0] | (uint32_t)buf[1] << 8;
+        uint32_t calc_crc = udisk_emu_crc16(buf + 2, 0x3E, 0);
+        uint32_t ent_s = (uint32_t)buf[2] | (uint32_t)buf[3] << 8;
+        uint32_t ent_c = nent <= 11u ? udisk_emu_crc16(buf + 0x40, nent * 0x50u, 0) : 0;
+        modd_log_int("ota-test: nent=", (int32_t)nent);
+        modd_log_int("ota-test: hdr_crc=", (int32_t)hdr_crc);
+        modd_log_int("ota-test: calc_crc=", (int32_t)calc_crc);
+        modd_log_int("ota-test: ent_s=", (int32_t)ent_s);
+        modd_log_int("ota-test: ent_c=", (int32_t)ent_c);
+        if (calc_crc != hdr_crc || nent == 0 || nent > 11u || ent_c != ent_s)
+            rc = -2;
+    }
+    modd_log_int("ota-test: rc=", (int32_t)rc);
+}
+#endif
 
 /* Take / give back a need. Returns 0 when the DISK setting is off: the need is still counted, so
  * every udisk_need() pairs with one udisk_release(), and the disk comes up if the setting is
@@ -71,6 +154,9 @@ static void udisk_try_mount(void)
         udisk_cwd[1] = 0;
         udisk_opendir("/");
         modd_log_int("udisk: mounted, files=", (int32_t)udisk_nentry);
+#ifdef CONFIG_EMU
+        udisk_emu_ota_selftest();
+#endif
     } else {
         modd_log_int("udisk: mount fail ", (int32_t)r);
     }
@@ -110,7 +196,7 @@ static int udisk_opendir(const char *path)
     while (udisk_nentry < UDISK_DIR_MAX) {
         r = f_readdir(&dp, &fno);
         if (r != FR_OK || fno.fname[0] == 0) break;
-        if (fno.fattrib & AM_HID) continue;
+        if (fno.fattrib & (AM_HID | AM_SYS)) continue;
         udisk_entry_t *e = &udisk_entries[udisk_nentry];
         uint32_t i;
         for (i = 0; i < UDISK_NAME_MAX - 1 && fno.fname[i]; i++)

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* Host test for the pure part of CDC-ECM (firmware/adapters/modd_cdc_ecm.h):
+/* Host test for the pure part of CDC-ECM (firmware/contracts/modd_cdc_ecm.h):
  * the configuration descriptor parser and the notification reassembly. */
 #include <stdio.h>
 #include <stdint.h>

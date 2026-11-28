@@ -1,0 +1,225 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+06:51:07.510	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	test			start
+06:51:07.528	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	exec	0.012		xdotool search --name ^FM-1 -> exit 1
+06:51:07.530	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 44017:9222
+06:51:07.532	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.000		GET /api/info -> URLError
+06:51:07.573	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			forward: host:44017 -> guest:9222
+06:51:07.575	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+06:51:07.575	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+06:51:07.575	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+06:51:07.575	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+06:51:07.575	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+06:51:07.575	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+06:51:07.575	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+06:51:07.576	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+06:51:07.576	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+06:51:07.576	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+06:51:07.576	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+06:51:07.576	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			MIDI in: MIDI support could not be initialized
+06:51:07.592	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+06:51:07.592	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+06:51:09.582	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[  2.1 s] 0.98x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:10.535	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	2.002		GET /api/info -> TimeoutError
+06:51:11.583	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[  4.1 s] 1.03x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:13.560	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	2.020		GET /api/info -> TimeoutError
+06:51:13.586	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[  6.1 s] 1.13x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:14.582	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.017		GET /api/info -> 200, 94 B
+06:51:14.582	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	emu	7.050		firmware API up on port 44017
+06:51:14.583	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	test	7.070		setup passed
+06:51:14.602	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.019		GET /modd/home -> 200, 447 B
+06:51:14.640	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.038		GET /api/page -> 200, 451 B
+06:51:15.587	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:15.590	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.950		GET /api/screenshot -> 200, 153654 B
+06:51:15.629	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.021		GET /api/track/sel/engine/ANALOG -> 200, 126 B
+06:51:15.649	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.020		GET /api/input/pot/master/1023 -> 200, 48 B
+06:51:15.670	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.021		GET /api/input -> 200, 138 B
+06:51:16.110	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.019		GET /api/input -> 200, 138 B
+06:51:16.130	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.020		GET /modd/INSERT -> 200, 106 B
+06:51:16.170	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.040		GET /api/page -> 200, 222 B
+06:51:17.121	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.951		GET /api/screenshot -> 200, 153654 B
+06:51:17.160	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.013		GET /api/input -> 200, 138 B
+06:51:17.490	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.013		GET /api/input -> 200, 138 B
+06:51:17.510	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.020		GET /api/page -> 200, 222 B
+06:51:17.530	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.017		GET /modd/home -> 200, 447 B
+06:51:17.576	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.046		GET /api/page -> 200, 451 B
+06:51:17.590	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:18.399	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.822		GET /api/screenshot -> 200, 153654 B
+06:51:18.450	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.017		GET /api/input/key/60/down -> 200, 49 B
+06:51:18.789	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.018		GET /api/input -> 200, 143 B
+06:51:18.875	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.085		GET /api/audio/capture -> 200, 21947 B
+06:51:18.890	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.015		GET /api/input/key/60/up -> 200, 49 B
+06:51:19.010	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.017		GET /api/input -> 200, 139 B
+06:51:19.030	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.015		GET /api/page/INSERT/set/1/127 -> 200, 38 B
+06:51:19.050	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.019		GET /api/page/INSERT/set/0/4 -> 200, 36 B
+06:51:19.070	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.020		GET /api/input -> 200, 139 B
+06:51:19.399	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.012		GET /api/input -> 200, 139 B
+06:51:19.419	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.019		GET /modd/INSERT -> 200, 106 B
+06:51:19.460	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.041		GET /api/page -> 200, 225 B
+06:51:19.591	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[ 12.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:20.412	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.951		GET /api/screenshot -> 200, 153654 B
+06:51:20.449	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.018		GET /api/input -> 200, 139 B
+06:51:20.780	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.013		GET /api/input -> 200, 139 B
+06:51:20.801	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.020		GET /api/page -> 200, 225 B
+06:51:20.820	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.019		GET /modd/home -> 200, 447 B
+06:51:20.866	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.045		GET /api/page -> 200, 451 B
+06:51:21.593	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:21.934	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	1.069		GET /api/screenshot -> 200, 153654 B
+06:51:21.979	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.020		GET /api/input/key/60/down -> 200, 49 B
+06:51:22.309	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.014		GET /api/input -> 200, 143 B
+06:51:22.396	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.087		GET /api/audio/capture -> 200, 21947 B
+06:51:22.410	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.013		GET /api/input/key/60/up -> 200, 49 B
+06:51:22.529	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.012		GET /api/input -> 200, 139 B
+06:51:22.549	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.016		GET /api/page/INSERT/set/0/0 -> 200, 36 B
+06:51:22.569	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.019		GET /api/input -> 200, 139 B
+06:51:22.900	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.015		GET /api/input -> 200, 139 B
+06:51:22.920	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.020		GET /modd/INSERT -> 200, 106 B
+06:51:22.955	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.034		GET /api/page -> 200, 224 B
+06:51:23.596	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[ 16.1 s] 1.02x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:25.600	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[ 18.1 s] 0.97x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:27.603	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[ 20.1 s] 0.92x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:29.605	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[ 22.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:29.685	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	6.730		GET /api/screenshot -> 200, 153654 B
+06:51:29.720	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.013		GET /api/input -> 200, 139 B
+06:51:30.049	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.014		GET /api/input -> 200, 139 B
+06:51:30.069	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.020		GET /api/page -> 200, 224 B
+06:51:30.089	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.019		GET /api/page -> 200, 224 B
+06:51:30.110	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.021		GET /modd/home -> 200, 447 B
+06:51:30.154	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.044		GET /api/page -> 200, 451 B
+06:51:31.207	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	1.052		GET /api/screenshot -> 200, 153654 B
+06:51:31.249	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.019		GET /api/input/key/60/down -> 200, 49 B
+06:51:31.580	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.015		GET /api/input -> 200, 143 B
+06:51:31.608	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	fm1-live			[ 24.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:31.665	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.085		GET /api/audio/capture -> 200, 21947 B
+06:51:31.680	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.014		GET /api/input/key/60/up -> 200, 49 B
+06:51:31.800	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.017		GET /api/input -> 200, 139 B
+06:51:31.819	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.015		GET /api/info -> 200, 95 B
+06:51:31.839	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.020		GET /api/page -> 200, 451 B
+06:51:32.811	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	http	0.970		GET /api/screenshot -> 200, 153654 B
+06:51:32.838	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	test	18.255		call passed
+06:51:32.839	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	test	0.000		teardown passed
+06:51:32.839	tests/audio/api_fx_page_test.py::FxPageHostTest::test_effect_page_over_api	test	25.329		end passed; 65 io, 18.8 s in io, 0.0 s throttled
+06:51:32.841	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	test			start
+06:51:32.841	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	test	0.000		setup passed
+06:51:32.860	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.019		GET /modd/home -> 200, 447 B
+06:51:32.900	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.040		GET /api/page -> 200, 451 B
+06:51:32.919	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.019		GET /modd/INSERT -> 200, 106 B
+06:51:32.940	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.021		GET /api/page -> 200, 224 B
+06:51:33.611	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	fm1-live			[ 26.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+06:51:33.831	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.891		GET /api/screenshot -> 200, 153654 B
+06:51:33.869	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.020		GET /api/input -> 200, 139 B
+06:51:34.200	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.013		GET /api/input -> 200, 139 B
+06:51:34.219	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.018		GET /api/page -> 200, 224 B
+06:51:34.239	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.020		GET /api/page/INSERT/set/0/10 -> HTTP 400
+06:51:34.258	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.019		GET /api/page/INSERT/set/7/0 -> HTTP 400
+06:51:34.279	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.021		GET /api/page/HOME/set/0/0 -> HTTP 404
+06:51:34.300	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.020		GET /api/page -> 200, 224 B
+06:51:34.319	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.014		GET /api/info -> 200, 95 B
+06:51:34.340	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.020		GET /api/info -> 200, 95 B
+06:51:34.359	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.019		GET /api/page -> 200, 224 B
+06:51:35.353	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	http	0.993		GET /api/screenshot -> 200, 153654 B
+06:51:35.379	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	test	2.538		call passed
+06:51:35.380	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	emu			fm1-live stopped
+06:51:35.381	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	test	0.002		teardown passed
+06:51:35.381	tests/audio/api_fx_page_test.py::FxPageHostTest::test_set_errors	test	2.540		end passed; 16 io, 2.2 s in io, 0.0 s throttled
+06:51:35.383	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	test			start
+06:51:35.400	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	exec	0.014		xdotool search --name ^FM-1 -> exit 1
+06:51:35.402	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu/modd.fwsc --usb ethernet --net internet --forward 53601:9222
+06:51:35.405	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	0.000		GET /api/info -> URLError
+06:51:35.424	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			forward: host:53601 -> guest:9222
+06:51:35.425	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+06:51:35.425	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+06:51:35.425	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+06:51:35.425	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+06:51:35.425	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+06:51:35.426	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+06:51:35.426	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+06:51:35.426	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+06:51:35.426	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+06:51:35.426	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+06:51:35.426	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+06:51:35.426	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			MIDI in: MIDI support could not be initialized
+06:51:35.441	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+06:51:35.441	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+06:51:37.434	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[  2.1 s] 1.04x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:38.410	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.002		GET /api/info -> TimeoutError
+06:51:39.438	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[  4.2 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:41.423	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.012		GET /api/info -> TimeoutError
+06:51:41.441	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[  6.1 s] 0.80x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:43.445	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[  8.2 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:44.426	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.002		GET /api/info -> TimeoutError
+06:51:45.448	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 10.1 s] 0.85x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:47.430	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.001		GET /api/info -> TimeoutError
+06:51:47.450	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 12.2 s] 1.07x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:49.453	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 14.1 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:50.433	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.002		GET /api/info -> TimeoutError
+06:51:51.455	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 16.1 s] 0.95x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:53.448	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.011		GET /api/info -> TimeoutError
+06:51:53.458	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 18.2 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:55.461	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 20.1 s] 0.86x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:56.463	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.014		GET /api/info -> TimeoutError
+06:51:57.464	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 22.2 s] 1.07x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:59.467	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 24.1 s] 0.86x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:51:59.475	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.010		GET /api/info -> TimeoutError
+06:52:01.471	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 26.1 s] 0.97x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:02.478	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.002		GET /api/info -> TimeoutError
+06:52:03.474	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 28.1 s] 0.94x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:05.476	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 30.2 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:05.484	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.004		GET /api/info -> TimeoutError
+06:52:07.480	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 32.1 s] 1.07x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:08.501	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.012		GET /api/info -> TimeoutError
+06:52:09.483	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 34.2 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:11.488	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 36.2 s] 1.06x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:11.521	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.017		GET /api/info -> TimeoutError
+06:52:13.493	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 38.2 s] 1.19x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:14.526	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.004		GET /api/info -> TimeoutError
+06:52:15.495	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 40.2 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:17.500	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 42.3 s] 1.06x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:17.548	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.018		GET /api/info -> TimeoutError
+06:52:19.502	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 44.2 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:20.557	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.006		GET /api/info -> TimeoutError
+06:52:21.504	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 46.1 s] 0.81x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:23.507	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 48.2 s] 1.10x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:23.577	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.011		GET /api/info -> TimeoutError
+06:52:25.510	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 50.2 s] 0.86x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:26.579	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.002		GET /api/info -> TimeoutError
+06:52:27.513	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 52.2 s] 1.06x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:29.516	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 54.2 s] 0.85x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:29.594	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.012		GET /api/info -> TimeoutError
+06:52:31.520	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 56.3 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:32.611	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.015		GET /api/info -> TimeoutError
+06:52:33.523	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 58.2 s] 1.08x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:35.525	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 60.3 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:35.628	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.011		GET /api/info -> TimeoutError
+06:52:37.530	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 62.2 s] 1.06x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:38.639	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.011		GET /api/info -> TimeoutError
+06:52:39.534	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 64.3 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:41.536	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 66.2 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:41.660	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.019		GET /api/info -> TimeoutError
+06:52:43.538	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 68.3 s] 1.07x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:44.685	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.014		GET /api/info -> TimeoutError
+06:52:45.541	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 70.3 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:47.545	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 72.2 s] 0.80x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:47.700	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.004		GET /api/info -> TimeoutError
+06:52:49.549	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 74.3 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:50.715	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.012		GET /api/info -> TimeoutError
+06:52:51.553	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 76.2 s] 0.86x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:53.558	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 78.3 s] 1.06x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:53.728	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.012		GET /api/info -> TimeoutError
+06:52:55.561	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 80.2 s] 0.86x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:56.736	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.006		GET /api/info -> TimeoutError
+06:52:57.564	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 82.2 s] 0.93x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:59.566	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 84.2 s] 0.97x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:52:59.745	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.004		GET /api/info -> TimeoutError
+06:53:01.570	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 86.3 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:53:02.759	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.014		GET /api/info -> TimeoutError
+06:53:03.573	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 88.2 s] 1.07x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:53:05.577	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	fm1-live			[ 90.3 s] 1.12x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+06:53:05.774	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	http	2.014		GET /api/info -> TimeoutError
+06:53:06.780	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	emu			fm1-live stopped
+06:53:06.811	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	test	91.402		setup failed: tests/api_fixtures.py:579: RuntimeError
+06:53:06.811	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	test	0.000		teardown passed
+06:53:06.811	tests/audio/api_fx_page_test.py::FxPageStackTest::test_effect_page_over_api	test	91.428		end failed; 32 io, 60.3 s in io, 0.0 s throttled
+06:53:06.813	tests/audio/api_fx_page_test.py::FxPageStackTest::test_set_errors	test			start
+06:53:06.825	tests/audio/api_fx_page_test.py::FxPageStackTest::test_set_errors	test	0.000		setup failed: tests/api_fixtures.py:579: RuntimeError
+06:53:06.826	tests/audio/api_fx_page_test.py::FxPageStackTest::test_set_errors	test	0.000		teardown passed
+06:53:06.826	tests/audio/api_fx_page_test.py::FxPageStackTest::test_set_errors	test	0.013		end failed; 0 io, 0.0 s in io, 0.0 s throttled

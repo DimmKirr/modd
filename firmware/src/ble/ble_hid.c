@@ -15,7 +15,7 @@
 #include "ble_host.h"
 #include "ble_ll.h"
 #include "ble_util.h"
-#include "ble_diag.h"
+#include "../../ports/optimist/ble/ble_diag.h"
 #include "ble_hid.h"
 
 enum { H_IDLE, H_MTU, H_SVC, H_CHR, H_RMAP, H_RMAP_BLOB, H_PMODE_R, H_PMODE_W,

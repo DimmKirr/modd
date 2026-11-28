@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Kerem Kilic (Ellic Studio)
  * Origin: keremimo/melodee firmware/hal/fm1_clock.h @ v1.4.5 (398ada1e)
  *         https://github.com/keremimo/melodee/blob/398ada1e09d864c12f3b778a43e45c7c2a8031b8/firmware/hal/fm1_clock.h */
-/* The SYS clock, read only. Melodee never writes the PLL: it runs at the clock the boot loader (SPL) sets.
+/* The SYS clock, read only. Melodee never writes the PLL: it runs at the clock the SPL sets.
  * Live FM-1 readings in PR #27 (@johnskiller, with @charlesvestal's register reads) identify PLL2_CON1 (0x119AC) as
  * the SYS VCO multiplier: FBDS = multiplier - 2. The SPL's 268 means 24 MHz / 12 * 270 = 540 MHz, with CLK_CON2
  * selecting 2/3 = 360 (HSB 180, LSB 60, SFC 90).

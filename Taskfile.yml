@@ -48,7 +48,13 @@ vars:
 tasks:
   build:
     desc: Build modd firmware (alias for build:live)
+    vars:
+      DEFCONFIG: '{{regexReplaceAll "^--defconfig[= ]+" (regexFind "--defconfig[= ]+[A-Za-z0-9_.-]+" .CLI_ARGS) "" | default "modd"}}'
+      _OPEN: '{{.OPEN | default .USE_OPEN}}'
+      _TC: '{{if eq ._OPEN "1"}}-open{{end}}'
     cmds:
+      - cmd: rm -f .task/checksum/build:live:{{.DEFCONFIG}}{{._TC}}
+        if: '{{contains "--force" .CLI_ARGS}}'
       - task: build:live
         vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
 
@@ -524,7 +530,7 @@ tasks:
   docs:themes:controls:
     desc: Regenerate physical controls reference in docs/ui/README.md
     sources:
-      - firmware/adapters/modd_controls.h
+      - firmware/contracts/modd_controls.h
       - tools/codegen/gen_ui_map.py
     cmds:
       - uv run --quiet python tools/codegen/gen_ui_map.py hw-controls docs/ui/README.md

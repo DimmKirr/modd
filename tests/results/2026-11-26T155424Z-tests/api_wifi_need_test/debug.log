@@ -1,0 +1,103 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+15:54:24.255	tests/wifi/api_wifi_need_test.py::TestWifiOffOn::test_wifi_off_then_on	test			start
+15:54:24.261	tests/wifi/api_wifi_need_test.py::TestWifiOffOn::test_wifi_off_then_on	test	0.002		setup skipped: ('/MODD/Users/dmitry/dev/modd-fm/modd/.venv/lib/python3.12/site-packages/_pytest/unittest.py', 523, 'Skipped: needs a firmware built with CONFIG_WIFI_IN_SHARED_POOL (/MODD/Users/dmitry/dev/modd-fm/modd/build/modd_emu/modd.fwsc is not)')
+15:54:24.261	tests/wifi/api_wifi_need_test.py::TestWifiOffOn::test_wifi_off_then_on	test	0.000		teardown passed
+15:54:24.261	tests/wifi/api_wifi_need_test.py::TestWifiOffOn::test_wifi_off_then_on	test	0.006		end skipped; 0 io, 0.0 s in io, 0.0 s throttled
+15:54:24.263	tests/wifi/api_wifi_need_test.py::TestWifiEthernet::test_ethernet_preferred	test			start
+15:54:24.264	tests/wifi/api_wifi_need_test.py::TestWifiEthernet::test_ethernet_preferred	test	0.001		setup skipped: ('/MODD/Users/dmitry/dev/modd-fm/modd/.venv/lib/python3.12/site-packages/_pytest/unittest.py', 523, 'Skipped: needs a firmware built with CONFIG_WIFI_IN_SHARED_POOL (/MODD/Users/dmitry/dev/modd-fm/modd/build/modd_emu/modd.fwsc is not)')
+15:54:24.264	tests/wifi/api_wifi_need_test.py::TestWifiEthernet::test_ethernet_preferred	test	0.000		teardown passed
+15:54:24.264	tests/wifi/api_wifi_need_test.py::TestWifiEthernet::test_ethernet_preferred	test	0.001		end skipped; 0 io, 0.0 s in io, 0.0 s throttled
+15:54:24.265	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	test			start
+15:54:24.275	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	exec	0.007		xdotool search --name ^FM-1 -> exit 1
+15:54:24.277	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_emu/modd.fwsc --usb ethernet --wifi oss --net internet --flash-size 8M --flash /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-26T155424Z-tests/api_wifi_need_test/flash-TestWifiOffAtBoot.img --forward 48671:9222
+15:54:24.302	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.024		GET /api/info -> URLError
+15:54:24.333	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			forward: host:48671 -> guest:9222
+15:54:24.335	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+15:54:24.335	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+15:54:24.335	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+15:54:24.335	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+15:54:24.335	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+15:54:24.336	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+15:54:24.336	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+15:54:24.336	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+15:54:24.336	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+15:54:24.336	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+15:54:24.336	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+15:54:24.337	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			MIDI in: MIDI support could not be initialized
+15:54:24.354	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+15:54:24.355	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+15:54:26.347	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			[  2.1 s] 1.02x real time | 240 MHz | audio 0 ms queued (target 50), 0 underruns
+15:54:27.342	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	2.028		GET /api/info -> TimeoutError
+15:54:28.350	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			[  4.1 s] 1.02x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+15:54:28.396	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.050		GET /api/info -> 200, 94 B
+15:54:28.397	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	emu	4.118		firmware API up on port 48671
+15:54:28.397	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	test	4.131		setup passed
+15:54:28.439	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.042		GET /modd/menu/hw -> 200, 201 B
+15:54:28.508	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.068		GET /api/page -> 200, 385 B
+15:54:29.610	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	1.052		GET /api/screenshot -> 200, 153654 B
+15:54:29.684	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.025		GET /api/page -> 200, 385 B
+15:54:29.700	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.015		GET /api/input/enc/algorithm/0 -> 200, 51 B
+15:54:29.793	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.021		GET /api/input -> 200, 136 B
+15:54:29.812	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.019		GET /api/page -> 200, 385 B
+15:54:29.830	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.017		GET /api/input/button/oct-/tap/80 -> 200, 47 B
+15:54:29.981	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.020		GET /api/input -> 200, 136 B
+15:54:30.001	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.019		GET /api/page -> 200, 386 B
+15:54:30.353	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			[  6.1 s] 1.01x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+15:54:30.886	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.885		GET /api/screenshot -> 200, 153654 B
+15:54:30.929	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.017		GET /api/input -> 200, 136 B
+15:54:32.356	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+15:54:33.050	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.016		GET /api/input -> 200, 136 B
+15:54:33.072	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	exec	0.021		xdotool search --name ^FM-1 -> exit 0
+15:54:33.079	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	exec	0.007		xdotool windowquit 16777226 -> exit 0
+15:54:33.105	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			flash: 3 erases / programs
+15:54:33.154	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	emu			fm1-live stopped
+15:54:33.163	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	exec	0.008		xdotool search --name ^FM-1 -> exit 1
+15:54:33.164	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_emu/modd.fwsc --usb ethernet --wifi oss --net internet --flash-size 8M --flash /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-26T155424Z-tests/api_wifi_need_test/flash-TestWifiOffAtBoot.img --forward 39929:9222
+15:54:33.166	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.000		GET /api/info -> URLError
+15:54:33.239	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			forward: host:39929 -> guest:9222
+15:54:33.241	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+15:54:33.241	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+15:54:33.241	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+15:54:33.241	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+15:54:33.241	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+15:54:33.241	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+15:54:33.241	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+15:54:33.242	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+15:54:33.242	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+15:54:33.242	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+15:54:33.242	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+15:54:33.242	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			MIDI in: MIDI support could not be initialized
+15:54:33.256	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+15:54:33.257	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+15:54:35.245	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			[  2.1 s] 0.99x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+15:54:36.180	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	2.011		GET /api/info -> TimeoutError
+15:54:37.219	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.019		GET /api/info -> 200, 94 B
+15:54:37.219	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	emu	4.053		firmware API up on port 39929
+15:54:37.241	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.021		GET /api/log -> 200, 2406 B
+15:54:37.252	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+15:54:37.267	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.023		GET /modd/menu/hw -> 200, 201 B
+15:54:37.305	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.038		GET /api/page -> 200, 386 B
+15:54:38.228	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.922		GET /api/screenshot -> 200, 153654 B
+15:54:38.265	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.017		GET /api/page -> 200, 386 B
+15:54:38.289	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.024		GET /api/input/enc/algorithm/0 -> 200, 51 B
+15:54:38.375	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.021		GET /api/input -> 200, 136 B
+15:54:38.395	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.020		GET /api/page -> 200, 386 B
+15:54:38.421	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.026		GET /api/log -> 200, 2710 B
+15:54:38.435	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.013		GET /api/input/button/oct+/tap/80 -> 200, 47 B
+15:54:38.598	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.016		GET /api/input -> 200, 136 B
+15:54:38.617	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.019		GET /api/page -> 200, 385 B
+15:54:39.255	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+15:54:39.504	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.887		GET /api/screenshot -> 200, 153654 B
+15:54:39.536	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.015		GET /api/input -> 200, 136 B
+15:54:41.256	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+15:54:42.705	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.014		GET /api/input -> 200, 136 B
+15:54:42.734	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.029		GET /api/log -> 200, 2976 B
+15:54:42.766	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.020		GET /api/info -> 200, 94 B
+15:54:42.787	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.020		GET /api/info -> 200, 94 B
+15:54:42.809	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.022		GET /api/page -> 200, 385 B
+15:54:43.262	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+15:54:43.722	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	http	0.912		GET /api/screenshot -> 200, 153654 B
+15:54:43.739	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	test	15.342		call passed
+15:54:43.741	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	emu			fm1-live stopped
+15:54:43.741	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	test	0.002		teardown passed
+15:54:43.741	tests/wifi/api_wifi_need_test.py::TestWifiOffAtBoot::test_off_survives_reboot_and_on_inits_once	test	19.476		end passed; 43 io, 9.5 s in io, 0.0 s throttled

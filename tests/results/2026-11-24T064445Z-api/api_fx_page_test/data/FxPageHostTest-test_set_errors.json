@@ -1,0 +1,305 @@
+{
+  "test": "audio.api_fx_page_test.FxPageHostTest.test_set_errors",
+  "requests": [
+    {
+      "t": "06:51:32.860",
+      "path": "/modd/home",
+      "reply": {
+        "ok": true,
+        "page": "HOME",
+        "index": 0,
+        "data": {
+          "selected_track": 1,
+          "tracks": [
+            {
+              "index": 0,
+              "engine": "ANALOG",
+              "preset": 0,
+              "engine_id": 0
+            },
+            {
+              "index": 1,
+              "engine": "ANALOG",
+              "preset": 0,
+              "engine_id": 0
+            },
+            {
+              "index": 2,
+              "engine": "ANALOG",
+              "preset": 0,
+              "engine_id": 0
+            },
+            {
+              "index": 3,
+              "engine": "ANALOG",
+              "preset": 0,
+              "engine_id": 0
+            }
+          ],
+          "palette": 8,
+          "palette_name": "CLAY",
+          "bpm": 128,
+          "playing": false,
+          "recording": false,
+          "oct": 0,
+          "root": 0,
+          "scale": 0,
+          "level": 100,
+          "atk": 10,
+          "dec": 40,
+          "sus": 80,
+          "rel": 88
+        }
+      }
+    },
+    {
+      "t": "06:51:32.900",
+      "path": "/api/page",
+      "reply": {
+        "modal": false,
+        "page": "HOME",
+        "index": 0,
+        "data": {
+          "selected_track": 1,
+          "tracks": [
+            {
+              "index": 0,
+              "engine": "ANALOG",
+              "preset": 0,
+              "engine_id": 0
+            },
+            {
+              "index": 1,
+              "engine": "ANALOG",
+              "preset": 0,
+              "engine_id": 0
+            },
+            {
+              "index": 2,
+              "engine": "ANALOG",
+              "preset": 0,
+              "engine_id": 0
+            },
+            {
+              "index": 3,
+              "engine": "ANALOG",
+              "preset": 0,
+              "engine_id": 0
+            }
+          ],
+          "palette": 8,
+          "palette_name": "CLAY",
+          "bpm": 128,
+          "playing": false,
+          "recording": false,
+          "oct": 0,
+          "root": 0,
+          "scale": 0,
+          "level": 100,
+          "atk": 10,
+          "dec": 40,
+          "sus": 80,
+          "rel": 88
+        }
+      }
+    },
+    {
+      "t": "06:51:32.919",
+      "path": "/modd/INSERT",
+      "reply": {
+        "ok": true,
+        "page": "INSERT",
+        "index": 12,
+        "data": {
+          "track": 1,
+          "engine": "ANALOG",
+          "title": "Insert",
+          "ready": false
+        }
+      }
+    },
+    {
+      "t": "06:51:32.940",
+      "path": "/api/page",
+      "reply": {
+        "modal": false,
+        "page": "INSERT",
+        "index": 12,
+        "data": {
+          "track": 1,
+          "engine": "ANALOG",
+          "title": "Insert",
+          "cards": [
+            {
+              "label": "TYPE",
+              "value": 0,
+              "text": "OFF",
+              "min": 0,
+              "max": 9
+            },
+            {
+              "label": "AMOUNT",
+              "value": 127,
+              "text": "127",
+              "min": 0,
+              "max": 127
+            }
+          ]
+        }
+      }
+    },
+    {
+      "t": "06:51:33.832",
+      "path": "/api/screenshot",
+      "reply": {
+        "width": 240,
+        "height": 240,
+        "format": "rgb565",
+        "data": "<153600 characters>"
+      }
+    },
+    {
+      "t": "06:51:33.869",
+      "path": "/api/input",
+      "reply": {
+        "ms": 26150,
+        "buttons": 0,
+        "notes": 0,
+        "inject_buttons": 0,
+        "inject_notes": 0,
+        "pending": 0,
+        "enc_pending": 0,
+        "pot": 1023,
+        "master_q12": 4032,
+        "idle": true
+      }
+    },
+    {
+      "t": "06:51:34.200",
+      "path": "/api/input",
+      "reply": {
+        "ms": 26481,
+        "buttons": 0,
+        "notes": 0,
+        "inject_buttons": 0,
+        "inject_notes": 0,
+        "pending": 0,
+        "enc_pending": 0,
+        "pot": 1023,
+        "master_q12": 4032,
+        "idle": true
+      }
+    },
+    {
+      "t": "06:51:34.219",
+      "path": "/api/page",
+      "reply": {
+        "modal": false,
+        "page": "INSERT",
+        "index": 12,
+        "data": {
+          "track": 1,
+          "engine": "ANALOG",
+          "title": "Insert",
+          "cards": [
+            {
+              "label": "TYPE",
+              "value": 0,
+              "text": "OFF",
+              "min": 0,
+              "max": 9
+            },
+            {
+              "label": "AMOUNT",
+              "value": 127,
+              "text": "127",
+              "min": 0,
+              "max": 127
+            }
+          ]
+        }
+      }
+    },
+    {
+      "t": "06:51:34.239",
+      "path": "/api/page/INSERT/set/0/10",
+      "error": "ApiError: GET /api/page/INSERT/set/0/10: HTTP 400 {\"error\":\"slot or value out of range\"}"
+    },
+    {
+      "t": "06:51:34.259",
+      "path": "/api/page/INSERT/set/7/0",
+      "error": "ApiError: GET /api/page/INSERT/set/7/0: HTTP 400 {\"error\":\"slot or value out of range\"}"
+    },
+    {
+      "t": "06:51:34.279",
+      "path": "/api/page/HOME/set/0/0",
+      "error": "ApiError: GET /api/page/HOME/set/0/0: HTTP 404 {\"error\":\"page has no cards that can be set\"}"
+    },
+    {
+      "t": "06:51:34.300",
+      "path": "/api/page",
+      "reply": {
+        "modal": false,
+        "page": "INSERT",
+        "index": 12,
+        "data": {
+          "track": 1,
+          "engine": "ANALOG",
+          "title": "Insert",
+          "cards": [
+            {
+              "label": "TYPE",
+              "value": 0,
+              "text": "OFF",
+              "min": 0,
+              "max": 9
+            },
+            {
+              "label": "AMOUNT",
+              "value": 127,
+              "text": "127",
+              "min": 0,
+              "max": 127
+            }
+          ]
+        }
+      }
+    },
+    {
+      "t": "06:51:34.319",
+      "path": "/api/info",
+      "reply": {
+        "firmware": "modd",
+        "version": "dev-20261124T064409Z-1c9f80584",
+        "uptime_ms": 26600,
+        "ip": 251789322
+      }
+    }
+  ],
+  "page_at_end": {
+    "modal": false,
+    "page": "INSERT",
+    "index": 12,
+    "data": {
+      "track": 1,
+      "engine": "ANALOG",
+      "title": "Insert",
+      "cards": [
+        {
+          "label": "TYPE",
+          "value": 0,
+          "text": "OFF",
+          "min": 0,
+          "max": 9
+        },
+        {
+          "label": "AMOUNT",
+          "value": 127,
+          "text": "127",
+          "min": 0,
+          "max": 127
+        }
+      ]
+    }
+  }
+}

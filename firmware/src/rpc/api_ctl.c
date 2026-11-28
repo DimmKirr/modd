@@ -280,7 +280,45 @@ static void api_info(const char *const *a)
     rpc_tx_char(tx, ',');
     rpc_tx_key_uint(tx, "uptime_ms", fm1_ms);
     rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "build_time", fw_meta.build_time);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_str(tx, "git_sha", fw_meta.git_sha);
+    rpc_tx_char(tx, ',');
     rpc_tx_key_uint(tx, "ip", net_get_ip());
+    {
+        volatile uint32_t *ir = (volatile uint32_t *)0x01C7C000u;
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_uint(tx, "init_info", ir[1]);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_uint(tx, "init_detail", ir[3]);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_uint(tx, "init_dn", ir[4]);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_uint(tx, "init_up", ir[5]);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_uint(tx, "init_idle", ir[6]);
+        {
+            volatile uint32_t *diag = (volatile uint32_t *)0x01C7FDE0u;
+            if (diag[0] == 0xDEAD0001u) {
+                rpc_tx_char(tx, ',');
+                rpc_tx_key_uint(tx, "diag_ld", diag[1]);
+                rpc_tx_char(tx, ',');
+                rpc_tx_key_uint(tx, "diag_detail", diag[2]);
+                rpc_tx_char(tx, ',');
+                rpc_tx_key_uint(tx, "diag_decision", diag[3]);
+                rpc_tx_char(tx, ',');
+                rpc_tx_key_uint(tx, "diag_dn", diag[4]);
+                rpc_tx_char(tx, ',');
+                rpc_tx_key_uint(tx, "diag_up", diag[5]);
+                rpc_tx_char(tx, ',');
+                rpc_tx_key_uint(tx, "diag_idle", diag[6]);
+            }
+        }
+    }
+#ifdef CONFIG_OTA
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "ota_staged", ota_staged());
+#endif
     rpc_http_json_end(tx);
 }
 
@@ -525,6 +563,41 @@ static void api_screenshot(const char *const *a)
 }
 #endif
 
+#ifdef CONFIG_MIRROR
+#include "mirror_page.h"
+
+static void api_mirror_page(const char *const *a)
+{
+    (void)a;
+    char hdr[256];
+    uint32_t hi = 0;
+    const char *p;
+    p = "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/html; charset=utf-8\r\n"
+        "Access-Control-Allow-Origin: *\r\n"
+        "Connection: close\r\n"
+        "Content-Length: ";
+    while (*p && hi < sizeof(hdr) - 1) hdr[hi++] = *p++;
+    {
+        uint32_t v = sizeof mirror_html - 1, ci = 0;
+        char cl[12], tmp[12];
+        uint32_t ti = 0;
+        if (v == 0) { cl[ci++] = '0'; }
+        else { while (v) { tmp[ti++] = '0' + (v % 10); v /= 10; }
+               while (ti) cl[ci++] = tmp[--ti]; }
+        uint32_t j;
+        for (j = 0; j < ci && hi < sizeof(hdr) - 1; j++) hdr[hi++] = cl[j];
+    }
+    p = "\r\n\r\n";
+    while (*p && hi < sizeof(hdr) - 1) hdr[hi++] = *p++;
+    api_slen = 0;
+    api_sfail = rpc_tcp_send((const uint8_t *)hdr, hi) < 0;
+    api_stream_put(mirror_html, sizeof mirror_html - 1);
+    api_stream_flush();
+    rpc_tcp_close();
+}
+#endif
+
 /* -------------------------------------------------------------- audio --- */
 
 static void api_audio(const char *const *a)
@@ -561,7 +634,7 @@ static void api_audio(const char *const *a)
 }
 
 #ifdef CONFIG_FX_HOST
-/* The effects host's one slot (audio/effects/host/fx_host.c): the main loop applies a request. */
+/* The effects host's one slot (audio/effects/effects.c): the main loop applies a request. */
 static void api_fx_json(void)
 {
     struct rpc_tx *tx = &rpc_tx_static;
@@ -751,6 +824,142 @@ static void api_audio_capture(const char *const *a)
     audio_tap_frozen = 0;
 }
 typedef char api_tap_n_is_8192[AUDIO_TAP_N == 8192u ? 1 : -1];   /* "n":8192 above */
+#endif
+
+#if defined(CONFIG_USB_AUDIO_HOST) && defined(CONFIG_EMU)
+/* arm the UAC ring for testing: fake UHOST_UAC_READY so the ISR feed hook runs */
+static void api_usb_audio_ring_arm(const char *const *a)
+{
+    struct rpc_tx *tx = &rpc_tx_static;
+    int32_t rate, depth;
+    if (!api_arg_int(a[0], "rate", 8000, 192000, &rate)) return;
+    if (!api_arg_int(a[1], "depth", 16, 32, &depth)) return;
+    uhost.uac_sample_rate = (uint32_t)rate;
+    uhost.uac_bit_depth = (uint8_t)depth;
+    uhost.uac_channels = 2;
+    uhost.uac_ep_out = 1;
+    uhost.uac_max_packet = UAC_RING_MAX_PACKET;
+    uac_compute_frame_bytes();
+    uac_ring_wr = 0;
+    uac_ring_rd = 0;
+    uac_frac_accum = 0;
+    uac_src_phase = 0;
+    uac_ring_frozen = 0;
+    uac_test_mode = 1;
+    uhost.state = UHOST_UAC_READY;
+    rpc_http_json_ok(tx);
+    rpc_tx_key_uint(tx, "rate", (uint32_t)rate);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_uint(tx, "depth", (uint32_t)depth);
+    rpc_http_json_end(tx);
+}
+
+static void api_usb_audio_ring_disarm(const char *const *a)
+{
+    struct rpc_tx *tx = &rpc_tx_static;
+    (void)a;
+    uhost.state = UHOST_DISCONNECTED;
+    uhost.uac_ep_out = 0;
+    uac_test_mode = 0;
+    uac_ring_wr = 0;
+    uac_ring_rd = 0;
+    rpc_http_json_ok(tx);
+    rpc_tx_key_str(tx, "state", "idle");
+    rpc_http_json_end(tx);
+}
+
+/* the USB audio host ring, rd to wr; the feed hook stops writing while it is read */
+static void api_usb_audio_ring(const char *const *a)
+{
+    uint32_t wr, rd, n, k;
+    (void)a;
+    uac_ring_frozen = 1;
+    wr = uac_ring_wr;
+    rd = uac_ring_rd;
+    n = wr - rd;
+    if (n > UAC_RING_SIZE) { rd = wr - UAC_RING_SIZE; n = UAC_RING_SIZE; }
+    {
+        uint32_t fbytes = (uint32_t)uhost.uac_channels * ((uhost.uac_bit_depth + 7u) / 8u);
+        if (fbytes > 1) {
+            uint32_t off = rd % fbytes;
+            if (off) { rd += fbytes - off; n = wr - rd; }
+        }
+    }
+    api_stream_begin();
+    api_stream_str("{\"rate\":");
+    api_stream_uint(uhost.uac_sample_rate);
+    api_stream_str(",\"format\":\"");
+    if (uhost.uac_bit_depth == 24)      api_stream_str("s24le");
+    else if (uhost.uac_bit_depth == 32) api_stream_str("s32le");
+    else                                api_stream_str("s16le");
+    api_stream_str("\",\"channels\":");
+    api_stream_uint(uhost.uac_channels);
+    api_stream_str(",\"n\":");
+    api_stream_uint(n);
+    api_stream_str(",\"wr\":");
+    api_stream_uint(wr);
+    api_stream_str(",\"rd\":");
+    api_stream_uint(uac_ring_rd);
+    api_stream_str(",\"bit_depth\":");
+    api_stream_uint(uhost.uac_bit_depth);
+    api_stream_str(",\"data\":\"");
+    {
+        static uint8_t b[384] RPC_SCRATCH;   /* multiple of 3: no base64 padding mid-stream */
+        uint32_t bn = 0;
+        for (k = 0; k < n; k++) {
+            b[bn++] = uac_ring[(rd + k) & (UAC_RING_SIZE - 1u)];
+            if (bn == sizeof b) { api_stream_b64(b, bn); bn = 0; }
+        }
+        if (bn) api_stream_b64(b, bn);
+    }
+    api_stream_str("\"}");
+    api_stream_end();
+    uac_ring_frozen = 0;
+}
+#endif
+
+#ifdef CONFIG_USB_HOST
+static void api_stream_hex32(uint32_t v)
+{
+    static const char hx[] = "0123456789abcdef";
+    char buf[10];
+    buf[0] = '0'; buf[1] = 'x';
+    buf[2] = hx[(v >> 28) & 0xF]; buf[3] = hx[(v >> 24) & 0xF];
+    buf[4] = hx[(v >> 20) & 0xF]; buf[5] = hx[(v >> 16) & 0xF];
+    buf[6] = hx[(v >> 12) & 0xF]; buf[7] = hx[(v >> 8) & 0xF];
+    buf[8] = hx[(v >> 4) & 0xF];  buf[9] = hx[v & 0xF];
+    api_stream_put(buf, 10);
+}
+
+static void api_usb_regs(const char *const *a)
+{
+    (void)a;
+    uint32_t con0 = FM1_USB_CON0;
+    uint32_t io0  = FM1_USB_IO_CON0;
+    uint32_t line = (con0 >> 16) & 3u;
+    uint32_t dc = 0, pw = 0, iu = 0;
+    if (otg.mode == OTG_HOST) {
+        dc = usb_host_sie_rd(SIE_DEVCTL);
+        pw = usb_host_sie_rd(SIE_POWER);
+        iu = usb_host_sie_rd(SIE_INTRUSB);
+    }
+    api_stream_begin();
+    api_stream_str("{\"con0\":\""); api_stream_hex32(con0);
+    api_stream_str("\",\"io_con0\":\""); api_stream_hex32(io0);
+    api_stream_str("\",\"line\":"); api_stream_uint(line);
+    api_stream_str(",\"devctl\":"); api_stream_uint(dc);
+    api_stream_str(",\"power\":"); api_stream_uint(pw);
+    api_stream_str(",\"intrusb\":"); api_stream_uint(iu);
+    api_stream_str(",\"vbus_valid\":"); api_stream_uint(((dc & 0x18u) == 0x18u) ? 1 : 0);
+    api_stream_str(",\"fsdev\":"); api_stream_uint((dc >> 6) & 1u);
+    api_stream_str(",\"lsdev\":"); api_stream_uint((dc >> 5) & 1u);
+    api_stream_str(",\"session\":"); api_stream_uint(dc & 1u);
+    api_stream_str(",\"hostmode\":"); api_stream_uint((dc >> 2) & 1u);
+    api_stream_str(",\"otg_mode\":"); api_stream_jstr(otg.mode == OTG_HOST ? "host" : "device");
+    api_stream_str(",\"uhost_state\":"); api_stream_uint(uhost.state);
+    api_stream_str("}");
+    api_stream_end();
+}
 #endif
 
 /* -------------------------------------------------------------- input --- */
@@ -973,10 +1182,11 @@ static void api_track_json(uint32_t k)
     rpc_http_json_end(tx);
 }
 
+#define API_TRACK_MAX 3  /* NTRK - 1 */
 static void api_track(const char *const *a)
 {
     int32_t k;
-    if (!api_arg_int_or(a[0], "track", 0, NTRK - 1, "sel", (int32_t)modd_sel(), &k)) return;
+    if (!api_arg_int_or(a[0], "track", 0, API_TRACK_MAX, "sel", (int32_t)modd_sel(), &k)) return;
     api_track_json((uint32_t)k);
 }
 
@@ -986,7 +1196,7 @@ static void api_track_engine(const char *const *a)
     int32_t k, e = -1;
     uint32_t i;
     const char *name;
-    if (!api_arg_int_or(a[0], "track", 0, NTRK - 1, "sel", (int32_t)modd_sel(), &k)) return;
+    if (!api_arg_int_or(a[0], "track", 0, API_TRACK_MAX, "sel", (int32_t)modd_sel(), &k)) return;
     name = api_arg_str(a[1], "engine");
     for (i = 0; i < NENGINES; i++)
         if (ENGINES[i]->name && rpc_streq_nocase(ENGINES[i]->name, name)) e = (int32_t)i;
@@ -1080,6 +1290,177 @@ static void api_mem_find(const char *const *a)
 }
 #endif /* CONFIG_RPC_MEM */
 
+/* ---------------------------------------------------------- LED test --- */
+
+static void api_led_test(const char *const *a)
+{
+    struct rpc_tx *tx = &rpc_tx_static;
+    int32_t id;
+    uint32_t col, row;
+    if (!api_arg_int(a[0], "id", -1, 40, &id)) return;
+    api_led_override = (id >= 0);
+    for (col = 0; col < FM1_NCOL; col++) {
+        fm1_led[col] = 0;
+        fm1_led_dim[0][col] = 0;
+        fm1_led_dim[1][col] = 0;
+        fm1_led_dim[2][col] = 0;
+    }
+    if (id >= 0) {
+        for (col = 0; col < FM1_NCOL; col++)
+            for (row = 1; row < 5u; row++)
+                if (FM1_KEYMAP[row][col] == (int8_t)id)
+                    fm1_led[col] |= (uint8_t)(1u << row);
+    }
+    rpc_http_json_ok(tx);
+    rpc_tx_key_int(tx, "id", id);
+    rpc_http_json_end(tx);
+}
+
+static void api_led_fill(const char *const *a)
+{
+    struct rpc_tx *tx = &rpc_tx_static;
+    int32_t to;
+    uint32_t col, row, id;
+    if (!api_arg_int(a[0], "to", -1, 40, &to)) return;
+    api_led_override = (to >= 14);
+    for (col = 0; col < FM1_NCOL; col++) {
+        fm1_led[col] = 0;
+        fm1_led_dim[0][col] = 0;
+        fm1_led_dim[1][col] = 0;
+        fm1_led_dim[2][col] = 0;
+    }
+    if (to >= (int32_t)FM1_NOTE_KEY_FIRST) {
+        for (id = FM1_NOTE_KEY_FIRST; id <= (uint32_t)to; id++)
+            for (col = 0; col < FM1_NCOL; col++)
+                for (row = 1; row < 5u; row++)
+                    if (FM1_KEYMAP[row][col] == (int8_t)id)
+                        fm1_led[col] |= (uint8_t)(1u << row);
+    }
+    rpc_http_json_ok(tx);
+    rpc_tx_key_int(tx, "to", to);
+    rpc_http_json_end(tx);
+}
+
+/* ------------------------------------------------- test: OTA disk read --- */
+#ifdef CONFIG_EMU
+#ifdef CONFIG_UDISK
+
+static uint32_t test_ota_crc16(const uint8_t *p, uint32_t n, uint32_t c)
+{
+    while (n--) {
+        c ^= (uint32_t)*p++ << 8;
+        uint32_t i;
+        for (i = 0; i < 8u; i++)
+            c = c & 0x8000u ? (c << 1) ^ 0x1021u : c << 1;
+        c &= 0xFFFFu;
+    }
+    return c;
+}
+
+static void test_ota_jl_enc(uint8_t *p, uint32_t n)
+{
+    uint32_t k = 0xFFFFu, i;
+    for (i = 0; i < n; i++) {
+        p[i] ^= (uint8_t)k;
+        k = ((k << 1) ^ (k & 0x8000u ? 0x1021u : 0u)) & 0xFFFFu;
+    }
+}
+
+static void test_ota_fwsc_strip(uint8_t *buf, uint32_t raw_len)
+{
+    uint32_t src = 0, dst = 0, blk;
+    for (blk = 0; blk < 20u && src + 0x2Fu < raw_len; blk++) {
+        if (dst != src) {
+            uint32_t j;
+            for (j = 0; j < 0x2Fu; j++)
+                buf[dst + j] = buf[src + j];
+        }
+        dst += 0x2Fu;
+        src += 0x2Fu + 1u;
+    }
+    while (src < raw_len)
+        buf[dst++] = buf[src++];
+}
+
+static void api_test_ota(const char *const *a)
+{
+    (void)a;
+    struct rpc_tx *tx = &rpc_tx_static;
+    if (!udisk_mounted) {
+        udisk_need();
+        uint32_t w;
+        for (w = 0; w < 200u && !udisk_mounted; w++)
+            sleep_ms(50);
+    }
+    if (!udisk_mounted) {
+        rpc_http_json_ok(tx);
+        rpc_tx_key_int(tx, "rc", -99);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_str(tx, "err", "no disk");
+        rpc_http_json_end(tx);
+        return;
+    }
+    static uint8_t hdr[0x400];
+    FIL fil;
+    UINT br;
+    FRESULT fr = f_open(&fil, "MODD.FWS", FA_READ);
+    if (fr != FR_OK) {
+        fr = f_open(&fil, "UPDATE.FWS", FA_READ);
+    }
+    if (fr != FR_OK) {
+        rpc_http_json_ok(tx);
+        rpc_tx_key_int(tx, "rc", -98);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_str(tx, "err", "no file");
+        rpc_http_json_end(tx);
+        return;
+    }
+    int rc = 0;
+    if (f_read(&fil, hdr, 512, &br) != FR_OK || br != 512) rc = -1;
+    if (rc == 0 && (f_read(&fil, hdr + 512, 512, &br) != FR_OK || br != 512)) rc = -1;
+    f_close(&fil);
+    if (rc == 0)
+        test_ota_fwsc_strip(hdr, 1024);
+    rpc_http_json_ok(tx);
+    rpc_tx_key_int(tx, "b0", hdr[0]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "b1", hdr[1]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "b2", hdr[2]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "b3", hdr[3]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "b8", hdr[8]);
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "b9", hdr[9]);
+    if (rc == 0) {
+        test_ota_jl_enc(hdr, 0x40);
+        uint32_t nent = (uint32_t)hdr[8] | (uint32_t)hdr[9] << 8;
+        uint32_t hdr_crc = (uint32_t)hdr[0] | (uint32_t)hdr[1] << 8;
+        uint32_t calc_crc = test_ota_crc16(hdr + 2, 0x3E, 0);
+        uint32_t ent_s = (uint32_t)hdr[2] | (uint32_t)hdr[3] << 8;
+        uint32_t ent_c = nent <= 11u ? test_ota_crc16(hdr + 0x40, nent * 0x50u, 0) : 0;
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "nent", (int32_t)nent);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "hdr_crc", (int32_t)hdr_crc);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "calc_crc", (int32_t)calc_crc);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "ent_s", (int32_t)ent_s);
+        rpc_tx_char(tx, ',');
+        rpc_tx_key_int(tx, "ent_c", (int32_t)ent_c);
+        if (calc_crc != hdr_crc || nent == 0 || nent > 11u || ent_c != ent_s)
+            rc = -2;
+    }
+    rpc_tx_char(tx, ',');
+    rpc_tx_key_int(tx, "rc", rc);
+    rpc_http_json_end(tx);
+}
+
+#endif
+#endif
+
 /* ------------------------------------------------------------- routes --- */
 
 /* {name} matches one path segment, handed to the handler as a[i] in order; literal
@@ -1106,10 +1487,21 @@ static const struct {
 #ifdef CONFIG_DEBUG_FRAMEBUFFER
     { "/api/screenshot",                          api_screenshot },
 #endif
+#ifdef CONFIG_MIRROR
+    { "/mirror",                                  api_mirror_page },
+#endif
     { "/api/audio",                               api_audio },
     { "/api/engine",                              api_engine },
 #ifdef CONFIG_RPC_AUDIO_TAP
     { "/api/audio/capture",                       api_audio_capture },
+#endif
+#if defined(CONFIG_USB_AUDIO_HOST) && defined(CONFIG_EMU)
+    { "/api/usb/audio/ring",                      api_usb_audio_ring },
+    { "/api/usb/audio/ring/arm/{rate}/{depth}",   api_usb_audio_ring_arm },
+    { "/api/usb/audio/ring/disarm",               api_usb_audio_ring_disarm },
+#endif
+#ifdef CONFIG_USB_HOST
+    { "/api/usb/regs",                             api_usb_regs },
 #endif
 #ifdef CONFIG_FX_HOST
     { "/api/fx/slot",                             api_fx_slot },
@@ -1146,6 +1538,13 @@ static const struct {
     { "/api/mem/find/{hex}",                      api_mem_find },
     { "/api/mem/{addr}/{length}",                 api_mem_read },
 #endif
+    { "/api/led/{id}",                            api_led_test },
+    { "/api/led/fill/{to}",                      api_led_fill },
+#ifdef CONFIG_EMU
+#ifdef CONFIG_UDISK
+    { "/api/test/ota",                            api_test_ota },
+#endif
+#endif
 };
 
 #define API_MAXSEG 8u
@@ -1162,8 +1561,7 @@ static int api_seg_eq(const char *seg, const char *lit, uint32_t n)
     return seg[n] == '\0';
 }
 
-/* Reply to one GET: a route, 404 for an unknown path under /api or /modd, else the
- * discovery reply (/json/version). */
+/* Reply to one GET: a route, discovery JSON for / and /json/version, else 404. */
 static void api_ctl_route(const char *path)
 {
     static char buf[128];
@@ -1200,11 +1598,11 @@ static void api_ctl_route(const char *path)
             return;
         }
     }
-    if (nseg && (api_seg_eq(seg[0], "api", 3) || api_seg_eq(seg[0], "modd", 4))) {
-        rpc_http_error(404, "no such route (see /openapi.json)");
+    if (nseg == 0) {
+        api_json_version(arg);
         return;
     }
-    api_json_version(arg);
+    rpc_http_error(404, "no such route (see /openapi.json)");
 }
 
 #ifndef CONFIG_RPC_INPUT

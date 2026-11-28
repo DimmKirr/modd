@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
 /* Host test of the WiFi power state machine: the real firmware/src/net/net_need.c,
- * firmware/src/wifi/wifi_need.c and firmware/src/wifi/wifi_api.c, with every lower layer a stub
- * that counts its calls. wifi_api.c needs only those lower-layer names and a few register macros
+ * firmware/src/wifi/need.c and firmware/src/wifi/wifi.c, with every lower layer a stub
+ * that counts its calls. wifi.c needs only those lower-layer names and a few register macros
  * (defined as 0 here), so the whole file is included unchanged.
  *
  * Built twice: plain, and with -DTEST_DOCK (CONFIG_DOCK, a dock_active stub): then wifi_poll()
@@ -19,7 +19,7 @@
 static const void *volatile dock_active;
 #endif
 
-#include "../adapters/modd_wifi.h"
+#include "../contracts/modd_wifi.h"
 
 /* ---- stubs: settings, log, toasts ---- */
 static struct { uint8_t wifi_on; } sys_settings;
@@ -39,7 +39,7 @@ static int count_log(const char *s)
     return n;
 }
 
-/* ---- stubs: the layers below wifi_api.c, counted ---- */
+/* ---- stubs: the layers below wifi_wifi.c, counted ---- */
 enum { C_RTOS_INIT, C_RTOS_DEINIT, C_RF_INIT, C_RF_ARM, C_RF_DEINIT, C_SDIO_INIT, C_SDIO_QUIESCE,
        C_SDIO_DEINIT, C_SDIO_POLL, C_MAC_INIT, C_MAC_DEINIT, C_MAC_TIGHTEN, C_STA_INIT, C_STA_DEINIT,
        C_STA_POLL, C_STA_DISCONNECT, C_STA_SCAN, C_STA_CONNECT, C_STA_FIND, C_LWIP_INIT, C_LWIP_DEINIT,
@@ -104,8 +104,8 @@ static void wifi_wpa_init(const uint8_t *p, uint32_t pl, const uint8_t *s, uint3
 static void wifi_wpa_reset(void) { calls[C_WPA_RESET]++; }
 
 #include "net/net_need.c"
-#include "wifi/wifi_need.c"
-#include "wifi/wifi_api.c"
+#include "wifi/need.c"
+#include "wifi/wifi.c"
 
 static int fails;
 #define CHECK(c) do { if (!(c)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #c); } } while (0)

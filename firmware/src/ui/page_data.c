@@ -232,6 +232,8 @@ static void edit_read(edit_data_t *d)
 typedef struct {
     const char *fw_name;
     const char *fw_version;
+    const char *git_sha;
+    uint32_t build_time;
     uint32_t uptime_s;
 } about_data_t;
 
@@ -239,5 +241,7 @@ static void about_read(about_data_t *d)
 {
     d->fw_name    = CONFIG_FIRMWARE_NAME;
     d->fw_version = CONFIG_FIRMWARE_VERSION;
+    d->git_sha    = fw_meta.git_sha;
+    d->build_time = fw_meta.build_time;
     d->uptime_s   = fm1_ms / 1000u;
 }

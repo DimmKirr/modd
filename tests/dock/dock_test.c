@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Dmitry Kireev (@DimmKirr)
-/* Host test for the pure part of the dock adapter (firmware/adapters/modd_dock.h):
+/* Host test for the pure part of the dock adapter (firmware/contracts/modd_dock.h):
  * header checks, CRC and relocation of a synthetic module image. */
 #include <stdio.h>
 #include <stdint.h>

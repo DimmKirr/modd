@@ -36,7 +36,7 @@ def test_wifi_mutually_exclusive_with_ble(kconf):
 
 
 def test_wifi_requires_sys_menu(kconf):
-    """wifi_need.c / wifi_sta.c read sys_settings.wifi_on, which exists only with SYS_MENU."""
+    """wifi/need.c / wifi/sta.c read sys_settings.wifi_on, which exists only with SYS_MENU."""
     w = kconf.syms['WIFI']
     assert 'SYS_MENU' in expr_str(w.direct_dep)
     kconf.syms['INPUT'].set_value('y')

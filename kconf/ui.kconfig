@@ -120,6 +120,39 @@ config PAGE_DEMO
       The demo/test page in VIEW_CONN. Disable to remove it from
       the page cycle.
 
+config LED_ANIM_FELUCCA
+    bool "Felucca LED animations"
+    default n
+    depends on INPUT && HAL_INPUT_MELODEE
+    help
+      Felucca's per-LED animations on the panel LEDs: a power-on sweep and an
+      idle animation. The pictures are upstream's
+      firmware/bsp/boards/fm1/fm1_led_anim.h (felucca-bsp, MPL-2.0), included
+      unchanged. Its frame driver lives inside Felucca's input scan, so
+      firmware/ports/felucca/leds/led_anim_drv_modd.c draws it onto Melodee's
+      LED arrays (each LED by sigma-delta, levels 0..64 of 64 frames).
+
+config LED_ANIM_BOOT
+    bool "Power-on LED sweep"
+    default y
+    depends on LED_ANIM_FELUCCA
+    help
+      Play the sweep once at boot. A key or button press ends it.
+
+config LED_ANIM_IDLE
+    bool "Idle LED animation"
+    default y
+    depends on LED_ANIM_FELUCCA
+    help
+      Play the idle animation after a time without panel input, while the
+      transport is stopped. Any key, button or knob ends it.
+
+config LED_ANIM_IDLE_MS
+    int "Idle time before the LED animation (ms)"
+    default 60000
+    range 1000 3600000
+    depends on LED_ANIM_IDLE
+
 config GEN_MELODEE_UI
     bool
     help

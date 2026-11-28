@@ -1,0 +1,116 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+18:11:27.039	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	test			start
+18:11:27.057	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	exec	0.014		xdotool search --name ^FM-1 -> exit 1
+18:11:27.059	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 41953:9222
+18:11:27.062	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	0.000		GET /api/info -> URLError
+18:11:27.107	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			forward: host:41953 -> guest:9222
+18:11:27.109	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+18:11:27.109	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+18:11:27.109	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+18:11:27.109	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+18:11:27.110	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+18:11:27.110	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+18:11:27.110	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+18:11:27.110	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+18:11:27.110	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+18:11:27.110	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+18:11:27.111	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+18:11:27.111	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			MIDI in: MIDI support could not be initialized
+18:11:27.127	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+18:11:27.127	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+18:11:29.115	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			[  2.1 s] 0.98x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:30.065	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	2.002		GET /api/info -> TimeoutError
+18:11:31.116	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			[  4.1 s] 1.11x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:33.068	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	2.003		GET /api/info -> TimeoutError
+18:11:33.119	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			[  6.1 s] 1.15x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:34.087	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	0.018		GET /api/info -> 200, 94 B
+18:11:34.088	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	emu	7.026		firmware API up on port 41953
+18:11:34.088	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	test	7.048		setup passed
+18:11:34.106	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	0.017		GET /modd/wx -> 200, 262 B
+18:11:34.145	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	0.039		GET /api/page -> 200, 383 B
+18:11:35.094	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	0.949		GET /api/screenshot -> 200, 153654 B
+18:11:35.120	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:36.109	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	0.982		GET /api/screenshot -> 200, 153654 B
+18:11:36.134	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	0.013		GET /api/page -> 200, 383 B
+18:11:36.164	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	0.018		GET /api/info -> 200, 94 B
+18:11:36.184	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	0.019		GET /api/info -> 200, 94 B
+18:11:36.204	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	http	0.020		GET /api/page -> 200, 383 B
+18:11:36.207	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	test	2.118		call passed
+18:11:36.207	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	test	0.000		teardown passed
+18:11:36.207	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_renders	test	9.169		end passed; 13 io, 6.1 s in io, 0.0 s throttled
+18:11:36.209	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	test			start
+18:11:36.209	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	test	0.000		setup passed
+18:11:36.224	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.015		GET /modd/wx -> 200, 379 B
+18:11:36.267	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.042		GET /api/page -> 200, 383 B
+18:11:36.285	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.017		GET /api/page -> 200, 383 B
+18:11:37.123	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:37.128	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.843		GET /api/screenshot -> 200, 153654 B
+18:11:37.164	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.018		GET /api/page -> 200, 383 B
+18:11:37.195	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.022		GET /api/input/button/home/tap/80 -> 200, 48 B
+18:11:37.345	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.019		GET /api/input -> 200, 137 B
+18:11:37.364	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.020		GET /api/page -> 200, 451 B
+18:11:38.396	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	1.031		GET /api/screenshot -> 200, 153654 B
+18:11:39.127	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	fm1-live			[ 12.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:39.422	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	1.005		GET /api/screenshot -> 200, 153654 B
+18:11:39.454	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.015		GET /api/page -> 200, 451 B
+18:11:39.474	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.013		GET /modd/wx -> 200, 262 B
+18:11:39.518	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.044		GET /api/page -> 200, 383 B
+18:11:40.435	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.917		GET /api/screenshot -> 200, 153654 B
+18:11:40.474	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.013		GET /api/page -> 200, 383 B
+18:11:41.128	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:41.451	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.976		GET /api/screenshot -> 200, 153654 B
+18:11:41.485	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.022		GET /api/page -> 200, 383 B
+18:11:41.514	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.016		GET /api/info -> 200, 95 B
+18:11:41.534	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.020		GET /api/info -> 200, 95 B
+18:11:41.555	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	http	0.020		GET /api/page -> 200, 383 B
+18:11:41.558	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	test	5.348		call passed
+18:11:41.558	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	test	0.000		teardown passed
+18:11:41.558	tests/net/api_weather_test.py::TestWeatherPage::test_weather_page_revisit	test	5.349		end passed; 20 io, 5.1 s in io, 0.0 s throttled
+18:11:41.560	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	test			start
+18:11:41.560	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	test	0.000		setup passed
+18:11:41.575	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.015		GET /modd/wx -> 200, 379 B
+18:11:41.619	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.044		GET /api/page -> 200, 383 B
+18:11:41.635	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.016		GET /api/page -> 200, 383 B
+18:11:42.468	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.833		GET /api/screenshot -> 200, 153654 B
+18:11:42.505	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.022		GET /api/page -> 200, 383 B
+18:11:42.544	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.033		GET /api/log -> 200, 8994 B
+18:11:42.564	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.019		GET /api/input/button/play/tap/80 -> 200, 48 B
+18:11:43.131	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	fm1-live			[ 16.1 s] 1.03x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:45.134	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	fm1-live			[ 18.1 s] 0.96x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:45.357	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	2.663		GET /api/input -> 200, 137 B
+18:11:47.136	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	fm1-live			[ 20.1 s] 0.98x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:48.454	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	3.097		GET /api/page -> 200, 384 B
+18:11:49.140	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	fm1-live			[ 22.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:49.464	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	1.010		GET /api/screenshot -> 200, 153654 B
+18:11:49.523	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.040		GET /api/log -> 200, 8511 B
+18:11:49.544	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.021		GET /api/page -> 200, 384 B
+18:11:50.491	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.946		GET /api/screenshot -> 200, 153654 B
+18:11:50.514	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.016		GET /api/page -> 200, 384 B
+18:11:50.543	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.018		GET /api/info -> 200, 95 B
+18:11:50.564	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.020		GET /api/info -> 200, 95 B
+18:11:50.585	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	http	0.021		GET /api/page -> 200, 384 B
+18:11:50.588	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	test	9.027		call passed
+18:11:50.588	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	test	0.000		teardown passed
+18:11:50.588	tests/net/api_weather_test.py::TestWeatherPage::test_weather_play_button_refresh	test	9.028		end passed; 17 io, 8.8 s in io, 0.0 s throttled
+18:11:50.590	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	test			start
+18:11:50.591	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	test	0.000		setup passed
+18:11:50.604	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.013		GET /modd/home -> 200, 447 B
+18:11:50.657	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.053		GET /api/page -> 200, 451 B
+18:11:51.142	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	fm1-live			[ 24.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:51.513	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.856		GET /api/screenshot -> 200, 153654 B
+18:11:51.572	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.032		GET /api/log -> 200, 8340 B
+18:11:51.594	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.021		GET /modd/wx -> 200, 263 B
+18:11:51.634	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.040		GET /api/page -> 200, 384 B
+18:11:52.533	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.898		GET /api/screenshot -> 200, 153654 B
+18:11:52.574	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.021		GET /api/page -> 200, 384 B
+18:11:52.612	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.038		GET /api/log -> 200, 8277 B
+18:11:53.144	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	fm1-live			[ 26.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+18:11:53.556	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.944		GET /api/screenshot -> 200, 153654 B
+18:11:53.594	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.020		GET /api/page -> 200, 384 B
+18:11:53.634	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.018		GET /api/info -> 200, 95 B
+18:11:53.653	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.019		GET /api/info -> 200, 95 B
+18:11:53.675	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	http	0.021		GET /api/page -> 200, 384 B
+18:11:53.678	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	test	3.087		call passed
+18:11:53.680	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	emu			fm1-live stopped
+18:11:53.680	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	test	0.002		teardown passed
+18:11:53.680	tests/net/api_weather_test.py::TestWeatherPage::test_weather_shows_data_over_the_network	test	3.090		end passed; 14 io, 3.0 s in io, 0.0 s throttled

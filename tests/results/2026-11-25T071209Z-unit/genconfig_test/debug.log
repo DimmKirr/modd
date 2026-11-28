@@ -1,0 +1,110 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+07:12:21.109	tests/build/genconfig_test.py::test_kconfig_parses	test			start
+07:12:21.111	tests/build/genconfig_test.py::test_kconfig_parses	test	0.000		setup passed
+07:12:21.173	tests/build/genconfig_test.py::test_kconfig_parses	exec	0.062		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); print(len(k.syms), "symbols") -> exit 1
+07:12:21.180	tests/build/genconfig_test.py::test_kconfig_parses	test	0.064		call failed: tests/build/genconfig_test.py:41: AssertionError
+07:12:21.180	tests/build/genconfig_test.py::test_kconfig_parses	test	0.000		teardown passed
+07:12:21.180	tests/build/genconfig_test.py::test_kconfig_parses	test	0.071		end failed; 1 io, 0.1 s in io, 0.0 s throttled
+07:12:21.182	tests/build/genconfig_test.py::test_genconfig_writes_header	test			start
+07:12:21.182	tests/build/genconfig_test.py::test_genconfig_writes_header	test	0.000		setup passed
+07:12:21.184	tests/build/genconfig_test.py::test_genconfig_writes_header	exec	0.001		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3 /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-25T071209Z-unit/genconfig_test/header_modd -> FileNotFoundError: [Errno 2] No such file or directory: '/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3'
+07:12:21.204	tests/build/genconfig_test.py::test_genconfig_writes_header	test	0.002		call failed: /home/dmitry/.local/share/mise/installs/python/3.12.13/lib/python3.12/subprocess.py:1955: FileNotFoundError
+07:12:21.204	tests/build/genconfig_test.py::test_genconfig_writes_header	test	0.000		teardown passed
+07:12:21.204	tests/build/genconfig_test.py::test_genconfig_writes_header	test	0.023		end failed; 1 io, 0.0 s in io, 0.0 s throttled
+07:12:21.206	tests/build/genconfig_test.py::test_menuconfig_imports_library	test			start
+07:12:21.206	tests/build/genconfig_test.py::test_menuconfig_imports_library	test	0.000		setup passed
+07:12:21.207	tests/build/genconfig_test.py::test_menuconfig_imports_library	exec	0.001		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3 -c import runpy; m = runpy.run_path('tools/build/menuconfig.py'); assert m['menuconfig'].__module__ == 'menuconfig' -> FileNotFoundError: [Errno 2] No such file or directory: '/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3'
+07:12:21.227	tests/build/genconfig_test.py::test_menuconfig_imports_library	test	0.001		call failed: /home/dmitry/.local/share/mise/installs/python/3.12.13/lib/python3.12/subprocess.py:1955: FileNotFoundError
+07:12:21.227	tests/build/genconfig_test.py::test_menuconfig_imports_library	test	0.000		teardown passed
+07:12:21.227	tests/build/genconfig_test.py::test_menuconfig_imports_library	test	0.022		end failed; 1 io, 0.0 s in io, 0.0 s throttled
+07:12:21.229	tests/build/genconfig_test.py::test_genconfig_writes_manifest	test			start
+07:12:21.229	tests/build/genconfig_test.py::test_genconfig_writes_manifest	test	0.000		setup passed
+07:12:21.230	tests/build/genconfig_test.py::test_genconfig_writes_manifest	exec	0.001		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3 /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-25T071209Z-unit/genconfig_test/manifest_modd -> FileNotFoundError: [Errno 2] No such file or directory: '/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3'
+07:12:21.251	tests/build/genconfig_test.py::test_genconfig_writes_manifest	test	0.001		call failed: /home/dmitry/.local/share/mise/installs/python/3.12.13/lib/python3.12/subprocess.py:1955: FileNotFoundError
+07:12:21.251	tests/build/genconfig_test.py::test_genconfig_writes_manifest	test	0.000		teardown passed
+07:12:21.251	tests/build/genconfig_test.py::test_genconfig_writes_manifest	test	0.022		end failed; 1 io, 0.0 s in io, 0.0 s throttled
+07:12:21.252	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	test			start
+07:12:21.252	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	test	0.000		setup passed
+07:12:21.311	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	exec	0.059		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/melodee_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("melodee:", enabled, "enabled") -> exit 1
+07:12:21.316	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	test	0.060		call failed: tests/build/genconfig_test.py:112: AssertionError
+07:12:21.316	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	test	0.000		teardown passed
+07:12:21.316	tests/build/genconfig_test.py::test_defconfig_loads[melodee]	test	0.064		end failed; 1 io, 0.1 s in io, 0.0 s throttled
+07:12:21.317	tests/build/genconfig_test.py::test_defconfig_loads[modd]	test			start
+07:12:21.317	tests/build/genconfig_test.py::test_defconfig_loads[modd]	test	0.000		setup passed
+07:12:21.376	tests/build/genconfig_test.py::test_defconfig_loads[modd]	exec	0.058		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/modd_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("modd:", enabled, "enabled") -> exit 1
+07:12:21.379	tests/build/genconfig_test.py::test_defconfig_loads[modd]	test	0.060		call failed: tests/build/genconfig_test.py:112: AssertionError
+07:12:21.380	tests/build/genconfig_test.py::test_defconfig_loads[modd]	test	0.000		teardown passed
+07:12:21.380	tests/build/genconfig_test.py::test_defconfig_loads[modd]	test	0.063		end failed; 1 io, 0.1 s in io, 0.0 s throttled
+07:12:21.381	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	test			start
+07:12:21.381	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	test	0.000		setup passed
+07:12:21.441	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	exec	0.059		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/modd_emu_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("modd_emu:", enabled, "enabled") -> exit 1
+07:12:21.445	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	test	0.061		call failed: tests/build/genconfig_test.py:112: AssertionError
+07:12:21.445	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	test	0.000		teardown passed
+07:12:21.445	tests/build/genconfig_test.py::test_defconfig_loads[modd_emu]	test	0.064		end failed; 1 io, 0.1 s in io, 0.0 s throttled
+07:12:21.446	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	test			start
+07:12:21.446	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	test	0.000		setup passed
+07:12:21.509	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	exec	0.063		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/modd_felucca_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("modd_felucca:", enabled, "enabled") -> exit 1
+07:12:21.514	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	test	0.065		call failed: tests/build/genconfig_test.py:112: AssertionError
+07:12:21.514	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	test	0.000		teardown passed
+07:12:21.515	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca]	test	0.068		end failed; 1 io, 0.1 s in io, 0.0 s throttled
+07:12:21.516	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	test			start
+07:12:21.517	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	test	0.000		setup passed
+07:12:21.581	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	exec	0.065		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/modd_felucca_emu_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("modd_felucca_emu:", enabled, "enabled") -> exit 1
+07:12:21.586	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	test	0.066		call failed: tests/build/genconfig_test.py:112: AssertionError
+07:12:21.586	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	test	0.000		teardown passed
+07:12:21.586	tests/build/genconfig_test.py::test_defconfig_loads[modd_felucca_emu]	test	0.070		end failed; 1 io, 0.1 s in io, 0.0 s throttled
+07:12:21.587	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	test			start
+07:12:21.587	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	test	0.000		setup passed
+07:12:21.648	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	exec	0.060		python3 -c from kconfiglib import Kconfig; k = Kconfig("/MODD/Users/dmitry/dev/modd-fm/modd/Kconfig"); k.load_config("/MODD/Users/dmitry/dev/modd-fm/modd/configs/sloop_defconfig"); enabled = sum(1 for s in k.syms.values() if s.str_value == "y"); print("sloop:", enabled, "enabled") -> exit 1
+07:12:21.652	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	test	0.062		call failed: tests/build/genconfig_test.py:112: AssertionError
+07:12:21.652	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	test	0.000		teardown passed
+07:12:21.652	tests/build/genconfig_test.py::test_defconfig_loads[sloop]	test	0.065		end failed; 1 io, 0.1 s in io, 0.0 s throttled
+07:12:21.653	tests/build/genconfig_test.py::test_manifest_components[modd]	test			start
+07:12:21.654	tests/build/genconfig_test.py::test_manifest_components[modd]	test	0.000		setup passed
+07:12:21.655	tests/build/genconfig_test.py::test_manifest_components[modd]	exec	0.001		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3 /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-25T071209Z-unit/genconfig_test/manifest_modd -> FileNotFoundError: [Errno 2] No such file or directory: '/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3'
+07:12:21.676	tests/build/genconfig_test.py::test_manifest_components[modd]	test	0.001		call failed: /home/dmitry/.local/share/mise/installs/python/3.12.13/lib/python3.12/subprocess.py:1955: FileNotFoundError
+07:12:21.676	tests/build/genconfig_test.py::test_manifest_components[modd]	test	0.000		teardown passed
+07:12:21.676	tests/build/genconfig_test.py::test_manifest_components[modd]	test	0.023		end failed; 1 io, 0.0 s in io, 0.0 s throttled
+07:12:21.678	tests/build/genconfig_test.py::test_usb_host_depends_on_usb	test			start
+07:12:21.678	tests/build/genconfig_test.py::test_usb_host_depends_on_usb	test	0.000		setup passed
+07:12:21.698	tests/build/genconfig_test.py::test_usb_host_depends_on_usb	test	0.020		call passed
+07:12:21.698	tests/build/genconfig_test.py::test_usb_host_depends_on_usb	test	0.000		teardown passed
+07:12:21.698	tests/build/genconfig_test.py::test_usb_host_depends_on_usb	test	0.021		end passed; 0 io, 0.0 s in io, 0.0 s throttled
+07:12:21.700	tests/build/genconfig_test.py::test_lwip_is_selectable_without_wifi	test			start
+07:12:21.700	tests/build/genconfig_test.py::test_lwip_is_selectable_without_wifi	test	0.000		setup passed
+07:12:21.716	tests/build/genconfig_test.py::test_lwip_is_selectable_without_wifi	test	0.016		call passed
+07:12:21.717	tests/build/genconfig_test.py::test_lwip_is_selectable_without_wifi	test	0.000		teardown passed
+07:12:21.717	tests/build/genconfig_test.py::test_lwip_is_selectable_without_wifi	test	0.017		end passed; 0 io, 0.0 s in io, 0.0 s throttled
+07:12:21.718	tests/build/genconfig_test.py::test_wifi_lwip_selects_lwip	test			start
+07:12:21.718	tests/build/genconfig_test.py::test_wifi_lwip_selects_lwip	test	0.000		setup passed
+07:12:21.750	tests/build/genconfig_test.py::test_wifi_lwip_selects_lwip	test	0.032		call passed
+07:12:21.750	tests/build/genconfig_test.py::test_wifi_lwip_selects_lwip	test	0.000		teardown passed
+07:12:21.750	tests/build/genconfig_test.py::test_wifi_lwip_selects_lwip	test	0.032		end passed; 0 io, 0.0 s in io, 0.0 s throttled
+07:12:21.751	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	test			start
+07:12:21.751	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	test	0.000		setup passed
+07:12:21.753	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	exec	0.000		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3 /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-25T071209Z-unit/genconfig_test/manifest_modd_wifi -> FileNotFoundError: [Errno 2] No such file or directory: '/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3'
+07:12:21.775	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	test	0.001		call failed: /home/dmitry/.local/share/mise/installs/python/3.12.13/lib/python3.12/subprocess.py:1955: FileNotFoundError
+07:12:21.775	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	test	0.000		teardown passed
+07:12:21.775	tests/build/genconfig_test.py::test_wifi_defconfig_manifest_gains_net_lwip	test	0.024		end failed; 1 io, 0.0 s in io, 0.0 s throttled
+07:12:21.777	tests/build/genconfig_test.py::test_rpc_and_llm_follow_lwip_not_wifi	test			start
+07:12:21.777	tests/build/genconfig_test.py::test_rpc_and_llm_follow_lwip_not_wifi	test	0.000		setup passed
+07:12:21.795	tests/build/genconfig_test.py::test_rpc_and_llm_follow_lwip_not_wifi	test	0.018		call passed
+07:12:21.795	tests/build/genconfig_test.py::test_rpc_and_llm_follow_lwip_not_wifi	test	0.000		teardown passed
+07:12:21.795	tests/build/genconfig_test.py::test_rpc_and_llm_follow_lwip_not_wifi	test	0.019		end passed; 0 io, 0.0 s in io, 0.0 s throttled
+07:12:21.796	tests/build/genconfig_test.py::test_usb_net_selects_lwip_and_needs_usb_host	test			start
+07:12:21.797	tests/build/genconfig_test.py::test_usb_net_selects_lwip_and_needs_usb_host	test	0.000		setup passed
+07:12:21.814	tests/build/genconfig_test.py::test_usb_net_selects_lwip_and_needs_usb_host	test	0.018		call passed
+07:12:21.815	tests/build/genconfig_test.py::test_usb_net_selects_lwip_and_needs_usb_host	test	0.000		teardown passed
+07:12:21.815	tests/build/genconfig_test.py::test_usb_net_selects_lwip_and_needs_usb_host	test	0.018		end passed; 0 io, 0.0 s in io, 0.0 s throttled
+07:12:21.816	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	test			start
+07:12:21.816	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	test	0.000		setup passed
+07:12:21.818	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	exec	0.001		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3 /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-25T071209Z-unit/genconfig_test/masked_secrets -> FileNotFoundError: [Errno 2] No such file or directory: '/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3'
+07:12:21.839	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	test	0.002		call failed: /home/dmitry/.local/share/mise/installs/python/3.12.13/lib/python3.12/subprocess.py:1955: FileNotFoundError
+07:12:21.840	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	test	0.000		teardown passed
+07:12:21.840	tests/build/genconfig_test.py::test_secret_symbols_are_masked_for_debug_dumps	test	0.024		end failed; 1 io, 0.0 s in io, 0.0 s throttled
+07:12:21.841	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	test			start
+07:12:21.841	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	test	0.000		setup passed
+07:12:21.843	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	exec	0.001		/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3 /MODD/Users/dmitry/dev/modd-fm/modd/tools/build/genconfig.py --defconfig modd --outdir /MODD/Users/dmitry/dev/modd-fm/modd/tests/results/2026-11-25T071209Z-unit/genconfig_test/emu_wifi_modd -> FileNotFoundError: [Errno 2] No such file or directory: '/MODD/Users/dmitry/dev/modd-fm/modd/.venv/bin/python3'
+07:12:21.863	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	test	0.002		call failed: /home/dmitry/.local/share/mise/installs/python/3.12.13/lib/python3.12/subprocess.py:1955: FileNotFoundError
+07:12:21.864	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	test	0.000		teardown passed
+07:12:21.864	tests/build/genconfig_test.py::test_emulator_build_keeps_its_wifi_credentials	test	0.023		end failed; 1 io, 0.0 s in io, 0.0 s throttled

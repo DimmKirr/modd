@@ -78,7 +78,7 @@ No upstream uses a flat encoder-scroll page list. Button selects view, encoder w
 ## Framework Structure
 
 ```
-firmware/adapters/
+firmware/contracts/
   modd_page.h            # page contract (modd_page_t)
   modd_modal.h           # modal overlay contract (modd_modal_t)
   modd_controls.h        # button/encoder ID constants
@@ -185,7 +185,7 @@ A shell may choose to render VIEW_SETTINGS as an overlay (matching upstream visu
 
 A modal is a temporary UI overlay that intercepts all shell input before the active page receives it. The modal draws on top of the page content (cards, graph, footer) while the header remains from the underlying page.
 
-The contract is defined in `firmware/adapters/modd_modal.h`:
+The contract is defined in `firmware/contracts/modd_modal.h`:
 
 ```c
 typedef struct modd_modal {
@@ -240,7 +240,7 @@ The callback `on_done(buf, ok)` receives the buffer and whether the user confirm
 
 ## Page Definition
 
-Extends the existing `modd_page_t` (defined in `firmware/adapters/modd_page.h`) with a `view` field and optional `visible` callback:
+Extends the existing `modd_page_t` (defined in `firmware/contracts/modd_page.h`) with a `view` field and optional `visible` callback:
 
 ```c
 typedef struct modd_page {

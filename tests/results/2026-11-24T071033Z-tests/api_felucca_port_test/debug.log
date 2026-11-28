@@ -1,0 +1,363 @@
+time_utc	test	kind	seconds	throttle_wait	detail
+07:10:33.453	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	test			start
+07:10:33.462	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	exec	0.005		xdotool search --name ^FM-1 -> exit 1
+07:10:33.463	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 40541:9222
+07:10:33.484	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.020		GET /api/info -> URLError
+07:10:33.512	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			forward: host:40541 -> guest:9222
+07:10:33.513	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+07:10:33.513	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+07:10:33.513	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+07:10:33.513	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+07:10:33.513	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+07:10:33.514	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+07:10:33.514	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+07:10:33.514	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+07:10:33.514	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+07:10:33.514	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+07:10:33.515	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+07:10:33.515	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			MIDI in: MIDI support could not be initialized
+07:10:33.525	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+07:10:33.525	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+07:10:35.520	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			[  2.1 s] 1.02x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:36.490	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	2.005		GET /api/info -> TimeoutError
+07:10:37.512	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.019		GET /api/info -> 200, 94 B
+07:10:37.512	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	emu	4.048		firmware API up on port 40541
+07:10:37.513	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	test	4.058		setup passed
+07:10:37.522	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:37.530	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.017		GET /modd/home -> 200, 442 B
+07:10:37.578	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.048		GET /api/page -> 200, 446 B
+07:10:38.527	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.890		GET /api/screenshot -> 200, 153654 B
+07:10:38.588	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.018		GET /api/info -> 200, 94 B
+07:10:38.658	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.015		GET /api/input -> 200, 136 B
+07:10:38.678	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.020		GET /modd/FX -> 200, 100 B
+07:10:38.718	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.040		GET /api/page -> 200, 212 B
+07:10:39.526	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:39.562	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.845		GET /api/screenshot -> 200, 153654 B
+07:10:39.608	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.015		GET /api/info -> 200, 94 B
+07:10:39.627	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.019		GET /api/page -> 200, 212 B
+07:10:40.593	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.966		GET /api/screenshot -> 200, 153654 B
+07:10:40.628	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.014		GET /api/input/enc/knob1/3 -> 200, 47 B
+07:10:40.707	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.019		GET /api/input -> 200, 136 B
+07:10:40.728	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.020		GET /api/info -> 200, 94 B
+07:10:40.748	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.020		GET /api/input/enc/knob2/3 -> 200, 47 B
+07:10:40.817	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.015		GET /api/input -> 200, 136 B
+07:10:40.837	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.020		GET /api/info -> 200, 94 B
+07:10:40.857	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.020		GET /api/input/enc/knob3/3 -> 200, 47 B
+07:10:40.928	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.019		GET /api/input -> 200, 136 B
+07:10:40.947	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.019		GET /api/info -> 200, 94 B
+07:10:40.967	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.020		GET /api/input/enc/knob4/3 -> 200, 47 B
+07:10:41.037	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.019		GET /api/input -> 200, 136 B
+07:10:41.058	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.020		GET /api/info -> 200, 94 B
+07:10:41.528	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:42.123	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	1.065		GET /api/screenshot -> 200, 153654 B
+07:10:42.167	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.017		GET /api/info -> 200, 94 B
+07:10:42.188	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.021		GET /api/page -> 200, 212 B
+07:10:43.159	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	http	0.969		GET /api/screenshot -> 200, 153654 B
+07:10:43.181	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	test	5.668		call passed
+07:10:43.182	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	test	0.000		teardown passed
+07:10:43.182	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dist_knob	test	9.729		end passed; 31 io, 7.2 s in io, 0.0 s throttled
+07:10:43.184	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	test			start
+07:10:43.184	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	test	0.000		setup passed
+07:10:43.198	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.013		GET /modd/home -> 200, 442 B
+07:10:43.238	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.040		GET /api/page -> 200, 446 B
+07:10:43.531	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:44.186	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.948		GET /api/screenshot -> 200, 153654 B
+07:10:44.218	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.012		GET /api/info -> 200, 95 B
+07:10:44.287	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.019		GET /api/input -> 200, 137 B
+07:10:44.308	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.020		GET /modd/DLY -> 200, 99 B
+07:10:44.348	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.040		GET /api/page -> 200, 218 B
+07:10:45.214	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.866		GET /api/screenshot -> 200, 153654 B
+07:10:45.257	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.021		GET /api/info -> 200, 95 B
+07:10:45.278	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.021		GET /api/page -> 200, 218 B
+07:10:45.532	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	fm1-live			[ 12.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:46.242	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.963		GET /api/screenshot -> 200, 153654 B
+07:10:46.287	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.019		GET /api/input/enc/knob1/3 -> 200, 48 B
+07:10:46.358	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.020		GET /api/input -> 200, 137 B
+07:10:46.378	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.019		GET /api/info -> 200, 95 B
+07:10:46.397	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.019		GET /api/input/enc/knob2/3 -> 200, 48 B
+07:10:46.468	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.020		GET /api/input -> 200, 137 B
+07:10:46.488	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.019		GET /api/info -> 200, 95 B
+07:10:46.508	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.020		GET /api/input/enc/knob3/3 -> 200, 48 B
+07:10:46.577	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.018		GET /api/input -> 200, 137 B
+07:10:46.598	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.020		GET /api/info -> 200, 95 B
+07:10:46.617	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.019		GET /api/input/enc/knob4/3 -> 200, 48 B
+07:10:46.688	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.020		GET /api/input -> 200, 137 B
+07:10:46.707	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.019		GET /api/info -> 200, 95 B
+07:10:47.535	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:47.771	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	1.064		GET /api/screenshot -> 200, 153654 B
+07:10:47.808	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.015		GET /api/info -> 200, 95 B
+07:10:47.827	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.019		GET /api/page -> 200, 218 B
+07:10:48.809	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	http	0.981		GET /api/screenshot -> 200, 153654 B
+07:10:48.832	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	test	5.648		call passed
+07:10:48.832	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	test	0.000		teardown passed
+07:10:48.833	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_dly_dtime	test	5.649		end passed; 27 io, 5.3 s in io, 0.0 s throttled
+07:10:48.834	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	test			start
+07:10:48.835	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	test	0.000		setup passed
+07:10:48.849	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.014		GET /modd/home -> 200, 442 B
+07:10:48.896	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.047		GET /api/page -> 200, 446 B
+07:10:49.538	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	fm1-live			[ 16.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:49.836	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.939		GET /api/screenshot -> 200, 153654 B
+07:10:49.879	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.013		GET /api/info -> 200, 95 B
+07:10:49.947	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.017		GET /api/input -> 200, 137 B
+07:10:49.968	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /modd/home -> 200, 442 B
+07:10:50.014	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.046		GET /api/page -> 200, 446 B
+07:10:50.027	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.013		GET /api/info -> 200, 95 B
+07:10:50.097	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.018		GET /api/input -> 200, 137 B
+07:10:50.118	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.021		GET /api/input/button/fx/tap/80 -> 200, 46 B
+07:10:50.267	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.017		GET /api/input -> 200, 137 B
+07:10:50.287	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/info -> 200, 95 B
+07:10:50.619	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.021		GET /api/page -> 200, 218 B
+07:10:51.539	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	fm1-live			[ 18.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:51.639	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	1.019		GET /api/screenshot -> 200, 153654 B
+07:10:51.678	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.021		GET /api/input/button/fx/tap/80 -> 200, 46 B
+07:10:51.827	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.018		GET /api/input -> 200, 137 B
+07:10:51.848	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/info -> 200, 95 B
+07:10:52.168	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.018		GET /api/page -> 200, 225 B
+07:10:53.186	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	1.017		GET /api/screenshot -> 200, 153654 B
+07:10:53.228	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/input/button/fx/tap/80 -> 200, 46 B
+07:10:53.378	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.015		GET /api/input -> 200, 137 B
+07:10:53.398	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/info -> 200, 95 B
+07:10:53.541	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	fm1-live			[ 20.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:53.718	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.018		GET /api/page -> 200, 224 B
+07:10:54.728	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	1.010		GET /api/screenshot -> 200, 153654 B
+07:10:54.767	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.015		GET /api/input/button/fx/tap/80 -> 200, 46 B
+07:10:54.918	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.019		GET /api/input -> 200, 137 B
+07:10:54.937	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.019		GET /api/info -> 200, 95 B
+07:10:55.257	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.019		GET /api/page -> 200, 212 B
+07:10:55.541	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	fm1-live			[ 22.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:56.278	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	1.020		GET /api/screenshot -> 200, 153654 B
+07:10:56.318	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/input/button/fx/tap/80 -> 200, 46 B
+07:10:56.467	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.017		GET /api/input -> 200, 137 B
+07:10:56.488	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/info -> 200, 95 B
+07:10:56.809	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/page -> 200, 221 B
+07:10:57.542	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	fm1-live			[ 24.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:57.822	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	1.012		GET /api/screenshot -> 200, 153654 B
+07:10:57.867	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.017		GET /api/input/button/fx/tap/80 -> 200, 46 B
+07:10:58.018	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/input -> 200, 137 B
+07:10:58.038	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/info -> 200, 95 B
+07:10:58.359	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.019		GET /api/page -> 200, 340 B
+07:10:59.380	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	1.021		GET /api/screenshot -> 200, 153654 B
+07:10:59.418	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.016		GET /api/input/button/fx/tap/80 -> 200, 46 B
+07:10:59.545	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	fm1-live			[ 26.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:10:59.567	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.019		GET /api/input -> 200, 137 B
+07:10:59.588	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/info -> 200, 95 B
+07:10:59.908	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.019		GET /api/page -> 200, 209 B
+07:11:00.921	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	1.011		GET /api/screenshot -> 200, 153654 B
+07:11:00.967	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/input/button/fx/tap/80 -> 200, 46 B
+07:11:01.117	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.015		GET /api/input -> 200, 137 B
+07:11:01.138	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.021		GET /api/info -> 200, 95 B
+07:11:01.458	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.019		GET /api/page -> 200, 218 B
+07:11:01.548	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	fm1-live			[ 28.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:02.475	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	1.017		GET /api/screenshot -> 200, 153654 B
+07:11:02.517	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.017		GET /api/input/button/fx/tap/80 -> 200, 46 B
+07:11:02.667	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.019		GET /api/input -> 200, 137 B
+07:11:02.687	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/info -> 200, 95 B
+07:11:03.008	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.019		GET /api/page -> 200, 225 B
+07:11:03.549	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	fm1-live			[ 30.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:04.029	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	1.021		GET /api/screenshot -> 200, 153654 B
+07:11:04.058	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.012		GET /api/input/button/fx/tap/80 -> 200, 46 B
+07:11:04.207	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.018		GET /api/input -> 200, 137 B
+07:11:04.227	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.019		GET /api/info -> 200, 95 B
+07:11:04.548	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.021		GET /api/page -> 200, 224 B
+07:11:05.552	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	fm1-live			[ 32.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:05.568	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	1.020		GET /api/screenshot -> 200, 153654 B
+07:11:05.608	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.014		GET /api/info -> 200, 95 B
+07:11:05.628	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.020		GET /api/page -> 200, 224 B
+07:11:06.602	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	http	0.973		GET /api/screenshot -> 200, 153654 B
+07:11:06.628	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	test	17.793		call passed
+07:11:06.629	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	test	0.000		teardown passed
+07:11:06.629	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_fx_cycles_seven_pages	test	17.794		end passed; 62 io, 13.1 s in io, 0.0 s throttled
+07:11:06.631	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	test			start
+07:11:06.632	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	test	0.000		setup passed
+07:11:06.647	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.016		GET /modd/home -> 200, 442 B
+07:11:06.688	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.041		GET /api/page -> 200, 446 B
+07:11:07.553	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	fm1-live			[ 34.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:07.630	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.942		GET /api/screenshot -> 200, 153654 B
+07:11:07.677	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.019		GET /api/info -> 200, 95 B
+07:11:07.747	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.018		GET /api/input -> 200, 137 B
+07:11:07.768	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.020		GET /modd/REVERB -> 200, 103 B
+07:11:07.807	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.039		GET /api/page -> 200, 225 B
+07:11:08.660	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.853		GET /api/screenshot -> 200, 153654 B
+07:11:08.697	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.011		GET /api/info -> 200, 95 B
+07:11:08.718	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.020		GET /api/page -> 200, 225 B
+07:11:09.554	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	fm1-live			[ 36.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:09.690	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.973		GET /api/screenshot -> 200, 153654 B
+07:11:09.728	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.020		GET /api/input/enc/knob1/3 -> 200, 48 B
+07:11:09.797	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.018		GET /api/input -> 200, 137 B
+07:11:09.817	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.020		GET /api/info -> 200, 95 B
+07:11:09.837	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.020		GET /api/input/enc/knob2/3 -> 200, 48 B
+07:11:09.907	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.017		GET /api/input -> 200, 137 B
+07:11:09.927	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.020		GET /api/info -> 200, 95 B
+07:11:09.948	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.020		GET /api/input/enc/knob3/3 -> 200, 48 B
+07:11:10.017	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.019		GET /api/input -> 200, 137 B
+07:11:10.038	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.020		GET /api/info -> 200, 95 B
+07:11:10.057	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.019		GET /api/input/enc/knob4/3 -> 200, 48 B
+07:11:10.128	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.020		GET /api/input -> 200, 137 B
+07:11:10.148	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.020		GET /api/info -> 200, 95 B
+07:11:11.223	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	1.075		GET /api/screenshot -> 200, 153654 B
+07:11:11.268	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.022		GET /api/info -> 200, 95 B
+07:11:11.287	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.019		GET /api/page -> 200, 225 B
+07:11:11.558	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	fm1-live			[ 38.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:12.250	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	http	0.963		GET /api/screenshot -> 200, 153654 B
+07:11:12.274	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	test	5.643		call passed
+07:11:12.278	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	emu			fm1-live stopped
+07:11:12.278	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	test	0.004		teardown passed
+07:11:12.278	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortEditFx::test_04_reverb_rsize_rtype	test	5.647		end passed; 27 io, 5.3 s in io, 0.0 s throttled
+07:11:12.280	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	test			start
+07:11:12.297	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	exec	0.013		xdotool search --name ^FM-1 -> exit 1
+07:11:12.298	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	emu			$ /Users/dmitry/dev/modd-fm/fm1-emu/.worktrees/master/target/release/fm1-live --fwsc /MODD/Users/dmitry/dev/modd-fm/modd/build/modd_felucca_emu-open/modd.fwsc --usb ethernet --net internet --flash-size 8M --forward 56281:9222
+07:11:12.300	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.000		GET /api/info -> URLError
+07:11:12.346	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			forward: host:56281 -> guest:9222
+07:11:12.349	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+07:11:12.349	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+07:11:12.349	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+07:11:12.349	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+07:11:12.349	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+07:11:12.349	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+07:11:12.349	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+07:11:12.350	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			ALSA lib pcm.c:2793:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+07:11:12.350	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			audio off: The requested device is no longer available. For example, it has been unplugged.
+07:11:12.350	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+07:11:12.350	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			ALSA lib seq_hw.c:540:(snd_seq_hw_open) [error.sequencer] open /dev/snd/seq failed: No such file or directory
+07:11:12.350	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			MIDI in: MIDI support could not be initialized
+07:11:12.366	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			mouse: click/drag the keys (lower = harder; drag down on a held key = aftertouch), click buttons, drag or scroll the knobs (MASTER = volume)
+07:11:12.366	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			keys: A W S E D F T G Y H U J K O L P ; ' = C4..F5, Z/X OCT, Space PLAY, Shift+Space REC, 1..0 buttons, arrows and , . for SELECT/PRESETS/ALGORITHM; F3 records a WAV (to Music/fm1-emu); F4 another firmware; Esc quits
+07:11:14.354	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			[  2.1 s] 1.02x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:15.309	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	2.007		GET /api/info -> TimeoutError
+07:11:16.326	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.017		GET /api/info -> 200, 94 B
+07:11:16.326	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	emu	4.027		firmware API up on port 56281
+07:11:16.327	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	test	4.047		setup passed
+07:11:16.345	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.017		GET /modd/home -> 200, 442 B
+07:11:16.355	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			[  4.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:16.394	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.049		GET /api/page -> 200, 446 B
+07:11:17.338	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.944		GET /api/screenshot -> 200, 153654 B
+07:11:17.383	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/info -> 200, 94 B
+07:11:17.453	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.014		GET /api/input -> 200, 136 B
+07:11:17.474	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.021		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+07:11:17.493	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/info -> 200, 94 B
+07:11:17.512	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/input/pot/master/1023 -> 200, 48 B
+07:11:17.533	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.021		GET /api/input -> 200, 138 B
+07:11:17.974	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/input -> 200, 138 B
+07:11:17.994	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /modd/home -> 200, 444 B
+07:11:18.043	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.049		GET /api/page -> 200, 448 B
+07:11:18.358	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			[  6.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:18.998	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.954		GET /api/screenshot -> 200, 153654 B
+07:11:19.043	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/info -> 200, 94 B
+07:11:19.112	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.017		GET /api/input -> 200, 138 B
+07:11:19.133	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/input/key/60/down -> 200, 48 B
+07:11:19.463	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.014		GET /api/input -> 200, 142 B
+07:11:19.553	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.090		GET /api/audio/capture -> 200, 21946 B
+07:11:19.573	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/input/key/60/up -> 200, 48 B
+07:11:19.693	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/input -> 200, 138 B
+07:11:19.713	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /modd/INSERT -> 200, 106 B
+07:11:19.744	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.032		GET /api/page -> 200, 343 B
+07:11:20.358	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			[  8.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:20.776	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	1.031		GET /api/screenshot -> 200, 153654 B
+07:11:20.813	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/info -> 200, 94 B
+07:11:20.833	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/input/enc/knob1/40 -> 200, 48 B
+07:11:20.903	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/input -> 200, 138 B
+07:11:20.923	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/info -> 200, 94 B
+07:11:21.808	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.885		GET /api/screenshot -> 200, 153654 B
+07:11:21.834	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.015		GET /modd/home -> 200, 444 B
+07:11:21.883	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.049		GET /api/page -> 200, 448 B
+07:11:22.360	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			[ 10.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:22.840	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.956		GET /api/screenshot -> 200, 153654 B
+07:11:22.883	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/info -> 200, 95 B
+07:11:22.953	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/input -> 200, 139 B
+07:11:22.974	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/input/key/60/down -> 200, 49 B
+07:11:23.303	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.014		GET /api/input -> 200, 143 B
+07:11:23.394	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.090		GET /api/audio/capture -> 200, 21947 B
+07:11:23.413	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/input/key/60/up -> 200, 49 B
+07:11:23.533	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/input -> 200, 139 B
+07:11:23.553	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /modd/INSERT -> 200, 106 B
+07:11:23.595	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.041		GET /api/page -> 200, 345 B
+07:11:24.364	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			[ 12.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:24.570	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.975		GET /api/screenshot -> 200, 153654 B
+07:11:24.613	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.017		GET /api/info -> 200, 95 B
+07:11:24.633	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/input/enc/knob1/-40 -> 200, 50 B
+07:11:24.703	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/input -> 200, 139 B
+07:11:24.723	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/info -> 200, 95 B
+07:11:24.743	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /modd/home -> 200, 444 B
+07:11:24.793	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.050		GET /api/page -> 200, 448 B
+07:11:25.855	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	1.062		GET /api/screenshot -> 200, 153654 B
+07:11:25.892	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.011		GET /api/info -> 200, 95 B
+07:11:25.963	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/input -> 200, 139 B
+07:11:25.982	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.019		GET /api/input/key/60/down -> 200, 49 B
+07:11:26.313	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.015		GET /api/input -> 200, 143 B
+07:11:26.366	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	fm1-live			[ 14.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:26.403	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.089		GET /api/audio/capture -> 200, 21947 B
+07:11:26.423	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/input/key/60/up -> 200, 49 B
+07:11:26.543	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/input -> 200, 139 B
+07:11:26.563	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.018		GET /api/info -> 200, 95 B
+07:11:26.583	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	0.020		GET /api/page -> 200, 448 B
+07:11:27.643	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	http	1.059		GET /api/screenshot -> 200, 153654 B
+07:11:27.671	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	test	11.343		call passed
+07:11:27.671	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	test	0.000		teardown passed
+07:11:27.671	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_insert_changes_audio	test	15.391		end passed; 62 io, 11.2 s in io, 0.0 s throttled
+07:11:27.673	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	test			start
+07:11:27.674	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	test	0.000		setup passed
+07:11:27.693	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /modd/home -> 200, 444 B
+07:11:27.733	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.040		GET /api/page -> 200, 448 B
+07:11:27.752	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/info -> 200, 95 B
+07:11:27.824	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.020		GET /api/input -> 200, 139 B
+07:11:27.844	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.020		GET /api/track/sel/engine/ANALOG -> 200, 194 B
+07:11:27.863	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/info -> 200, 95 B
+07:11:27.883	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/input/pot/master/1023 -> 200, 49 B
+07:11:27.902	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/input -> 200, 139 B
+07:11:28.343	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.020		GET /api/input -> 200, 139 B
+07:11:28.364	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.021		GET /modd/home -> 200, 444 B
+07:11:28.370	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	fm1-live			[ 16.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:28.412	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.047		GET /api/page -> 200, 448 B
+07:11:28.432	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.020		GET /api/info -> 200, 95 B
+07:11:28.504	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.017		GET /api/input -> 200, 139 B
+07:11:28.523	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/input/key/60/down -> 200, 49 B
+07:11:28.853	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.013		GET /api/input -> 200, 143 B
+07:11:28.942	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.089		GET /api/audio/capture -> 200, 21947 B
+07:11:28.962	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/input/key/60/up -> 200, 49 B
+07:11:29.083	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.020		GET /api/input -> 200, 139 B
+07:11:29.103	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /modd/SLICER -> 200, 106 B
+07:11:29.142	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.039		GET /api/page -> 200, 224 B
+07:11:30.193	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	1.051		GET /api/screenshot -> 200, 153654 B
+07:11:30.222	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.012		GET /api/info -> 200, 95 B
+07:11:30.242	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/input/enc/knob1/40 -> 200, 49 B
+07:11:30.312	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.018		GET /api/input -> 200, 139 B
+07:11:30.333	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.020		GET /api/info -> 200, 95 B
+07:11:30.371	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	fm1-live			[ 18.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:31.231	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.898		GET /api/screenshot -> 200, 153654 B
+07:11:31.274	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.020		GET /modd/home -> 200, 444 B
+07:11:31.324	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.049		GET /api/page -> 200, 448 B
+07:11:32.264	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.939		GET /api/screenshot -> 200, 153654 B
+07:11:32.303	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.018		GET /api/info -> 200, 95 B
+07:11:32.372	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/input -> 200, 139 B
+07:11:32.374	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	fm1-live			[ 20.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:32.393	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.020		GET /api/input/key/60/down -> 200, 49 B
+07:11:32.723	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.015		GET /api/input -> 200, 143 B
+07:11:32.815	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.092		GET /api/audio/capture -> 200, 21947 B
+07:11:32.833	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.018		GET /api/input/key/60/up -> 200, 49 B
+07:11:32.953	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.017		GET /api/input -> 200, 139 B
+07:11:32.973	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /modd/SLICER -> 200, 106 B
+07:11:33.014	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.041		GET /api/page -> 200, 224 B
+07:11:33.993	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.978		GET /api/screenshot -> 200, 153654 B
+07:11:34.032	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.018		GET /api/info -> 200, 95 B
+07:11:34.053	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.020		GET /api/input/enc/knob1/-40 -> 200, 50 B
+07:11:34.116	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.005		GET /api/input -> 200, 139 B
+07:11:34.133	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.016		GET /api/info -> 200, 95 B
+07:11:34.153	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.020		GET /modd/home -> 200, 444 B
+07:11:34.193	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.040		GET /api/page -> 200, 448 B
+07:11:34.376	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	fm1-live			[ 22.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:35.273	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	1.079		GET /api/screenshot -> 200, 153654 B
+07:11:35.313	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.014		GET /api/info -> 200, 95 B
+07:11:35.383	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/input -> 200, 139 B
+07:11:35.402	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/input/key/60/down -> 200, 49 B
+07:11:35.733	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.015		GET /api/input -> 200, 143 B
+07:11:35.823	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.089		GET /api/audio/capture -> 200, 21948 B
+07:11:35.842	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/input/key/60/up -> 200, 49 B
+07:11:35.964	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/input -> 200, 139 B
+07:11:35.983	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.018		GET /api/info -> 200, 95 B
+07:11:36.003	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	0.019		GET /api/page -> 200, 448 B
+07:11:36.379	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	fm1-live			[ 24.1 s] 1.00x real time | 240 MHz | audio 250 ms queued (target 50), 0 underruns
+07:11:37.062	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	http	1.058		GET /api/screenshot -> 200, 153654 B
+07:11:37.086	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	test	9.412		call passed
+07:11:37.088	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	emu			fm1-live stopped
+07:11:37.088	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	test	0.002		teardown passed
+07:11:37.088	tests/ui/shells/felucca/api_felucca_port_test.py::TestFeluccaPortAudioLayers::test_05_slicer_changes_audio	test	9.415		end passed; 56 io, 7.3 s in io, 0.0 s throttled

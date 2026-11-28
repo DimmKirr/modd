@@ -16,7 +16,7 @@ material in it:
              app area 0x4000..: app_area_head, Melodee app.bin, the SDK
              cfg_tool.bin and eq_cfg_hw.bin, the region descriptors, SFC-encrypted
              with the chip key
-  ota.bin    Melodee's own update loader (firmware/loader)
+  ota.bin    Melodee's own update loader (firmware/boot)
 
 The layout values (offsets, flags, descriptor addresses, header fields) are
 facts of the FM-1 flash layout and the SDK file formats.
@@ -40,11 +40,11 @@ from pathlib import Path
 import flashmap
 
 KEY = 0x980F
-# the boot stub's layout (firmware/stub/stub_core.h), as app.bin offsets (app.bin offset 0 = flash 0x4120)
-STUB_LEN = 0xEE0                    # the stub; the body (the app proper) follows: flash 0x5000, XIP 0x02001000
-STUB_SIG = b"CRSTUB"                # at app.bin + 8 (crt0_stub.S), then the stub's version (u16)
+# the boot stub's layout (firmware/init/init_core.h), as app.bin offsets (app.bin offset 0 = flash 0x4120)
+INIT_LEN = 0xEE0                    # the stub; the body (the app proper) follows: flash 0x5000, XIP 0x02001000
+INIT_SIG = b"CRSTUB"                # at app.bin + 8 (crt0_init.S), then the stub's version (u16)
 MARK_MAGIC, MARK_FORMAT = 0x4D425243, 1     # "CRBM"
-STUB_FLASH_OFF = 0x4120             # flash offset of app.bin offset 0
+INIT_FLASH_OFF = 0x4120             # flash offset of app.bin offset 0
 APP_CRC_FIXED = 0x4352              # app.bin's CRC-16 in every stub package ("CR")
 # flash header: JieLi SDK defaults (burner_size 544, VID "0.01", flash_size the chip less 0x1000 (0xFF000),
 # fs_ver 0x10, PID "AC791N_STORY"), plain, without its CRC
@@ -129,16 +129,16 @@ def sdk_file(rel):
         raise SystemExit(f"fm1pkg_make: {path}: {e.strerror}. Set AC79_SDK to a JieLi AC79 SDK checkout.")
 
 
-def has_stub(app):
-    return len(app) >= STUB_LEN and app[8:8 + len(STUB_SIG)] == STUB_SIG
+def has_init(app):
+    return len(app) >= INIT_LEN and app[8:8 + len(INIT_SIG)] == INIT_SIG
 
 
-def stub_version(app):
-    return struct.unpack_from("<H", app, 8 + len(STUB_SIG))[0] if has_stub(app) else None
+def init_version(app):
+    return struct.unpack_from("<H", app, 8 + len(INIT_SIG))[0] if has_init(app) else None
 
 
 def marker(body):
-    """the 20-byte commit marker of a body (app.bin from STUB_LEN, padded to words)"""
+    """the 20-byte commit marker of a body (app.bin from INIT_LEN, padded to words)"""
     m = struct.pack("<IIII", MARK_MAGIC, MARK_FORMAT, len(body), zlib.crc32(body))
     return m + struct.pack("<I", zlib.crc32(m))
 
@@ -182,15 +182,15 @@ def crc16_slow(data):
 def commit(app, layout, marker_of=marker):
     """a stub app padded to the slot, with its marker and compensation bytes (marker_of allows
     host tests to supply a deliberately wrong marker)"""
-    body = app[STUB_LEN:]
+    body = app[INIT_LEN:]
     body += b"\xFF" * (-len(body) % 4)
     if len(body) > layout.body_max:
         raise SystemExit(f"the app body is {len(body)} B, the room below the marker's sector is {layout.body_max} B")
     if not body:
         raise SystemExit("the app has a stub and no body")
-    mark_off = layout.mark_off - STUB_FLASH_OFF         # the marker: the last 32 bytes of its flash sector
+    mark_off = layout.mark_off - INIT_FLASH_OFF         # the marker: the last 32 bytes of its flash sector
     comp_off = mark_off + 20                            # the four compensation bytes
-    a = bytearray(app[:STUB_LEN] + body + b"\xFF" * (layout.app_slot - STUB_LEN - len(body)))
+    a = bytearray(app[:INIT_LEN] + body + b"\xFF" * (layout.app_slot - INIT_LEN - len(body)))
     a[mark_off:mark_off + 20] = marker_of(body)
     a[comp_off:comp_off + 4] = bytes(4)
     a[comp_off:comp_off + 4] = compensate(bytes(a), comp_off, APP_CRC_FIXED)
@@ -226,7 +226,7 @@ def flash_image(app, key, layout, marker_of=marker):
     # ---- app area (plain first, then SFC)
     if len(app) > app_slot:
         raise SystemExit(f"app is {len(app)} B, the slot is {app_slot} B")
-    app = commit(app, layout, marker_of) if has_stub(app) else app + b"\xFF" * (app_slot - len(app))
+    app = commit(app, layout, marker_of) if has_init(app) else app + b"\xFF" * (app_slot - len(app))
     blk = 0x120 + app_slot + len(cfg_tool)              # app_area_head block size
     area = bytearray(b"\xFF" * blk)
     area[0x120:0x120 + app_slot] = app

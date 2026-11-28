@@ -65,7 +65,7 @@ Everything is under `firmware/src/ui/shells/modd/`.
 | What the firmware build contains | `configs/modd_defconfig` |
 
 A setting needs no shell change: `settings.c` builds a switch or a drop-down list for
-every item of `SYS_MENU[]` (`firmware/adapters/modd_sys_menu.h`).
+every item of `SYS_MENU[]` (`firmware/contracts/modd_sys_menu.h`).
 
 Changing `lv_conf.h` recompiles the whole library (483 files, about 3 minutes). Changing
 the shell's `.c` files does not.

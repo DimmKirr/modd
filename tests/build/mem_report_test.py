@@ -216,11 +216,11 @@ def test_report_names_the_components_and_files_that_fill_ram(tmp_path):
 """)
     comp, files, sizes = mem_files.attribute(tmp_path)
     assert sizes['RAM'] > 0
-    assert comp['RAM']['src/wifi'] == 0x6580 and files['RAM']['src/wifi/wifi_rtos.c'] == 0x6580
+    assert comp['RAM']['src/wifi'] == 0x6580 and files['RAM']['src/wifi/rtos.c'] == 0x6580
     assert comp['RAM'][mem_files.MERGED] == 0x200
     assert comp['RAM'][mem_files.UNATTRIBUTED] == 0x100
     text = mem_files.format_files(tmp_path)
-    assert 'RAM: src/wifi' in text and 'wifi_rtos.c' in text
+    assert 'RAM: src/wifi' in text and 'rtos.c' in text
 
 
 # a trimmed lld map (open toolchain) of firmware/app.ld: no Memory Configuration table, hex without

@@ -2,6 +2,7 @@
 choice
     prompt "Core upstream"
     depends on AUDIO
+    optional
     default CORE_FELUCCA if AUDIO_CORE_FELUCCA
 
 config CORE_FELUCCA
@@ -14,8 +15,13 @@ config CORE_FELUCCA
       seq.c (with chord, motion, midi_control, midi_clock).
 
 config CORE_MELODEE
-    bool "Melodee (future)"
-    depends on n
+    bool "Melodee (params, mod, voice, mix, fx, seq)"
+    depends on AUDIO_CORE_MELODEE
+    select AUDIO_MELODEE_STACK_INCLUDED
+    help
+      The upstream Melodee audio stack as a single included block:
+      dsp.c, params.c, mod.c, voice.c, mix.c (+ fx.c),
+      seq.c (with chord, motion, recording, click).
 
 config CORE_SLOOP
     bool "SLOOP (future)"

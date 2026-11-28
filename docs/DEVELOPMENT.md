@@ -254,7 +254,7 @@ starts. On macOS, build in the container first, then flash from the host:
 
 The `modd` and `modd_emu` defconfigs enable WiFi, USB ethernet and the weather
 client. Each can be disabled in Kconfig. When enabled, the link auto-starts at
-boot and stays up while any consumer needs it (`net_need.c`, `wifi_need.c`):
+boot and stays up while any consumer needs it (`net_need.c`, `wifi/need.c`):
 the weather client, the LLM client and the Settings NET page each register
 interest, and the link is brought down only when no consumer remains.
 

@@ -45,13 +45,39 @@ config USB_AUDIO
       Stereo or 4-track capture. Melodee only.
 
 config USB_AUDIO_HOST
-    bool "USB Audio host (external DAC/sound card)"
+    bool "USB Audio host (external DAC)"
     depends on USB_HOST
     default n
     help
-      USB Audio Class host driver: use an external USB DAC or sound
-      card plugged into the hub as the FM-1's audio output. Not yet
-      implemented.
+      USB Audio Class 1 host driver: stream audio to an external USB
+      DAC or sound card plugged into the FM-1's USB host port. The
+      runtime Settings menu cycles among the modes enabled below.
+
+config USB_AUDIO_HOST_44K_16
+    bool "44.1 kHz 16-bit stereo"
+    depends on USB_AUDIO_HOST
+    default y
+    help
+      Native render rate, no sample rate conversion needed.
+
+config USB_AUDIO_HOST_48K_24
+    bool "48 kHz 24-bit stereo"
+    depends on USB_AUDIO_HOST
+    default y
+    help
+      Most USB DACs default to 48 kHz. Requires 44.1→48 kHz SRC.
+
+config USB_AUDIO_HOST_48K_32
+    bool "48 kHz 32-bit stereo"
+    depends on USB_AUDIO_HOST
+    default n
+
+config USB_AUDIO_HOST_96K_24
+    bool "96 kHz 24-bit stereo"
+    depends on USB_AUDIO_HOST
+    default n
+    help
+      576 bytes/frame, near the Full-Speed ISO limit (1023).
 
 config EDITOR
     bool "SysEx web editor protocol"
